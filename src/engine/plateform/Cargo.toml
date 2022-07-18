@@ -1,0 +1,10 @@
+[package]
+name = "plateform"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+maths = { path = "../maths" }
+maths_operators = { path = "../maths_operators" }
+enumflags2 = "0.7.5"
+raw-window-handle = "0.4.3"

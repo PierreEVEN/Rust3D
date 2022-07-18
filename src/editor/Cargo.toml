@@ -1,0 +1,13 @@
+[package]
+name = "editor"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "editor"
+
+[dependencies]
+core = { path = "../engine/core" }
+maths = { path = "../engine/maths" }
+plateform_window = { path = "../engine/plateform_window" }
+plateform = { path = "../engine/plateform" }

@@ -1,0 +1,10 @@
+[package]
+name = "plateform_window"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+plateform = {path = "../plateform"}
+maths = { path = "../maths" }
+raw-window-handle = "0.4.3"
+windows = { version = "0.37.0", features = [ "Win32", "Win32_Foundation", "Win32_Graphics_Gdi", "Win32_UI_WindowsAndMessaging", "Win32_Media_Multimedia", "Win32_UI_HiDpi"] }

@@ -1,0 +1,3 @@
+[workspace]
+members = ["src/engine/*", "src/editor/", "src/main/"]
+default-members = ["src/editor/"]

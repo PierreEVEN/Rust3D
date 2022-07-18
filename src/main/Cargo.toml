@@ -1,0 +1,10 @@
+[package]
+name = "main"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "main"
+
+[dependencies]
+core = { path = "../engine/core" }

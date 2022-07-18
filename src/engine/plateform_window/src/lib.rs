@@ -217,9 +217,9 @@ impl Platform for PlatformWindows {
                     SW_SHOW
                 },
             );
-
-            let window = WindowWindows::new(hwnd, width, height, x, y, style, ex_style);
-            self.windows.insert(hwnd.into(), Arc::downgrade(&window));
+            
+            let window = Arc::new(WindowWindows {}); //::new(hwnd, width, height, x, y, style, ex_style);
+            //self.windows.insert(hwnd.into(), Arc::downgrade(&window));
             return Ok(window);
         };
     }

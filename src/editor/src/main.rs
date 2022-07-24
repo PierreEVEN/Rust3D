@@ -10,13 +10,13 @@ fn main() {
 	
 	// Create main window	
 	let _main_window = platform.create_window(WindowCreateInfos {
-		name: "Primary window".to_string(),
-		geometry: Rect2D::new(300, 400, 800 + 300, 600 + 400),
+		name: "Engine - 0.1.0".to_string(),
+		geometry: Rect2D::rect(300, 400, 800, 600),
 		window_flags: WindowFlags::from_flag(WindowFlagBits::Resizable),
 		background_alpha: 255
 	}).unwrap();
-	_main_window.show();
-	
+	_main_window.lock().unwrap().show();
+
 	'game_loop: loop {
 		while let Some(message) = platform.poll_event() {
 			match message {

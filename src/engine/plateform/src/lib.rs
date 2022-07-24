@@ -1,6 +1,6 @@
 pub mod window;
 
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use maths::rect2d::Rect2D;
 use crate::window::{Window, WindowCreateInfos, PlatformEvent};
 
@@ -28,7 +28,7 @@ impl ToString for Monitor {
 }
 
 pub trait Platform {
-    fn create_window(&self, create_infos: WindowCreateInfos) -> Result<Arc<dyn Window>, ()>;
+    fn create_window(&self, create_infos: WindowCreateInfos) -> Result<Arc<Mutex<dyn Window>>, ()>;
     fn monitor_count (&self) -> usize;
     fn get_monitor(&self, index:usize) -> Monitor;
     fn collect_monitors(&self);

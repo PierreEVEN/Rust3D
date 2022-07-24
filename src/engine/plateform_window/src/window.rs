@@ -1,9 +1,9 @@
 ﻿use std::ptr::null;
-use std::sync::{Arc};
-use raw_window_handle::RawWindowHandle;
+use std::sync::{Arc, Mutex};
+use raw_window_handle::{RawWindowHandle, Win32Handle};
 use windows::core::PCWSTR;
 use windows::Win32::Foundation::{HINSTANCE, HWND, RECT};
-use windows::Win32::UI::WindowsAndMessaging::{AdjustWindowRectEx, CreateWindowExW, HMENU, LWA_ALPHA, SetLayeredWindowAttributes, ShowWindow, SW_MAXIMIZE, SW_SHOW, WINDOW_STYLE, WS_CAPTION, WS_EX_LAYERED, WS_MAXIMIZEBOX, WS_MINIMIZEBOX, WS_OVERLAPPED, WS_POPUP, WS_SYSMENU, WS_THICKFRAME, WS_VISIBLE};
+use windows::Win32::UI::WindowsAndMessaging::{AdjustWindowRectEx, CreateWindowExW, HMENU, LWA_ALPHA, SetLayeredWindowAttributes, SetWindowTextW, ShowWindow, SW_MAXIMIZE, SW_SHOW, WINDOW_STYLE, WS_CAPTION, WS_EX_LAYERED, WS_MAXIMIZEBOX, WS_MINIMIZEBOX, WS_OVERLAPPED, WS_POPUP, WS_SYSMENU, WS_THICKFRAME, WS_VISIBLE};
 use maths::rect2d::{RectI32};
 use plateform::window::{Window, WindowCreateInfos, WindowFlagBits, WindowFlags};
 use crate::{utf8_to_utf16, WIN_CLASS_NAME};
@@ -13,10 +13,12 @@ pub struct WindowWin32 {
     pub hwnd: HWND,
     flags: WindowFlags,
     geometry: RectI32,
+    background_alpha: u8,
+    title: String,
 }
 
 impl WindowWin32 {
-    pub fn new(create_infos: WindowCreateInfos) -> Arc<WindowWin32> {
+    pub fn new(create_infos: WindowCreateInfos) -> Arc<Mutex<WindowWin32>> {
         let ex_style = WS_EX_LAYERED;
         let mut style = WINDOW_STYLE::default();
         
@@ -60,14 +62,17 @@ impl WindowWin32 {
                 Ok(_) => {}
             }
 
-            let window = Arc::new(WindowWin32 {
+            let mut window = WindowWin32 {
                 hwnd,
                 geometry: create_infos.geometry,
+                background_alpha: create_infos.background_alpha,
                 flags: create_infos.window_flags,
-            });
+                title: create_infos.name.to_string()
+            };
+
             window.set_background_alpha(create_infos.background_alpha);
             
-            return window;
+            return Arc::new(Mutex::new(window));
         }
     }
 }
@@ -77,8 +82,20 @@ impl Window for WindowWin32 {
         self.geometry = _geometry.clone()
     }
 
-    fn set_title(&self, _title: &str) {
-        todo!()
+    fn get_geometry(&self) -> RectI32 {
+        self.geometry
+    }
+    
+    fn set_title(&mut self, _title: &str) {
+        unsafe {
+            if SetWindowTextW(self.hwnd, PCWSTR(utf8_to_utf16(_title).as_ptr())).as_bool() {
+                self.title = _title.to_string();
+            }
+        }
+    }
+
+    fn get_title(&self) -> &str {
+        self.title.as_str()
     }
 
     fn show(&self) {
@@ -94,17 +111,19 @@ impl Window for WindowWin32 {
         }
     }
 
-    fn set_background_alpha(&self, alpha: u8) {
+    fn set_background_alpha(&mut self, alpha: u8) {
         unsafe {
             SetLayeredWindowAttributes(self.hwnd, 0, alpha, LWA_ALPHA);
         }
     }
 
-    fn get_handle(&self) -> RawWindowHandle {
-        todo!()
+    fn get_background_alpha(&self) -> u8 {
+        self.background_alpha
     }
-
-    fn get_geometry(&self) -> RectI32 {
-        todo!()
+    
+    fn get_handle(&self) -> RawWindowHandle {
+        let mut handle = Win32Handle::empty();
+        handle.hwnd = self.hwnd.0 as *mut std::ffi::c_void;
+        RawWindowHandle::Win32(handle)
     }
 }

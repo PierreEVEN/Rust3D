@@ -37,7 +37,7 @@ impl From<HWND> for HashableHWND {
 }
 
 pub struct PlatformWin32 {
-    windows: Mutex<HashMap<HashableHWND, Arc<WindowWin32>>>,
+    windows: Mutex<HashMap<HashableHWND, Arc<Mutex<WindowWin32>>>>,
     messages: Mutex<VecDeque<PlatformEvent>>,
     monitors: Vec<Monitor>,
 }
@@ -149,9 +149,10 @@ unsafe extern "system" fn wnd_proc(hwnd: HWND, msg: u32, wparam: WPARAM, lparam:
 }
 
 impl Platform for PlatformWin32 {
-    fn create_window(&self, create_infos: WindowCreateInfos) -> Result<Arc<dyn Window>, ()> {
+    fn create_window(&self, create_infos: WindowCreateInfos) -> Result<Arc<Mutex<dyn Window>>, ()> {
         let window = WindowWin32::new(create_infos.clone());
-        self.windows.lock().unwrap().insert(window.hwnd.into(), window.clone());
+        let hwnd = window.lock().unwrap().hwnd.into(); 
+        self.windows.lock().unwrap().insert(hwnd, window.clone());
         return Ok(window);
     }
 

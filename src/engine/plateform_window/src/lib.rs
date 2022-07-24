@@ -1,80 +1,75 @@
-use std::collections::VecDeque;
+pub mod window;
+pub mod utils;
+
+use std::collections::{HashMap, VecDeque};
+use std::hash::{Hash, Hasher};
 use std::mem::size_of;
 use std::ptr::null;
-use std::rc::Weak;
-use std::sync::Arc;
-use raw_window_handle::RawWindowHandle;
+use std::sync::{Arc, Mutex};
 use windows::core::PCWSTR;
-use windows::Win32::Foundation::{BOOL, GetLastError, HINSTANCE, HWND, LPARAM, NO_ERROR, RECT};
-use windows::Win32::Graphics::Gdi::{EnumDisplayMonitors, GetMonitorInfoW, HDC, HMONITOR, MONITORINFO};
+use windows::Win32::Foundation::{BOOL, HINSTANCE, HWND, LPARAM, LRESULT, RECT, WPARAM};
+use windows::Win32::Graphics::Gdi::{BLACK_BRUSH, EnumDisplayMonitors, GetMonitorInfoW, GetStockObject, HBRUSH, HDC, HMONITOR, MONITORINFO};
+use windows::Win32::Media::{timeBeginPeriod, timeEndPeriod};
 use windows::Win32::UI::HiDpi::{GetDpiForMonitor, MDT_EFFECTIVE_DPI};
-use windows::Win32::UI::WindowsAndMessaging::{AdjustWindowRectEx, CreateWindowExW, DestroyWindow, GET_CLASS_LONG_INDEX, HMENU, LWA_ALPHA, SetClassLongPtrW, SetLayeredWindowAttributes, ShowWindow, SW_MAXIMIZE, SW_SHOW, WINDOW_EX_STYLE, WINDOW_STYLE, WS_CAPTION, WS_EX_LAYERED, WS_MAXIMIZEBOX, WS_MINIMIZEBOX, WS_OVERLAPPED, WS_POPUP, WS_SYSMENU, WS_THICKFRAME, WS_VISIBLE};
+use windows::Win32::UI::WindowsAndMessaging::{CreateWindowExW, CS_DBLCLKS, CS_HREDRAW, CS_VREDRAW, DefWindowProcW, DispatchMessageW, GET_CLASS_LONG_INDEX, GetClassLongPtrW, HMENU, IDC_ARROW, LoadCursorW, PeekMessageW, PM_REMOVE, RegisterClassExW, SetClassLongPtrW, TranslateMessage, UnregisterClassW, WINDOW_EX_STYLE, WINDOW_STYLE, WNDCLASSEXW};
 use maths::rect2d::{Rect2D};
-use plateform::{Platform, Monitor, WindowCreateInfos, WindowMessage, Window, WindowFlagBits};
+use plateform::{Monitor, Platform};
+use plateform::window::{Window, WindowCreateInfos, PlatformEvent};
+use crate::utils::{check_win32_error, utf8_to_utf16};
+use crate::window::WindowWin32;
+use windows::Win32::UI::WindowsAndMessaging::*;
 
 const WIN_CLASS_NAME: &str = "r3d_window";
 
-pub struct MonitorWindows {
-    
-}
+#[derive(Eq, PartialEq)]
+struct HashableHWND(HWND);
 
-impl MonitorWindows {
-    fn new() -> Arc<MonitorWindows> {
-        Arc::new(MonitorWindows {
-            
-        })
+impl Hash for HashableHWND {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        state.write_isize(self.0 .0);
     }
 }
 
-pub struct WindowWindows {
-    
-}
-
-impl Window for WindowWindows {
-    fn set_geometry(&self, geometry: Rect2D<i32>) {
-        todo!()
-    }
-
-    fn set_title(&self, title: &str) {
-        todo!()
-    }
-
-    fn show(&self) {
-        todo!()
-    }
-
-    fn get_handle(&self) -> RawWindowHandle {
-        todo!()
-    }
-
-    fn get_geometry(&self) -> Rect2D<i32> {
-        todo!()
+impl From<HWND> for HashableHWND {
+    fn from(hwnd: HWND) -> Self {
+        Self { 0: hwnd }
     }
 }
 
-pub struct PlatformWindows {
-    windows: Vec<Weak<WindowWindows>>,
-    messages: VecDeque<WindowMessage>,
+pub struct PlatformWin32 {
+    windows: Mutex<HashMap<HashableHWND, Arc<WindowWin32>>>,
+    messages: Mutex<VecDeque<PlatformEvent>>,
     monitors: Vec<Monitor>,
 }
 
-pub fn utf8_to_utf16(str : &str) -> Vec<u16>
-{
-    str.encode_utf16().chain(Some(0)).collect()
-}
-
-impl PlatformWindows {
-    pub fn new() -> Arc<PlatformWindows> {
-        let platform = Arc::new(PlatformWindows {
-            windows: Default::default(),
-            messages: VecDeque::new(),
-            monitors: Default::default(),
-        });
+impl PlatformWin32 {
+    pub fn new() -> Arc<PlatformWin32> {
 
         unsafe {
-            // Create dummy window to set platform pointer into the WNDCLASS
+            // Ensure time precision is the highest
+            timeBeginPeriod(1);
+
+            let mut win_class = WNDCLASSEXW::default();
+            win_class.cbSize = size_of::<WNDCLASSEXW>() as u32;
+            win_class.style = CS_HREDRAW | CS_VREDRAW | CS_DBLCLKS;
+            win_class.lpszClassName = PCWSTR(utf8_to_utf16(WIN_CLASS_NAME).as_ptr());
+            win_class.hbrBackground = HBRUSH(GetStockObject(BLACK_BRUSH).0);
+            win_class.hCursor = LoadCursorW(HINSTANCE::default(), IDC_ARROW).unwrap();
+            win_class.cbClsExtra = size_of::<usize>() as i32;
+            win_class.lpfnWndProc = Some(wnd_proc);
+            assert_ne!(RegisterClassExW(&win_class), 0);
+        }
+        
+        let platform = Arc::new(PlatformWin32 {
+            windows: Default::default(),
+            messages: Mutex::new(VecDeque::new()),
+            monitors: Default::default(),
+        });
+        
+        // Set platform pointer into WNDCLASS
+        unsafe {
             {
-                let dummy_window = CreateWindowExW(
+                let window_handle = CreateWindowExW(
                     WINDOW_EX_STYLE(0),
                     PCWSTR(utf8_to_utf16(WIN_CLASS_NAME).as_ptr()),
                     PCWSTR::default(),
@@ -90,23 +85,85 @@ impl PlatformWindows {
                 );
 
                 SetClassLongPtrW(
-                    dummy_window,
+                    window_handle,
                     GET_CLASS_LONG_INDEX(0),
-                    (platform.as_ref() as *const PlatformWindows) as isize,
+                    (platform.as_ref() as *const PlatformWin32) as isize,
                 );
 
-                DestroyWindow(dummy_window);
+                match check_win32_error() {
+                    Ok(_) => (),
+                    Err(_message) => panic!("failed to send platform pointer to wndclass : {_message}"),
+                }
             }
-            
+        }
+        
+        // Collect monitors
+        platform.collect_monitors();
+        
+        return platform;
+    }
+
+
+    fn send_window_message(&self, hwnd: HWND, msg: u32, _wparam: WPARAM, lparam: LPARAM) {
+        let window_map = self.windows.lock();
+        if let Some(window) = window_map.unwrap().get(&hwnd.into()) {
+            let message_queue = self.messages.lock();
+            match msg {
+                WM_CLOSE => {
+                    message_queue.unwrap().push_back(PlatformEvent::WindowClosed(window.clone()));
+                }
+                WM_SIZE => {
+                    message_queue.unwrap().push_back(PlatformEvent::WindowResized(window.clone(), win32_loword!(lparam.0), win32_hiword!(lparam.0)));
+                }
+                _ => {}
+            }
+        }
+    }
+}
+
+impl Drop for PlatformWin32 {
+    fn drop(&mut self) {
+        unsafe {
+            UnregisterClassW(
+                PCWSTR(utf8_to_utf16(WIN_CLASS_NAME).as_ptr()),
+                HINSTANCE::default(),
+            );
+            timeEndPeriod(1);
+        }
+    }
+}
+
+unsafe extern "system" fn wnd_proc(hwnd: HWND, msg: u32, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
+
+    let platform = {
+        let ptr = GetClassLongPtrW(hwnd, GET_CLASS_LONG_INDEX(0));
+        if ptr == 0 {
+            return DefWindowProcW(hwnd, msg, wparam, lparam);
         }
 
-        platform.fetch_monitors();
-        
-        platform
-    }
+        (ptr as *const PlatformWin32).as_ref().unwrap_unchecked()
+    };
     
-    pub fn fetch_monitors(&self) {
+    platform.send_window_message(hwnd, msg, wparam, lparam);
+    DefWindowProcW(hwnd, msg, wparam, lparam)
+}
 
+impl Platform for PlatformWin32 {
+    fn create_window(&self, create_infos: WindowCreateInfos) -> Result<Arc<dyn Window>, ()> {
+        let window = WindowWin32::new(create_infos.clone());
+        self.windows.lock().unwrap().insert(window.hwnd.into(), window.clone());
+        return Ok(window);
+    }
+
+    fn monitor_count(&self) -> usize {
+        self.monitors.len()
+    }
+
+    fn get_monitor(&self, index: usize) -> Monitor {
+        self.monitors[index]
+    }
+
+    fn collect_monitors(&self) {
         unsafe {
             EnumDisplayMonitors(
                 HDC::default(),
@@ -115,16 +172,37 @@ impl PlatformWindows {
                 LPARAM((&self.monitors as *const _) as isize),
             );
         }
+
+        match check_win32_error() {
+            Ok(_) => (),
+            Err(_message) => panic!("failed to get monitor information : {_message}"),
+        }
+    }
+
+    fn poll_event(&self) -> Option<PlatformEvent> {
+        let mut event_queue = self.messages.lock().unwrap();
+        if let Some(event) = event_queue.pop_front() {
+            return Some(event)
+        }
+        else {
+            drop(event_queue);
+
+            //@TODO : make this think cleaner
+            unsafe {
+                let mut msg = std::mem::zeroed();
+                if PeekMessageW(&mut msg, HWND::default(), 0, 0, PM_REMOVE) != false {
+                    TranslateMessage(&mut msg);
+                    DispatchMessageW(&mut msg);
+                }
+            }
+
+            None
+        }
     }
 }
 
-
-unsafe extern "system" fn enum_display_monitors_callback(
-    monitor: HMONITOR,
-    _: HDC,
-    _: *mut RECT,
-    userdata: LPARAM,
-) -> BOOL {
+unsafe extern "system" fn enum_display_monitors_callback(monitor: HMONITOR, _: HDC, _: *mut RECT, userdata: LPARAM) -> BOOL {
+    
     let mut info = MONITORINFO {
         cbSize: size_of::<MONITORINFO>() as u32,
         rcMonitor: Default::default(),
@@ -136,13 +214,15 @@ unsafe extern "system" fn enum_display_monitors_callback(
 
     let mut dpi_x = 0;
     let mut dpi_y = 0;
-    GetDpiForMonitor(monitor, MDT_EFFECTIVE_DPI, &mut dpi_x, &mut dpi_y);
-
-    let mut monitors = (userdata.0 as *mut Vec<Monitor>)
+    match GetDpiForMonitor(monitor, MDT_EFFECTIVE_DPI, &mut dpi_x, &mut dpi_y) {
+        Ok(_) => (),
+        Err(error) => panic!("failed to get DPI for monitor {}", error)
+    }
+    
+    let monitors = (userdata.0 as *mut Vec<Monitor>)
         .as_mut()
         .unwrap_unchecked();
 
-    
     monitors.push(Monitor {
         bounds: Rect2D::<i32>::new(
             info.rcMonitor.left,
@@ -157,78 +237,12 @@ unsafe extern "system" fn enum_display_monitors_callback(
             info.rcWork.bottom,
         ),
         dpi: dpi_x as f32,
+        primary: info.dwFlags & MONITORINFOF_PRIMARY != 0
     });
 
+    match check_win32_error() {
+        Ok(_) => (),
+        Err(_message) => panic!("failed to get monitor information : {_message}"),
+    }
     BOOL::from(true)
-}
-
-impl Platform for PlatformWindows {
-    fn create_window(&self, create_infos: WindowCreateInfos) -> Result<Arc<dyn Window>, ()> {
-
-        let ex_style = WS_EX_LAYERED;
-        let mut style = WINDOW_STYLE::default();
-
-        if create_infos.window_flags.contains(WindowFlagBits::Borderless) {
-            style |= WS_VISIBLE | WS_POPUP;
-        } else {
-            style |= WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX;
-        }
-
-        if create_infos.window_flags.contains(WindowFlagBits::Resizable) {
-            style |= WS_THICKFRAME;
-        }
-
-        // Rect must be ajusted since Win32 api include window decoration in the width/height
-        let mut initial_rect = RECT {
-            left: 0,
-            top: 0,
-            right: (create_infos.geometry.max_x - create_infos.geometry.min_x) as i32,
-            bottom: (create_infos.geometry.max_y - create_infos.geometry.min_y) as i32,
-        };
-
-        unsafe {
-            AdjustWindowRectEx(&mut initial_rect, style, false, ex_style);
-            let hwnd = CreateWindowExW(
-                ex_style,
-                PCWSTR(utf8_to_utf16(WIN_CLASS_NAME).as_ptr()),
-                PCWSTR(utf8_to_utf16(create_infos.name.as_str()).as_ptr()),
-                style,
-                create_infos.geometry.min_x as i32 + initial_rect.left,
-                create_infos.geometry.min_y as i32 + initial_rect.top,
-                initial_rect.right - initial_rect.left,
-                initial_rect.bottom - initial_rect.top,
-                HWND::default(),
-                HMENU::default(),
-                HINSTANCE::default(),
-                null(),
-            );
-
-            if GetLastError() != NO_ERROR {
-                return Err(());
-            }
-
-            SetLayeredWindowAttributes(hwnd, 0, 255, LWA_ALPHA);
-
-            ShowWindow(
-                hwnd,
-                if create_infos.window_flags.contains(WindowFlagBits::Maximized) {
-                    SW_MAXIMIZE
-                } else {
-                    SW_SHOW
-                },
-            );
-            
-            let window = Arc::new(WindowWindows {}); //::new(hwnd, width, height, x, y, style, ex_style);
-            //self.windows.insert(hwnd.into(), Arc::downgrade(&window));
-            return Ok(window);
-        };
-    }
-
-    fn monitor_count(&self) -> usize {
-        todo!()
-    }
-
-    fn get_monitor(&self, index: usize) -> Monitor {
-        todo!()
-    }
 }

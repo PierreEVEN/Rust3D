@@ -1,6 +1,6 @@
 ﻿use std::borrow::Cow;
 use std::collections::HashMap;
-use std::ffi::CStr;
+use std::ffi::{CStr, CString};
 use std::ops::Add;
 use std::os::raw::c_char;
 
@@ -30,73 +30,44 @@ pub struct VkInstance {
 
 impl VkInstance {
     pub fn new(create_infos: InstanceCreateInfos) -> Result<VkInstance, std::io::Error> {
-        let enable_validation_layers = create_infos.enable_validation_layers && VkInstance::is_layer_available("VK_LAYER_KHRONOS_validation");
-
         // Build extensions and layer
-        let mut required_layers = create_infos.required_layers.clone();
-        let mut required_extensions = create_infos.required_extensions.clone();
-
-        if enable_validation_layers {
-            required_layers.push(("VK_LAYER_KHRONOS_validation".to_string(), true));
-            required_extensions.push((DebugUtils::name().to_str().unwrap().to_string(), true));
-        }
-
+        let mut required_layers = Vec::new();
+        let mut required_extensions = Vec::new();        
         let mut layers_names_raw = Vec::<*const c_char>::new();
-        for (layer_name, required) in required_layers {
+        let mut extension_names_raw = Vec::<*const c_char>::new();
+        
+        for (mut layer_name, required) in create_infos.required_layers {
             let is_available = VkInstance::is_layer_available(layer_name.as_str());
             if !is_available {
-                if required { panic!("required layer [{}] is not available", layer_name); } else { println!("optional layer [{}] is not available", layer_name); }
+                if required { panic!("required layer [{}] is not available", layer_name); }
+                else { println!("optional layer [{}] is not available", layer_name); }
                 continue;
             }
-            
-            let mut final_str = layer_name.clone();
-            final_str += "\0";
-            layers_names_raw.push(final_str.as_ptr() as *const c_char);
-        }
-        layers_names_raw.push("VK_LAYER_KHRONOS_validation\0".as_ptr() as *const c_char);
-        
-        for ext in layers_names_raw.clone() {
-
-
-
-            let ptr = ext;
-
-            unsafe {
-                for i in 0..28 {
-                    let b = ptr.offset(i as isize);
-                    let c = *b;
-
-                    println!("chr : [{}]", c as u8 as char);
-                }
-            }
-            
-            
-            unsafe { println!("lay : {}", CStr::from_ptr(ext).to_str().unwrap().to_string()); }
-        }
-        
-        if let Some(layer_properties) = g_vulkan!().enumerate_instance_layer_properties().ok() {
-            unsafe {
-                for layer_details in layer_properties {
-                    println!("layer : {}", CStr::from_ptr(layer_details.layer_name.as_ptr()).to_str().expect("failed to read layer name"))
-                }
-            }
-        }
-        
-
-        let mut extension_names_raw = Vec::<*const c_char>::new();
-        for (extension_name, required) in required_extensions {
+            layer_name += "\0";
+            required_layers.push(layer_name);
+        }        
+        for (mut extension_name, required) in create_infos.required_extensions {
             let is_available = VkInstance::is_extension_available(extension_name.as_str());
             if !is_available {
-                if required { panic!("required extension [{}] is not available", extension_name); } else { println!("optional extension [{}] is not available", extension_name); }
+                if required { panic!("required layer [{}] is not available", extension_name); } else { println!("optional layer [{}] is not available", extension_name); }
                 continue;
             }
-            let mut string = extension_name.clone();
-            string += "\0";
-            extension_names_raw.push(string.as_ptr() as *const c_char);
+            extension_name += "\0";
+            required_extensions.push(extension_name);
         }
-
-        for ext in extension_names_raw.clone() {
-            unsafe { println!("ext : {}", CStr::from_ptr(ext).to_str().unwrap()); }
+        
+        // Add validation layers
+        let enable_validation_layers = create_infos.enable_validation_layers && VkInstance::is_layer_available("VK_LAYER_KHRONOS_validation");
+        if enable_validation_layers {
+            required_layers.push("VK_LAYER_KHRONOS_validation\0".to_string());
+            required_extensions.push(DebugUtils::name().to_str().unwrap().to_string() + "\0");
+        }
+        
+        for layer in &required_layers {
+            layers_names_raw.push(layer.as_str().as_ptr() as *const c_char);
+        }
+        for extension in &required_extensions {
+            extension_names_raw.push(extension.as_str().as_ptr() as *const c_char);
         }
 
         // Create instance
@@ -115,9 +86,9 @@ impl VkInstance {
             enabled_extension_count: extension_names_raw.len() as u32,
             ..Default::default()
         };
-
         let instance = unsafe { g_vulkan!().create_instance(&ci_instance, None) }.expect("failed to create instance");
-
+        
+        // Create debug messenger
         let _debug_info = vk::DebugUtilsMessengerCreateInfoEXT {
             message_severity: vk::DebugUtilsMessageSeverityFlagsEXT::ERROR | vk::DebugUtilsMessageSeverityFlagsEXT::WARNING | vk::DebugUtilsMessageSeverityFlagsEXT::INFO,
             message_type: vk::DebugUtilsMessageTypeFlagsEXT::GENERAL | vk::DebugUtilsMessageTypeFlagsEXT::VALIDATION | vk::DebugUtilsMessageTypeFlagsEXT::PERFORMANCE,
@@ -127,7 +98,7 @@ impl VkInstance {
 
         let debug_util_loader = DebugUtils::new(g_vulkan!(), &instance);
 
-        let debug_callback =
+        let debug_messenger =
             if enable_validation_layers {
                 unsafe { debug_util_loader.create_debug_utils_messenger(&_debug_info, None) }.unwrap()
             } else {
@@ -147,9 +118,9 @@ impl VkInstance {
         Ok(Self {
             instance,
             debug_util_loader,
-            debug_messenger: debug_callback,
+            debug_messenger,
             enable_validation_layers,
-            device_map: device_map,
+            device_map,
         })
     }
 
@@ -235,7 +206,7 @@ impl VkInstance {
 impl Drop for VkInstance {
     fn drop(&mut self) {
         if self.enable_validation_layers {
-            unsafe { self.debug_util_loader.destroy_debug_utils_messenger(self.debug_messenger, None); }
+            // unsafe { self.debug_util_loader.destroy_debug_utils_messenger(self.debug_messenger, None); }
         }
     }
 }

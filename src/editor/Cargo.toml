@@ -11,3 +11,5 @@ core = { path = "../engine/core" }
 maths = { path = "../engine/maths" }
 plateform_window = { path = "../engine/plateform_window" }
 plateform = { path = "../engine/plateform" }
+backend_vulkan = { path = "../engine/backend_vulkan" }
+gfx = { path = "../engine/gfx" }

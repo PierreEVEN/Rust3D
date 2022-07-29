@@ -150,7 +150,7 @@ impl VkInstance {
         false
     }
 
-    pub fn validation_layers_available(&self) -> bool {
+    pub fn enable_validation_layers(&self) -> bool {
         return self.enable_validation_layers;
     }
 

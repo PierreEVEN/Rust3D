@@ -11,7 +11,8 @@ pub struct DeviceQueueProperties {
 
 #[derive(Default, Clone)]
 pub struct VkPhysicalDevice {
-    queues: Vec<DeviceQueueProperties>,
+    pub device: vk::PhysicalDevice,
+    pub queues: Vec<DeviceQueueProperties>,
 }
 
 
@@ -65,6 +66,7 @@ impl VkPhysicalDevice {
 
         (device_properties,
          Self {
+             device,
              queues,
          }
         )

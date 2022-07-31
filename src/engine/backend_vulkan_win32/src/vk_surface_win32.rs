@@ -1,13 +1,16 @@
-﻿use ash::vk;
-use ash::vk::{HINSTANCE, Win32SurfaceCreateInfoKHR};
-use backend_vulkan::{g_vulkan, gfx_object, GfxVulkan};
+﻿use std::ffi::c_void;
+use std::ptr::null;
+use ash::extensions::khr;
+use ash::vk;
+use ash::vk::{HINSTANCE, SurfaceKHR, Win32SurfaceCreateInfoKHR};
+use windows::Win32::Foundation::HWND;
+use backend_vulkan::{g_vulkan, G_VULKAN, gfx_object, GfxVulkan};
 use plateform_win32::PlatformWin32;
 use plateform_win32::window::WindowWin32;
 
 
 pub struct VkSurfaceWin32 {
-  
-    
+    surface: SurfaceKHR
 }
 
 impl VkSurfaceWin32 {
@@ -15,15 +18,18 @@ impl VkSurfaceWin32 {
         
         let ci_surface = Win32SurfaceCreateInfoKHR {
             flags: Default::default(),
-            hinstance: HINSTANCE::default(),
-            hwnd: window.hwnd as ash::vk::HWND,
+            hinstance: null(),
+            hwnd: window.hwnd.0 as *const c_void,
             ..Default::default()
         };
         
-        let instance = &gfx_object!(gfx.instance).instance;
+        let entry = g_vulkan!();
         
-        let surface = unsafe { ash_window::create_surface(g_vulkan!(), , window.hwnd as ash::vk::HWND, None) };
+        let surface_fn = khr::Win32Surface::new(entry, &gfx_object!(gfx.instance).instance);
+        let surface = unsafe { surface_fn.create_win32_surface(&ci_surface, None) }.expect("failed to create surface");
         
-        Self {}
+        Self {
+            surface
+        }
     }
 } 

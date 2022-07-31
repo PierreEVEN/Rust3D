@@ -7,18 +7,16 @@ pub mod vk_surface;
 use std::sync::Arc;
 use gfx::{GfxInterface, PhysicalDevice};
 use ash::{Entry, vk};
-use ash::version::InstanceV1_0;
 use crate::vk_device::VkDevice;
 use crate::vk_instance::{InstanceCreateInfos, VkInstance};
 use crate::vk_physical_device::VkPhysicalDevice;
 
 
-static mut G_VULKAN: Option<Entry> = None;
+pub static mut G_VULKAN: Option<Entry> = None;
 
 #[macro_export]
 macro_rules! g_vulkan {    
     () => {
-        #[allow(unused_unsafe)]
         match unsafe { &G_VULKAN } {
             None => { panic!("vulkan has not been loaded yet"); }
             Some(entry) => { entry }
@@ -76,6 +74,7 @@ impl GfxInterface for GfxVulkan {
                 panic!("physical device has already been selected");
             }
         }
+        
     }
 
 
@@ -96,7 +95,7 @@ impl GfxInterface for GfxVulkan {
 
 impl GfxVulkan {
     pub fn new() -> Self {
-        unsafe { G_VULKAN = Some(Entry::new().expect("failed to load vulkan library")); } 
+        unsafe { G_VULKAN = Some(Entry::load().expect("failed to load vulkan library")); } 
         
         let instance = VkInstance::new(InstanceCreateInfos {
             enable_validation_layers: true,

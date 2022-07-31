@@ -7,7 +7,6 @@ use std::sync::Arc;
 
 use ash::{Instance, vk};
 use ash::extensions::ext::DebugUtils;
-use ash::version::{EntryV1_0, InstanceV1_0};
 use ash::vk::DebugUtilsMessengerEXT;
 
 use gfx::PhysicalDevice;
@@ -146,7 +145,7 @@ impl VkInstance {
     }
 
     pub fn is_extension_available(layer: &str) -> bool {
-        if let Some(extensions_properties) = g_vulkan!().enumerate_instance_extension_properties().ok() {
+        if let Some(extensions_properties) = g_vulkan!().enumerate_instance_extension_properties(None).ok() {
             unsafe {
                 for extension in extensions_properties {
                     if CStr::from_ptr(extension.extension_name.as_ptr()).to_str().expect("failed to read extension name") == layer {

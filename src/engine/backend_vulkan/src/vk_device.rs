@@ -4,9 +4,10 @@ use std::ops::Deref;
 use std::os::raw::{c_char, c_void};
 use std::ptr::null;
 use ash::prelude::VkResult;
-use ash::version::InstanceV1_0;
 use ash::vk;
 use ash::vk::{Bool32, PhysicalDevice, PhysicalDeviceFeatures};
+use gpu_allocator::AllocatorDebugSettings;
+use gpu_allocator::vulkan::{Allocator, AllocatorCreateDesc};
 use crate::{gfx_object, GfxVulkan, vk_check, VkInstance};
 
 pub fn get_required_device_extensions() -> Vec<*const c_char>{
@@ -18,7 +19,7 @@ pub fn get_required_device_extensions() -> Vec<*const c_char>{
 
 pub struct VkDevice {
     device: ash::Device,
-    allocator: vk_mem::Allocator,
+    allocator: gpu_allocator::vulkan::Allocator,
 }
 
 impl VkDevice {
@@ -92,11 +93,15 @@ impl VkDevice {
             None
         ) });
         
-        let allocator = vk_mem::Allocator::new(&vk_mem::AllocatorCreateInfo {
-            physical_device: gfx_object!(gfx.physical_device_vk).device,
-            device: device.clone(),
+        let allocator = Allocator::new(&AllocatorCreateDesc {
             instance: gfx_object!(gfx.instance).instance.clone(),
-            ..Default::default()
+            device: device.clone(),
+            physical_device: gfx_object!(gfx.physical_device_vk).device,
+            debug_settings: gpu_allocator::AllocatorDebugSettings {
+                log_leaks_on_shutdown: true,
+                ..Default::default()
+            },
+            buffer_device_address: false
         }).expect("failed to create AMD Vulkan memory allocator");
         
         Self {

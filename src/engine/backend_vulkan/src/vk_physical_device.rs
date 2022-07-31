@@ -1,5 +1,4 @@
 ﻿use std::ffi::CStr;
-use ash::version::InstanceV1_0;
 use ash::vk;
 use ash::vk::{ExtensionProperties, QueueFlags};
 use gfx::{PhysicalDevice, PhysicalDeviceType};

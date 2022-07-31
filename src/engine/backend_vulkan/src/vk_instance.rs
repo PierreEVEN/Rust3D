@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use std::ffi::{CStr, CString};
 use std::ops::Add;
 use std::os::raw::c_char;
+use std::sync::Arc;
 
 use ash::{Instance, vk};
 use ash::extensions::ext::DebugUtils;
@@ -61,7 +62,9 @@ impl VkInstance {
         if enable_validation_layers {
             required_layers.push("VK_LAYER_KHRONOS_validation\0".to_string());
             required_extensions.push(DebugUtils::name().to_str().unwrap().to_string() + "\0");
+            required_extensions.push("VK_EXT_debug_report\0".to_string());
         }
+        required_extensions.push("VK_KHR_surface\0".to_string());
         
         for layer in &required_layers {
             layers_names_raw.push(layer.as_str().as_ptr() as *const c_char);
@@ -77,7 +80,7 @@ impl VkInstance {
                 application_version: vk::make_api_version(0, 0, 1, 0),
                 p_engine_name: to_c_char!(""),
                 engine_version: vk::make_api_version(0, 0, 1, 0),
-                api_version: vk::make_api_version(0, 1, 3, 0),
+                api_version: vk::make_api_version(0, 1, 2, 0),
                 ..Default::default()
             },
             pp_enabled_layer_names: layers_names_raw.as_ptr(),
@@ -90,7 +93,7 @@ impl VkInstance {
         
         // Create debug messenger
         let _debug_info = vk::DebugUtilsMessengerCreateInfoEXT {
-            message_severity: vk::DebugUtilsMessageSeverityFlagsEXT::ERROR | vk::DebugUtilsMessageSeverityFlagsEXT::WARNING | vk::DebugUtilsMessageSeverityFlagsEXT::INFO,
+            message_severity: vk::DebugUtilsMessageSeverityFlagsEXT::ERROR | vk::DebugUtilsMessageSeverityFlagsEXT::WARNING,
             message_type: vk::DebugUtilsMessageTypeFlagsEXT::GENERAL | vk::DebugUtilsMessageTypeFlagsEXT::VALIDATION | vk::DebugUtilsMessageTypeFlagsEXT::PERFORMANCE,
             pfn_user_callback: Some(vulkan_debug_callback),
             ..Default::default()

@@ -1,12 +1,13 @@
 ﻿use std::ffi::CStr;
 use ash::vk;
-use ash::vk::{QueueFlags};
+use ash::vk::{ExtensionProperties, QueueFlags};
 use gfx::{PhysicalDevice, PhysicalDeviceType};
+use crate::{gfx_object, GfxVulkan};
 
 #[derive(Default, Clone)]
 pub struct DeviceQueueProperties {
-    index: u32,
-    flags: QueueFlags,
+    pub index: u32,
+    pub flags: QueueFlags,
 }
 
 #[derive(Default, Clone)]
@@ -79,5 +80,17 @@ impl VkPhysicalDevice {
             }
         }
         false
+    }
+    
+    pub fn enumerate_device_extensions(&self, gfx: &GfxVulkan) -> Vec<ExtensionProperties> {
+        let mut result = Vec::new();
+        unsafe {
+            if let Some(extensions) = gfx_object!(gfx.instance).instance.enumerate_device_extension_properties(gfx_object!(gfx.physical_device_vk).device).ok() {
+                for extension in extensions {
+                    result.push(extension);
+                }
+            }
+        }
+        result
     }
 }

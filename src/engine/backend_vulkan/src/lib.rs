@@ -2,6 +2,7 @@ pub mod vk_instance;
 pub mod vk_physical_device;
 pub mod vk_device;
 
+use std::sync::Arc;
 use gfx::{GfxInterface, PhysicalDevice};
 use ash::{Entry, vk};
 use crate::vk_device::VkDevice;
@@ -52,10 +53,10 @@ macro_rules! vk_check {
 
 #[derive(Default)]
 pub struct GfxVulkan {
-    instance: Option<VkInstance>,
-    physical_device: Option<PhysicalDevice>,
-    physical_device_vk: Option<VkPhysicalDevice>,
-    device: Option<VkDevice>,
+    pub instance: Option<VkInstance>,
+    pub physical_device: Option<PhysicalDevice>,
+    pub physical_device_vk: Option<VkPhysicalDevice>,
+    pub device: Option<VkDevice>,
 }
 
 impl GfxInterface for GfxVulkan {
@@ -91,23 +92,26 @@ impl GfxVulkan {
         let instance = VkInstance::new(InstanceCreateInfos {
             enable_validation_layers: true,
             ..Default::default()
-        }).expect("failed to create instance");        
-        
+        }).expect("failed to create instance");
+
         Self {
             instance: Some(instance),
             physical_device: None,
             physical_device_vk: None,
             device: None,
-            ..Default::default()
+        }
+    }
+    
+    pub fn do_test(&self) {
+        match &self.instance {
+            None => {}
+            Some(inst) => { unsafe { inst.instance.enumerate_physical_devices(); } }
         }
     }
 }
 
 impl Drop for GfxVulkan {
-    fn drop(&mut self) {     
-        self.device = None;
-        self.instance = None;
-        
+    fn drop(&mut self) {        
         unsafe { G_VULKAN = None; }
     }
 }

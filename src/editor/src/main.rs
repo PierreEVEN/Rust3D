@@ -1,4 +1,4 @@
-use backend_vulkan::GfxVulkan;
+use backend_vulkan::{gfx_object, GfxVulkan};
 use gfx::GfxInterface;
 use maths::rect2d::Rect2D;
 use plateform::Platform;
@@ -23,6 +23,8 @@ fn main() {
 
     gfx_backend.set_physical_device(gfx_backend.find_best_suitable_physical_device().expect("there is no suitable GPU available"));
 
+
+    
     'game_loop: loop {
         // handle events
         while let Some(message) = platform.poll_event() {

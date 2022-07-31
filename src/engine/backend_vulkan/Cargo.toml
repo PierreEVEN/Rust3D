@@ -5,4 +5,5 @@ edition = "2021"
 
 [dependencies]
 gfx = {path = "../gfx"}
-ash = "0.37.0"
+ash = ">= 0.27.1, < 0.33"
+vk-mem = {git = "https://github.com/Chris--B/vk-mem-rs"}

@@ -7,6 +7,7 @@ use std::sync::Arc;
 
 use ash::{Instance, vk};
 use ash::extensions::ext::DebugUtils;
+use ash::version::{EntryV1_0, InstanceV1_0};
 use ash::vk::DebugUtilsMessengerEXT;
 
 use gfx::PhysicalDevice;
@@ -27,6 +28,10 @@ pub struct VkInstance {
     debug_messenger: DebugUtilsMessengerEXT,
     enable_validation_layers: bool,
     device_map: HashMap<PhysicalDevice, VkPhysicalDevice>,
+}
+
+const fn make_api_version(variant: u32, major: u32, minor: u32, patch: u32) -> u32 {
+    ((variant) << 29) | ((major) << 22) | ((minor) << 12) | (patch)
 }
 
 impl VkInstance {
@@ -77,10 +82,10 @@ impl VkInstance {
         let ci_instance = vk::InstanceCreateInfo {
             p_application_info: &vk::ApplicationInfo {
                 p_application_name: to_c_char!(""),
-                application_version: vk::make_api_version(0, 0, 1, 0),
+                application_version: make_api_version(0, 0, 1, 0),
                 p_engine_name: to_c_char!(""),
-                engine_version: vk::make_api_version(0, 0, 1, 0),
-                api_version: vk::make_api_version(0, 1, 2, 0),
+                engine_version: make_api_version(0, 0, 1, 0),
+                api_version: make_api_version(0, 1, 2, 0),
                 ..Default::default()
             },
             pp_enabled_layer_names: layers_names_raw.as_ptr(),
@@ -141,7 +146,7 @@ impl VkInstance {
     }
 
     pub fn is_extension_available(layer: &str) -> bool {
-        if let Some(extensions_properties) = g_vulkan!().enumerate_instance_extension_properties(None).ok() {
+        if let Some(extensions_properties) = g_vulkan!().enumerate_instance_extension_properties().ok() {
             unsafe {
                 for extension in extensions_properties {
                     if CStr::from_ptr(extension.extension_name.as_ptr()).to_str().expect("failed to read extension name") == layer {

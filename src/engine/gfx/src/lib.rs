@@ -11,6 +11,8 @@ pub trait GfxInterface {
     fn set_physical_device(&mut self, selected_device: PhysicalDevice);
     fn enumerate_physical_devices(&self) -> Vec<PhysicalDevice>;
     fn find_best_suitable_physical_device(&self) -> Result<PhysicalDevice, String>;
+    fn begin_frame(&self);
+    fn end_frame(&self);
 }
 
 #[derive(Copy, Clone)]

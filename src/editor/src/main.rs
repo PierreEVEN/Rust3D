@@ -35,7 +35,9 @@ fn main() {
                 PlatformEvent::WindowResized(_window, _width, _height) => {}
             }
         }
-
+        
         // Game loop
+        gfx_backend.begin_frame();
+        gfx_backend.end_frame();
     }
 }

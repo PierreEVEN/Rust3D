@@ -1,0 +1,11 @@
+[package]
+name = "backend_vulkan_win32"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+gfx = {path = "../gfx"}
+ash = ">= 0.27.1, < 0.33"
+ash-window = "0.11.0"
+backend_vulkan = { path = "../backend_vulkan" }
+plateform_win32 = {path = "../plateform_win32"}

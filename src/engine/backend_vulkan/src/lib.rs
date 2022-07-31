@@ -1,10 +1,13 @@
 pub mod vk_instance;
 pub mod vk_physical_device;
 pub mod vk_device;
+pub mod vk_swapchain;
+pub mod vk_surface;
 
 use std::sync::Arc;
 use gfx::{GfxInterface, PhysicalDevice};
 use ash::{Entry, vk};
+use ash::version::InstanceV1_0;
 use crate::vk_device::VkDevice;
 use crate::vk_instance::{InstanceCreateInfos, VkInstance};
 use crate::vk_physical_device::VkPhysicalDevice;
@@ -83,11 +86,17 @@ impl GfxInterface for GfxVulkan {
     fn find_best_suitable_physical_device(&self) -> Result<PhysicalDevice, String> {
         gfx_object!(self.instance).find_best_suitable_gpu_vk()
     }
+
+    fn begin_frame(&self) {
+    }
+
+    fn end_frame(&self) {
+    }
 }
 
 impl GfxVulkan {
     pub fn new() -> Self {
-        unsafe { G_VULKAN = Some(Entry::load().expect("failed to load vulkan library")); } 
+        unsafe { G_VULKAN = Some(Entry::new().expect("failed to load vulkan library")); } 
         
         let instance = VkInstance::new(InstanceCreateInfos {
             enable_validation_layers: true,

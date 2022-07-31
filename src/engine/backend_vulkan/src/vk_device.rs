@@ -4,6 +4,7 @@ use std::ops::Deref;
 use std::os::raw::{c_char, c_void};
 use std::ptr::null;
 use ash::prelude::VkResult;
+use ash::version::InstanceV1_0;
 use ash::vk;
 use ash::vk::{Bool32, PhysicalDevice, PhysicalDeviceFeatures};
 use crate::{gfx_object, GfxVulkan, vk_check, VkInstance};
@@ -17,6 +18,7 @@ pub fn get_required_device_extensions() -> Vec<*const c_char>{
 
 pub struct VkDevice {
     device: ash::Device,
+    allocator: vk_mem::Allocator,
 }
 
 impl VkDevice {
@@ -45,7 +47,7 @@ impl VkDevice {
         };
         
         if gfx_object!(gfx.instance).enable_validation_layers() {
-            device_features.robust_buffer_access = 1;
+            device_features.robust_buffer_access = 0;
         }
 
         let index_features = [vk::PhysicalDeviceDescriptorIndexingFeatures::builder()
@@ -58,7 +60,6 @@ impl VkDevice {
             features: device_features,
             ..Default::default()
         };
-
         
         let mut extensions = get_required_device_extensions().clone();
         
@@ -91,8 +92,16 @@ impl VkDevice {
             None
         ) });
         
+        let allocator = vk_mem::Allocator::new(&vk_mem::AllocatorCreateInfo {
+            physical_device: gfx_object!(gfx.physical_device_vk).device,
+            device: device.clone(),
+            instance: gfx_object!(gfx.instance).instance.clone(),
+            ..Default::default()
+        }).expect("failed to create AMD Vulkan memory allocator");
+        
         Self {
             device,
+            allocator
         }
     }
 }

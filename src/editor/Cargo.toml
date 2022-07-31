@@ -9,7 +9,8 @@ name = "editor"
 [dependencies]
 core = { path = "../engine/core" }
 maths = { path = "../engine/maths" }
-plateform_window = { path = "../engine/plateform_window" }
-plateform = { path = "../engine/plateform" }
-backend_vulkan = { path = "../engine/backend_vulkan" }
 gfx = { path = "../engine/gfx" }
+plateform = { path = "../engine/plateform" }
+plateform_win32 = { path = "../engine/plateform_win32" }
+backend_vulkan = { path = "../engine/backend_vulkan" }
+backend_vulkan_win32 = { path = "../engine/backend_vulkan_win32" }

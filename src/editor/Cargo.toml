@@ -9,6 +9,7 @@ name = "editor"
 [dependencies]
 core = { path = "../engine/core" }
 maths = { path = "../engine/maths" }
+maths_operators = { path = "../engine/maths_operators" }
 gfx = { path = "../engine/gfx" }
 plateform = { path = "../engine/plateform" }
 plateform_win32 = { path = "../engine/plateform_win32" }

@@ -1,3 +1,6 @@
+pub mod surface;
+pub mod types;
+
 use std::hash::{Hash, Hasher};
 
 pub trait GfxResource {

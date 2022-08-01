@@ -1,9 +1,7 @@
 ﻿use std::borrow::Cow;
 use std::collections::HashMap;
-use std::ffi::{CStr, CString};
-use std::ops::Add;
+use std::ffi::CStr;
 use std::os::raw::c_char;
-use std::sync::Arc;
 
 use ash::{Instance, vk};
 use ash::extensions::ext::DebugUtils;
@@ -23,8 +21,8 @@ pub struct InstanceCreateInfos {
 
 pub struct VkInstance {
     pub instance: Instance,
-    debug_util_loader: DebugUtils,
-    debug_messenger: DebugUtilsMessengerEXT,
+    _debug_util_loader: DebugUtils,
+    _debug_messenger: DebugUtilsMessengerEXT,
     enable_validation_layers: bool,
     device_map: HashMap<PhysicalDevice, VkPhysicalDevice>,
 }
@@ -37,20 +35,19 @@ impl VkInstance {
     pub fn new(create_infos: InstanceCreateInfos) -> Result<VkInstance, std::io::Error> {
         // Build extensions and layer
         let mut required_layers = Vec::new();
-        let mut required_extensions = Vec::new();        
+        let mut required_extensions = Vec::new();
         let mut layers_names_raw = Vec::<*const c_char>::new();
         let mut extension_names_raw = Vec::<*const c_char>::new();
-        
+
         for (mut layer_name, required) in create_infos.required_layers {
             let is_available = VkInstance::is_layer_available(layer_name.as_str());
             if !is_available {
-                if required { panic!("required layer [{}] is not available", layer_name); }
-                else { println!("optional layer [{}] is not available", layer_name); }
+                if required { panic!("required layer [{}] is not available", layer_name); } else { println!("optional layer [{}] is not available", layer_name); }
                 continue;
             }
             layer_name += "\0";
             required_layers.push(layer_name);
-        }        
+        }
         for (mut extension_name, required) in create_infos.required_extensions {
             let is_available = VkInstance::is_extension_available(extension_name.as_str());
             if !is_available {
@@ -60,7 +57,7 @@ impl VkInstance {
             extension_name += "\0";
             required_extensions.push(extension_name);
         }
-        
+
         // Add validation layers
         let enable_validation_layers = create_infos.enable_validation_layers && VkInstance::is_layer_available("VK_LAYER_KHRONOS_validation");
         if enable_validation_layers {
@@ -69,7 +66,8 @@ impl VkInstance {
             required_extensions.push("VK_EXT_debug_report\0".to_string());
         }
         required_extensions.push("VK_KHR_surface\0".to_string());
-        
+        required_extensions.push("VK_KHR_win32_surface\0".to_string());
+
         for layer in &required_layers {
             layers_names_raw.push(layer.as_str().as_ptr() as *const c_char);
         }
@@ -94,7 +92,7 @@ impl VkInstance {
             ..Default::default()
         };
         let instance = unsafe { g_vulkan!().create_instance(&ci_instance, None) }.expect("failed to create instance");
-        
+
         // Create debug messenger
         let _debug_info = vk::DebugUtilsMessengerCreateInfoEXT {
             message_severity: vk::DebugUtilsMessageSeverityFlagsEXT::ERROR | vk::DebugUtilsMessageSeverityFlagsEXT::WARNING,
@@ -124,8 +122,8 @@ impl VkInstance {
 
         Ok(Self {
             instance,
-            debug_util_loader,
-            debug_messenger,
+            _debug_util_loader: debug_util_loader,
+            _debug_messenger: debug_messenger,
             enable_validation_layers,
             device_map,
         })

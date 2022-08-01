@@ -3,10 +3,10 @@ pub mod vk_physical_device;
 pub mod vk_device;
 pub mod vk_swapchain;
 pub mod vk_surface;
+pub mod types;
 
-use std::sync::Arc;
 use gfx::{GfxInterface, PhysicalDevice};
-use ash::{Entry, vk};
+use ash::{Entry};
 use crate::vk_device::VkDevice;
 use crate::vk_instance::{InstanceCreateInfos, VkInstance};
 use crate::vk_physical_device::VkPhysicalDevice;
@@ -17,6 +17,7 @@ pub static mut G_VULKAN: Option<Entry> = None;
 #[macro_export]
 macro_rules! g_vulkan {    
     () => {
+        #[allow(unused_unsafe)]
         match unsafe { &G_VULKAN } {
             None => { panic!("vulkan has not been loaded yet"); }
             Some(entry) => { entry }
@@ -107,13 +108,6 @@ impl GfxVulkan {
             physical_device: None,
             physical_device_vk: None,
             device: None,
-        }
-    }
-    
-    pub fn do_test(&self) {
-        match &self.instance {
-            None => {}
-            Some(inst) => { unsafe { inst.instance.enumerate_physical_devices(); } }
         }
     }
 }

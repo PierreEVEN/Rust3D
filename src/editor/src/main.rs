@@ -1,11 +1,10 @@
-use backend_vulkan::{gfx_object, GfxVulkan};
-use backend_vulkan_win32::vk_surface_win32::VkSurfaceWin32;
+use backend_vulkan::{GfxVulkan};
+use backend_vulkan_win32::vk_surface_win32::{VkSurfaceWin32};
 use gfx::GfxInterface;
 use maths::rect2d::Rect2D;
 use plateform::Platform;
 use plateform::window::{PlatformEvent, WindowCreateInfos, WindowFlagBits, WindowFlags};
 use plateform_win32::PlatformWin32;
-use plateform_win32::window::WindowWin32;
 
 fn main() {
     // We use a win32 backend
@@ -21,15 +20,12 @@ fn main() {
     }).unwrap();
     main_window.lock().unwrap().show();
     
+    // Create graphics
     let mut gfx_backend = GfxVulkan::new();
-
     gfx_backend.set_physical_device(gfx_backend.find_best_suitable_physical_device().expect("there is no suitable GPU available"));
-
     
-    let window = &*main_window.lock().unwrap();
-    
-    let mut main_window_surface = VkSurfaceWin32::new(&gfx_backend, &platform, window);
-    
+    // Bind graphic surface onto current window
+    let mut _main_window_surface = VkSurfaceWin32::new(&gfx_backend, &*main_window.lock().unwrap());
     
     'game_loop: loop {
         // handle events

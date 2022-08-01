@@ -1,7 +1,9 @@
 pub mod surface;
 pub mod types;
+pub mod buffer;
 
 use std::hash::{Hash, Hasher};
+use crate::buffer::{BufferCreateInfo, GfxBuffer};
 
 pub trait GfxResource {
     fn load() -> Result<String, String>;
@@ -16,6 +18,8 @@ pub trait GfxInterface {
     fn find_best_suitable_physical_device(&self) -> Result<PhysicalDevice, String>;
     fn begin_frame(&self);
     fn end_frame(&self);
+    
+    fn create_buffer(&mut self, create_infos: &BufferCreateInfo) -> Box<dyn GfxBuffer>;
 }
 
 #[derive(Copy, Clone)]

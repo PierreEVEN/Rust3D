@@ -1,12 +1,18 @@
+extern crate core;
+
 pub mod vk_instance;
 pub mod vk_physical_device;
 pub mod vk_device;
 pub mod vk_swapchain;
 pub mod vk_surface;
-pub mod types;
+pub mod vk_types;
+pub mod vk_render_pass;
+pub mod vk_buffer;
 
 use gfx::{GfxInterface, PhysicalDevice};
 use ash::{Entry};
+use gfx::buffer::{BufferCreateInfo, GfxBuffer};
+use crate::vk_buffer::VkBuffer;
 use crate::vk_device::VkDevice;
 use crate::vk_instance::{InstanceCreateInfos, VkInstance};
 use crate::vk_physical_device::VkPhysicalDevice;
@@ -91,6 +97,10 @@ impl GfxInterface for GfxVulkan {
     }
 
     fn end_frame(&self) {
+    }
+
+    fn create_buffer(&mut self, create_infos: &BufferCreateInfo) -> Box<dyn GfxBuffer> {        
+        Box::new(VkBuffer::new(self, create_infos))
     }
 }
 

@@ -6,7 +6,7 @@ use ash::vk::{Bool32, CompositeAlphaFlagsKHR, Format, ImageUsageFlags, PresentMo
 use raw_window_handle::RawWindowHandle;
 
 use backend_vulkan::{g_vulkan, G_VULKAN, gfx_object, GfxVulkan, vk_check};
-use backend_vulkan::types::{VkExtent2D};
+use backend_vulkan::vk_types::VkExtent2D;
 use gfx::surface::{GfxSurface, SurfaceCreateInfos};
 use maths::vec2::Vec2u32;
 

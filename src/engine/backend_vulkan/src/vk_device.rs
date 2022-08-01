@@ -1,4 +1,6 @@
-﻿use std::os::raw::{c_char, c_void};
+﻿use std::cell::Cell;
+use std::os::raw::{c_char, c_void};
+use std::sync::{Arc, Mutex, RwLock};
 
 use ash::vk;
 use ash::vk::{Bool32, PhysicalDevice};
@@ -15,7 +17,7 @@ pub fn get_required_device_extensions() -> Vec<*const c_char> {
 
 pub struct VkDevice {
     pub device: ash::Device,
-    pub allocator: Allocator,
+    pub allocator: Mutex<Allocator>,
 }
 
 impl VkDevice {
@@ -102,7 +104,7 @@ impl VkDevice {
 
         Self {
             device,
-            allocator,
+            allocator: Mutex::new(allocator),
         }
     }
 }

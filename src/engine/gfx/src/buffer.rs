@@ -1,15 +1,17 @@
-﻿
+﻿use std::ffi::c_void;
+use std::ptr::NonNull;
+
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub enum BufferType
 {
     // No allowed updates
-    IMMUTABLE,
+    Immutable,
     // Pretty never updated. Updating data would cause some freezes
-    STATIC,
+    Static,
     // Data is stored internally, then automatically submitted. Can lead to a memory overhead depending on the get size.
-    DYNAMIC,
+    Dynamic,
     // Data need to be submitted every frames
-    IMMEDIATE,
+    Immediate,
 }
 
 #[derive(Copy, Clone, Eq, PartialEq)]
@@ -51,4 +53,7 @@ pub struct BufferCreateInfo {
 }
 
 pub trait GfxBuffer {
+    fn submit_data(&self);
+    fn resize_buffer(&self);
+    fn get_data_buffer(&self) -> Option<NonNull<c_void>>;
 }

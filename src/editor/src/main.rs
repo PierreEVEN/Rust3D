@@ -1,3 +1,4 @@
+use std::path::Path;
 use backend_vulkan::{GfxVulkan};
 use backend_vulkan_win32::vk_surface_win32::{VkSurfaceWin32};
 use gfx::buffer::{BufferAccess, BufferCreateInfo, BufferType, BufferUsage};
@@ -6,6 +7,8 @@ use maths::rect2d::Rect2D;
 use plateform::Platform;
 use plateform::window::{PlatformEvent, WindowCreateInfos, WindowFlagBits, WindowFlags};
 use plateform_win32::PlatformWin32;
+use shader_compiler::parser::Parser;
+use shader_compiler::types::ShaderErrorResult;
 
 fn main() {
     // We use a win32 backend
@@ -28,16 +31,20 @@ fn main() {
     // Bind graphic surface onto current window
     let mut _main_window_surface = VkSurfaceWin32::new(&gfx_backend, &*main_window.lock().unwrap());
 
-    {
-        let mut _test_buffer = gfx_backend.create_buffer(&BufferCreateInfo {
-            buffer_type: BufferType::IMMUTABLE,
-            usage: BufferUsage::IndexData,
-            access: BufferAccess::Default,
-            size: 4000000048,
-            alignment: 16,
-            memory_type_bits: 1
-        });
-    }
+    let mut _test_buffer = gfx_backend.create_buffer(&BufferCreateInfo {
+        buffer_type: BufferType::Immutable,
+        usage: BufferUsage::IndexData,
+        access: BufferAccess::Default,
+        size: 2048,
+        alignment: 16,
+        memory_type_bits: 1
+    });
+    
+    match Parser::new(Path::new("./data/shaders/demo.shb")) {
+        Ok(_result) => { println!("successfully parsed shader")}
+        Err(error) => { println!("shader compilation error : \n{}", error.to_string())}
+    };
+    
     
     'game_loop: loop {
         // handle events

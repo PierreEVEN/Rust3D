@@ -8,4 +8,4 @@ gfx = {path = "../gfx"}
 maths = {path = "../maths"}
 maths_operators = {path = "../maths_operators"}
 ash = "0.37.0"
-gpu-allocator = "0.18.0"
+gpu-allocator =  { version="0.18.0", default-features = false, features=["vulkan"]}

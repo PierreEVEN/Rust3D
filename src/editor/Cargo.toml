@@ -8,6 +8,7 @@ name = "editor"
 
 [dependencies]
 core = { path = "../engine/core" }
+shader_compiler = { path = "../engine/shader_compiler" }
 maths = { path = "../engine/maths" }
 maths_operators = { path = "../engine/maths_operators" }
 gfx = { path = "../engine/gfx" }

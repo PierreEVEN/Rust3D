@@ -1,19 +1,65 @@
 ﻿use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
-
-use crate::backends::backend_glslang::GlslangIncluder;
 use crate::file_iterator::FileIterator;
 use crate::includer::Includer;
-use crate::ShaderLanguage;
+use crate::{ShaderLanguage, ShaderStage};
 use crate::types::{AlphaMode, Culling, FrontFace, PolygonMode, ShaderErrorResult, ShaderProperties, Topology};
 
 #[derive(Default)]
-pub struct ShaderPass
+pub struct ProgramData
 {
-    pass_name: String,
-    vertex_chunks: Vec<ShaderChunk>,
-    fragment_chunks: Vec<ShaderChunk>,
+    chunks: HashMap<ShaderStage, HashMap<String, Vec<ShaderChunk>>>
+}
+
+impl ProgramData {
+    pub fn push_chunk(&mut self, pass: &String, stage: &ShaderStage, chunk: ShaderChunk) {
+        match self.chunks.get_mut(stage) {
+            None => {
+                self.chunks.insert(stage.clone(), HashMap::from([(pass.clone(), vec![chunk])]));
+            }
+            Some(passes) => {                
+                match passes.get_mut(pass) {
+                    None => {
+                        passes.insert(pass.clone(), vec![chunk]);}
+                    Some(chunks) => {
+                        chunks.push(chunk);
+                    }
+                }
+            }
+        }
+    }
+    
+    pub fn get_data(&self, pass: &String, stage: &ShaderStage) -> Result<&Vec<ShaderChunk>, ShaderErrorResult> {
+        let mut errors = ShaderErrorResult::default(); 
+        match self.chunks.get(stage) {
+            None => {
+                errors.push(-1, -1, format!("failed to find pass {pass}").as_str(), "");
+                Err(errors)
+            }
+            Some(passes) => {
+                match passes.get(pass) {
+                    None => {
+                        errors.push(-1, -1, format!("failed to find pass {pass} for stage {stage}").as_str(), "");
+                        Err(errors)
+                    }
+                    Some(chunks) => { Ok(chunks) }
+                }
+            }
+        }
+    }
+
+    pub fn get_available_passes(&self) -> Vec<String> {
+        let mut result = Vec::<String>::new();
+        for (_, value) in &self.chunks {
+            for (key, _) in value {
+                if !result.contains(&key) {
+                    result.push(key.clone());
+                }
+            }
+        }
+        result
+    }
 }
 
 pub struct Parser {
@@ -21,9 +67,8 @@ pub struct Parser {
     includer: Box<dyn Includer>,
     internal_properties: HashMap::<String, String>,
     pub properties: ShaderProperties,
-    pub globals: Vec::<ShaderChunk>,
     pub default_values: HashMap<String, String>,
-    pub passes: HashMap<String, ShaderPass>,
+    pub program_data: ProgramData,
 }
 
 #[derive(Clone, Default)]
@@ -35,8 +80,6 @@ pub struct ShaderChunk {
 
 impl Parser {
     fn skip_comment(&mut self) {
-        let next = &self.file_iterator + 1;
-
         if self.file_iterator.current() == '/' && &self.file_iterator + 1 == '/' {
             self.file_iterator.get_next_line();
         }
@@ -236,7 +279,7 @@ impl Parser {
         }
     }
 
-    pub fn new(file_path: &Path) -> Result<Self, ShaderErrorResult> {
+    pub fn new(file_path: &Path, includer: Box<dyn Includer>) -> Result<Self, ShaderErrorResult> {
         let mut errors = ShaderErrorResult::default();
 
         let mut shader_code = match fs::read_to_string(file_path) {
@@ -249,12 +292,11 @@ impl Parser {
 
         let mut parser = Self {
             file_iterator: FileIterator::new(shader_code),
-            includer: Box::new(GlslangIncluder::new()),
+            includer,
             internal_properties: HashMap::new(),
             properties: ShaderProperties::default(),
-            globals: Vec::new(),
             default_values: HashMap::new(),
-            passes: HashMap::new(),
+            program_data: ProgramData::default(),
         };
 
         match parser.parse_shader(file_path) {
@@ -288,8 +330,15 @@ impl Parser {
             {
                 match self.get_next_chunk(file_path) {
                     Ok(chunk) => {
-                        for field in Self::parse_head(&chunk.content) {
-                            // self.default_values.insert(field);
+                        match Self::parse_head(&chunk.content) {
+                            Ok(head) => {
+                                for (key, value) in head {
+                                    self.default_values.insert(key, value);
+                                }}
+                            Err(error) => {
+                                errors += error;
+                                errors.push(self.file_iterator.current_line() as isize, 0, "failed to parse header for 'head' chunk", file_path.to_str().unwrap())
+                            }
                         }
                     }
                     Err(error) => {
@@ -301,14 +350,17 @@ impl Parser {
 
             if self.file_iterator.match_string("global")
             {
-                let _global_args = self.get_next_definition();
+                let global_args = self.get_next_definition();
                 match self.get_next_chunk(file_path) {
                     Ok(chunk) => {
                         let mut chunk_data = chunk.clone();
                         if chunk_data.file.is_empty() {
                             chunk_data.file = file_path.to_str().unwrap().to_string();
                         }
-                        self.globals.push(chunk_data);
+                        for pass in Self::parse_chunk_head(&global_args) {
+                            self.program_data.push_chunk(&pass, &ShaderStage::Vertex, chunk_data.clone());
+                            self.program_data.push_chunk(&pass, &ShaderStage::Vertex, chunk_data.clone());
+                        }
                     }
                     Err(error) => {
                         errors += error;
@@ -327,10 +379,7 @@ impl Parser {
                             chunk_data.file = file_path.to_str().unwrap().to_string();
                         }
                         for pass in Self::parse_chunk_head(&vertex_args) {
-                            match self.passes.get(&pass) {
-                                None => {}
-                                Some(elem) => { /*elem.vertex_chunks.push(chunk_data); */ }
-                            }
+                            self.program_data.push_chunk(&pass, &ShaderStage::Vertex,chunk_data.clone());
                         }
                     }
                     Err(error) => {
@@ -350,7 +399,7 @@ impl Parser {
                             chunk_data.file = file_path.to_str().unwrap().to_string();
                         }
                         for pass in Self::parse_chunk_head(&fragment_args) {
-                            // self.passes[pass].vertex_chunks.push(chunk_data);
+                            self.program_data.push_chunk(&pass, &ShaderStage::Fragment,chunk_data.clone());
                         }
                     }
                     Err(error) => {
@@ -362,16 +411,6 @@ impl Parser {
 
             self.file_iterator += 1;
         }
-        /*
-                for pass in self.passes
-                {
-                    for global in self.globals
-                    {
-                       // pass.second.fragment_chunks.insert(pass.second.fragment_chunks.begin(), &global);
-                        // pass.second.vertex_chunks.insert(pass.second.vertex_chunks.begin(), &global);
-                    }
-                }
-         */
 
         self.properties = ShaderProperties {
             shader_version: self.get_property("shader_version").to_string(),
@@ -419,62 +458,6 @@ impl Parser {
         } else {
             Err(errors)
         }
-    }
-    
-    pub fn get_vertex_code(&self, pass: &String) -> Result<Vec<ShaderChunk>, ShaderErrorResult> {
-        let mut result = Vec::new();
-        let mut errors = ShaderErrorResult::default();
-        
-        match self.passes.get(pass) {
-            None => {
-                errors.push(-1, -1, format!("there is no pass named {pass}").as_str(), "");
-                return Err(errors);
-            }
-            Some(element) => {
-
-
-                for item in self.globals {
-                    result.push(item);
-                }
-
-                for item in element.vertex_chunks {
-                    result.push(item);
-                }                
-            }
-        }        
-        
-        Ok(result)
-    }
-
-    pub fn get_fragment_code(&self, pass: &String) -> Result<Vec<ShaderChunk>, ShaderErrorResult> {
-        let mut result = Vec::new();
-        let mut errors = ShaderErrorResult::default();
-
-        match self.passes.get(pass) {
-            None => {
-                errors.push(-1, -1, format!("there is no pass named {pass}").as_str(), "");
-                return Err(errors);
-            }
-            Some(element) => {
-                for item in self.globals {
-                    result.push(item);
-                }
-
-                for item in element.fragment_chunks {
-                    result.push(item);
-                }
-            }
-        }
-
-        Ok(result)
-    }
-    
-    pub fn get_available_passes(&self) -> Vec<String> {
-        let mut result = Vec::new();
-        for (key, value) in self.passes {
-            result.push(key.clone());
-        }
-        result
     }
 }
 

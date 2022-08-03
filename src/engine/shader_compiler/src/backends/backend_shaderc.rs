@@ -1,7 +1,8 @@
 ﻿use std::path::Path;
-use shaderc::{CompileOptions, Compiler, EnvVersion, IncludeCallbackResult, IncludeType, ResolvedInclude, SpirvVersion, TargetEnv};
 
-use crate::{InterstageData, ShaderBlock, CompilerBackend, ShaderLanguage, ShaderStage, CompilationResult};
+use shaderc::{CompileOptions, Compiler, EnvVersion, IncludeCallbackResult, IncludeType, ResolvedInclude, SourceLanguage, SpirvVersion, TargetEnv};
+
+use crate::{CompilationResult, CompilerBackend, InterstageData, ShaderBlock, ShaderChunk, ShaderLanguage, ShaderStage};
 use crate::includer::Includer;
 use crate::types::ShaderErrorResult;
 
@@ -29,7 +30,7 @@ fn include_callback(name: &str, include_type: IncludeType, source: &str, include
 }
 
 impl CompilerBackend for BackendShaderC {
-    fn compile_to_spirv(&self, shader_code: Vec<ShaderBlock>, source_language: ShaderLanguage, shader_stage: ShaderStage, previous_stage_data: InterstageData) -> Result<CompilationResult, ShaderErrorResult> {
+    fn compile_to_spirv(&self, shader_code: &Vec<ShaderChunk>, source_language: ShaderLanguage, shader_stage: ShaderStage, previous_stage_data: InterstageData) -> Result<CompilationResult, ShaderErrorResult> {
         let mut errors = ShaderErrorResult::default();
 
         let compiler = match Compiler::new() {
@@ -55,21 +56,25 @@ impl CompilerBackend for BackendShaderC {
         compile_options.set_auto_bind_uniforms(true);
         compile_options.set_target_env(TargetEnv::Vulkan, EnvVersion::Vulkan1_2 as u32);
         compile_options.set_target_spirv(SpirvVersion::V1_6);
+        compile_options.set_source_language(match source_language {
+            ShaderLanguage::HLSL => { SourceLanguage::HLSL }
+            ShaderLanguage::GLSL => { SourceLanguage::GLSL }
+        });
         let mut shader = String::new();
         for block in shader_code {
-            shader += block.raw_text.as_str();
+            shader += block.content.as_str();
         }
 
         let binary_result = match compiler.compile_into_spirv(&shader, shaderc::ShaderKind::Vertex, "shader.glsl", "main", Some(&compile_options)) {
             Ok(binary) => { binary }
             Err(compile_error) => {
-                errors.push(-1, -1, format!("failed to compile shader to spirv : {}", compile_error.to_string()).as_str(), "");
+                errors.push(-1, -1, format!("failed to compile shader to spirv : {}\n\n{}", compile_error.to_string(), shader).as_str(), "spirv shader binary code");
                 return Err(errors);
             }
         };
 
 
-        let mut binary_result = Vec::from(binary_result.as_binary());
+        let binary_result = Vec::from(binary_result.as_binary());
 
 
         Ok(CompilationResult {

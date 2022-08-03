@@ -7,7 +7,7 @@ use maths::rect2d::Rect2D;
 use plateform::Platform;
 use plateform::window::{PlatformEvent, WindowCreateInfos, WindowFlagBits, WindowFlags};
 use plateform_win32::PlatformWin32;
-use shader_compiler::backends::backend_shaderc::BackendShaderC;
+use shader_compiler::backends::backend_shaderc::{BackendShaderC, ShaderCIncluder};
 use shader_compiler::{CompilationResult, CompilerBackend};
 use shader_compiler::parser::{Parser, ShaderChunk};
 use shader_compiler::types::{InterstageData, ShaderErrorResult, ShaderLanguage, ShaderStage};
@@ -42,7 +42,9 @@ fn main() {
         memory_type_bits: 1,
     });
 
-    let parse_result = match Parser::new(Path::new("./data/shaders/demo.shb")) {
+    let includer = Box::new(ShaderCIncluder::new());
+    
+    let parse_result = match Parser::new(Path::new("./data/shaders/demo.shb"), includer) {
         Ok(result) => {
             println!("successfully parsed shader");
             result
@@ -52,25 +54,25 @@ fn main() {
     
     let shader_compiler = BackendShaderC::new();
     
-    for pass in parse_result.get_available_passes() {
+    for pass in parse_result.program_data.get_available_passes() {
 
         let interstage = InterstageData {
             stage_outputs: Default::default(),
             binding_index: 0
         };
         
-        let vertex_code = match parse_result.get_vertex_code(&pass) {
+        let vertex_code = match parse_result.program_data.get_data(&pass, &ShaderStage::Vertex) {
             Ok(code) => {code}
             Err(error) => {panic!("failed to get vertex shader code : \n{}", error.to_string())}
         };
 
-        let sprv = match shader_compiler.compile_to_spirv(&vertex_code, ShaderLanguage::HLSL, ShaderStage::Vertex, interstage) {
+        let sprv = match shader_compiler.compile_to_spirv(vertex_code, ShaderLanguage::HLSL, ShaderStage::Vertex, interstage) {
             Ok(sprv) => {
                 println!("compilation succeeded");
                 sprv
             }
             Err(error) => { panic!("shader compilation error : \n{}", error.to_string()) }
-        }
+        };
     }
     
     'game_loop: loop {

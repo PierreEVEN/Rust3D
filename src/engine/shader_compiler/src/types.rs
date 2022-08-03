@@ -1,6 +1,8 @@
 ﻿use std::collections::HashMap;
 use std::ffi::c_void;
-use std::ops;
+use std::fmt::{Display, Formatter};
+use std::hash::Hash;
+use std::{fmt, ops};
 
 use gfx::types::PixelFormat;
 
@@ -82,11 +84,20 @@ impl Default for ShaderLanguage {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub enum ShaderStage
 {
     Vertex,
     Fragment,
+}
+
+impl Display for ShaderStage {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        match self {
+            ShaderStage::Vertex => write!(f, "Vertex"),
+            ShaderStage::Fragment => write!(f, "Fragment"),
+        }
+    }
 }
 
 #[derive(Clone, Debug)]

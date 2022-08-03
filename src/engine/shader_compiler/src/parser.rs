@@ -420,5 +420,61 @@ impl Parser {
             Err(errors)
         }
     }
+    
+    pub fn get_vertex_code(&self, pass: &String) -> Result<Vec<ShaderChunk>, ShaderErrorResult> {
+        let mut result = Vec::new();
+        let mut errors = ShaderErrorResult::default();
+        
+        match self.passes.get(pass) {
+            None => {
+                errors.push(-1, -1, format!("there is no pass named {pass}").as_str(), "");
+                return Err(errors);
+            }
+            Some(element) => {
+
+
+                for item in self.globals {
+                    result.push(item);
+                }
+
+                for item in element.vertex_chunks {
+                    result.push(item);
+                }                
+            }
+        }        
+        
+        Ok(result)
+    }
+
+    pub fn get_fragment_code(&self, pass: &String) -> Result<Vec<ShaderChunk>, ShaderErrorResult> {
+        let mut result = Vec::new();
+        let mut errors = ShaderErrorResult::default();
+
+        match self.passes.get(pass) {
+            None => {
+                errors.push(-1, -1, format!("there is no pass named {pass}").as_str(), "");
+                return Err(errors);
+            }
+            Some(element) => {
+                for item in self.globals {
+                    result.push(item);
+                }
+
+                for item in element.fragment_chunks {
+                    result.push(item);
+                }
+            }
+        }
+
+        Ok(result)
+    }
+    
+    pub fn get_available_passes(&self) -> Vec<String> {
+        let mut result = Vec::new();
+        for (key, value) in self.passes {
+            result.push(key.clone());
+        }
+        result
+    }
 }
 

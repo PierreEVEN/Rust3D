@@ -65,8 +65,8 @@ impl ops::AddAssign<ShaderErrorResult> for ShaderErrorResult {
 #[derive(Clone, Default, Debug)]
 pub struct ShaderBlock
 {
-    name: String,
-    raw_text: String,
+    pub name: String,
+    pub raw_text: String,
 }
 
 #[derive(Clone, Debug)]

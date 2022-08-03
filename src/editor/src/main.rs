@@ -7,14 +7,16 @@ use maths::rect2d::Rect2D;
 use plateform::Platform;
 use plateform::window::{PlatformEvent, WindowCreateInfos, WindowFlagBits, WindowFlags};
 use plateform_win32::PlatformWin32;
-use shader_compiler::parser::Parser;
-use shader_compiler::types::ShaderErrorResult;
+use shader_compiler::backends::backend_shaderc::BackendShaderC;
+use shader_compiler::{CompilationResult, CompilerBackend};
+use shader_compiler::parser::{Parser, ShaderChunk};
+use shader_compiler::types::{InterstageData, ShaderErrorResult, ShaderLanguage, ShaderStage};
 
 fn main() {
     // We use a win32 backend
     #[cfg(any(target_os = "windows"))]
-    let platform = PlatformWin32::new();
-    
+        let platform = PlatformWin32::new();
+
     // Create main window
     let main_window = platform.create_window(WindowCreateInfos {
         name: "Engine - 0.1.0".to_string(),
@@ -23,11 +25,11 @@ fn main() {
         background_alpha: 255,
     }).unwrap();
     main_window.lock().unwrap().show();
-    
+
     // Create graphics
     let mut gfx_backend = GfxVulkan::new();
     gfx_backend.set_physical_device(gfx_backend.find_best_suitable_physical_device().expect("there is no suitable GPU available"));
-    
+
     // Bind graphic surface onto current window
     let mut _main_window_surface = VkSurfaceWin32::new(&gfx_backend, &*main_window.lock().unwrap());
 
@@ -37,14 +39,39 @@ fn main() {
         access: BufferAccess::Default,
         size: 2048,
         alignment: 16,
-        memory_type_bits: 1
+        memory_type_bits: 1,
     });
-    
-    match Parser::new(Path::new("./data/shaders/demo.shb")) {
-        Ok(_result) => { println!("successfully parsed shader")}
-        Err(error) => { println!("shader compilation error : \n{}", error.to_string())}
+
+    let parse_result = match Parser::new(Path::new("./data/shaders/demo.shb")) {
+        Ok(result) => {
+            println!("successfully parsed shader");
+            result
+        }
+        Err(error) => { panic!("shader syntax error : \n{}", error.to_string()) }
     };
     
+    let shader_compiler = BackendShaderC::new();
+    
+    for pass in parse_result.get_available_passes() {
+
+        let interstage = InterstageData {
+            stage_outputs: Default::default(),
+            binding_index: 0
+        };
+        
+        let vertex_code = match parse_result.get_vertex_code(&pass) {
+            Ok(code) => {code}
+            Err(error) => {panic!("failed to get vertex shader code : \n{}", error.to_string())}
+        };
+
+        let sprv = match shader_compiler.compile_to_spirv(&vertex_code, ShaderLanguage::HLSL, ShaderStage::Vertex, interstage) {
+            Ok(sprv) => {
+                println!("compilation succeeded");
+                sprv
+            }
+            Err(error) => { panic!("shader compilation error : \n{}", error.to_string()) }
+        }
+    }
     
     'game_loop: loop {
         // handle events
@@ -56,7 +83,7 @@ fn main() {
                 PlatformEvent::WindowResized(_window, _width, _height) => {}
             }
         }
-        
+
         // Game loop
         gfx_backend.begin_frame();
         gfx_backend.end_frame();

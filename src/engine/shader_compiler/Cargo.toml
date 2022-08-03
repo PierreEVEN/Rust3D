@@ -4,5 +4,6 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-glsl-lang = "0.3.1"
+shaderc = "0.8.0"
+spirv-reflect = "0.2.3"
 gfx = { path = "../gfx" }

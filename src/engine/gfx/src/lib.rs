@@ -1,9 +1,11 @@
 pub mod surface;
 pub mod types;
 pub mod buffer;
+pub mod shader;
 
 use std::hash::{Hash, Hasher};
 use crate::buffer::{BufferCreateInfo, GfxBuffer};
+use crate::shader::ShaderBackend;
 
 pub trait GfxResource {
     fn load() -> Result<String, String>;
@@ -20,6 +22,7 @@ pub trait GfxInterface {
     fn end_frame(&self);
     
     fn create_buffer(&mut self, create_infos: &BufferCreateInfo) -> Box<dyn GfxBuffer>;
+    fn get_shader_backend(&self) -> &Box<dyn ShaderBackend>;
 }
 
 #[derive(Copy, Clone)]

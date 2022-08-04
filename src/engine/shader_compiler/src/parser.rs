@@ -9,7 +9,7 @@ use crate::types::{AlphaMode, Culling, FrontFace, PolygonMode, ShaderErrorResult
 #[derive(Default)]
 pub struct ProgramData
 {
-    chunks: HashMap<ShaderStage, HashMap<String, Vec<ShaderChunk>>>
+    chunks: HashMap<ShaderStage, HashMap<String, Vec<ShaderChunk>>>,
 }
 
 impl ProgramData {
@@ -18,10 +18,11 @@ impl ProgramData {
             None => {
                 self.chunks.insert(stage.clone(), HashMap::from([(pass.clone(), vec![chunk])]));
             }
-            Some(passes) => {                
+            Some(passes) => {
                 match passes.get_mut(pass) {
                     None => {
-                        passes.insert(pass.clone(), vec![chunk]);}
+                        passes.insert(pass.clone(), vec![chunk]);
+                    }
                     Some(chunks) => {
                         chunks.push(chunk);
                     }
@@ -29,9 +30,9 @@ impl ProgramData {
             }
         }
     }
-    
+
     pub fn get_data(&self, pass: &String, stage: &ShaderStage) -> Result<&Vec<ShaderChunk>, ShaderErrorResult> {
-        let mut errors = ShaderErrorResult::default(); 
+        let mut errors = ShaderErrorResult::default();
         match self.chunks.get(stage) {
             None => {
                 errors.push(-1, -1, format!("failed to find pass {pass}").as_str(), "");
@@ -197,22 +198,22 @@ impl Parser {
         let mut begin: i32 = -1;
         let mut end: i32 = -1;
         let mut chars = string.chars();
-        for i in 0..(string.len() - 1) {
-            if begin < 0 && !Self::property_trim_func(chars.nth(i).unwrap()) {
+        for i in 0..string.len() {
+            if begin < 0 && !Self::property_trim_func(chars.clone().nth(i).unwrap()) {
                 begin = i as i32;
                 break;
             }
         }
-        for i in (string.len() - 1)..0 {
-            if end < 0 && !Self::property_trim_func(chars.nth(i).unwrap()) {
+        for i in (0..string.len()).rev() {
+            if end < 0 && !Self::property_trim_func(chars.clone().nth(i).unwrap()) {
                 end = i as i32;
                 break;
             }
         }
 
         if begin >= 0 && end >= 0 {
-            for i in begin..end {
-                result.push(chars.nth(i as usize).unwrap());
+            for i in begin..(end + 1) {
+                result.push(chars.clone().nth(i as usize).unwrap());
             }
         }
 
@@ -245,7 +246,7 @@ impl Parser {
         let mut fields = Vec::new();
         let mut errors = ShaderErrorResult::default();
         let head_lines = Self::split_string(header, &vec![';']);
-        for i in 0..(head_lines.len() - 1)
+        for i in 0..head_lines.len()
         {
             let prop_field = Self::split_string(&head_lines[i], &vec!['=']);
             if prop_field.len() != 2
@@ -334,7 +335,8 @@ impl Parser {
                             Ok(head) => {
                                 for (key, value) in head {
                                     self.default_values.insert(key, value);
-                                }}
+                                }
+                            }
                             Err(error) => {
                                 errors += error;
                                 errors.push(self.file_iterator.current_line() as isize, 0, "failed to parse header for 'head' chunk", file_path.to_str().unwrap())
@@ -359,7 +361,7 @@ impl Parser {
                         }
                         for pass in Self::parse_chunk_head(&global_args) {
                             self.program_data.push_chunk(&pass, &ShaderStage::Vertex, chunk_data.clone());
-                            self.program_data.push_chunk(&pass, &ShaderStage::Vertex, chunk_data.clone());
+                            self.program_data.push_chunk(&pass, &ShaderStage::Fragment, chunk_data.clone());
                         }
                     }
                     Err(error) => {

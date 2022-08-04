@@ -3,6 +3,7 @@ use backend_vulkan::{GfxVulkan};
 use backend_vulkan_win32::vk_surface_win32::{VkSurfaceWin32};
 use gfx::buffer::{BufferAccess, BufferCreateInfo, BufferType, BufferUsage};
 use gfx::GfxInterface;
+use gfx::shader::Shader;
 use maths::rect2d::Rect2D;
 use plateform::Platform;
 use plateform::window::{PlatformEvent, WindowCreateInfos, WindowFlagBits, WindowFlags};
@@ -13,6 +14,7 @@ use shader_compiler::parser::{Parser, ShaderChunk};
 use shader_compiler::types::{InterstageData, ShaderErrorResult, ShaderLanguage, ShaderStage};
 
 fn main() {
+    
     // We use a win32 backend
     #[cfg(any(target_os = "windows"))]
         let platform = PlatformWin32::new();
@@ -54,7 +56,7 @@ fn main() {
     
     let shader_compiler = BackendShaderC::new();
     
-    for pass in parse_result.program_data.get_available_passes() {
+    for pass in ["gbuffer".to_string()] {
 
         let interstage = InterstageData {
             stage_outputs: Default::default(),
@@ -74,6 +76,8 @@ fn main() {
             Err(error) => { panic!("shader compilation error : \n{}", error.to_string()) }
         };
     }
+    
+    let shader = Shader::new()
     
     'game_loop: loop {
         // handle events

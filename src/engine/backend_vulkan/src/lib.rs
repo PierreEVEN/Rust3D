@@ -8,14 +8,17 @@ pub mod vk_surface;
 pub mod vk_types;
 pub mod vk_render_pass;
 pub mod vk_buffer;
+pub mod vk_shader;
 
 use gfx::{GfxInterface, PhysicalDevice};
 use ash::{Entry};
 use gfx::buffer::{BufferCreateInfo, GfxBuffer};
+use gfx::shader::ShaderBackend;
 use crate::vk_buffer::VkBuffer;
 use crate::vk_device::VkDevice;
 use crate::vk_instance::{InstanceCreateInfos, VkInstance};
 use crate::vk_physical_device::VkPhysicalDevice;
+use crate::vk_shader::VkShaderBackend;
 
 
 pub static mut G_VULKAN: Option<Entry> = None;
@@ -59,12 +62,12 @@ macro_rules! vk_check {
     }
 }
 
-#[derive(Default)]
 pub struct GfxVulkan {
     pub instance: Option<VkInstance>,
     pub physical_device: Option<PhysicalDevice>,
     pub physical_device_vk: Option<VkPhysicalDevice>,
     pub device: Option<VkDevice>,
+    shader_backend: Box<dyn ShaderBackend>,
 }
 
 impl GfxInterface for GfxVulkan {
@@ -102,6 +105,10 @@ impl GfxInterface for GfxVulkan {
     fn create_buffer(&mut self, create_infos: &BufferCreateInfo) -> Box<dyn GfxBuffer> {        
         Box::new(VkBuffer::new(self, create_infos))
     }
+
+    fn get_shader_backend(&self) -> &Box<dyn ShaderBackend> {
+        &self.shader_backend
+    }
 }
 
 impl GfxVulkan {
@@ -118,6 +125,7 @@ impl GfxVulkan {
             physical_device: None,
             physical_device_vk: None,
             device: None,
+            shader_backend: Box::new(VkShaderBackend::new()),
         }
     }
 }

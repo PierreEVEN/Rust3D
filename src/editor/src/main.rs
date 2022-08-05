@@ -77,7 +77,7 @@ fn main() {
         };
     }
     
-    let shader = Shader::new()
+    
     
     'game_loop: loop {
         // handle events

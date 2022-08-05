@@ -1,5 +1,6 @@
+use gfx::shader::ShaderStage;
 use crate::parser::ShaderChunk;
-use crate::types::{InterstageData, ShaderBlock, ShaderErrorResult, ShaderLanguage, ShaderStage};
+use crate::types::{InterstageData, ShaderErrorResult, ShaderLanguage};
 
 pub mod parser;
 mod file_iterator;

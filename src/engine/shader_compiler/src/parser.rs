@@ -1,10 +1,11 @@
 ﻿use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
+use gfx::shader::{AlphaMode, Culling, FrontFace, PolygonMode, ShaderStage, Topology};
 use crate::file_iterator::FileIterator;
 use crate::includer::Includer;
-use crate::{ShaderLanguage, ShaderStage};
-use crate::types::{AlphaMode, Culling, FrontFace, PolygonMode, ShaderErrorResult, ShaderProperties, Topology};
+use crate::{ShaderLanguage};
+use crate::types::{ShaderErrorResult, ShaderProperties};
 
 #[derive(Default)]
 pub struct ProgramData

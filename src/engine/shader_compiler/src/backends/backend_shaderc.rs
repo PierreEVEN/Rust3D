@@ -1,8 +1,9 @@
 ﻿use std::path::Path;
 
 use shaderc::{CompileOptions, Compiler, EnvVersion, IncludeCallbackResult, IncludeType, ResolvedInclude, SourceLanguage, SpirvVersion, TargetEnv};
+use gfx::shader::ShaderStage;
 
-use crate::{CompilationResult, CompilerBackend, InterstageData, ShaderBlock, ShaderChunk, ShaderLanguage, ShaderStage};
+use crate::{CompilationResult, CompilerBackend, InterstageData, ShaderChunk, ShaderLanguage};
 use crate::includer::Includer;
 use crate::types::ShaderErrorResult;
 

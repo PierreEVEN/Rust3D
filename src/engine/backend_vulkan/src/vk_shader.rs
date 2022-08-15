@@ -3,7 +3,7 @@ use std::os::raw::c_char;
 use std::ptr::null;
 use std::sync::Arc;
 
-use ash::vk::{BlendFactor, BlendOp, Bool32, ColorComponentFlags, CompareOp, CullModeFlags, DynamicState, GraphicsPipelineCreateInfo, Pipeline, PipelineCache, PipelineColorBlendAttachmentState, PipelineColorBlendStateCreateInfo, PipelineDepthStencilStateCreateInfo, PipelineDynamicStateCreateInfo, PipelineInputAssemblyStateCreateInfo, PipelineLayout, PipelineLayoutCreateInfo, PipelineMultisampleStateCreateInfo, PipelineRasterizationStateCreateInfo, PipelineShaderStageCreateInfo, PipelineVertexInputStateCreateInfo, PipelineViewportStateCreateInfo, PrimitiveTopology, PushConstantRange, SampleCountFlags, ShaderModule, ShaderModuleCreateFlags, ShaderModuleCreateInfo, ShaderStageFlags, StructureType, VertexInputAttributeDescription, VertexInputBindingDescription, VertexInputRate};
+use ash::vk::{BlendFactor, BlendOp, Bool32, ColorComponentFlags, CompareOp, CullModeFlags, DynamicState, GraphicsPipelineCreateInfo, Pipeline, PipelineCache, PipelineColorBlendAttachmentState, PipelineColorBlendStateCreateInfo, PipelineDepthStencilStateCreateInfo, PipelineDynamicStateCreateInfo, PipelineInputAssemblyStateCreateInfo, PipelineLayout, PipelineLayoutCreateInfo, PipelineMultisampleStateCreateInfo, PipelineRasterizationStateCreateInfo, PipelineShaderStageCreateInfo, PipelineVertexInputStateCreateInfo, PipelineViewportStateCreateInfo, PrimitiveTopology, PushConstantRange, RenderPass, SampleCountFlags, ShaderModule, ShaderModuleCreateFlags, ShaderModuleCreateInfo, ShaderStageFlags, StructureType, VertexInputAttributeDescription, VertexInputBindingDescription, VertexInputRate};
 
 use gfx::shader::{AlphaMode, Culling, FrontFace, PolygonMode, ShaderProgramInfos, Topology};
 
@@ -106,7 +106,7 @@ impl VkShaderProgram {
 
         let mut vertex_input_size = 0;
 
-        for input_property in create_infos.vertex_stage.stage_input
+        for input_property in &create_infos.vertex_stage.stage_input
         {
             if input_property.location < 0 {
                 continue;
@@ -114,7 +114,7 @@ impl VkShaderProgram {
 
             vertex_attribute_description.push(VertexInputAttributeDescription {
                 location: input_property.location as u32,
-                format: *VkPixelFormat::from(input_property.property_type.format),
+                format: *VkPixelFormat::from(&input_property.property_type.format),
                 offset: input_property.offset,
                 ..VertexInputAttributeDescription::default()
             });
@@ -188,6 +188,7 @@ impl VkShaderProgram {
 
         let mut color_blend_attachment = Vec::<PipelineColorBlendAttachmentState>::new();
 
+        /**
         for i in 0..render_pass.color_attachment_count
         {
             color_blend_attachment.push(PipelineColorBlendAttachmentState {
@@ -202,6 +203,7 @@ impl VkShaderProgram {
                 ..PipelineColorBlendAttachmentState::default()
             });
         }
+        **/
 
         let shader_stages = Vec::<PipelineShaderStageCreateInfo>::from([
             PipelineShaderStageCreateInfo {
@@ -251,7 +253,7 @@ impl VkShaderProgram {
             p_color_blend_state: &color_blending,
             p_dynamic_state: &dynamic_states,
             layout: pipeline_layout,
-            render_pass: render_pass.get_render_pass(),
+            render_pass: RenderPass::default(),//render_pass.get_render_pass(),
             subpass: 0,
             base_pipeline_handle: Pipeline::default(),
             base_pipeline_index: -1,

@@ -30,8 +30,8 @@ impl Deref for VkPixelFormat {
     }
 }
 
-impl From<PixelFormat> for VkPixelFormat {
-    fn from(format: PixelFormat) -> Self {
+impl From<&PixelFormat> for VkPixelFormat {
+    fn from(format: &PixelFormat) -> Self {
         match format {
             PixelFormat::UNDEFINED => { VkPixelFormat(Format::UNDEFINED) }
             PixelFormat::R4G4_UNORM_PACK8 => { VkPixelFormat(Format::R4G4_UNORM_PACK8) }

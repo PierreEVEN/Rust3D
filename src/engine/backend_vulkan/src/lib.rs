@@ -11,7 +11,10 @@ pub mod vk_buffer;
 pub mod vk_shader;
 pub mod vk_descriptor_set;
 
-use gfx::{GfxInterface, PhysicalDevice};
+use std::any::Any;
+use std::cell::{Cell, RefCell};
+use std::sync::{Arc, Mutex, RwLock};
+use gfx::{Gfx, GfxCast, GfxInterface, PhysicalDevice};
 use ash::{Entry};
 use gfx::buffer::{BufferCreateInfo, GfxBuffer};
 use crate::vk_buffer::VkBuffer;
@@ -50,6 +53,15 @@ macro_rules! gfx_object {
     }
 }
 
+#[macro_export]
+macro_rules! gfx_vulkan {
+    ($gfx:expr) => {
+        match $gfx.as_ref().as_any().downcast_ref::<GfxVulkan>() {
+            None => { panic!("cast failed"); }
+            Some(instance) => { instance }
+        };
+    };
+}
 
 #[macro_export]
 macro_rules! vk_check {
@@ -66,6 +78,12 @@ pub struct GfxVulkan {
     pub physical_device: Option<PhysicalDevice>,
     pub physical_device_vk: Option<VkPhysicalDevice>,
     pub device: Option<VkDevice>,
+}
+
+impl GfxCast for GfxVulkan {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
 }
 
 impl GfxInterface for GfxVulkan {
@@ -106,7 +124,7 @@ impl GfxInterface for GfxVulkan {
 }
 
 impl GfxVulkan {
-    pub fn new() -> Self {
+    pub fn new() -> Gfx {
         unsafe { G_VULKAN = Some(Entry::load().expect("failed to load vulkan library")); } 
         
         let instance = VkInstance::new(InstanceCreateInfos {
@@ -114,12 +132,12 @@ impl GfxVulkan {
             ..Default::default()
         }).expect("failed to create instance");
 
-        Self {
+        Arc::new(RwLock::new(Self {
             instance: Some(instance),
             physical_device: None,
             physical_device_vk: None,
             device: None,
-        }
+        }))
     }
 }
 

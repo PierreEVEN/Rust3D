@@ -10,7 +10,6 @@ pub enum WindowFlagBits {
     Maximized = 1 << 1,
     Borderless = 1 << 2,
     Resizable = 1 << 3,
-    Transparent = 1 << 4,
 }
 pub type WindowFlags = BitFlags<WindowFlagBits>;
 

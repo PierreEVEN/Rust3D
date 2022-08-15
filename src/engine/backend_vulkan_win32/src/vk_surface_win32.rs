@@ -1,12 +1,16 @@
-﻿use std::ptr::null;
+﻿use std::any::Any;
+use std::cell::RefCell;
+use std::ptr::null;
+use std::sync::Arc;
 
 use ash::extensions::khr;
 use ash::extensions::khr::{Surface, Swapchain};
 use ash::vk::{Bool32, CompositeAlphaFlagsKHR, Format, ImageUsageFlags, PresentModeKHR, SharingMode, SurfaceCapabilitiesKHR, SurfaceFormatKHR, SurfaceKHR, SurfaceTransformFlagsKHR, SwapchainCreateInfoKHR, SwapchainKHR, Win32SurfaceCreateInfoKHR};
 use raw_window_handle::RawWindowHandle;
 
-use backend_vulkan::{g_vulkan, G_VULKAN, gfx_object, GfxVulkan, vk_check};
+use backend_vulkan::{g_vulkan, G_VULKAN, gfx_object, gfx_vulkan, GfxVulkan, vk_check};
 use backend_vulkan::vk_types::VkExtent2D;
+use gfx::{Gfx, GfxCast, GfxInterface};
 use gfx::surface::{GfxSurface, SurfaceCreateInfos};
 use maths::vec2::Vec2u32;
 
@@ -91,7 +95,16 @@ impl GfxSurface for VkSurfaceWin32 {
 }
 
 impl VkSurfaceWin32 {
-    pub fn new(gfx: &GfxVulkan, window: &dyn plateform::window::Window) -> VkSurfaceWin32 {
+    pub fn new(gfx: &mut Gfx, window: &dyn plateform::window::Window) -> VkSurfaceWin32 {
+      
+        let gfx = gfx.get_mut().expect("failed to acquire");
+        
+        
+        let gfx = match gfx.as_any().downcast_ref::<GfxVulkan>() {
+            None => { panic!("cast failed"); }
+            Some(instance) => { instance }
+        };
+        
         let handle = match window.get_handle() {
             RawWindowHandle::Win32(handle) => { handle }
             _ => { panic!("invalid window handle"); }

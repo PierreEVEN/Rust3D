@@ -12,7 +12,7 @@ pub mod backends {
 }
 
 pub struct CompilationResult {
-    binary: Vec<u32>
+    pub binary: Vec<u32>
 }
 
 pub trait CompilerBackend {

@@ -1,6 +1,4 @@
-﻿
-
-pub struct VkSwapchain {
+﻿pub struct VkSwapchain {
     
 }
 
@@ -10,5 +8,5 @@ impl VkSwapchain {
         Self {
             
         }
-    } 
+    }
 }

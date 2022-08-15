@@ -1,10 +1,16 @@
+use std::any::Any;
+use std::cell::{Cell, RefCell};
+use std::hash::{Hash, Hasher};
+use std::sync::{Arc, Mutex, RwLock};
+
+use crate::buffer::{BufferCreateInfo, GfxBuffer};
+
 pub mod surface;
 pub mod types;
 pub mod buffer;
 pub mod shader;
-
-use std::hash::{Hash, Hasher};
-use crate::buffer::{BufferCreateInfo, GfxBuffer};
+pub mod render_pass;
+pub mod image;
 
 pub trait GfxResource {
     fn load() -> Result<String, String>;
@@ -13,15 +19,22 @@ pub trait GfxResource {
     fn unload_now() -> Result<String, String>;
 }
 
-pub trait GfxInterface {
+pub trait GfxCast: 'static {
+    fn as_any(&self) -> &dyn Any;
+}
+
+
+pub trait GfxInterface: GfxCast {
     fn set_physical_device(&mut self, selected_device: PhysicalDevice);
     fn enumerate_physical_devices(&self) -> Vec<PhysicalDevice>;
     fn find_best_suitable_physical_device(&self) -> Result<PhysicalDevice, String>;
     fn begin_frame(&self);
     fn end_frame(&self);
-    
+
     fn create_buffer(&mut self, create_infos: &BufferCreateInfo) -> Box<dyn GfxBuffer>;
 }
+
+pub type Gfx = Arc<RwLock<dyn GfxInterface>>;
 
 #[derive(Copy, Clone)]
 pub enum PhysicalDeviceType {

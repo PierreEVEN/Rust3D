@@ -65,9 +65,9 @@ impl VkDescriptorSetLayout {
             p_bindings: bindings.as_ptr(),
             ..DescriptorSetLayoutCreateInfo::default()
         };
-        
-        let descriptor_set_layout = vk_check!(gfx_object!(gfx.device).device.create_descriptor_set_layout(&ci_descriptor_set_layout, None));
-        
+
+        let descriptor_set_layout = vk_check!(unsafe {gfx_object!(gfx.device).device.create_descriptor_set_layout(&ci_descriptor_set_layout, None)});
+
         Arc::new(Self {
             descriptor_set_layout,
             gfx: gfx.clone(),
@@ -75,9 +75,7 @@ impl VkDescriptorSetLayout {
     }
 }
 
-pub struct VkDescriptorPool {
-    
-}
+pub struct VkDescriptorPool {}
 
 impl VkDescriptorPool {
     pub fn new() -> Arc<Self> {

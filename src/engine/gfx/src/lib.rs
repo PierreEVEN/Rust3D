@@ -11,6 +11,7 @@ pub mod buffer;
 pub mod shader;
 pub mod render_pass;
 pub mod image;
+pub mod render_pass_instance;
 
 pub trait GfxResource {
     fn load() -> Result<String, String>;
@@ -19,12 +20,17 @@ pub trait GfxResource {
     fn unload_now() -> Result<String, String>;
 }
 
+pub type GfxRef = Arc<dyn GfxInterface>;
+
 pub trait GfxCast: 'static {
     fn as_any(&self) -> &dyn Any;
 }
 
-
-pub type GfxRef = Arc<dyn GfxInterface>;
+impl<T: 'static> GfxCast for T {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
 
 pub trait GfxInterface: GfxCast {
     fn set_physical_device(&self, selected_device: PhysicalDevice);
@@ -33,7 +39,7 @@ pub trait GfxInterface: GfxCast {
     fn begin_frame(&self);
     fn end_frame(&self);
     fn create_buffer(&self, create_infos: &BufferCreateInfo) -> Box<dyn GfxBuffer>;
-    fn create_render_pass(&self, create_infos: RenderPassCreateInfos) -> Box<dyn RenderPass>;
+    fn create_render_pass(&self, create_infos: RenderPassCreateInfos) -> Arc<dyn RenderPass>;
     fn get_ref(&self) -> GfxRef;
 }
 

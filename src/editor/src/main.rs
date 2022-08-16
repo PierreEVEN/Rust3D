@@ -8,7 +8,7 @@ use gfx::render_pass::{FrameGraph, RenderPassAttachment, RenderPassCreateInfos};
 use gfx::shader::ShaderStage;
 use gfx::types::{ClearValues, PixelFormat};
 use maths::rect2d::Rect2D;
-use maths::vec2::Vec2F32;
+use maths::vec2::{Vec2F32, Vec2u32};
 use maths::vec4::Vec4F32;
 use plateform::Platform;
 use plateform::window::{PlatformEvent, WindowCreateInfos, WindowFlagBits, WindowFlags};
@@ -36,7 +36,7 @@ fn main() {
     let gfx_backend = GfxVulkan::new();
     gfx_backend.set_physical_device(gfx_backend.find_best_suitable_physical_device().expect("there is no suitable GPU available"));
 
-    create_render_graph(gfx_backend.clone());
+    create_render_graph(gfx_backend.clone(), Vec2u32::new(800, 600));
     
     // Bind graphic surface onto current window
     let mut _main_window_surface = VkSurfaceWin32::new(&gfx_backend, &*main_window.lock().unwrap());
@@ -79,7 +79,7 @@ fn main() {
             }
         };
 
-        let sprv = match shader_compiler.compile_to_spirv(vertex_code, ShaderLanguage::HLSL, ShaderStage::Vertex, interstage) {
+        let _sprv = match shader_compiler.compile_to_spirv(vertex_code, ShaderLanguage::HLSL, ShaderStage::Vertex, interstage) {
             Ok(sprv) => {
                 println!("compilation succeeded");
                 sprv
@@ -108,11 +108,11 @@ fn main() {
     }
 }
 
-pub fn create_render_graph(gfx: GfxRef) {
+pub fn create_render_graph(gfx: GfxRef, res: Vec2u32) {
     let framegraph = FrameGraph::new(gfx.clone());
     framegraph.create_or_recreate_swapchain();
 
-    gfx.create_render_pass(RenderPassCreateInfos {
+    let g_buffer_pass = gfx.create_render_pass(RenderPassCreateInfos {
         name: "GBuffers".to_string(),
         color_attachments: vec![
             RenderPassAttachment {
@@ -144,7 +144,7 @@ pub fn create_render_graph(gfx: GfxRef) {
         is_present_pass: false
     });
 
-    gfx.create_render_pass(RenderPassCreateInfos{
+    let deferred_combine_pass = gfx.create_render_pass(RenderPassCreateInfos{
         name: "deferred_combine".to_string(),
         color_attachments: vec![RenderPassAttachment {
             name: "color".to_string(),
@@ -154,6 +154,9 @@ pub fn create_render_graph(gfx: GfxRef) {
         depth_attachment: None,
         is_present_pass: false
     });
+    
+    let g_buffer_instance = g_buffer_pass.instantiate(res);
+    let deferred_combine_instance = deferred_combine_pass.instantiate(res);
 }
 
 

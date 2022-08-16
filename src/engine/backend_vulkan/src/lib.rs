@@ -4,12 +4,14 @@ use std::any::Any;
 use std::sync::{Arc, RwLock, Weak};
 
 use ash::Entry;
+use ash::vk::CommandPool;
 
 use gfx::{GfxCast, GfxInterface, GfxRef, PhysicalDevice};
 use gfx::buffer::{BufferCreateInfo, GfxBuffer};
 use gfx::render_pass::{RenderPass, RenderPassCreateInfos};
 
 use crate::vk_buffer::VkBuffer;
+use crate::vk_command_buffer::VkCommandPool;
 use crate::vk_device::VkDevice;
 use crate::vk_instance::{InstanceCreateInfos, VkInstance};
 use crate::vk_physical_device::VkPhysicalDevice;
@@ -25,6 +27,9 @@ pub mod vk_render_pass;
 pub mod vk_buffer;
 pub mod vk_shader;
 pub mod vk_descriptor_set;
+pub mod vk_render_pass_instance;
+pub mod vk_command_buffer;
+pub mod vk_queue;
 
 pub static mut G_VULKAN: Option<Entry> = None;
 
@@ -79,12 +84,7 @@ pub struct GfxVulkan {
     pub physical_device_vk: RwLock<Option<VkPhysicalDevice>>,
     pub device: RwLock<Option<VkDevice>>,
     pub gfx_ref: RwLock<Weak<GfxVulkan>>,
-}
-
-impl GfxCast for GfxVulkan {
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
+    pub command_pool: RwLock<Option<VkCommandPool>>,
 }
 
 impl GfxInterface for GfxVulkan {
@@ -105,6 +105,9 @@ impl GfxInterface for GfxVulkan {
         }
         let mut device = self.device.write().unwrap();
         *device = Some(VkDevice::new(&self.get_ref()));
+        
+        let mut command_pool = self.command_pool.write().unwrap();
+        *command_pool = Some(VkCommandPool::new(self.get_ref()));
     }
 
 
@@ -124,7 +127,7 @@ impl GfxInterface for GfxVulkan {
         Box::new(VkBuffer::new(&self.get_ref(), create_infos))
     }
 
-    fn create_render_pass(&self, create_infos: RenderPassCreateInfos) -> Box<dyn RenderPass> {
+    fn create_render_pass(&self, create_infos: RenderPassCreateInfos) -> Arc<dyn RenderPass> {
         VkRenderPass::new(self.get_ref(), create_infos)
     }
 
@@ -148,6 +151,7 @@ impl GfxVulkan {
             physical_device_vk: Default::default(),
             device: Default::default(),
             gfx_ref: RwLock::new(Weak::new()),
+            command_pool: Default::default()
         });
 
         {

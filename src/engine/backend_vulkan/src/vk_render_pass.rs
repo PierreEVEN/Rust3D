@@ -1,25 +1,33 @@
+use std::any::Any;
 use std::ptr::null;
-use std::sync::Arc;
+use std::sync::{Arc, RwLock, Weak};
 
 use ash::vk::{AccessFlags, AttachmentDescription, AttachmentLoadOp, AttachmentReference, AttachmentStoreOp, DependencyFlags, ImageLayout, PipelineBindPoint, PipelineStageFlags, RenderPassCreateInfo, SampleCountFlags, SUBPASS_EXTERNAL, SubpassDependency, SubpassDescription};
 
 use gfx::GfxRef;
 use gfx::render_pass::{RenderPass, RenderPassCreateInfos};
+use gfx::render_pass_instance::RenderPassInstance;
 use gfx::types::{ClearValues, PixelFormat};
+use maths::vec2::Vec2u32;
 
 use crate::{gfx_cast_vulkan, gfx_object, GfxVulkan, vk_check};
+use crate::vk_render_pass_instance::VkRenderPassInstance;
 use crate::vk_types::VkPixelFormat;
 
 pub struct VkRenderPass {
     pub render_pass: ash::vk::RenderPass,
+    gfx: GfxRef,
+    self_ref: RwLock<Weak<VkRenderPass>>,
 }
 
 impl RenderPass for VkRenderPass {
-    
+    fn instantiate(&self, res: Vec2u32) -> Box<dyn RenderPassInstance> {
+        Box::new(VkRenderPassInstance::new(self.gfx.clone(), self.self_ref.read().unwrap().upgrade().unwrap(), res))
+    }
 }
 
 impl VkRenderPass {
-    pub fn new(gfx: GfxRef, create_infos: RenderPassCreateInfos) -> Box<Self> {
+    pub fn new(gfx: GfxRef, create_infos: RenderPassCreateInfos) -> Arc<Self> {
         let mut attachment_descriptions = Vec::<AttachmentDescription>::new();
         let mut color_attachment_references = Vec::<AttachmentReference>::new();
         let mut depth_attachment_reference = None;
@@ -145,8 +153,16 @@ impl VkRenderPass {
         let device = gfx_cast_vulkan!(gfx).device.read().unwrap();
         let render_pass = vk_check!(unsafe { gfx_object!(*device).device.create_render_pass(&render_pass_infos, None) });
 
-        Box::new(Self {
-            render_pass
-        })
+        let render_pass = Arc::new(Self {
+            render_pass,
+            gfx: gfx.clone(),
+            self_ref: RwLock::new(Weak::new()),
+        });
+
+        {
+            let mut self_ref = render_pass.self_ref.write().unwrap();
+            *self_ref = Arc::downgrade(&render_pass);
+        }
+        render_pass
     }
 }

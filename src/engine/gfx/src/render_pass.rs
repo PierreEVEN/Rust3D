@@ -1,9 +1,11 @@
-﻿use std::sync::Arc;
+﻿use std::any::Any;
+use std::sync::Arc;
 
-use maths::vec2::{Vec2F32, Vec2F64};
+use maths::vec2::{Vec2F32, Vec2F64, Vec2u32};
 use maths::vec4::Vec4F32;
 
-use crate::GfxRef;
+use crate::{GfxCast, GfxRef};
+use crate::render_pass_instance::RenderPassInstance;
 use crate::types::{ClearValues, PixelFormat};
 
 pub struct RenderPassAttachment {
@@ -19,7 +21,9 @@ pub struct RenderPassCreateInfos {
     pub is_present_pass: bool
 }
 
-pub trait RenderPass {}
+pub trait RenderPass: GfxCast {
+    fn instantiate(&self, res: Vec2u32) -> Box<dyn RenderPassInstance>;
+}
 
 
 pub struct FrameGraph {}
@@ -30,11 +34,6 @@ impl FrameGraph {
     }
 
     pub fn create_or_recreate_swapchain(&self) {}
-
     pub fn create_or_recreate_render_target(&self) {}
-
-    pub fn get_primary_render_pass(&self) -> Arc<dyn RenderPass> {
-        todo!()
-    }
 }
 

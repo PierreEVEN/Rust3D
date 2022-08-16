@@ -83,9 +83,12 @@ impl VkPhysicalDevice {
     }
     
     pub fn enumerate_device_extensions(&self, gfx: &GfxVulkan) -> Vec<ExtensionProperties> {
+        
+        let physical_device = gfx.physical_device_vk.read().unwrap();
+        
         let mut result = Vec::new();
         unsafe {
-            if let Some(extensions) = gfx_object!(gfx.instance).instance.enumerate_device_extension_properties(gfx_object!(gfx.physical_device_vk).device).ok() {
+            if let Some(extensions) = gfx_object!(gfx.instance).instance.enumerate_device_extension_properties(gfx_object!(*physical_device).device).ok() {
                 for extension in extensions {
                     result.push(extension);
                 }

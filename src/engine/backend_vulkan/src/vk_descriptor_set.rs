@@ -2,10 +2,11 @@
 use std::sync::Arc;
 
 use ash::vk::{DescriptorSetLayout, DescriptorSetLayoutBinding, DescriptorSetLayoutCreateInfo, ShaderStageFlags};
+use gfx::GfxRef;
 
 use gfx::shader::{DescriptorType, ShaderBinding};
 
-use crate::{gfx_object, GfxVulkan, vk_check};
+use crate::{gfx_cast_vulkan, gfx_object, GfxVulkan, vk_check};
 
 pub struct VkDescriptorType(ash::vk::DescriptorType);
 
@@ -30,11 +31,11 @@ impl From<&DescriptorType> for VkDescriptorType {
 
 pub struct VkDescriptorSetLayout {
     pub descriptor_set_layout: DescriptorSetLayout,
-    pub gfx: Arc<GfxVulkan>,
+    pub gfx: GfxRef,
 }
 
 impl VkDescriptorSetLayout {
-    pub fn new(gfx: &Arc<GfxVulkan>, vertex_bindings: &Vec<ShaderBinding>, fragment_bindings: &Vec<ShaderBinding>) -> Arc<Self> {
+    pub fn new(gfx: &GfxRef, vertex_bindings: &Vec<ShaderBinding>, fragment_bindings: &Vec<ShaderBinding>) -> Arc<Self> {
         let mut bindings = Vec::<DescriptorSetLayoutBinding>::new();
         for binding in vertex_bindings
         {
@@ -66,7 +67,8 @@ impl VkDescriptorSetLayout {
             ..DescriptorSetLayoutCreateInfo::default()
         };
 
-        let descriptor_set_layout = vk_check!(unsafe {gfx_object!(gfx.device).device.create_descriptor_set_layout(&ci_descriptor_set_layout, None)});
+        let device = gfx_cast_vulkan!(gfx).device.read().unwrap();
+        let descriptor_set_layout = vk_check!(unsafe {gfx_object!(*device).device.create_descriptor_set_layout(&ci_descriptor_set_layout, None)});
 
         Arc::new(Self {
             descriptor_set_layout,

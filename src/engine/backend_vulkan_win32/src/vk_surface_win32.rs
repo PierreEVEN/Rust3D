@@ -1,16 +1,13 @@
-﻿use std::any::Any;
-use std::cell::RefCell;
-use std::ptr::null;
-use std::sync::Arc;
+﻿use std::ptr::null;
 
 use ash::extensions::khr;
 use ash::extensions::khr::{Surface, Swapchain};
 use ash::vk::{Bool32, CompositeAlphaFlagsKHR, Format, ImageUsageFlags, PresentModeKHR, SharingMode, SurfaceCapabilitiesKHR, SurfaceFormatKHR, SurfaceKHR, SurfaceTransformFlagsKHR, SwapchainCreateInfoKHR, SwapchainKHR, Win32SurfaceCreateInfoKHR};
 use raw_window_handle::RawWindowHandle;
 
-use backend_vulkan::{g_vulkan, G_VULKAN, gfx_object, gfx_vulkan, GfxVulkan, vk_check};
+use backend_vulkan::{g_vulkan, G_VULKAN, gfx_object, gfx_cast_vulkan, GfxVulkan, vk_check};
 use backend_vulkan::vk_types::VkExtent2D;
-use gfx::{Gfx, GfxCast, GfxInterface};
+use gfx::{GfxRef};
 use gfx::surface::{GfxSurface, SurfaceCreateInfos};
 use maths::vec2::Vec2u32;
 
@@ -95,15 +92,11 @@ impl GfxSurface for VkSurfaceWin32 {
 }
 
 impl VkSurfaceWin32 {
-    pub fn new(gfx: &mut Gfx, window: &dyn plateform::window::Window) -> VkSurfaceWin32 {
-      
-        let gfx = gfx.get_mut().expect("failed to acquire");
-        
-        
-        let gfx = match gfx.as_any().downcast_ref::<GfxVulkan>() {
-            None => { panic!("cast failed"); }
-            Some(instance) => { instance }
-        };
+    pub fn new(gfx: &GfxRef, window: &dyn plateform::window::Window) -> VkSurfaceWin32 {
+
+        let gfx = gfx_cast_vulkan!(gfx);
+        let device = gfx.device.read().unwrap();
+        let physical_device_vk = gfx.physical_device_vk.read().unwrap();
         
         let handle = match window.get_handle() {
             RawWindowHandle::Win32(handle) => { handle }
@@ -121,12 +114,12 @@ impl VkSurfaceWin32 {
         let surface = unsafe { surface_fn.create_win32_surface(&ci_surface, None) }.expect("failed to create surface");
         let surface_loader = Surface::new(g_vulkan!(), &gfx_object!(gfx.instance).instance);
 
-        let surface_formats = vk_check!(unsafe { surface_loader.get_physical_device_surface_formats(gfx_object!(gfx.physical_device_vk).device, surface) });
-        let surface_capabilities = vk_check!(unsafe { surface_loader.get_physical_device_surface_capabilities(gfx_object!(gfx.physical_device_vk).device, surface) });
-        let present_modes = vk_check!(unsafe { surface_loader.get_physical_device_surface_present_modes(gfx_object!(gfx.physical_device_vk).device, surface) });
+        let surface_formats = vk_check!(unsafe { surface_loader.get_physical_device_surface_formats(gfx_object!(*physical_device_vk).device, surface) });
+        let surface_capabilities = vk_check!(unsafe { surface_loader.get_physical_device_surface_capabilities(gfx_object!(*physical_device_vk).device, surface) });
+        let present_modes = vk_check!(unsafe { surface_loader.get_physical_device_surface_present_modes(gfx_object!(*physical_device_vk).device, surface) });
 
 
-        let swapchain_loader = Swapchain::new(&gfx_object!(gfx.instance).instance, &gfx_object!(gfx.device).device);
+        let swapchain_loader = Swapchain::new(&gfx_object!(gfx.instance).instance, &gfx_object!(*device).device);
 
         let mut surface = Self {
             surface,

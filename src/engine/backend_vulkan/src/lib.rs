@@ -1,5 +1,20 @@
 extern crate core;
 
+use std::any::Any;
+use std::sync::{Arc, RwLock, Weak};
+
+use ash::Entry;
+
+use gfx::{GfxCast, GfxInterface, GfxRef, PhysicalDevice};
+use gfx::buffer::{BufferCreateInfo, GfxBuffer};
+use gfx::render_pass::{RenderPass, RenderPassCreateInfos};
+
+use crate::vk_buffer::VkBuffer;
+use crate::vk_device::VkDevice;
+use crate::vk_instance::{InstanceCreateInfos, VkInstance};
+use crate::vk_physical_device::VkPhysicalDevice;
+use crate::vk_render_pass::VkRenderPass;
+
 pub mod vk_instance;
 pub mod vk_physical_device;
 pub mod vk_device;
@@ -10,18 +25,6 @@ pub mod vk_render_pass;
 pub mod vk_buffer;
 pub mod vk_shader;
 pub mod vk_descriptor_set;
-
-use std::any::Any;
-use std::cell::{Cell, RefCell};
-use std::sync::{Arc, Mutex, RwLock};
-use gfx::{Gfx, GfxCast, GfxInterface, PhysicalDevice};
-use ash::{Entry};
-use gfx::buffer::{BufferCreateInfo, GfxBuffer};
-use crate::vk_buffer::VkBuffer;
-use crate::vk_device::VkDevice;
-use crate::vk_instance::{InstanceCreateInfos, VkInstance};
-use crate::vk_physical_device::VkPhysicalDevice;
-
 
 pub static mut G_VULKAN: Option<Entry> = None;
 
@@ -54,12 +57,9 @@ macro_rules! gfx_object {
 }
 
 #[macro_export]
-macro_rules! gfx_vulkan {
-    ($gfx:expr) => {
-        match $gfx.as_ref().as_any().downcast_ref::<GfxVulkan>() {
-            None => { panic!("cast failed"); }
-            Some(instance) => { instance }
-        };
+macro_rules! gfx_cast_vulkan {
+    ($gfx:expr) => {        
+        $gfx.as_any().downcast_ref::<GfxVulkan>().expect("failed to cast to gfx vulkan")
     };
 }
 
@@ -75,9 +75,10 @@ macro_rules! vk_check {
 
 pub struct GfxVulkan {
     pub instance: Option<VkInstance>,
-    pub physical_device: Option<PhysicalDevice>,
-    pub physical_device_vk: Option<VkPhysicalDevice>,
-    pub device: Option<VkDevice>,
+    pub physical_device: RwLock<Option<PhysicalDevice>>,
+    pub physical_device_vk: RwLock<Option<VkPhysicalDevice>>,
+    pub device: RwLock<Option<VkDevice>>,
+    pub gfx_ref: RwLock<Weak<GfxVulkan>>,
 }
 
 impl GfxCast for GfxVulkan {
@@ -87,20 +88,23 @@ impl GfxCast for GfxVulkan {
 }
 
 impl GfxInterface for GfxVulkan {
-    fn set_physical_device(&mut self, selected_device: PhysicalDevice) {
-        match self.physical_device {
-            None => {
-                self.physical_device = Some(selected_device.clone());
-                self.physical_device_vk = Some(gfx_object!(self.instance).get_vk_device(&selected_device).expect("failed to get physical device information for vulkan").clone());
-                
-                self.device = Some(VkDevice::new(&self)) 
-                
-            }
-            Some(_) => {
-                panic!("physical device has already been selected");
+    fn set_physical_device(&self, selected_device: PhysicalDevice) {
+        {
+            let mut physical_device = self.physical_device.write().unwrap();
+            let mut physical_device_vk = self.physical_device_vk.write().unwrap();
+
+            match *physical_device {
+                None => {
+                    *physical_device = Some(selected_device.clone());
+                    *physical_device_vk = Some(gfx_object!(self.instance).get_vk_device(&selected_device).expect("failed to get physical device information for vulkan").clone());
+                }
+                Some(_) => {
+                    panic!("physical device has already been selected");
+                }
             }
         }
-        
+        let mut device = self.device.write().unwrap();
+        *device = Some(VkDevice::new(&self.get_ref()));
     }
 
 
@@ -112,37 +116,53 @@ impl GfxInterface for GfxVulkan {
         gfx_object!(self.instance).find_best_suitable_gpu_vk()
     }
 
-    fn begin_frame(&self) {
+    fn begin_frame(&self) {}
+
+    fn end_frame(&self) {}
+
+    fn create_buffer(&self, create_infos: &BufferCreateInfo) -> Box<dyn GfxBuffer> {
+        Box::new(VkBuffer::new(&self.get_ref(), create_infos))
     }
 
-    fn end_frame(&self) {
+    fn create_render_pass(&self, create_infos: RenderPassCreateInfos) -> Box<dyn RenderPass> {
+        VkRenderPass::new(self.get_ref(), create_infos)
     }
 
-    fn create_buffer(&mut self, create_infos: &BufferCreateInfo) -> Box<dyn GfxBuffer> {        
-        Box::new(VkBuffer::new(self, create_infos))
+    fn get_ref(&self) -> GfxRef {
+        self.gfx_ref.read().unwrap().upgrade().unwrap().clone()
     }
 }
 
 impl GfxVulkan {
-    pub fn new() -> Gfx {
-        unsafe { G_VULKAN = Some(Entry::load().expect("failed to load vulkan library")); } 
-        
+    pub fn new() -> GfxRef {
+        unsafe { G_VULKAN = Some(Entry::load().expect("failed to load vulkan library")); }
+
         let instance = VkInstance::new(InstanceCreateInfos {
             enable_validation_layers: true,
             ..Default::default()
         }).expect("failed to create instance");
 
-        Arc::new(RwLock::new(Self {
+        let mut gfx = Arc::new(Self {
             instance: Some(instance),
-            physical_device: None,
-            physical_device_vk: None,
-            device: None,
-        }))
+            physical_device: Default::default(),
+            physical_device_vk: Default::default(),
+            device: Default::default(),
+            gfx_ref: RwLock::new(Weak::new()),
+        });
+
+        {
+            let mut gfx_ref = gfx.gfx_ref.write().unwrap();
+            *gfx_ref = Arc::downgrade(&gfx);
+        }
+
+        gfx
     }
 }
 
 impl Drop for GfxVulkan {
-    fn drop(&mut self) {        
-        unsafe { G_VULKAN = None; }
+    fn drop(&mut self) {
+        unsafe {
+            G_VULKAN = None;
+        }
     }
 }

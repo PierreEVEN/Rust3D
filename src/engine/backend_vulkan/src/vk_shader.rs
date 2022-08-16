@@ -3,11 +3,12 @@ use std::os::raw::c_char;
 use std::ptr::null;
 use std::sync::Arc;
 
-use ash::vk::{BlendFactor, BlendOp, Bool32, ColorComponentFlags, CompareOp, CullModeFlags, DynamicState, GraphicsPipelineCreateInfo, Pipeline, PipelineCache, PipelineColorBlendAttachmentState, PipelineColorBlendStateCreateInfo, PipelineDepthStencilStateCreateInfo, PipelineDynamicStateCreateInfo, PipelineInputAssemblyStateCreateInfo, PipelineLayout, PipelineLayoutCreateInfo, PipelineMultisampleStateCreateInfo, PipelineRasterizationStateCreateInfo, PipelineShaderStageCreateInfo, PipelineVertexInputStateCreateInfo, PipelineViewportStateCreateInfo, PrimitiveTopology, PushConstantRange, RenderPass, SampleCountFlags, ShaderModule, ShaderModuleCreateFlags, ShaderModuleCreateInfo, ShaderStageFlags, StructureType, VertexInputAttributeDescription, VertexInputBindingDescription, VertexInputRate};
+use ash::vk::{Bool32, CompareOp, CullModeFlags, DynamicState, GraphicsPipelineCreateInfo, Pipeline, PipelineCache, PipelineColorBlendAttachmentState, PipelineColorBlendStateCreateInfo, PipelineDepthStencilStateCreateInfo, PipelineDynamicStateCreateInfo, PipelineInputAssemblyStateCreateInfo, PipelineLayout, PipelineLayoutCreateInfo, PipelineMultisampleStateCreateInfo, PipelineRasterizationStateCreateInfo, PipelineShaderStageCreateInfo, PipelineVertexInputStateCreateInfo, PipelineViewportStateCreateInfo, PrimitiveTopology, PushConstantRange, RenderPass, SampleCountFlags, ShaderModule, ShaderModuleCreateFlags, ShaderModuleCreateInfo, ShaderStageFlags, StructureType, VertexInputAttributeDescription, VertexInputBindingDescription, VertexInputRate};
+use gfx::GfxRef;
 
-use gfx::shader::{AlphaMode, Culling, FrontFace, PolygonMode, ShaderProgramInfos, Topology};
+use gfx::shader::{Culling, FrontFace, PolygonMode, ShaderProgramInfos, Topology};
 
-use crate::{gfx_object, GfxVulkan, vk_check};
+use crate::{gfx_cast_vulkan, gfx_object, GfxVulkan, vk_check};
 use crate::vk_descriptor_set::VkDescriptorSetLayout;
 use crate::vk_types::VkPixelFormat;
 
@@ -60,7 +61,7 @@ impl From<&FrontFace> for VkFrontFace {
 }
 
 pub struct VkShaderProgram {
-    gfx: Arc<GfxVulkan>,
+    gfx: GfxRef,
     vertex_module: Arc<VkShaderModule>,
     fragment_module: Arc<VkShaderModule>,
     pipeline: Pipeline,
@@ -69,9 +70,11 @@ pub struct VkShaderProgram {
 }
 
 impl VkShaderProgram {
-    pub fn new(gfx: &Arc<GfxVulkan>, create_infos: &ShaderProgramInfos, descriptor_set_layout: &Arc<VkDescriptorSetLayout>) -> Arc<Self> {
-        let vertex_module = VkShaderModule::new(gfx, &create_infos.vertex_stage.spirv);
-        let fragment_module = VkShaderModule::new(gfx, &create_infos.fragment_stage.spirv);
+    pub fn new(gfx: &GfxRef, create_infos: &ShaderProgramInfos, descriptor_set_layout: &Arc<VkDescriptorSetLayout>) -> Arc<Self> {
+        let device = gfx_cast_vulkan!(gfx).device.read().unwrap();
+        
+        let vertex_module = VkShaderModule::new(gfx.clone(), &create_infos.vertex_stage.spirv);
+        let fragment_module = VkShaderModule::new(gfx.clone(), &create_infos.fragment_stage.spirv);
 
         let mut push_constants = Vec::<PushConstantRange>::new();
 
@@ -100,7 +103,7 @@ impl VkShaderProgram {
             p_push_constant_ranges: push_constants.as_ptr(),
             ..PipelineLayoutCreateInfo::default()
         };
-        let pipeline_layout = vk_check!(unsafe { gfx_object!(gfx.device).device.create_pipeline_layout(&pipeline_layout_infos, None) });
+        let pipeline_layout = vk_check!(unsafe { gfx_object!(*device).device.create_pipeline_layout(&pipeline_layout_infos, None) });
 
         let mut vertex_attribute_description = Vec::<VertexInputAttributeDescription>::new();
 
@@ -188,7 +191,7 @@ impl VkShaderProgram {
 
         let mut color_blend_attachment = Vec::<PipelineColorBlendAttachmentState>::new();
 
-        /**
+        /*
         for i in 0..render_pass.color_attachment_count
         {
             color_blend_attachment.push(PipelineColorBlendAttachmentState {
@@ -203,7 +206,7 @@ impl VkShaderProgram {
                 ..PipelineColorBlendAttachmentState::default()
             });
         }
-        **/
+        */
 
         let shader_stages = Vec::<PipelineShaderStageCreateInfo>::from([
             PipelineShaderStageCreateInfo {
@@ -260,9 +263,9 @@ impl VkShaderProgram {
             ..GraphicsPipelineCreateInfo::default()
         };
 
-        let pipeline = match unsafe { gfx_object!(gfx.device).device.create_graphics_pipelines(PipelineCache::default(), &[ci_pipeline], None) } {
+        let pipeline = match unsafe { gfx_object!(*device).device.create_graphics_pipelines(PipelineCache::default(), &[ci_pipeline], None) } {
             Ok(pipeline) => { pipeline[0] }
-            Err(errors) => { panic!("failed to create graphic pipelines") }
+            Err(_) => { panic!("failed to create graphic pipelines") }
         };
 
 
@@ -278,12 +281,15 @@ impl VkShaderProgram {
 }
 
 pub struct VkShaderModule {
-    gfx: Arc<GfxVulkan>,
+    gfx: GfxRef,
     shader_module: ShaderModule,
 }
 
 impl VkShaderModule {
-    pub fn new(gfx: &Arc<GfxVulkan>, spirv: &Vec<u32>) -> Arc<Self> {
+    pub fn new(gfx: GfxRef, spirv: &Vec<u32>) -> Arc<Self> {
+
+        let device = gfx_cast_vulkan!(gfx).device.read().unwrap();
+        
         let ci_shader_module = ShaderModuleCreateInfo {
             s_type: StructureType::SHADER_MODULE_CREATE_INFO,
             code_size: spirv.len() * mem::size_of::<u32>(),
@@ -292,7 +298,7 @@ impl VkShaderModule {
             p_next: null(),
         };
 
-        let shader_module = vk_check!(unsafe { gfx_object!(gfx.device).device.create_shader_module(&ci_shader_module, None) });
+        let shader_module = vk_check!(unsafe { gfx_object!(*device).device.create_shader_module(&ci_shader_module, None) });
 
         Arc::new(Self {
             gfx: gfx.clone(),

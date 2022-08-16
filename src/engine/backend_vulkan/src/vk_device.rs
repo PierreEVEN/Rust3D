@@ -5,8 +5,9 @@ use std::sync::{Arc};
 use ash::vk;
 use ash::vk::{Bool32, PhysicalDevice};
 use gpu_allocator::vulkan::{Allocator, AllocatorCreateDesc};
+use gfx::GfxRef;
 
-use crate::{gfx_object, GfxVulkan, vk_check};
+use crate::{gfx_cast_vulkan, gfx_object, GfxVulkan, vk_check};
 
 pub fn get_required_device_extensions() -> Vec<*const c_char> {
     let mut result = Vec::new();
@@ -21,11 +22,13 @@ pub struct VkDevice {
 }
 
 impl VkDevice {
-    pub fn new(gfx: &GfxVulkan) -> VkDevice {
+    pub fn new(gfx: &GfxRef) -> VkDevice {
         let mut ci_queues = Vec::<vk::DeviceQueueCreateInfo>::new();
-
+        let physical_device = gfx_cast_vulkan!(gfx).physical_device_vk.read().unwrap();
+        let instance = gfx_object!(gfx_cast_vulkan!(gfx).instance);
+        
         let queue_priorities: f32 = 1.0;
-        for queue in &gfx_object!(gfx.physical_device_vk).queues {
+        for queue in &gfx_object!(*physical_device).queues {
             ci_queues.push({
                 vk::DeviceQueueCreateInfo {
                     queue_family_index: queue.index,
@@ -45,7 +48,7 @@ impl VkDevice {
             ..Default::default()
         };
 
-        if gfx_object!(gfx.instance).enable_validation_layers() {
+        if gfx_object!(gfx_cast_vulkan!(gfx).instance).enable_validation_layers() {
             device_features.robust_buffer_access = 0;
         }
 
@@ -62,7 +65,7 @@ impl VkDevice {
 
         let mut extensions = get_required_device_extensions().clone();
 
-        if gfx_object!(gfx.instance).enable_validation_layers() {
+        if instance.enable_validation_layers() {
             extensions.push("VK_EXT_debug_marker\0".as_ptr() as *const c_char);
         }
 
@@ -77,7 +80,7 @@ impl VkDevice {
 
         let mut ps: PhysicalDevice = Default::default();
         unsafe {
-            if let Some(devices) = gfx_object!(gfx.instance).instance.enumerate_physical_devices().ok() {
+            if let Some(devices) = instance.instance.enumerate_physical_devices().ok() {
                 for device in devices {
                     ps = device;
                     break;
@@ -85,16 +88,16 @@ impl VkDevice {
             }
         }
 
-        let device = vk_check!(unsafe { gfx_object!(gfx.instance).instance.create_device(
+        let device = vk_check!(unsafe { instance.instance.create_device(
             ps,
             &ci_device,
             None
         ) });
 
         let allocator = Allocator::new(&AllocatorCreateDesc {
-            instance: gfx_object!(gfx.instance).instance.clone(),
+            instance: instance.instance.clone(),
             device: device.clone(),
-            physical_device: gfx_object!(gfx.physical_device_vk).device,
+            physical_device: gfx_object!(*physical_device).device,
             debug_settings: gpu_allocator::AllocatorDebugSettings {
                 log_leaks_on_shutdown: true,
                 ..Default::default()

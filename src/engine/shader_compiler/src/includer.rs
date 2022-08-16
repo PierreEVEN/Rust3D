@@ -1,5 +1,4 @@
-﻿use std::fmt::Error;
-use std::path::Path;
+﻿use std::path::Path;
 
 use crate::types::ShaderErrorResult;
 

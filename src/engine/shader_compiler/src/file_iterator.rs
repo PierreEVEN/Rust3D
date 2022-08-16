@@ -1,4 +1,4 @@
-﻿use std::ops::{Add, AddAssign, Deref, Sub};
+﻿use std::ops::{Add, AddAssign, Sub};
 
 pub struct FileIterator {
     line_count: i64,

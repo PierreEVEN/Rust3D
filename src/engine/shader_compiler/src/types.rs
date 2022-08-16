@@ -1,13 +1,9 @@
 ﻿use std::collections::HashMap;
 use std::ffi::c_void;
-use std::fmt::{Display, Formatter};
-use std::hash::Hash;
-use std::{fmt, ops};
-use gfx::shader::{AlphaMode, Culling, FrontFace, PolygonMode, ShaderStage, Topology};
+use std::{ops};
+use gfx::shader::{Culling, FrontFace, PolygonMode, Topology};
 
 use gfx::types::PixelFormat;
-
-use crate::ShaderChunk;
 
 #[derive(Clone)]
 pub struct ShaderError {

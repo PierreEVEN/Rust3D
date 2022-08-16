@@ -1,19 +1,21 @@
-use std::borrow::BorrowMut;
-use std::ops::Deref;
 use std::path::Path;
 
-use backend_vulkan::{gfx_vulkan, GfxVulkan};
+use backend_vulkan::{GfxVulkan};
 use backend_vulkan_win32::vk_surface_win32::VkSurfaceWin32;
 use gfx::buffer::{BufferAccess, BufferCreateInfo, BufferType, BufferUsage};
-use gfx::GfxInterface;
+use gfx::GfxRef;
+use gfx::render_pass::{FrameGraph, RenderPassAttachment, RenderPassCreateInfos};
 use gfx::shader::ShaderStage;
+use gfx::types::{ClearValues, PixelFormat};
 use maths::rect2d::Rect2D;
+use maths::vec2::Vec2F32;
+use maths::vec4::Vec4F32;
 use plateform::Platform;
 use plateform::window::{PlatformEvent, WindowCreateInfos, WindowFlagBits, WindowFlags};
 use plateform_win32::PlatformWin32;
 use shader_compiler::{CompilationResult, CompilerBackend};
 use shader_compiler::backends::backend_shaderc::{BackendShaderC, ShaderCIncluder};
-use shader_compiler::parser::{Parser, ShaderChunk};
+use shader_compiler::parser::{Parser};
 use shader_compiler::types::{InterstageData, ShaderLanguage};
 
 fn main() {
@@ -31,20 +33,16 @@ fn main() {
     main_window.lock().unwrap().show();
 
     // Create graphics
-    let mut gfx_backend = GfxVulkan::new();
-        
-    let selected_device = gfx_vulkan!(gfx_backend).find_best_suitable_physical_device().expect("there is no suitable GPU available");
+    let gfx_backend = GfxVulkan::new();
+    gfx_backend.set_physical_device(gfx_backend.find_best_suitable_physical_device().expect("there is no suitable GPU available"));
 
-    let test = gfx_backend.borrow_mut();
-    test.set_physical_device(selected_device);
+    create_render_graph(gfx_backend.clone());
     
-    gfx_vulkan!(gfx_backend).set_physical_device(selected_device);
-
     // Bind graphic surface onto current window
-    let mut _main_window_surface = VkSurfaceWin32::new(gfx_backend.clone(), &*main_window.lock().unwrap());
+    let mut _main_window_surface = VkSurfaceWin32::new(&gfx_backend, &*main_window.lock().unwrap());
 
     // GPU Buffer example
-    let mut _test_buffer = gfx_vulkan!(gfx_backend).create_buffer(&BufferCreateInfo {
+    let mut _test_buffer = gfx_backend.create_buffer(&BufferCreateInfo {
         buffer_type: BufferType::Immutable,
         usage: BufferUsage::IndexData,
         access: BufferAccess::Default,
@@ -109,3 +107,55 @@ fn main() {
         gfx_backend.end_frame();
     }
 }
+
+pub fn create_render_graph(gfx: GfxRef) {
+    let framegraph = FrameGraph::new(gfx.clone());
+    framegraph.create_or_recreate_swapchain();
+
+    gfx.create_render_pass(RenderPassCreateInfos {
+        name: "GBuffers".to_string(),
+        color_attachments: vec![
+            RenderPassAttachment {
+                name: "albedo".to_string(),
+                clear_value: ClearValues::Color(Vec4F32::new(0.0, 0.0, 0.0, 1.0)),
+                image_format: PixelFormat::R8G8B8A8_UNORM,
+            },
+            RenderPassAttachment {
+                name: "roughness_metalness_ao".to_string(),
+                clear_value: ClearValues::Color(Vec4F32::new(0.0, 0.0, 0.0, 1.0)),
+                image_format: PixelFormat::R8G8_UNORM,
+            },
+            RenderPassAttachment {
+                name: "normal".to_string(),
+                clear_value: ClearValues::Color(Vec4F32::new(0.0, 0.0, 0.0, 1.0)),
+                image_format: PixelFormat::R8G8B8A8_UNORM,
+            },
+            RenderPassAttachment {
+                name: "velocity".to_string(),
+                clear_value: ClearValues::Color(Vec4F32::new(0.0, 0.0, 0.0, 1.0)),
+                image_format: PixelFormat::R16G16B16A16_SFLOAT,
+            }],
+        depth_attachment: Some(
+            RenderPassAttachment {
+                name: "depth".to_string(),
+                clear_value: ClearValues::DepthStencil(Vec2F32::new(1.0, 0.0)),
+                image_format: PixelFormat::D32_SFLOAT,
+            }),
+        is_present_pass: false
+    });
+
+    gfx.create_render_pass(RenderPassCreateInfos{
+        name: "deferred_combine".to_string(),
+        color_attachments: vec![RenderPassAttachment {
+            name: "color".to_string(),
+            clear_value: ClearValues::Color(Vec4F32::new(0.0, 0.0, 0.0, 1.0)),
+            image_format: PixelFormat::R8G8B8A8_UNORM,
+        }],
+        depth_attachment: None,
+        is_present_pass: false
+    });
+}
+
+
+
+

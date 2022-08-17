@@ -5,7 +5,7 @@ use std::collections::{HashMap, VecDeque};
 use std::hash::{Hash, Hasher};
 use std::mem::size_of;
 use std::ptr::null;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, RwLock};
 use windows::core::PCWSTR;
 use windows::Win32::Foundation::{BOOL, HINSTANCE, HWND, LPARAM, LRESULT, RECT, WPARAM};
 use windows::Win32::Graphics::Gdi::{BLACK_BRUSH, EnumDisplayMonitors, GetMonitorInfoW, GetStockObject, HBRUSH, HDC, HMONITOR, MONITORINFO};
@@ -37,14 +37,13 @@ impl From<HWND> for HashableHWND {
 }
 
 pub struct PlatformWin32 {
-    windows: Mutex<HashMap<HashableHWND, Arc<Mutex<WindowWin32>>>>,
-    messages: Mutex<VecDeque<PlatformEvent>>,
+    windows: RwLock<HashMap<HashableHWND, Arc<WindowWin32>>>,
+    messages: RwLock<VecDeque<PlatformEvent>>,
     monitors: Vec<Monitor>,
 }
 
 impl PlatformWin32 {
     pub fn new() -> Arc<PlatformWin32> {
-
         unsafe {
             // Ensure time precision is the highest
             timeBeginPeriod(1);
@@ -62,7 +61,7 @@ impl PlatformWin32 {
         
         let platform = Arc::new(PlatformWin32 {
             windows: Default::default(),
-            messages: Mutex::new(VecDeque::new()),
+            messages: RwLock::new(VecDeque::new()),
             monitors: Default::default(),
         });
         
@@ -105,9 +104,9 @@ impl PlatformWin32 {
 
 
     fn send_window_message(&self, hwnd: HWND, msg: u32, _wparam: WPARAM, lparam: LPARAM) {
-        let window_map = self.windows.lock();
+        let window_map = self.windows.read();
         if let Some(window) = window_map.unwrap().get(&hwnd.into()) {
-            let message_queue = self.messages.lock();
+            let mut message_queue = self.messages.write();
             match msg {
                 WM_CLOSE => {
                     message_queue.unwrap().push_back(PlatformEvent::WindowClosed(window.clone()));
@@ -149,10 +148,10 @@ unsafe extern "system" fn wnd_proc(hwnd: HWND, msg: u32, wparam: WPARAM, lparam:
 }
 
 impl Platform for PlatformWin32 {
-    fn create_window(&self, create_infos: WindowCreateInfos) -> Result<Arc<Mutex<dyn Window>>, ()> {
+    fn create_window(&self, create_infos: WindowCreateInfos) -> Result<Arc<dyn Window>, ()> {
         let window = WindowWin32::new(create_infos.clone());
-        let hwnd = window.lock().unwrap().hwnd.into(); 
-        self.windows.lock().unwrap().insert(hwnd, window.clone());
+        let hwnd = window.hwnd.into(); 
+        self.windows.write().unwrap().insert(hwnd, window.clone());
         return Ok(window);
     }
 
@@ -181,7 +180,7 @@ impl Platform for PlatformWin32 {
     }
 
     fn poll_event(&self) -> Option<PlatformEvent> {
-        let mut event_queue = self.messages.lock().unwrap();
+        let mut event_queue = self.messages.write().unwrap();
         if let Some(event) = event_queue.pop_front() {
             return Some(event)
         }

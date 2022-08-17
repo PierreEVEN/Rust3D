@@ -22,7 +22,6 @@ use crate::vk_render_pass::VkRenderPass;
 pub mod vk_instance;
 pub mod vk_physical_device;
 pub mod vk_device;
-pub mod vk_swapchain;
 pub mod vk_types;
 pub mod vk_render_pass;
 pub mod vk_buffer;
@@ -31,7 +30,7 @@ pub mod vk_descriptor_set;
 pub mod vk_render_pass_instance;
 pub mod vk_command_buffer;
 pub mod vk_queue;
-pub mod vk_swpachain_resource;
+pub mod vk_swapchain_resource;
 
 pub static mut G_VULKAN: Option<Entry> = None;
 

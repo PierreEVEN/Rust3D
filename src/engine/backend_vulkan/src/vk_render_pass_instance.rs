@@ -9,7 +9,7 @@ use gfx::types::ClearValues;
 use maths::vec2::Vec2u32;
 
 use crate::{gfx_cast_vulkan, gfx_object, GfxVulkan, vk_check, VkRenderPass};
-use crate::vk_swpachain_resource::VkSwapchainResource;
+use crate::vk_swapchain_resource::VkSwapchainResource;
 
 pub struct VkRenderPassInstance {
     pub render_finished_semaphore: VkSwapchainResource<Semaphore>,

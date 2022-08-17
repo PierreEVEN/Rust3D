@@ -6,7 +6,7 @@ use gfx::GfxRef;
 
 use crate::{gfx_cast_vulkan, gfx_object, GfxVulkan, vk_check};
 use crate::vk_device::VkQueue;
-use crate::vk_swpachain_resource::VkSwapchainResource;
+use crate::vk_swapchain_resource::VkSwapchainResource;
 
 pub struct VkCommandPool {
     command_pool: CommandPool,

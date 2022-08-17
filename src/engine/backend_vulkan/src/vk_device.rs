@@ -150,8 +150,7 @@ impl VkDevice {
                 }
             }
         }
-
-
+        
         Self {
             device,
             queues: queue_map,

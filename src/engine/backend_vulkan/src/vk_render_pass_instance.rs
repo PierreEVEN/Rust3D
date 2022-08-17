@@ -9,14 +9,16 @@ use gfx::types::ClearValues;
 use maths::vec2::Vec2u32;
 
 use crate::{gfx_cast_vulkan, gfx_object, GfxVulkan, vk_check, VkRenderPass};
+use crate::vk_swpachain_resource::VkSwapchainResource;
 
 pub struct VkRenderPassInstance {
-    pub render_finished_semaphore: Semaphore,
+    pub render_finished_semaphore: VkSwapchainResource<Semaphore>,
     owner: Arc<dyn RenderPass>,
+    gfx: GfxRef,
     pub clear_value: Vec<ClearValues>,
 }
 
-impl VkRenderPassInstance {    
+impl VkRenderPassInstance {
     pub fn new(gfx: &GfxRef, owner: Arc<dyn RenderPass>, res: Vec2u32) -> VkRenderPassInstance {
         let device = gfx_cast_vulkan!(gfx).device.read().unwrap();
 
@@ -27,11 +29,12 @@ impl VkRenderPassInstance {
         let render_finished_semaphore = vk_check!(unsafe { gfx_object!(*device).device.create_semaphore(&create_infos, None) });
 
         let clear_values = (&owner).get_clear_values().clone();
-        
+
         VkRenderPassInstance {
-            render_finished_semaphore,
+            render_finished_semaphore: VkSwapchainResource::new(vec![render_finished_semaphore], 3),
             owner,
-            clear_value: clear_values.clone()
+            clear_value: clear_values.clone(),
+            gfx: gfx.clone()
         }
     }
 }
@@ -72,6 +75,10 @@ impl RenderPassInstance for VkRenderPassInstance {
             p_clear_values: clear_values.as_ptr(),
             ..RenderPassBeginInfo::default()
         };
+
+
+        let device = gfx_cast_vulkan!(self.gfx).device.read().unwrap();
+        //gfx_object!(*device).device.cmd_begin_render_pass()
     }
 
     fn submit(&self) {

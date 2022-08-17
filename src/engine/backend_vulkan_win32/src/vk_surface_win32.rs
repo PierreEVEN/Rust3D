@@ -1,4 +1,5 @@
 ﻿use std::ptr::null;
+use std::sync::RwLock;
 
 use ash::extensions::khr;
 use ash::extensions::khr::{Surface, Swapchain};
@@ -13,7 +14,7 @@ use maths::vec2::Vec2u32;
 
 pub struct VkSurfaceWin32 {
     pub surface: SurfaceKHR,
-    pub swapchain: Option<SwapchainKHR>,
+    pub swapchain: RwLock<Option<SwapchainKHR>>,
     surface_formats: Vec<SurfaceFormatKHR>,
     surface_capabilities: SurfaceCapabilitiesKHR,
     present_modes: Vec<PresentModeKHR>,
@@ -22,7 +23,7 @@ pub struct VkSurfaceWin32 {
 }
 
 impl GfxSurface for VkSurfaceWin32 {
-    fn create_or_recreate(&mut self, create_infos: SurfaceCreateInfos) {
+    fn create_or_recreate(&self, create_infos: SurfaceCreateInfos) {
         let mut composite_alpha = CompositeAlphaFlagsKHR::OPAQUE;
         for alpha_flag in vec![CompositeAlphaFlagsKHR::OPAQUE, CompositeAlphaFlagsKHR::PRE_MULTIPLIED, CompositeAlphaFlagsKHR::POST_MULTIPLIED, CompositeAlphaFlagsKHR::INHERIT] {
             if self.surface_capabilities.supported_composite_alpha.contains(alpha_flag) {
@@ -78,7 +79,7 @@ impl GfxSurface for VkSurfaceWin32 {
             composite_alpha,
             present_mode,
             clipped: true as Bool32,
-            old_swapchain: match self.swapchain {
+            old_swapchain: match *self.swapchain.read().unwrap() {
                 None => { Default::default() }
                 Some(old) => { old }
             },
@@ -86,14 +87,28 @@ impl GfxSurface for VkSurfaceWin32 {
         };
 
         let swapchain = vk_check!(unsafe { self._swapchain_loader.create_swapchain(&ci_swapchain, None) });
+        
+        let mut swapchain_ref = self.swapchain.write().unwrap();
+        *swapchain_ref = Some(swapchain);
+    }
 
-        self.swapchain = Some(swapchain);
+    fn get_image_count(&self) -> u8 {
+        3
+    }
+
+    fn get_current_image(&self) -> u8 {
+        0
+    }
+
+    fn begin(&self) {
+    }
+
+    fn submit(&self) {
     }
 }
 
 impl VkSurfaceWin32 {
     pub fn new(gfx: &GfxRef, window: &dyn plateform::window::Window) -> VkSurfaceWin32 {
-
         let gfx = gfx_cast_vulkan!(gfx);
         let device = gfx.device.read().unwrap();
         let physical_device_vk = gfx.physical_device_vk.read().unwrap();
@@ -123,7 +138,7 @@ impl VkSurfaceWin32 {
 
         let mut surface = Self {
             surface,
-            swapchain: None,
+            swapchain: Default::default(),
             _surface_loader: surface_loader,
             surface_formats,
             surface_capabilities,

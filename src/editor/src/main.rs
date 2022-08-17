@@ -7,6 +7,7 @@ use gfx::buffer::{BufferAccess, BufferCreateInfo, BufferType, BufferUsage};
 use gfx::{GfxCast, GfxRef};
 use gfx::render_pass::{FrameGraph, RenderPassAttachment, RenderPassCreateInfos};
 use gfx::shader::ShaderStage;
+use gfx::surface::GfxSurface;
 use gfx::types::{ClearValues, PixelFormat};
 use maths::rect2d::Rect2D;
 use maths::vec2::{Vec2F32, Vec2u32};
@@ -40,7 +41,7 @@ fn main() {
     
     create_render_graph(gfx_backend.clone(), Vec2u32::new(800, 600));
     // Bind graphic surface onto current window
-    let mut _main_window_surface = VkSurfaceWin32::new(&gfx_backend, &*main_window.lock().unwrap());
+    let mut main_window_surface = VkSurfaceWin32::new(&gfx_backend, &*main_window.lock().unwrap());
 
     // GPU Buffer example
     let mut _test_buffer = gfx_backend.create_buffer(&BufferCreateInfo {
@@ -104,8 +105,9 @@ fn main() {
             }
         }
 
-        gfx_backend.begin_frame();
-        gfx_backend.end_frame();
+        main_window_surface.begin();
+        // Rendering
+        main_window_surface.submit();
     }
 }
 

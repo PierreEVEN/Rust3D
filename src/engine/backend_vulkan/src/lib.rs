@@ -8,7 +8,9 @@ use ash::vk::CommandPool;
 
 use gfx::{GfxCast, GfxInterface, GfxRef, PhysicalDevice};
 use gfx::buffer::{BufferCreateInfo, GfxBuffer};
+use gfx::buffer::BufferAccess::Default;
 use gfx::render_pass::{RenderPass, RenderPassCreateInfos};
+use gfx::surface::GfxSurface;
 
 use crate::vk_buffer::VkBuffer;
 use crate::vk_command_buffer::VkCommandPool;
@@ -21,7 +23,6 @@ pub mod vk_instance;
 pub mod vk_physical_device;
 pub mod vk_device;
 pub mod vk_swapchain;
-pub mod vk_surface;
 pub mod vk_types;
 pub mod vk_render_pass;
 pub mod vk_buffer;
@@ -30,6 +31,7 @@ pub mod vk_descriptor_set;
 pub mod vk_render_pass_instance;
 pub mod vk_command_buffer;
 pub mod vk_queue;
+pub mod vk_swpachain_resource;
 
 pub static mut G_VULKAN: Option<Entry> = None;
 
@@ -122,10 +124,6 @@ impl GfxInterface for GfxVulkan {
         gfx_object!(self.instance).find_best_suitable_gpu_vk()
     }
 
-    fn begin_frame(&self) {}
-
-    fn end_frame(&self) {}
-
     fn create_buffer(&self, create_infos: &BufferCreateInfo) -> Box<dyn GfxBuffer> {
         Box::new(VkBuffer::new(&self.get_ref(), create_infos))
     }
@@ -137,6 +135,10 @@ impl GfxInterface for GfxVulkan {
     fn get_ref(&self) -> GfxRef {
         self.gfx_ref.read().unwrap().upgrade().unwrap().clone()
     }
+
+    fn get_surface(&self) -> &Box<dyn GfxSurface> {
+        todo!()
+    }
 }
 
 impl GfxVulkan {
@@ -145,16 +147,16 @@ impl GfxVulkan {
 
         let instance = VkInstance::new(InstanceCreateInfos {
             enable_validation_layers: true,
-            ..Default::default()
+            ..InstanceCreateInfos::default()
         }).expect("failed to create instance");
 
         let mut gfx = Arc::new(Self {
             instance: Some(instance),
-            physical_device: Default::default(),
-            physical_device_vk: Default::default(),
-            device: Default::default(),
+            physical_device: RwLock::default(),
+            physical_device_vk: RwLock::default(),
+            device: RwLock::default(),
             gfx_ref: RwLock::new(Weak::new()),
-            command_pool: Default::default(),
+            command_pool: RwLock::default(),
         });
 
         {

@@ -1,3 +1,0 @@
-﻿pub struct VkSurface {
-    
-}

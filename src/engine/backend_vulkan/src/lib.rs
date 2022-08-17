@@ -1,6 +1,6 @@
 extern crate core;
 
-use std::any::Any;
+use std::any::{Any, TypeId};
 use std::sync::{Arc, RwLock, Weak};
 
 use ash::Entry;
@@ -64,7 +64,7 @@ macro_rules! gfx_object {
 #[macro_export]
 macro_rules! gfx_cast_vulkan {
     ($gfx:expr) => {        
-        $gfx.as_any().downcast_ref::<GfxVulkan>().expect("failed to cast to gfx vulkan")
+        ($gfx.as_ref()).as_any().downcast_ref::<GfxVulkan>().expect("failed to cast to gfx vulkan")
     };
 }
 
@@ -103,11 +103,14 @@ impl GfxInterface for GfxVulkan {
                 }
             }
         }
-        let mut device = self.device.write().unwrap();
-        *device = Some(VkDevice::new(&self.get_ref()));
-        
-        let mut command_pool = self.command_pool.write().unwrap();
-        *command_pool = Some(VkCommandPool::new(self.get_ref()));
+        {
+            let mut device = self.device.write().unwrap();
+            *device = Some(VkDevice::new(&self.get_ref()));
+        }
+        {
+            let mut command_pool = self.command_pool.write().unwrap();
+            *command_pool = Some(VkCommandPool::new(self.get_ref()));
+        }
     }
 
 
@@ -151,7 +154,7 @@ impl GfxVulkan {
             physical_device_vk: Default::default(),
             device: Default::default(),
             gfx_ref: RwLock::new(Weak::new()),
-            command_pool: Default::default()
+            command_pool: Default::default(),
         });
 
         {

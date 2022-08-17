@@ -1,9 +1,10 @@
+use std::any::{Any, TypeId};
 use std::path::Path;
 
 use backend_vulkan::{GfxVulkan};
 use backend_vulkan_win32::vk_surface_win32::VkSurfaceWin32;
 use gfx::buffer::{BufferAccess, BufferCreateInfo, BufferType, BufferUsage};
-use gfx::GfxRef;
+use gfx::{GfxCast, GfxRef};
 use gfx::render_pass::{FrameGraph, RenderPassAttachment, RenderPassCreateInfos};
 use gfx::shader::ShaderStage;
 use gfx::types::{ClearValues, PixelFormat};
@@ -36,8 +37,8 @@ fn main() {
     let gfx_backend = GfxVulkan::new();
     gfx_backend.set_physical_device(gfx_backend.find_best_suitable_physical_device().expect("there is no suitable GPU available"));
 
-    create_render_graph(gfx_backend.clone(), Vec2u32::new(800, 600));
     
+    create_render_graph(gfx_backend.clone(), Vec2u32::new(800, 600));
     // Bind graphic surface onto current window
     let mut _main_window_surface = VkSurfaceWin32::new(&gfx_backend, &*main_window.lock().unwrap());
 
@@ -111,7 +112,7 @@ fn main() {
 pub fn create_render_graph(gfx: GfxRef, res: Vec2u32) {
     let framegraph = FrameGraph::new(gfx.clone());
     framegraph.create_or_recreate_swapchain();
-
+        
     let g_buffer_pass = gfx.create_render_pass(RenderPassCreateInfos {
         name: "GBuffers".to_string(),
         color_attachments: vec![
@@ -143,6 +144,9 @@ pub fn create_render_graph(gfx: GfxRef, res: Vec2u32) {
             }),
         is_present_pass: false
     });
+    if TypeId::of::<GfxVulkan>() == gfx.get_ref().as_any().type_id() {
+        println!("LA AUSSI TOUJOURS BON");
+    }
 
     let deferred_combine_pass = gfx.create_render_pass(RenderPassCreateInfos{
         name: "deferred_combine".to_string(),
@@ -154,6 +158,7 @@ pub fn create_render_graph(gfx: GfxRef, res: Vec2u32) {
         depth_attachment: None,
         is_present_pass: false
     });
+
     
     let g_buffer_instance = g_buffer_pass.instantiate(res);
     let deferred_combine_instance = deferred_combine_pass.instantiate(res);

@@ -1,28 +1,34 @@
-use std::any::Any;
+use std::any::{Any, TypeId};
 use std::ptr::null;
 use std::sync::{Arc, RwLock, Weak};
 
 use ash::vk::{AccessFlags, AttachmentDescription, AttachmentLoadOp, AttachmentReference, AttachmentStoreOp, DependencyFlags, ImageLayout, PipelineBindPoint, PipelineStageFlags, RenderPassCreateInfo, SampleCountFlags, SUBPASS_EXTERNAL, SubpassDependency, SubpassDescription};
 
-use gfx::GfxRef;
+use gfx::{GfxCast, GfxInterface, GfxRef};
 use gfx::render_pass::{RenderPass, RenderPassCreateInfos};
 use gfx::render_pass_instance::RenderPassInstance;
 use gfx::types::{ClearValues, PixelFormat};
 use maths::vec2::Vec2u32;
 
 use crate::{gfx_cast_vulkan, gfx_object, GfxVulkan, vk_check};
-use crate::vk_render_pass_instance::VkRenderPassInstance;
+use crate::vk_render_pass_instance::{VkRenderPassInstance};
 use crate::vk_types::VkPixelFormat;
 
 pub struct VkRenderPass {
     pub render_pass: ash::vk::RenderPass,
     gfx: GfxRef,
     self_ref: RwLock<Weak<VkRenderPass>>,
+    default_clear_values: Vec<ClearValues>,
 }
+
 
 impl RenderPass for VkRenderPass {
     fn instantiate(&self, res: Vec2u32) -> Box<dyn RenderPassInstance> {
-        Box::new(VkRenderPassInstance::new(self.gfx.clone(), self.self_ref.read().unwrap().upgrade().unwrap(), res))
+        Box::new(VkRenderPassInstance::new(&self.gfx, self.self_ref.read().unwrap().upgrade().unwrap(), res))
+    }
+
+    fn get_clear_values(&self) -> &Vec<ClearValues> {
+        &self.default_clear_values
     }
 }
 
@@ -32,6 +38,7 @@ impl VkRenderPass {
         let mut color_attachment_references = Vec::<AttachmentReference>::new();
         let mut depth_attachment_reference = None;
         let mut color_attachment_resolve_reference = None;
+        let mut clear_values = Vec::new();
 
         // add color color_attachments
         for attachment in create_infos.color_attachments
@@ -62,6 +69,8 @@ impl VkRenderPass {
                 attachment: attachment_index,
                 layout: ImageLayout::COLOR_ATTACHMENT_OPTIMAL,
             });
+
+            clear_values.push(attachment.clear_value);
         }
 
         // add depth attachment
@@ -95,6 +104,8 @@ impl VkRenderPass {
                     attachment: attachment_index,
                     layout: ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
                 });
+                
+                clear_values.push(attachment.clear_value);
             }
         }
 
@@ -150,19 +161,22 @@ impl VkRenderPass {
             ..RenderPassCreateInfo::default()
         };
 
-        let device = gfx_cast_vulkan!(gfx).device.read().unwrap();
+        let gfx_copy = gfx.clone();
+        let device = gfx_cast_vulkan!(gfx_copy).device.read().unwrap();
         let render_pass = vk_check!(unsafe { gfx_object!(*device).device.create_render_pass(&render_pass_infos, None) });
-
-        let render_pass = Arc::new(Self {
+        
+        let vk_render_pass = Arc::new(Self {
             render_pass,
-            gfx: gfx.clone(),
+            gfx,
             self_ref: RwLock::new(Weak::new()),
+            default_clear_values: clear_values
         });
 
         {
-            let mut self_ref = render_pass.self_ref.write().unwrap();
-            *self_ref = Arc::downgrade(&render_pass);
+            let mut self_ref = vk_render_pass.self_ref.write().unwrap();
+            *self_ref = Arc::downgrade(&vk_render_pass);
         }
-        render_pass
+
+        vk_render_pass
     }
 }

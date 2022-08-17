@@ -406,6 +406,7 @@ impl PixelFormat {
     }
 }
 
+#[derive(Copy, Clone)]
 pub enum ClearValues {
     DontClear,
     Color(Vec4F32),

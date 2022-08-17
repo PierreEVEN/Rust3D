@@ -23,6 +23,7 @@ pub struct RenderPassCreateInfos {
 
 pub trait RenderPass: GfxCast {
     fn instantiate(&self, res: Vec2u32) -> Box<dyn RenderPassInstance>;
+    fn get_clear_values(&self) -> &Vec<ClearValues>;
 }
 
 

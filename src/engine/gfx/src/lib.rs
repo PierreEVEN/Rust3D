@@ -12,7 +12,6 @@ pub mod buffer;
 pub mod shader;
 pub mod render_pass;
 pub mod image;
-pub mod render_pass_instance;
 
 pub trait GfxResource {
     fn load() -> Result<String, String>;

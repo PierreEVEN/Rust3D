@@ -160,6 +160,7 @@ name = "gfx"
 version = "0.1.0"
 dependencies = [
  "maths",
+ "plateform",
 ]
 
 [[package]]

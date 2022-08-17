@@ -13,7 +13,8 @@ use backend_vulkan::vk_swapchain_resource::VkSwapchainResource;
 use backend_vulkan::vk_types::VkExtent2D;
 use gfx::GfxRef;
 use gfx::render_pass::FrameGraph;
-use gfx::surface::{GfxSurface};
+use gfx::surface::GfxSurface;
+use gfx::types::PixelFormat;
 use maths::vec2::Vec2u32;
 use plateform::window::Window;
 
@@ -75,7 +76,7 @@ impl GfxSurface for VkSurfaceWin32 {
         }
 
         let dimensions = Vec2u32::new(self.window.get_geometry().width() as u32, self.window.get_geometry().height() as u32);
-        
+
         let ci_swapchain = SwapchainCreateInfoKHR {
             surface: self.surface,
             min_image_count: self.image_count as u32,
@@ -102,6 +103,14 @@ impl GfxSurface for VkSurfaceWin32 {
 
         let mut swapchain_ref = self.swapchain.write().unwrap();
         *swapchain_ref = Some(swapchain);
+    }
+
+    fn get_owning_window(&self) -> &Arc<dyn Window> {
+        &self.window
+    }
+
+    fn get_surface_pixel_format(&self) -> PixelFormat {
+        self.image_format
     }
 
     fn get_image_count(&self) -> u8 {
@@ -136,16 +145,15 @@ impl GfxSurface for VkSurfaceWin32 {
                 (0, false)
             }
         };
-        
+
         self.current_image.store(image_index as u8, Ordering::Release);
-        
+
         //@TODO : wait for framegraph fences
 
         Ok(())
     }
 
     fn submit(&self) {
-        
         let current_image = self.get_current_image() as u32;
         let mut results = vk::Result::default();
         let present_info = PresentInfoKHR {
@@ -187,7 +195,7 @@ impl VkSurfaceWin32 {
 
 
         let swapchain_loader = Swapchain::new(&gfx_object!(gfx_cast_vulkan!(gfx.clone()).instance).instance, &gfx_object!(*device).device);
-                
+
         let mut image_acquire_semaphore = Vec::new();
         for i in 0..image_count {
             image_acquire_semaphore.push(vk_check!(unsafe { gfx_object!(*device).device.create_semaphore(&SemaphoreCreateInfo::default(), None) }))

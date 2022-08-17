@@ -3,8 +3,7 @@ use std::sync::Arc;
 use ash::vk::{ClearColorValue, ClearDepthStencilValue, ClearValue, RenderPassBeginInfo, Semaphore, SemaphoreCreateInfo};
 
 use gfx::{GfxCast, GfxRef};
-use gfx::render_pass::RenderPass;
-use gfx::render_pass_instance::RenderPassInstance;
+use gfx::render_pass::{RenderPass, RenderPassInstance};
 use gfx::types::ClearValues;
 use maths::vec2::Vec2u32;
 
@@ -81,7 +80,7 @@ impl RenderPassInstance for VkRenderPassInstance {
         //gfx_object!(*device).device.cmd_begin_render_pass()
     }
 
-    fn submit(&self) {
+    fn end(&self) {
         todo!()
     }
 }

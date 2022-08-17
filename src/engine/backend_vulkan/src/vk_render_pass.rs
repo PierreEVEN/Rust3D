@@ -5,8 +5,7 @@ use std::sync::{Arc, RwLock, Weak};
 use ash::vk::{AccessFlags, AttachmentDescription, AttachmentLoadOp, AttachmentReference, AttachmentStoreOp, DependencyFlags, ImageLayout, PipelineBindPoint, PipelineStageFlags, RenderPassCreateInfo, SampleCountFlags, SUBPASS_EXTERNAL, SubpassDependency, SubpassDescription};
 
 use gfx::{GfxCast, GfxInterface, GfxRef};
-use gfx::render_pass::{RenderPass, RenderPassCreateInfos};
-use gfx::render_pass_instance::RenderPassInstance;
+use gfx::render_pass::{RenderPass, RenderPassCreateInfos, RenderPassInstance};
 use gfx::types::{ClearValues, PixelFormat};
 use maths::vec2::Vec2u32;
 

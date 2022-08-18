@@ -1,4 +1,5 @@
-﻿use maths::vec2::Vec2F32;
+﻿use std::any::Any;
+use maths::vec2::Vec2F32;
 use maths::vec4::Vec4F32;
 
 #[allow(non_camel_case_types)]
@@ -23,6 +24,7 @@ pub enum ColorSpace {
 }
 
 #[allow(non_camel_case_types)]
+#[derive(Copy, Clone, Debug)]
 pub enum PixelFormat {
     UNDEFINED,
     R4G4_UNORM_PACK8,
@@ -413,3 +415,12 @@ pub enum ClearValues {
     DepthStencil(Vec2F32),
 }
 
+pub trait GfxCast: 'static {
+    fn as_any(&self) -> &dyn Any;
+}
+
+impl<T: 'static> GfxCast for T {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}

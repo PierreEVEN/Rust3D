@@ -1,14 +1,13 @@
 extern crate core;
 
 use std::any::{Any, TypeId};
+use std::default::Default;
 use std::sync::{Arc, RwLock, Weak};
 
 use ash::Entry;
-use ash::vk::CommandPool;
 
-use gfx::{GfxCast, GfxInterface, GfxRef, PhysicalDevice};
+use gfx::{GfxInterface, GfxRef, PhysicalDevice};
 use gfx::buffer::{BufferCreateInfo, GfxBuffer};
-use gfx::buffer::BufferAccess::Default;
 use gfx::render_pass::{RenderPass, RenderPassCreateInfos};
 use gfx::surface::GfxSurface;
 
@@ -31,6 +30,7 @@ pub mod vk_render_pass_instance;
 pub mod vk_command_buffer;
 pub mod vk_queue;
 pub mod vk_swapchain_resource;
+pub mod vk_image;
 
 pub static mut G_VULKAN: Option<Entry> = None;
 
@@ -110,7 +110,7 @@ impl GfxInterface for GfxVulkan {
         }
         {
             let mut command_pool = self.command_pool.write().unwrap();
-            *command_pool = Some(VkCommandPool::new(self.get_ref()));
+            *command_pool = Some(VkCommandPool::new(&self.get_ref()));
         }
     }
 
@@ -128,15 +128,11 @@ impl GfxInterface for GfxVulkan {
     }
 
     fn create_render_pass(&self, create_infos: RenderPassCreateInfos) -> Arc<dyn RenderPass> {
-        VkRenderPass::new(self.get_ref(), create_infos)
+        VkRenderPass::new(&self.get_ref(), create_infos)
     }
 
     fn get_ref(&self) -> GfxRef {
         self.gfx_ref.read().unwrap().upgrade().unwrap().clone()
-    }
-
-    fn get_surface(&self) -> &Box<dyn GfxSurface> {
-        todo!()
     }
 }
 

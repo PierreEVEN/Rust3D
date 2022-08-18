@@ -13,7 +13,7 @@ pub struct VkCommandPool {
 }
 
 impl VkCommandPool {
-    pub fn new(gfx: GfxRef) -> VkCommandPool {
+    pub fn new(gfx: &GfxRef) -> VkCommandPool {
         let device = gfx_cast_vulkan!(gfx).device.read().unwrap();
         
         let create_infos = CommandPoolCreateInfo {
@@ -34,12 +34,12 @@ impl VkCommandPool {
     }
 }
 
-struct VkCommandBuffer {
-    command_buffer: CommandBuffer,
+pub struct VkCommandBuffer {
+    pub command_buffer: CommandBuffer,
 }
 
 impl VkCommandBuffer {
-    pub fn new(gfx: GfxRef) -> VkCommandBuffer {
+    pub fn new(gfx: &GfxRef) -> VkCommandBuffer {
         let device = gfx_cast_vulkan!(gfx).device.read().unwrap();
         let command_pool = gfx_cast_vulkan!(gfx).command_pool.read().unwrap();
 

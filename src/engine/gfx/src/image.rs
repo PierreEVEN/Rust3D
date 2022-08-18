@@ -1,3 +1,3 @@
-﻿pub trait GfxImage {
-    
-}
+﻿use crate::GfxCast;
+
+pub trait GfxImage: GfxCast {}

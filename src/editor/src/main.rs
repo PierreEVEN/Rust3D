@@ -37,10 +37,10 @@ fn main() {
     gfx_backend.set_physical_device(gfx_backend.find_best_suitable_physical_device().expect("there is no suitable GPU available"));
 
     // Bind graphic surface onto current window
-    let main_window_surface = VkSurfaceWin32::new(gfx_backend.clone(), main_window.clone(), 3);
+    let main_window_surface = VkSurfaceWin32::new(&gfx_backend, main_window.clone(), 3);
 
     // Create framegraph
-    let main_framegraph = FrameGraph::from_surface(main_window_surface);
+    let main_framegraph = FrameGraph::from_surface(&gfx_backend, &main_window_surface);
 
     // Game loop
     'game_loop: loop {

@@ -4,8 +4,9 @@ use std::sync::{Arc, RwLock, Weak};
 
 use ash::vk::{AccessFlags, AttachmentDescription, AttachmentLoadOp, AttachmentReference, AttachmentStoreOp, DependencyFlags, ImageLayout, PipelineBindPoint, PipelineStageFlags, RenderPassCreateInfo, SampleCountFlags, SUBPASS_EXTERNAL, SubpassDependency, SubpassDescription};
 
-use gfx::{GfxCast, GfxInterface, GfxRef};
+use gfx::{GfxInterface, GfxRef};
 use gfx::render_pass::{RenderPass, RenderPassCreateInfos, RenderPassInstance};
+use gfx::surface::GfxSurface;
 use gfx::types::{ClearValues, PixelFormat};
 use maths::vec2::Vec2u32;
 
@@ -20,10 +21,9 @@ pub struct VkRenderPass {
     default_clear_values: Vec<ClearValues>,
 }
 
-
 impl RenderPass for VkRenderPass {
-    fn instantiate(&self, res: Vec2u32) -> Box<dyn RenderPassInstance> {
-        Box::new(VkRenderPassInstance::new(&self.gfx, self.self_ref.read().unwrap().upgrade().unwrap(), res))
+    fn instantiate(&self, surface: &Arc<dyn GfxSurface>, res: Vec2u32) -> Box<dyn RenderPassInstance> {
+        Box::new(VkRenderPassInstance::new(&self.gfx, surface, self.self_ref.read().unwrap().upgrade().unwrap(), res, false))
     }
 
     fn get_clear_values(&self) -> &Vec<ClearValues> {
@@ -32,7 +32,7 @@ impl RenderPass for VkRenderPass {
 }
 
 impl VkRenderPass {
-    pub fn new(gfx: GfxRef, create_infos: RenderPassCreateInfos) -> Arc<Self> {
+    pub fn new(gfx: &GfxRef, create_infos: RenderPassCreateInfos) -> Arc<Self> {
         let mut attachment_descriptions = Vec::<AttachmentDescription>::new();
         let mut color_attachment_references = Vec::<AttachmentReference>::new();
         let mut depth_attachment_reference = None;
@@ -166,7 +166,7 @@ impl VkRenderPass {
         
         let vk_render_pass = Arc::new(Self {
             render_pass,
-            gfx,
+            gfx: gfx.clone(),
             self_ref: RwLock::new(Weak::new()),
             default_clear_values: clear_values
         });

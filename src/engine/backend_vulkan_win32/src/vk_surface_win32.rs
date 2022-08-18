@@ -1,18 +1,20 @@
 ﻿use std::ptr::null;
-use std::sync::{Arc, RwLock};
 use std::sync::atomic::{AtomicU8, Ordering};
+use std::sync::{Arc, RwLock, Weak};
 
 use ash::extensions::khr;
 use ash::extensions::khr::{Surface, Swapchain};
 use ash::vk;
-use ash::vk::{Bool32, CompositeAlphaFlagsKHR, Fence, Format, ImageUsageFlags, PresentInfoKHR, PresentModeKHR, Semaphore, SemaphoreCreateInfo, SharingMode, SurfaceCapabilitiesKHR, SurfaceFormatKHR, SurfaceKHR, SurfaceTransformFlagsKHR, SwapchainCreateInfoKHR, SwapchainKHR, Win32SurfaceCreateInfoKHR};
+use ash::vk::{Bool32, CompositeAlphaFlagsKHR, Fence, Format, ImageUsageFlags, ImageView, ImageViewCreateInfo, ImageViewType, PresentInfoKHR, PresentModeKHR, Semaphore, SemaphoreCreateInfo, SharingMode, SurfaceCapabilitiesKHR, SurfaceFormatKHR, SurfaceKHR, SurfaceTransformFlagsKHR, SwapchainCreateInfoKHR, SwapchainKHR, Win32SurfaceCreateInfoKHR};
 use raw_window_handle::RawWindowHandle;
 
 use backend_vulkan::{g_vulkan, G_VULKAN, gfx_cast_vulkan, gfx_object, GfxVulkan, vk_check};
+use backend_vulkan::vk_render_pass::VkRenderPass;
 use backend_vulkan::vk_swapchain_resource::VkSwapchainResource;
-use backend_vulkan::vk_types::VkExtent2D;
+use backend_vulkan::vk_types::{GfxPixelFormat, VkExtent2D, VkPixelFormat};
 use gfx::GfxRef;
-use gfx::render_pass::FrameGraph;
+use gfx::image::GfxImage;
+use gfx::render_pass::{FrameGraph, RenderPass, RenderPassCreateInfos};
 use gfx::surface::GfxSurface;
 use gfx::types::PixelFormat;
 use maths::vec2::Vec2u32;
@@ -22,75 +24,38 @@ pub struct VkSurfaceWin32 {
     pub surface: SurfaceKHR,
     pub swapchain: RwLock<Option<SwapchainKHR>>,
     image_acquire_semaphore: VkSwapchainResource<Semaphore>,
-    surface_formats: Vec<SurfaceFormatKHR>,
+    surface_format: SurfaceFormatKHR,
+    transform_flags: SurfaceTransformFlagsKHR,
     surface_capabilities: SurfaceCapabilitiesKHR,
-    present_modes: Vec<PresentModeKHR>,
     _surface_loader: Surface,
     _swapchain_loader: Swapchain,
     image_count: u8,
+    composite_alpha: CompositeAlphaFlagsKHR,
+    present_mode: PresentModeKHR,
     current_image: AtomicU8,
     window: Arc<dyn Window>,
     gfx: GfxRef,
+    swapchain_image_views: RwLock<VkSwapchainResource<ImageView>>
 }
 
 impl GfxSurface for VkSurfaceWin32 {
     fn create_or_recreate(&self) {
-        let mut composite_alpha = CompositeAlphaFlagsKHR::OPAQUE;
-        for alpha_flag in vec![CompositeAlphaFlagsKHR::OPAQUE, CompositeAlphaFlagsKHR::PRE_MULTIPLIED, CompositeAlphaFlagsKHR::POST_MULTIPLIED, CompositeAlphaFlagsKHR::INHERIT] {
-            if self.surface_capabilities.supported_composite_alpha.contains(alpha_flag) {
-                composite_alpha = alpha_flag;
-            }
-        }
-        let transform_flags = if self.surface_capabilities.supported_transforms.contains(SurfaceTransformFlagsKHR::IDENTITY) { SurfaceTransformFlagsKHR::IDENTITY } else { self.surface_capabilities.current_transform };
-        let mut present_mode = PresentModeKHR::FIFO;
-        for mode in &self.present_modes {
-            if mode.as_raw() == PresentModeKHR::MAILBOX.as_raw() {
-                present_mode = *mode;
-                break;
-            }
-        }
-
-        let mut surface_format: SurfaceFormatKHR = Default::default();
-        if self.surface_formats.len() == 1 && self.surface_formats[0].format == Format::UNDEFINED
-        {
-            surface_format.format = Format::B8G8R8A8_UNORM;
-            surface_format.color_space = self.surface_formats[0].color_space;
-        } else {
-            let mut found_b8g8r8a8_unorm = false;
-            for format in &self.surface_formats
-            {
-                if format.format == Format::B8G8R8A8_UNORM
-                {
-                    surface_format.format = format.format;
-                    surface_format.color_space = format.color_space;
-                    found_b8g8r8a8_unorm = true;
-                    break;
-                }
-            }
-
-            if !found_b8g8r8a8_unorm
-            {
-                surface_format.format = self.surface_formats[0].format;
-                surface_format.color_space = self.surface_formats[0].color_space;
-            }
-        }
-
         let dimensions = Vec2u32::new(self.window.get_geometry().width() as u32, self.window.get_geometry().height() as u32);
 
         let ci_swapchain = SwapchainCreateInfoKHR {
             surface: self.surface,
             min_image_count: self.image_count as u32,
-            image_format: surface_format.format,
-            image_color_space: surface_format.color_space,
+            image_format: self.surface_format.format,
+            image_color_space: self.surface_format.color_space,
             image_extent: *VkExtent2D::from(dimensions),
             image_array_layers: 1,
             image_usage: ImageUsageFlags::COLOR_ATTACHMENT,
             image_sharing_mode: SharingMode::EXCLUSIVE,
             queue_family_index_count: 0,
             p_queue_family_indices: null(),
-            pre_transform: transform_flags,
-            composite_alpha,
-            present_mode,
+            pre_transform: self.transform_flags,
+            composite_alpha: self.composite_alpha,
+            present_mode: self.present_mode,
             clipped: true as Bool32,
             old_swapchain: match *self.swapchain.read().unwrap() {
                 None => { Default::default() }
@@ -103,6 +68,27 @@ impl GfxSurface for VkSurfaceWin32 {
 
         let mut swapchain_ref = self.swapchain.write().unwrap();
         *swapchain_ref = Some(swapchain);
+
+        let images = vk_check!(unsafe { self._swapchain_loader.get_swapchain_images(swapchain) });
+
+        let device = gfx_cast_vulkan!(self.gfx).device.read().unwrap();
+
+        let mut views = Vec::new();
+        for i in 0..self.get_image_count() {
+            let ci_view = ImageViewCreateInfo {
+                image: images[i as usize],
+                view_type: ImageViewType::TYPE_2D,
+                format: self.surface_format.format,
+                components: Default::default(),
+                subresource_range: Default::default(),
+                ..ImageViewCreateInfo::default()
+            };
+
+            unsafe { views.push(vk_check!(gfx_object!(*device).device.create_image_view(&ci_view, None))) }
+        }
+        
+        let mut view_list = self.swapchain_image_views.write().unwrap();
+        *view_list = VkSwapchainResource::new(views, self.get_image_count());        
     }
 
     fn get_owning_window(&self) -> &Arc<dyn Window> {
@@ -110,7 +96,7 @@ impl GfxSurface for VkSurfaceWin32 {
     }
 
     fn get_surface_pixel_format(&self) -> PixelFormat {
-        self.image_format
+        *GfxPixelFormat::from(self.surface_format.format)
     }
 
     fn get_image_count(&self) -> u8 {
@@ -121,6 +107,13 @@ impl GfxSurface for VkSurfaceWin32 {
         self.current_image.load(Ordering::Acquire)
     }
 
+    fn get_images(&self) -> Vec<Arc<dyn GfxImage>> {
+        todo!()
+    }
+
+    fn create_render_pass(&self, create_infos: RenderPassCreateInfos) -> Arc<dyn RenderPass> {
+        VkRenderPass::new(&self.gfx, create_infos)
+    }
 
     fn begin(&self) -> Result<(), String> {
         let geometry = self.window.get_geometry();
@@ -128,8 +121,6 @@ impl GfxSurface for VkSurfaceWin32 {
         if geometry.width() == 0 || geometry.height() == 0 {
             return Err("invalid resolution".to_string());
         }
-
-        let device = gfx_cast_vulkan!(self.gfx).device.read().unwrap();
 
         let current_image_acquire_semaphore = self.image_acquire_semaphore.get_image(self.current_image.load(Ordering::Acquire));
         let swapchain = self.swapchain.read().unwrap();
@@ -168,7 +159,7 @@ impl GfxSurface for VkSurfaceWin32 {
 }
 
 impl VkSurfaceWin32 {
-    pub fn new(gfx: GfxRef, window: Arc<dyn Window>, image_count: u32) -> Arc<dyn GfxSurface> {
+    pub fn new(gfx: &GfxRef, window: Arc<dyn Window>, image_count: u32) -> Arc<dyn GfxSurface> {
         let gfx_copy = gfx.clone();
         let device = gfx_cast_vulkan!(gfx).device.read().unwrap();
         let physical_device_vk = gfx_cast_vulkan!(gfx).physical_device_vk.read().unwrap();
@@ -200,22 +191,67 @@ impl VkSurfaceWin32 {
         for i in 0..image_count {
             image_acquire_semaphore.push(vk_check!(unsafe { gfx_object!(*device).device.create_semaphore(&SemaphoreCreateInfo::default(), None) }))
         }
-        let surface = Self {
+
+
+        let mut composite_alpha = CompositeAlphaFlagsKHR::OPAQUE;
+        for alpha_flag in vec![CompositeAlphaFlagsKHR::OPAQUE, CompositeAlphaFlagsKHR::PRE_MULTIPLIED, CompositeAlphaFlagsKHR::POST_MULTIPLIED, CompositeAlphaFlagsKHR::INHERIT] {
+            if surface_capabilities.supported_composite_alpha.contains(alpha_flag) {
+                composite_alpha = alpha_flag;
+            }
+        }
+        let transform_flags = if surface_capabilities.supported_transforms.contains(SurfaceTransformFlagsKHR::IDENTITY) { SurfaceTransformFlagsKHR::IDENTITY } else { surface_capabilities.current_transform };
+        let mut present_mode = PresentModeKHR::FIFO;
+        for mode in &present_modes {
+            if mode.as_raw() == PresentModeKHR::MAILBOX.as_raw() {
+                present_mode = *mode;
+                break;
+            }
+        }
+
+        let mut surface_format: SurfaceFormatKHR = Default::default();
+        if surface_formats.len() == 1 && surface_formats[0].format == Format::UNDEFINED
+        {
+            surface_format.format = Format::B8G8R8A8_UNORM;
+            surface_format.color_space = surface_formats[0].color_space;
+        } else {
+            let mut found_b8g8r8a8_unorm = false;
+            for format in &surface_formats
+            {
+                if format.format == Format::B8G8R8A8_UNORM
+                {
+                    surface_format.format = format.format;
+                    surface_format.color_space = format.color_space;
+                    found_b8g8r8a8_unorm = true;
+                    break;
+                }
+            }
+
+            if !found_b8g8r8a8_unorm
+            {
+                surface_format.format = surface_formats[0].format;
+                surface_format.color_space = surface_formats[0].color_space;
+            }
+        }
+
+        let surface = Arc::new(Self {
             surface,
             swapchain: Default::default(),
             _surface_loader: surface_loader,
-            surface_formats,
+            surface_format,
             surface_capabilities,
-            present_modes,
+            present_mode,
+            transform_flags,
+            composite_alpha,
             _swapchain_loader: swapchain_loader,
             image_count: image_count as u8,
             current_image: AtomicU8::new(0),
             window: window.clone(),
             gfx: gfx_copy,
             image_acquire_semaphore: VkSwapchainResource::new(image_acquire_semaphore, image_count as u8),
-        };
+            swapchain_image_views: RwLock::new(VkSwapchainResource::new(vec![], 0))
+        });
 
         surface.create_or_recreate();
-        Arc::new(surface)
+        surface
     }
 } 

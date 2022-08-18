@@ -5,6 +5,7 @@ use std::sync::{Arc};
 use crate::buffer::{BufferCreateInfo, GfxBuffer};
 use crate::render_pass::{RenderPass, RenderPassCreateInfos};
 use crate::surface::GfxSurface;
+use crate::types::GfxCast;
 
 pub mod surface;
 pub mod types;
@@ -22,16 +23,6 @@ pub trait GfxResource {
 
 pub type GfxRef = Arc<dyn GfxInterface>;
 
-pub trait GfxCast: 'static {
-    fn as_any(&self) -> &dyn Any;
-}
-
-impl<T: 'static> GfxCast for T {
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-}
-
 pub trait GfxInterface: GfxCast {
     fn set_physical_device(&self, selected_device: PhysicalDevice);
     fn enumerate_physical_devices(&self) -> Vec<PhysicalDevice>;
@@ -39,7 +30,6 @@ pub trait GfxInterface: GfxCast {
     fn create_buffer(&self, create_infos: &BufferCreateInfo) -> Box<dyn GfxBuffer>;
     fn create_render_pass(&self, create_infos: RenderPassCreateInfos) -> Arc<dyn RenderPass>;
     fn get_ref(&self) -> GfxRef;
-    fn get_surface(&self) -> &Box<dyn GfxSurface>;
 }
 
 #[derive(Copy, Clone)]

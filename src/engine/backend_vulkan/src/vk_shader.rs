@@ -73,8 +73,8 @@ impl VkShaderProgram {
     pub fn new(gfx: &GfxRef, create_infos: &ShaderProgramInfos, descriptor_set_layout: &Arc<VkDescriptorSetLayout>) -> Arc<Self> {
         let device = gfx_cast_vulkan!(gfx).device.read().unwrap();
         
-        let vertex_module = VkShaderModule::new(gfx.clone(), &create_infos.vertex_stage.spirv);
-        let fragment_module = VkShaderModule::new(gfx.clone(), &create_infos.fragment_stage.spirv);
+        let vertex_module = VkShaderModule::new(gfx, &create_infos.vertex_stage.spirv);
+        let fragment_module = VkShaderModule::new(gfx, &create_infos.fragment_stage.spirv);
 
         let mut push_constants = Vec::<PushConstantRange>::new();
 
@@ -286,7 +286,7 @@ pub struct VkShaderModule {
 }
 
 impl VkShaderModule {
-    pub fn new(gfx: GfxRef, spirv: &Vec<u32>) -> Arc<Self> {
+    pub fn new(gfx: &GfxRef, spirv: &Vec<u32>) -> Arc<Self> {
 
         let device = gfx_cast_vulkan!(gfx).device.read().unwrap();
         

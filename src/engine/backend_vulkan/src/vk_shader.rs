@@ -61,12 +61,12 @@ impl From<&FrontFace> for VkFrontFace {
 }
 
 pub struct VkShaderProgram {
-    gfx: GfxRef,
-    vertex_module: Arc<VkShaderModule>,
-    fragment_module: Arc<VkShaderModule>,
-    pipeline: Pipeline,
-    pipeline_layout: PipelineLayout,
-    descriptor_set_layout: Arc<VkDescriptorSetLayout>,
+    _gfx: GfxRef,
+    _vertex_module: Arc<VkShaderModule>,
+    _fragment_module: Arc<VkShaderModule>,
+    _pipeline: Pipeline,
+    _pipeline_layout: PipelineLayout,
+    _descriptor_set_layout: Arc<VkDescriptorSetLayout>,
 }
 
 impl VkShaderProgram {
@@ -189,7 +189,7 @@ impl VkShaderProgram {
             ..PipelineDepthStencilStateCreateInfo::default()
         };
 
-        let mut color_blend_attachment = Vec::<PipelineColorBlendAttachmentState>::new();
+        let color_blend_attachment = Vec::<PipelineColorBlendAttachmentState>::new();
 
         /*
         for i in 0..render_pass.color_attachment_count
@@ -270,18 +270,18 @@ impl VkShaderProgram {
 
 
         Arc::new(Self {
-            gfx: gfx.clone(),
-            vertex_module,
-            fragment_module,
-            pipeline,
-            pipeline_layout,
-            descriptor_set_layout: descriptor_set_layout.clone()
+            _gfx: gfx.clone(),
+            _vertex_module: vertex_module,
+            _fragment_module: fragment_module,
+            _pipeline: pipeline,
+            _pipeline_layout: pipeline_layout,
+            _descriptor_set_layout: descriptor_set_layout.clone()
         })
     }
 }
 
 pub struct VkShaderModule {
-    gfx: GfxRef,
+    _gfx: GfxRef,
     shader_module: ShaderModule,
 }
 
@@ -301,7 +301,7 @@ impl VkShaderModule {
         let shader_module = vk_check!(unsafe { gfx_object!(*device).device.create_shader_module(&ci_shader_module, None) });
 
         Arc::new(Self {
-            gfx: gfx.clone(),
+            _gfx: gfx.clone(),
             shader_module,
         })
     }

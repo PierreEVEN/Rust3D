@@ -1,10 +1,9 @@
 ﻿use std::path::Path;
 use std::sync::Arc;
 
-use backend_vulkan::GfxVulkan;
 use gfx::buffer::*;
 use gfx::GfxRef;
-use gfx::render_pass::{FrameGraph, RenderPassAttachment, RenderPassCreateInfos};
+use gfx::render_pass::{RenderPassAttachment, RenderPassCreateInfos};
 use gfx::shader::ShaderStage;
 use gfx::surface::GfxSurface;
 use gfx::types::*;
@@ -15,7 +14,7 @@ use shader_compiler::backends::backend_shaderc::*;
 use shader_compiler::parser::Parser;
 use shader_compiler::types::*;
 
-pub fn demo_objects(gfx: &GfxRef, surface: &Arc<dyn GfxSurface>) {
+pub fn _demo_objects(gfx: &GfxRef, surface: &Arc<dyn GfxSurface>) {
     // GPU Buffer example
     let mut _test_buffer = gfx.create_buffer(&BufferCreateInfo {
         buffer_type: BufferType::Immutable,
@@ -115,6 +114,6 @@ pub fn demo_objects(gfx: &GfxRef, surface: &Arc<dyn GfxSurface>) {
     });
 
 
-    let g_buffer_instance = g_buffer_pass.instantiate(surface, res);
-    let deferred_combine_instance = deferred_combine_pass.instantiate(surface, res);
+    let _g_buffer_instance = g_buffer_pass.instantiate(surface, res);
+    let _deferred_combine_instance = deferred_combine_pass.instantiate(surface, res);
 }

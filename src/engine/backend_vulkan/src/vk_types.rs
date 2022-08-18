@@ -417,7 +417,6 @@ impl From<vk::Format> for GfxPixelFormat {
                 Format::ASTC_10X8_UNORM_BLOCK => { PixelFormat::ASTC_10X8_UNORM_BLOCK }
                 Format::ASTC_10X8_SRGB_BLOCK => { PixelFormat::ASTC_10X8_SRGB_BLOCK }
                 Format::ASTC_10X10_SRGB_BLOCK => { PixelFormat::ASTC_10X10_UNORM_BLOCK }
-                Format::ASTC_10X10_SRGB_BLOCK => { PixelFormat::ASTC_10X10_SRGB_BLOCK }
                 Format::ASTC_12X10_UNORM_BLOCK => { PixelFormat::ASTC_12X10_UNORM_BLOCK }
                 Format::ASTC_12X10_SRGB_BLOCK => { PixelFormat::ASTC_12X10_SRGB_BLOCK }
                 Format::ASTC_12X12_UNORM_BLOCK => { PixelFormat::ASTC_12X12_UNORM_BLOCK }

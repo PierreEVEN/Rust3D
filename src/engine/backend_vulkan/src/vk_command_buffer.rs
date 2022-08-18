@@ -1,12 +1,8 @@
-﻿use std::collections::HashMap;
-use std::sync::Arc;
-use ash::vk::{CommandBuffer, CommandBufferAllocateInfo, CommandPool, CommandPoolCreateFlags, CommandPoolCreateInfo, QueueFlags};
+﻿use ash::vk::{CommandBuffer, CommandBufferAllocateInfo, CommandPool, CommandPoolCreateFlags, CommandPoolCreateInfo, QueueFlags};
 
 use gfx::GfxRef;
 
 use crate::{gfx_cast_vulkan, gfx_object, GfxVulkan, vk_check};
-use crate::vk_device::VkQueue;
-use crate::vk_swapchain_resource::VkSwapchainResource;
 
 pub struct VkCommandPool {
     command_pool: CommandPool,

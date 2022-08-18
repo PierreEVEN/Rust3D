@@ -1,6 +1,6 @@
 pub mod window;
 
-use std::sync::{Arc, Mutex, RwLock};
+use std::sync::{Arc};
 use maths::rect2d::Rect2D;
 use crate::window::{Window, WindowCreateInfos, PlatformEvent};
 

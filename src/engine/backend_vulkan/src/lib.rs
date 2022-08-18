@@ -1,6 +1,5 @@
 extern crate core;
 
-use std::any::{Any, TypeId};
 use std::default::Default;
 use std::sync::{Arc, RwLock, Weak};
 
@@ -9,7 +8,6 @@ use ash::Entry;
 use gfx::{GfxInterface, GfxRef, PhysicalDevice};
 use gfx::buffer::{BufferCreateInfo, GfxBuffer};
 use gfx::render_pass::{RenderPass, RenderPassCreateInfos};
-use gfx::surface::GfxSurface;
 
 use crate::vk_buffer::VkBuffer;
 use crate::vk_command_buffer::VkCommandPool;
@@ -31,6 +29,7 @@ pub mod vk_command_buffer;
 pub mod vk_queue;
 pub mod vk_swapchain_resource;
 pub mod vk_image;
+pub mod vk_framebuffer;
 
 pub static mut G_VULKAN: Option<Entry> = None;
 
@@ -145,7 +144,7 @@ impl GfxVulkan {
             ..InstanceCreateInfos::default()
         }).expect("failed to create instance");
 
-        let mut gfx = Arc::new(Self {
+        let gfx = Arc::new(Self {
             instance: Some(instance),
             physical_device: RwLock::default(),
             physical_device_vk: RwLock::default(),

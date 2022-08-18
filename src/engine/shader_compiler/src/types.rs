@@ -1,9 +1,6 @@
 ﻿use std::collections::HashMap;
-use std::ffi::c_void;
 use std::{ops};
 use gfx::shader::{Culling, FrontFace, PolygonMode, Topology};
-
-use gfx::types::PixelFormat;
 
 #[derive(Clone)]
 pub struct ShaderError {
@@ -79,22 +76,6 @@ impl Default for ShaderLanguage {
     fn default() -> Self {
         ShaderLanguage::HLSL
     }
-}
-
-struct TypeInfo
-{
-    type_name: String,
-    type_id: c_void,
-    type_size: usize,
-    format: PixelFormat,
-}
-
-struct Property
-{
-    name: String,
-    type_info: TypeInfo,
-    offset: u32,
-    location: i32,
 }
 
 pub struct ShaderProperties

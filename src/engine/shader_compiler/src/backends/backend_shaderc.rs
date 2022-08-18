@@ -1,6 +1,6 @@
 ﻿use std::path::Path;
 
-use shaderc::{CompileOptions, Compiler, EnvVersion, IncludeCallbackResult, IncludeType, ResolvedInclude, SourceLanguage, SpirvVersion, TargetEnv};
+use shaderc::{CompileOptions, Compiler, EnvVersion, IncludeCallbackResult, IncludeType, SourceLanguage, SpirvVersion, TargetEnv};
 use gfx::shader::ShaderStage;
 
 use crate::{CompilationResult, CompilerBackend, InterstageData, ShaderChunk, ShaderLanguage};
@@ -15,23 +15,17 @@ impl BackendShaderC {
     }
 }
 
-fn include_callback(name: &str, include_type: IncludeType, source: &str, include_depth: usize) -> IncludeCallbackResult {
+fn include_callback(_name: &str, include_type: IncludeType, _source: &str, _include_depth: usize) -> IncludeCallbackResult {
     match include_type {
         IncludeType::Relative => {}
         IncludeType::Standard => {}
     }
 
-    let result = ResolvedInclude {
-        resolved_name: "".to_string(),
-        content: "".to_string(),
-    };
-
     return Err("failed to include file".to_string());
-    return Ok(result);
 }
 
 impl CompilerBackend for BackendShaderC {
-    fn compile_to_spirv(&self, shader_code: &Vec<ShaderChunk>, source_language: ShaderLanguage, shader_stage: ShaderStage, previous_stage_data: InterstageData) -> Result<CompilationResult, ShaderErrorResult> {
+    fn compile_to_spirv(&self, shader_code: &Vec<ShaderChunk>, source_language: ShaderLanguage, _shader_stage: ShaderStage, _previous_stage_data: InterstageData) -> Result<CompilationResult, ShaderErrorResult> {
         let mut errors = ShaderErrorResult::default();
 
         let compiler = match Compiler::new() {
@@ -99,11 +93,11 @@ impl Includer for ShaderCIncluder {
         Err(errors)
     }
 
-    fn include_system(&self, file: &String, shader_path: &Path) -> Result<(String, String), ShaderErrorResult> {
+    fn include_system(&self, _file: &String, _shader_path: &Path) -> Result<(String, String), ShaderErrorResult> {
         todo!()
     }
 
-    fn release_include(&self, file: &String, shader_path: &Path) {}
+    fn release_include(&self, _file: &String, _shader_path: &Path) {}
 
-    fn add_include_path(&self, include_path: &Path) {}
+    fn add_include_path(&self, _include_path: &Path) {}
 }

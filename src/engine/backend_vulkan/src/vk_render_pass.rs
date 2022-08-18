@@ -1,17 +1,16 @@
-use std::any::{Any, TypeId};
 use std::ptr::null;
 use std::sync::{Arc, RwLock, Weak};
 
 use ash::vk::{AccessFlags, AttachmentDescription, AttachmentLoadOp, AttachmentReference, AttachmentStoreOp, DependencyFlags, ImageLayout, PipelineBindPoint, PipelineStageFlags, RenderPassCreateInfo, SampleCountFlags, SUBPASS_EXTERNAL, SubpassDependency, SubpassDescription};
 
-use gfx::{GfxInterface, GfxRef};
+use gfx::{GfxRef};
 use gfx::render_pass::{RenderPass, RenderPassCreateInfos, RenderPassInstance};
 use gfx::surface::GfxSurface;
 use gfx::types::{ClearValues, PixelFormat};
 use maths::vec2::Vec2u32;
 
 use crate::{gfx_cast_vulkan, gfx_object, GfxVulkan, vk_check};
-use crate::vk_render_pass_instance::{VkRenderPassInstance};
+use crate::vk_render_pass_instance::VkRenderPassInstance;
 use crate::vk_types::VkPixelFormat;
 
 pub struct VkRenderPass {
@@ -36,7 +35,6 @@ impl VkRenderPass {
         let mut attachment_descriptions = Vec::<AttachmentDescription>::new();
         let mut color_attachment_references = Vec::<AttachmentReference>::new();
         let mut depth_attachment_reference = None;
-        let mut color_attachment_resolve_reference = None;
         let mut clear_values = Vec::new();
 
         // add color color_attachments
@@ -103,46 +101,43 @@ impl VkRenderPass {
                     attachment: attachment_index,
                     layout: ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
                 });
-                
+
                 clear_values.push(attachment.clear_value);
             }
         }
 
         let subpass = SubpassDescription {
             pipeline_bind_point: PipelineBindPoint::GRAPHICS,
-            input_attachment_count: 0,       // Input color_attachments can be used to sample from contents of a previous subpass
-            p_input_attachments: null(), // (Input color_attachments not used here)
+            input_attachment_count: 0,         // Input color_attachments can be used to sample from contents of a previous subpass
+            p_input_attachments: null(),       // (Input color_attachments not used here)
             color_attachment_count: color_attachment_references.len() as u32,
             p_color_attachments: color_attachment_references.as_ptr(),
-            p_resolve_attachments: match color_attachment_resolve_reference {
-                Some(attachment) => { &attachment }
-                None => { null() }
-            }, // resolve mean the target attachment for msaa
+            p_resolve_attachments: null(),     // resolve mean the target attachment for msaa
             p_depth_stencil_attachment: match depth_attachment_reference {
                 Some(attachment) => { &attachment }
                 None => { null() }
-            }, // resolve mean the target attachment for msaa
+            },                                  // resolve mean the target attachment for msaa
             preserve_attachment_count: 0,       // Preserved color_attachments can be used to loop (and preserve) color_attachments through subpasses
-            p_preserve_attachments: null(), // (Preserve color_attachments not used by this example)
+            p_preserve_attachments: null(),     // (Preserve color_attachments not used by this example)
             ..SubpassDescription::default()
         };
 
         let dependencies = vec![
             SubpassDependency {
-                src_subpass: SUBPASS_EXTERNAL,                                                        // Producer of the dependency
-                dst_subpass: 0,                                                                          // Consumer is our single subpass that will wait for the execution depdendency
-                src_stage_mask: PipelineStageFlags::BOTTOM_OF_PIPE,                                       // Match our pWaitDstStageMask when we vkQueueSubmit
-                dst_stage_mask: PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT,                              // is a loadOp stage for color color_attachments
-                src_access_mask: AccessFlags::MEMORY_READ,                                  // semaphore wait already does memory dependency for us
+                src_subpass: SUBPASS_EXTERNAL,                                                             // Producer of the dependency
+                dst_subpass: 0,                                                                            // Consumer is our single subpass that will wait for the execution dependency
+                src_stage_mask: PipelineStageFlags::BOTTOM_OF_PIPE,                                        // Match our pWaitDstStageMask when we vkQueueSubmit
+                dst_stage_mask: PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT,                               // is a loadOp stage for color color_attachments
+                src_access_mask: AccessFlags::MEMORY_READ,                                                 // semaphore wait already does memory dependency for us
                 dst_access_mask: AccessFlags::COLOR_ATTACHMENT_READ | AccessFlags::COLOR_ATTACHMENT_WRITE, // is a loadOp CLEAR access mask for color color_attachments
                 dependency_flags: DependencyFlags::BY_REGION,
                 ..SubpassDependency::default()
             },
             SubpassDependency {
-                src_subpass: 0,                                                                          // Producer of the dependency is our single subpass
-                dst_subpass: SUBPASS_EXTERNAL,                                                        // Consumer are all commands outside of the renderpass
-                src_stage_mask: PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT,                             // is a storeOp stage for color color_attachments
-                dst_stage_mask: PipelineStageFlags::BOTTOM_OF_PIPE,                                       // Do not block any subsequent work
+                src_subpass: 0,                                                                            // Producer of the dependency is our single subpass
+                dst_subpass: SUBPASS_EXTERNAL,                                                             // Consumer are all commands outside of the render pass
+                src_stage_mask: PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT,                               // is a storeOp stage for color color_attachments
+                dst_stage_mask: PipelineStageFlags::BOTTOM_OF_PIPE,                                        // Do not block any subsequent work
                 src_access_mask: AccessFlags::COLOR_ATTACHMENT_READ | AccessFlags::COLOR_ATTACHMENT_WRITE, // is a storeOp `STORE` access mask for color color_attachments
                 dst_access_mask: AccessFlags::MEMORY_READ,
                 dependency_flags: DependencyFlags::BY_REGION,
@@ -163,12 +158,12 @@ impl VkRenderPass {
         let gfx_copy = gfx.clone();
         let device = gfx_cast_vulkan!(gfx_copy).device.read().unwrap();
         let render_pass = vk_check!(unsafe { gfx_object!(*device).device.create_render_pass(&render_pass_infos, None) });
-        
+
         let vk_render_pass = Arc::new(Self {
             render_pass,
             gfx: gfx.clone(),
             self_ref: RwLock::new(Weak::new()),
-            default_clear_values: clear_values
+            default_clear_values: clear_values,
         });
 
         {

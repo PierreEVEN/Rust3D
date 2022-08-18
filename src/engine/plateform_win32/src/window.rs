@@ -1,5 +1,5 @@
 ﻿use std::ptr::null;
-use std::sync::{Arc, Mutex, RwLock};
+use std::sync::{Arc, RwLock};
 
 use raw_window_handle::{RawWindowHandle, Win32Handle};
 use windows::core::PCWSTR;
@@ -65,7 +65,7 @@ impl WindowWin32 {
                 Ok(_) => {}
             }
 
-            let mut window = WindowWin32 {
+            let window = WindowWin32 {
                 hwnd,
                 geometry: RwLock::new(create_infos.geometry),
                 background_alpha: RwLock::new(create_infos.background_alpha),

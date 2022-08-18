@@ -5,7 +5,7 @@ use std::collections::{HashMap, VecDeque};
 use std::hash::{Hash, Hasher};
 use std::mem::size_of;
 use std::ptr::null;
-use std::sync::{Arc, Mutex, RwLock};
+use std::sync::{Arc, RwLock};
 use windows::core::PCWSTR;
 use windows::Win32::Foundation::{BOOL, HINSTANCE, HWND, LPARAM, LRESULT, RECT, WPARAM};
 use windows::Win32::Graphics::Gdi::{BLACK_BRUSH, EnumDisplayMonitors, GetMonitorInfoW, GetStockObject, HBRUSH, HDC, HMONITOR, MONITORINFO};
@@ -106,7 +106,7 @@ impl PlatformWin32 {
     fn send_window_message(&self, hwnd: HWND, msg: u32, _wparam: WPARAM, lparam: LPARAM) {
         let window_map = self.windows.read();
         if let Some(window) = window_map.unwrap().get(&hwnd.into()) {
-            let mut message_queue = self.messages.write();
+            let message_queue = self.messages.write();
             match msg {
                 WM_CLOSE => {
                     message_queue.unwrap().push_back(PlatformEvent::WindowClosed(window.clone()));

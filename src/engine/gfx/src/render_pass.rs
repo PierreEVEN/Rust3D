@@ -1,4 +1,4 @@
-﻿use std::sync::Arc;
+﻿use std::sync::{Arc};
 
 use maths::vec2::Vec2u32;
 use maths::vec4::Vec4F32;
@@ -32,11 +32,11 @@ pub trait RenderPassInstance {
 
 pub struct FrameGraph {
     surface: Arc<dyn GfxSurface>,
-    draw_pass: Box<dyn RenderPassInstance>,
+    present_pass: Box<dyn RenderPassInstance>,
 }
 
 impl FrameGraph {
-    pub fn from_surface(gfx: &GfxRef, surface: &Arc<dyn GfxSurface>) -> Self {
+    pub fn from_surface(_gfx: &GfxRef, surface: &Arc<dyn GfxSurface>) -> Self {
         let render_pass_ci = RenderPassCreateInfos {
             name: "surface_pass".to_string(),
             color_attachments: vec![RenderPassAttachment {
@@ -51,18 +51,17 @@ impl FrameGraph {
         let res = surface.get_owning_window().get_geometry();
 
         let draw_pass = surface.create_render_pass(render_pass_ci).instantiate(surface, Vec2u32::new(res.width() as u32, res.height() as u32));
-
-
+        
         Self {
             surface: surface.clone(),
-            draw_pass,
+            present_pass: draw_pass,
         }
     }
 
     pub fn begin(&self) -> Result<(), String> {
         match self.surface.begin() {
             Ok(_) => {
-                self.draw_pass.begin();
+                self.present_pass.begin();
             }
             Err(error) => { return Err(error); }
         }
@@ -70,7 +69,7 @@ impl FrameGraph {
     }
 
     pub fn submit(&self) {
-        self.draw_pass.end();
+        self.present_pass.end();
 
 
         self.surface.submit()

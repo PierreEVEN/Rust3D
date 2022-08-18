@@ -198,7 +198,7 @@ impl Parser {
         let mut result = String::new();
         let mut begin: i32 = -1;
         let mut end: i32 = -1;
-        let mut chars = string.chars();
+        let chars = string.chars();
         for i in 0..string.len() {
             if begin < 0 && !Self::property_trim_func(chars.clone().nth(i).unwrap()) {
                 begin = i as i32;
@@ -284,7 +284,7 @@ impl Parser {
     pub fn new(file_path: &Path, includer: Box<dyn Includer>) -> Result<Self, ShaderErrorResult> {
         let mut errors = ShaderErrorResult::default();
 
-        let mut shader_code = match fs::read_to_string(file_path) {
+        let shader_code = match fs::read_to_string(file_path) {
             Ok(file_data) => { file_data }
             Err(error) => {
                 errors.push(-1, -1, &format!("failed to open file : {}", error), file_path.to_str().unwrap());

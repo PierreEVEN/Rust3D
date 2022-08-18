@@ -1,6 +1,5 @@
-﻿use std::any::{TypeId};
-use std::sync::Arc;
-use ash::vk::{ClearColorValue, ClearDepthStencilValue, ClearValue, CommandBuffer, Framebuffer, FramebufferCreateInfo, RenderPassBeginInfo, Semaphore, SemaphoreCreateInfo, SubpassContents};
+﻿use std::sync::Arc;
+use ash::vk::{ClearColorValue, ClearDepthStencilValue, ClearValue, Framebuffer, FramebufferCreateInfo, RenderPassBeginInfo, Semaphore, SemaphoreCreateInfo, SubpassContents};
 
 use gfx::{GfxRef};
 use gfx::render_pass::{RenderPass, RenderPassInstance};
@@ -8,7 +7,7 @@ use gfx::surface::GfxSurface;
 use gfx::types::{ClearValues, GfxCast};
 use maths::vec2::Vec2u32;
 
-use crate::{gfx_cast_vulkan, gfx_object, GfxVulkan, vk_check, VkCommandPool, VkRenderPass};
+use crate::{gfx_cast_vulkan, gfx_object, GfxVulkan, vk_check, VkRenderPass};
 use crate::vk_command_buffer::VkCommandBuffer;
 use crate::vk_image::VkImage;
 use crate::vk_swapchain_resource::VkSwapchainResource;
@@ -19,7 +18,7 @@ pub struct VkRenderPassInstance {
     owner: Arc<dyn RenderPass>,
     gfx: GfxRef,
     surface: Arc<dyn GfxSurface>,
-    framebuffers: VkSwapchainResource<Framebuffer>,
+    _framebuffers: VkSwapchainResource<Framebuffer>,
     pub clear_value: Vec<ClearValues>,
 }
 
@@ -65,7 +64,7 @@ impl VkRenderPassInstance {
         VkRenderPassInstance {
             render_finished_semaphore: VkSwapchainResource::new(vec![render_finished_semaphore], surface.get_image_count()),
             pass_command_buffers: VkSwapchainResource::new(command_buffers, surface.get_image_count()),
-            framebuffers: VkSwapchainResource::new(framebuffers, surface.get_image_count()),
+            _framebuffers: VkSwapchainResource::new(framebuffers, surface.get_image_count()),
             owner,
             clear_value: clear_values.clone(),
             gfx: gfx.clone(),
@@ -75,7 +74,7 @@ impl VkRenderPassInstance {
 }
 
 impl RenderPassInstance for VkRenderPassInstance {
-    fn resize(&self, new_res: Vec2u32) {
+    fn resize(&self, _new_res: Vec2u32) {
         todo!()
     }
 

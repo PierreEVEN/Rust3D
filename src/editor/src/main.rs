@@ -1,7 +1,6 @@
 use backend_vulkan::GfxVulkan;
 use backend_vulkan_win32::vk_surface_win32::VkSurfaceWin32;
 use gfx::render_pass::FrameGraph;
-use gfx::surface::GfxSurface;
 use maths::rect2d::Rect2D;
 use plateform::Platform;
 use plateform::window::{PlatformEvent, WindowCreateInfos, WindowFlagBits, WindowFlags};

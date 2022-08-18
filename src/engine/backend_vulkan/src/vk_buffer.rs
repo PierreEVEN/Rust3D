@@ -75,9 +75,6 @@ impl VkBuffer {
             .size(create_infos.size as DeviceSize)
             .usage(usage);
 
-        let gfx = gfx.as_any().downcast_ref::<GfxVulkan>().expect("cast failed");
-        
-
         let buffer = unsafe { gfx_object!(*device).device.create_buffer(&ci_buffer, None) }.unwrap();
         let requirements = unsafe { gfx_object!(*device).device.get_buffer_memory_requirements(buffer) };
 

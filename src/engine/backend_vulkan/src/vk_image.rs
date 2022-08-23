@@ -13,7 +13,7 @@ use crate::vk_swapchain_resource::{GfxImageBuilder, VkSwapchainResource};
 use crate::vk_types::VkPixelFormat;
 
 pub struct VkImage {
-    pub image: Arc<VkSwapchainResource<Image>>,
+    pub image: Option<Arc<VkSwapchainResource<Image>>>,
     pub view: VkSwapchainResource<ImageView>,
     pub image_params: ImageParams,
 }
@@ -147,6 +147,7 @@ impl VkImageUsage {
             ImageUsage::CopyDestination => { flags |= ImageUsageFlags::TRANSFER_DST }
             ImageUsage::Sampling => { flags |= ImageUsageFlags::SAMPLED }
             ImageUsage::GpuWriteDestination => { flags |= if is_depth { ImageUsageFlags::DEPTH_STENCIL_ATTACHMENT } else { ImageUsageFlags::COLOR_ATTACHMENT } }
+            _ => {}
         };
         VkImageUsage(flags)
     }
@@ -167,8 +168,19 @@ impl VkImage {
 
         Arc::new(Self {
             view: views,
-            image: images,
+            image: Some(images),
             image_params: create_infos,
+        })
+    }
+
+    pub fn from_existing_images(existing_images: VkSwapchainResource<Image>, image_params: ImageParams) -> Arc<dyn GfxImage> {
+        Arc::new(VkImage {
+            image: None,
+            view: VkSwapchainResource::new(Box::new(RbImageView {
+                images: Arc::new(existing_images),
+                create_infos: image_params
+            })),
+            image_params
         })
     }
 }

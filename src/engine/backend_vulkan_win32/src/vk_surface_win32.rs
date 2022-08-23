@@ -5,19 +5,20 @@ use std::sync::atomic::{AtomicU8, Ordering};
 use ash::extensions::khr;
 use ash::extensions::khr::{Surface, Swapchain};
 use ash::vk;
-use ash::vk::{Bool32, ComponentMapping, ComponentSwizzle, CompositeAlphaFlagsKHR, Fence, Format, ImageAspectFlags, ImageSubresourceRange, ImageUsageFlags, ImageView, ImageViewCreateInfo, ImageViewType, PresentInfoKHR, PresentModeKHR, Semaphore, SemaphoreCreateInfo, SharingMode, SurfaceFormatKHR, SurfaceKHR, SurfaceTransformFlagsKHR, SwapchainCreateInfoKHR, SwapchainKHR, Win32SurfaceCreateInfoKHR};
+use ash::vk::{Bool32, ComponentMapping, ComponentSwizzle, CompositeAlphaFlagsKHR, Fence, Format, Image, ImageAspectFlags, ImageSubresourceRange, ImageUsageFlags, ImageView, ImageViewCreateInfo, ImageViewType, PresentInfoKHR, PresentModeKHR, Semaphore, SemaphoreCreateInfo, SharingMode, SurfaceFormatKHR, SurfaceKHR, SurfaceTransformFlagsKHR, SwapchainCreateInfoKHR, SwapchainKHR, Win32SurfaceCreateInfoKHR};
 use raw_window_handle::RawWindowHandle;
 
 use backend_vulkan::{g_vulkan, G_VULKAN, gfx_cast_vulkan, gfx_object, GfxVulkan, vk_check};
+use backend_vulkan::vk_image::VkImage;
 use backend_vulkan::vk_render_pass::VkRenderPass;
 use backend_vulkan::vk_render_pass_instance::RbSemaphore;
 use backend_vulkan::vk_swapchain_resource::{GfxImageBuilder, VkSwapchainResource};
-use backend_vulkan::vk_types::{GfxPixelFormat, VkExtent2D};
+use backend_vulkan::vk_types::{GfxPixelFormat, VkExtent2D, VkPixelFormat};
 use gfx::GfxRef;
-use gfx::image::GfxImage;
+use gfx::image::{GfxImage, ImageParams, ImageType, ImageUsage};
 use gfx::render_pass::{RenderPass, RenderPassCreateInfos};
 use gfx::surface::{GfxImageID, GfxSurface};
-use gfx::types::PixelFormat;
+use gfx::types::{GfxCast, PixelFormat};
 use maths::vec2::Vec2u32;
 use plateform::window::Window;
 
@@ -35,9 +36,19 @@ pub struct VkSurfaceWin32 {
     current_image: AtomicU8,
     window: Arc<dyn Window>,
     gfx: GfxRef,
-    swapchain_image_views: RwLock<Vec<ImageView>>,
+    surface_image: RwLock<Option<Arc<dyn GfxImage>>>
 }
 
+
+struct RbSurfaceImage {
+    images: Vec<Image>
+}
+
+impl GfxImageBuilder<Image> for RbSurfaceImage {
+    fn build(&self, gfx: &GfxRef, swapchain_ref: &GfxImageID) -> Image {
+        self.images[0]
+    }
+}
 
 impl GfxSurface for VkSurfaceWin32 {
     fn create_or_recreate(&self) {
@@ -72,31 +83,16 @@ impl GfxSurface for VkSurfaceWin32 {
 
         let images = vk_check!(unsafe { self._swapchain_loader.get_swapchain_images(swapchain) });
 
-        let device = gfx_cast_vulkan!(self.gfx).device.read().unwrap();
-
-        let mut views = Vec::new();
-        for i in 0..self.get_image_count() {
-            let ci_view = ImageViewCreateInfo {
-                image: images[i as usize],
-                view_type: ImageViewType::TYPE_2D,
-                format: self.surface_format.format,
-                components: ComponentMapping { r: ComponentSwizzle::R, g: ComponentSwizzle::G, b: ComponentSwizzle::B, a: ComponentSwizzle::A },
-                subresource_range: ImageSubresourceRange {
-                    aspect_mask: ImageAspectFlags::COLOR,
-                    base_mip_level: 0,
-                    level_count: 1,
-                    base_array_layer: 0,
-                    layer_count: 1,
-                    ..ImageSubresourceRange::default()
-                },
-                ..ImageViewCreateInfo::default()
-            };
-
-            unsafe { views.push(vk_check!(gfx_object!(*device).device.create_image_view(&ci_view, None))) }
-        }
-
-        let mut view_list = self.swapchain_image_views.write().unwrap();
-        *view_list = views;
+        let mut image = self.surface_image.write().unwrap();
+        *image = Some(VkImage::from_existing_images(VkSwapchainResource::new(Box::new(RbSurfaceImage {
+            images,
+        })), ImageParams {
+            pixel_format: *GfxPixelFormat::from(self.surface_format.format),
+            image_format: ImageType::Texture2d(800, 600),
+            read_only: true,
+            mip_levels: Some(1),
+            usage: ImageUsage::Any
+        }));
     }
 
     fn get_owning_window(&self) -> &Arc<dyn Window> {
@@ -115,8 +111,8 @@ impl GfxSurface for VkSurfaceWin32 {
         GfxImageID::new(self.gfx.clone(), self.current_image.load(Ordering::Acquire), 0)
     }
 
-    fn get_images(&self) -> Vec<Arc<dyn GfxImage>> {
-        todo!()
+    fn get_surface_texture(&self) -> Arc<dyn GfxImage> {
+        self.surface_image.read().unwrap().as_ref().unwrap().clone()
     }
 
     fn create_render_pass(&self, create_infos: RenderPassCreateInfos) -> Arc<dyn RenderPass> {
@@ -258,7 +254,7 @@ impl VkSurfaceWin32 {
             window: window.clone(),
             gfx: gfx_copy,
             image_acquire_semaphore: VkSwapchainResource::new(Box::new(RbSemaphore {})),
-            swapchain_image_views: RwLock::default(),
+            surface_image: RwLock::default(),
         });
 
         surface.create_or_recreate();

@@ -47,7 +47,7 @@ pub trait GfxSurface: GfxCast {
     fn get_surface_pixel_format(&self) -> PixelFormat;
     fn get_image_count(&self) -> u8;
     fn get_current_ref(&self) -> GfxImageID;
-    fn get_images(&self) -> Vec<Arc<dyn GfxImage>>;
+    fn get_surface_texture(&self) -> Arc<dyn GfxImage>;
 
     fn create_render_pass(&self, create_infos: RenderPassCreateInfos) -> Arc<dyn RenderPass>;
     fn get_gfx(&self) -> &GfxRef;

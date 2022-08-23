@@ -46,7 +46,7 @@ impl FrameGraph {
                 image_format: surface.get_surface_pixel_format(),
             }],
             depth_attachment: None,
-            is_present_pass: false,
+            is_present_pass: true,
         };
 
         let res = surface.get_owning_window().get_geometry();

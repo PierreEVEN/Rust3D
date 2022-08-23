@@ -1,25 +1,78 @@
 ﻿use std::sync::Arc;
-use ash::vk::{ClearColorValue, ClearDepthStencilValue, ClearValue, Framebuffer, FramebufferCreateInfo, RenderPassBeginInfo, Semaphore, SemaphoreCreateInfo, SubpassContents};
 
-use gfx::{GfxRef};
+use ash::vk;
+use ash::vk::{ClearColorValue, ClearDepthStencilValue, ClearValue, CommandBuffer, CommandBufferAllocateInfo, Extent2D, Framebuffer, FramebufferCreateInfo, Image, ImageView, Offset2D, RenderPassBeginInfo, Semaphore, SemaphoreCreateInfo, SubpassContents};
+
+use gfx::GfxRef;
+use gfx::image::GfxImage;
 use gfx::render_pass::{RenderPass, RenderPassInstance};
-use gfx::surface::GfxSurface;
+use gfx::surface::{GfxImageID, GfxSurface};
 use gfx::types::{ClearValues, GfxCast};
 use maths::vec2::Vec2u32;
 
-use crate::{gfx_cast_vulkan, gfx_object, GfxVulkan, vk_check, VkRenderPass};
+use crate::{gfx_cast_vulkan, gfx_object, GfxVulkan, vk_check, VkCommandPool, VkRenderPass};
 use crate::vk_command_buffer::VkCommandBuffer;
-use crate::vk_image::VkImage;
-use crate::vk_swapchain_resource::VkSwapchainResource;
+use crate::vk_swapchain_resource::{GfxImageBuilder, VkSwapchainResource};
 
 pub struct VkRenderPassInstance {
     pub render_finished_semaphore: VkSwapchainResource<Semaphore>,
-    pub pass_command_buffers: VkSwapchainResource<VkCommandBuffer>,
+    pub pass_command_buffers: VkSwapchainResource<CommandBuffer>,
     owner: Arc<dyn RenderPass>,
     gfx: GfxRef,
     surface: Arc<dyn GfxSurface>,
     _framebuffers: VkSwapchainResource<Framebuffer>,
     pub clear_value: Vec<ClearValues>,
+    pub resolution: Vec2u32
+}
+
+pub struct RbSemaphore {}
+
+impl GfxImageBuilder<Semaphore> for RbSemaphore {
+    fn build(&self, gfx: &GfxRef, _swapchain_ref: &GfxImageID) -> Semaphore {
+        let ci_semaphore = SemaphoreCreateInfo {
+            ..SemaphoreCreateInfo::default()
+        };
+
+        let device = gfx_cast_vulkan!(gfx).device.read().unwrap();
+        vk_check!(unsafe {gfx_object!(*device).device.create_semaphore(&ci_semaphore, None)})
+    }
+}
+
+pub struct RbCommandBuffer {}
+
+impl GfxImageBuilder<CommandBuffer> for RbCommandBuffer {
+    fn build(&self, gfx: &GfxRef, _swapchain_ref: &GfxImageID) -> CommandBuffer {
+        let ci_command_buffer = CommandBufferAllocateInfo {
+            command_pool: gfx_object!(*gfx_cast_vulkan!(gfx).command_pool.read().unwrap()).command_pool,
+            command_buffer_count: 1,
+            ..CommandBufferAllocateInfo::default()
+        };
+
+        let device = gfx_cast_vulkan!(gfx).device.read().unwrap();
+        vk_check!(unsafe {gfx_object!(*device).device.allocate_command_buffers(&ci_command_buffer)})[0]
+    }
+}
+
+struct RbFramebuffer {
+    render_pass: vk::RenderPass,
+    res: Vec2u32,
+    images: Vec<ImageView>,
+}
+
+impl GfxImageBuilder<Framebuffer> for RbFramebuffer {
+    fn build(&self, gfx: &GfxRef, swapchain_ref: &GfxImageID) -> Framebuffer {
+        let create_infos = FramebufferCreateInfo {
+            render_pass: self.render_pass,
+            attachment_count: self.images.len() as u32,
+            p_attachments: self.images.as_ptr(),
+            width: self.res.x,
+            height: self.res.y,
+            layers: 1,
+            ..FramebufferCreateInfo::default()
+        };
+        let device = gfx_cast_vulkan!(gfx).device.read().unwrap();
+        vk_check!(unsafe { gfx_object!(*device).device.create_framebuffer(&create_infos, None) })
+    }
 }
 
 impl VkRenderPassInstance {
@@ -38,37 +91,22 @@ impl VkRenderPassInstance {
         for _ in 0..surface.get_image_count() {
             command_buffers.push(VkCommandBuffer::new(gfx));
         }
-        
-        
-        let mut framebuffers = Vec::new();
-        for i in 0..surface.get_image_count() {
 
-            let mut images = Vec::new();
-            if use_surface_images {
-                images.push(surface.get_images()[i as usize].as_any().downcast_ref::<VkImage>().unwrap().view);
-            }
-            
-            
-            let create_infos = FramebufferCreateInfo {
-                render_pass: owner.as_ref().as_any().downcast_ref::<VkRenderPass>().unwrap().render_pass,
-                attachment_count: images.len() as u32,
-                p_attachments: images.as_ptr(),
-                width: res.x,
-                height: res.y,
-                layers: 0,
-                ..FramebufferCreateInfo::default()
-            };
-            unsafe { framebuffers.push(vk_check!(gfx_object!(*device).device.create_framebuffer(&create_infos, None))); }
-        }
+        let render_pass = owner.as_ref().as_any().downcast_ref::<VkRenderPass>().unwrap().render_pass;
+
+        let images = Vec::new();
+        for att_color in &owner.get_config().color_attachments {}
+        for att_depth in &owner.get_config().depth_attachment {}
 
         VkRenderPassInstance {
-            render_finished_semaphore: VkSwapchainResource::new(vec![render_finished_semaphore], surface.get_image_count()),
-            pass_command_buffers: VkSwapchainResource::new(command_buffers, surface.get_image_count()),
-            _framebuffers: VkSwapchainResource::new(framebuffers, surface.get_image_count()),
+            render_finished_semaphore: VkSwapchainResource::new(Box::new(RbSemaphore {})),
+            pass_command_buffers: VkSwapchainResource::new(Box::new(RbCommandBuffer {})),
+            _framebuffers: VkSwapchainResource::new(Box::new(RbFramebuffer { render_pass, res, images })),
             owner,
             clear_value: clear_values.clone(),
             gfx: gfx.clone(),
             surface: surface.clone(),
+            resolution: res
         }
     }
 }
@@ -103,28 +141,35 @@ impl RenderPassInstance for VkRenderPassInstance {
 
         let begin_infos = RenderPassBeginInfo {
             render_pass: self.owner.as_ref().as_any().downcast_ref::<VkRenderPass>().expect("invalid render pass").render_pass,
-            framebuffer: Default::default(),
-            render_area: Default::default(),
+            framebuffer: self._framebuffers.get(&self.surface.get_current_ref()),
+            render_area: vk::Rect2D {
+                offset: Offset2D { x: 0, y: 0 },
+                extent: Extent2D { width: self.resolution.x, height: self.resolution.y },
+            },
             clear_value_count: clear_values.len() as u32,
             p_clear_values: clear_values.as_ptr(),
             ..RenderPassBeginInfo::default()
         };
 
-        let command_buffer = self.pass_command_buffers.get_image(self.surface.get_current_image());
-        command_buffer.start();
+        let command_buffer = self.pass_command_buffers.get(&self.surface.get_current_ref());
 
         let device = gfx_cast_vulkan!(self.gfx).device.read().unwrap();
-        unsafe { gfx_object!(*device).device.cmd_begin_render_pass(command_buffer.command_buffer, &begin_infos, SubpassContents::INLINE) }
+
+        vk_check!(unsafe { gfx_object!(*device).device.begin_command_buffer(command_buffer, &vk::CommandBufferBeginInfo::default()) });
+
+
+        unsafe { gfx_object!(*device).device.cmd_begin_render_pass(command_buffer, &begin_infos, SubpassContents::INLINE) }
     }
 
     fn end(&self) {
         let device = gfx_cast_vulkan!(self.gfx).device.read().unwrap();
 
 
-        let command_buffer = self.pass_command_buffers.get_image(self.surface.get_current_image());
+        let command_buffer = self.pass_command_buffers.get(&self.surface.get_current_ref());
 
-        unsafe { gfx_object!(*device).device.cmd_end_render_pass(command_buffer.command_buffer) }
+        unsafe { gfx_object!(*device).device.cmd_end_render_pass(command_buffer) }
 
-        command_buffer.submit();        
+        todo!();
+        // command_buffer.submit();
     }
 }

@@ -5,7 +5,7 @@ use gfx::GfxRef;
 use crate::{gfx_cast_vulkan, gfx_object, GfxVulkan, vk_check};
 
 pub struct VkCommandPool {
-    command_pool: CommandPool,
+    pub command_pool: CommandPool,
 }
 
 impl VkCommandPool {

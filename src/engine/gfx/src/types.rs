@@ -408,6 +408,21 @@ impl PixelFormat {
     }
 }
 
+impl PixelFormat {
+    pub fn is_depth_format(&self) -> bool {
+        return match self {
+            PixelFormat::D32_SFLOAT => { true }
+            PixelFormat::D24_UNORM_S8_UINT => { true }
+            PixelFormat::D16_UNORM => { true }
+            PixelFormat::D16_UNORM_S8_UINT => { true }
+            PixelFormat::D32_SFLOAT_S8_UINT => { true }
+            PixelFormat::X8_D24_UNORM_PACK32 => { true }
+            _ => { false }
+        };
+    }
+}
+
+
 #[derive(Copy, Clone)]
 pub enum ClearValues {
     DontClear,

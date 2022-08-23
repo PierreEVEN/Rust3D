@@ -18,6 +18,7 @@ pub struct VkRenderPass {
     gfx: GfxRef,
     self_ref: RwLock<Weak<VkRenderPass>>,
     default_clear_values: Vec<ClearValues>,
+    config: RenderPassCreateInfos
 }
 
 impl RenderPass for VkRenderPass {
@@ -27,6 +28,10 @@ impl RenderPass for VkRenderPass {
 
     fn get_clear_values(&self) -> &Vec<ClearValues> {
         &self.default_clear_values
+    }
+
+    fn get_config(&self) -> &RenderPassCreateInfos {
+        &self.config
     }
 }
 
@@ -38,7 +43,7 @@ impl VkRenderPass {
         let mut clear_values = Vec::new();
 
         // add color color_attachments
-        for attachment in create_infos.color_attachments
+        for attachment in &create_infos.color_attachments
         {
             match attachment.image_format {
                 PixelFormat::UNDEFINED => { panic!("wrong pixel format") }
@@ -71,7 +76,7 @@ impl VkRenderPass {
         }
 
         // add depth attachment
-        match create_infos.depth_attachment {
+        match &create_infos.depth_attachment {
             None => {}
             Some(attachment) => {
                 match attachment.image_format {
@@ -164,6 +169,7 @@ impl VkRenderPass {
             gfx: gfx.clone(),
             self_ref: RwLock::new(Weak::new()),
             default_clear_values: clear_values,
+            config: create_infos
         });
 
         {

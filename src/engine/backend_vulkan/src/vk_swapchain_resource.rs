@@ -1,17 +1,70 @@
-﻿pub struct VkSwapchainResource<T> {
-    resources: Vec<T>,
-    _image_count: u8,
+﻿use std::collections::HashMap;
+use std::hash::{Hash, Hasher};
+use std::ops::Deref;
+use std::sync::{Arc, RwLock};
+
+use gfx::GfxRef;
+use gfx::surface::{GfxImageID, GfxSurface};
+
+pub trait GfxImageBuilder<T: Clone> {
+    fn build(&self, gfx: &GfxRef, swapchain_ref: &GfxImageID) -> T;
 }
 
-impl<T> VkSwapchainResource<T> {
-    pub fn new(resources: Vec<T>, image_count: u8) -> Self {
+struct DefaultSwapchainResourceBuilder {}
+
+impl<T: Clone> GfxImageBuilder<T> for DefaultSwapchainResourceBuilder {
+    fn build(&self, gfx: &GfxRef, swapchain_ref: &GfxImageID) -> T {
+        todo!()
+    }
+}
+
+pub struct VkSwapchainResource<T> {
+    resources: RwLock<HashMap<GfxImageID, T>>,
+    builder: Box<dyn GfxImageBuilder<T>>,
+    static_resource: bool,
+}
+
+impl<T: Clone> Default for VkSwapchainResource<T> {
+    fn default() -> Self {
         Self {
-            resources,
-            _image_count: image_count,
+            resources: RwLock::default(),
+            builder: Box::new(DefaultSwapchainResourceBuilder {}),
+            static_resource: true,
+        }
+    }
+}
+
+impl<T: Clone> VkSwapchainResource<T> {
+    pub fn  new(builder: Box<dyn GfxImageBuilder<T>>) -> Self {
+        Self {
+            static_resource: false,
+            builder,
+            resources: RwLock::default(),
+        }
+    }
+    pub fn new_static(gfx: &GfxRef, builder: Box<dyn GfxImageBuilder<T>>) -> Self {
+        let static_ref = GfxImageID::new(gfx.clone(), 0, 0);
+        Self {
+            static_resource: true,
+            resources: RwLock::new(HashMap::from([(static_ref.clone(), builder.build(gfx, &static_ref))])),
+            builder,
         }
     }
 
-    pub fn get_image(&self, image: u8) -> &T {
-        &self.resources[image as usize]
+    pub fn get(&self, reference: &GfxImageID) -> T {
+        if self.static_resource {
+            let image_id = GfxImageID::new(reference.gfx().clone(), 0, 0);
+            return self.resources.read().unwrap().deref().get(&image_id).unwrap().clone();
+        }
+
+        {
+            match self.resources.read().unwrap().deref().get(&reference) {
+                None => {}
+                Some(resource) => { return resource.clone(); }
+            }
+        }
+
+        self.resources.write().unwrap().insert(reference.clone(), self.builder.as_ref().build(&reference.gfx(), reference));
+        self.resources.read().unwrap().get(reference).unwrap().clone()
     }
 }

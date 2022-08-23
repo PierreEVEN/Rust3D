@@ -13,13 +13,6 @@ pub mod shader;
 pub mod render_pass;
 pub mod image;
 
-pub trait GfxResource {
-    fn load() -> Result<String, String>;
-    fn load_now() -> Result<String, String>;
-    fn unload() -> Result<String, String>;
-    fn unload_now() -> Result<String, String>;
-}
-
 pub type GfxRef = Arc<dyn GfxInterface>;
 
 pub trait GfxInterface: GfxCast {

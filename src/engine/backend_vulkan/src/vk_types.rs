@@ -1,6 +1,6 @@
 ﻿use std::ops::Deref;
-use ash::vk;
 
+use ash::vk;
 use ash::vk::{ColorSpaceKHR, Extent2D, Format};
 
 use gfx::types::{ColorSpace, PixelFormat};
@@ -426,7 +426,6 @@ impl From<vk::Format> for GfxPixelFormat {
         }
     }
 }
-
 
 pub struct VkColorSpace(ColorSpaceKHR);
 

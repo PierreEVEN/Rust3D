@@ -5,7 +5,7 @@ use std::os::raw::c_char;
 
 use ash::{Instance, vk};
 use ash::extensions::ext::DebugUtils;
-use ash::vk::DebugUtilsMessengerEXT;
+use ash::vk::{DebugUtilsMessengerEXT, make_api_version};
 
 use gfx::PhysicalDevice;
 
@@ -25,10 +25,6 @@ pub struct VkInstance {
     _debug_messenger: DebugUtilsMessengerEXT,
     enable_validation_layers: bool,
     device_map: HashMap<PhysicalDevice, VkPhysicalDevice>,
-}
-
-const fn make_api_version(variant: u32, major: u32, minor: u32, patch: u32) -> u32 {
-    ((variant) << 29) | ((major) << 22) | ((minor) << 12) | (patch)
 }
 
 impl VkInstance {
@@ -208,14 +204,6 @@ impl VkInstance {
     }
 }
 
-impl Drop for VkInstance {
-    fn drop(&mut self) {
-        if self.enable_validation_layers {
-            // unsafe { self.debug_util_loader.destroy_debug_utils_messenger(self.debug_messenger, None); }
-        }
-    }
-}
-
 unsafe extern "system" fn vulkan_debug_callback(message_severity: vk::DebugUtilsMessageSeverityFlagsEXT, message_type: vk::DebugUtilsMessageTypeFlagsEXT, p_callback_data: *const vk::DebugUtilsMessengerCallbackDataEXT, _user_data: *mut std::os::raw::c_void) -> vk::Bool32 {
     let callback_data = *p_callback_data;
     let message_id_number: i32 = callback_data.message_id_number as i32;
@@ -232,14 +220,83 @@ unsafe extern "system" fn vulkan_debug_callback(message_severity: vk::DebugUtils
         CStr::from_ptr(callback_data.p_message).to_string_lossy()
     };
 
-    println!(
-        "{:?}:\n{:?} [{} ({})] : {}\n",
-        message_severity,
-        message_type,
-        message_id_name,
-        &message_id_number.to_string(),
-        message,
-    );
 
+    let mut object_handle = None;
+    let mut object_type = None;
+    let mut message_text = None;
+
+    let mut splited = message.split("]");
+    splited.next();
+
+    let mut right = String::new();
+    for item in splited {
+        right += item;
+        right += "]";
+    }
+    right = (&right[1..right.len() - 1]).to_string();
+    let mut right = right.split(",");
+    match right.nth(0) {
+        None => {}
+        Some(obj) => {
+            match obj.split(":").nth(1) {
+                None => {}
+                Some(obj) => {
+                    match obj.split("=").nth(1) {
+                        None => {}
+                        Some(handle) => {
+                            object_handle = Some(handle);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    match right.nth(0) {
+        None => { println!("WTF 0") }
+        Some(right) => {
+            let mut right = right.split(";");
+            match right.nth(0) {
+                None => {}
+                Some(obj_type) => {
+                    match obj_type.split("=").nth(1) {
+                        None => {}
+                        Some(obj_type) => { object_type = Some(obj_type) }
+                    }
+                }
+            }
+            match right.nth(0) {
+                None => {
+                    message_text = Some(message.to_string())
+                }
+                Some(right) => {
+                    match right.split("|").nth(2) {
+                        None => {}
+                        Some(message) => { message_text = Some(message.to_string()); }
+                    }
+                }
+            }
+        }
+    }
+
+    println!(
+        "[{}] {:?} {:?}: [{}] :\n\t=>{} -{}\n\t=>{}\n",
+        &message_id_number.to_string(),
+        message_type,
+        message_severity,
+        message_id_name,
+        match object_type {
+            Some(obj_type) => { obj_type }
+            None => { "None" }
+        },
+        match object_handle {
+            Some(handle) => { handle }
+            None => { "None" }
+        },
+        match message_text {
+            Some(text) => { text }
+            None => { "None".to_string() }
+        },
+    );
+    
     vk::FALSE
 }

@@ -2,10 +2,10 @@
 use std::collections::HashMap;
 use std::os::raw::{c_char, c_void};
 use std::sync::Arc;
-use ash::extensions::khr::Swapchain;
 
-use ash::vk;
-use ash::vk::{Bool32, DeviceQueueCreateInfo, Fence, FenceCreateInfo, PhysicalDevice, PresentInfoKHR, Queue, QueueFlags, SubmitInfo};
+use ash::{Device, vk};
+use ash::extensions::khr::Swapchain;
+use ash::vk::{Bool32, DeviceCreateInfo, DeviceQueueCreateInfo, Fence, FenceCreateFlags, FenceCreateInfo, PhysicalDevice, PhysicalDeviceDescriptorIndexingFeatures, PhysicalDeviceFeatures, PhysicalDeviceFeatures2, PresentInfoKHR, Queue, QueueFlags, SubmitInfo};
 use gpu_allocator::vulkan::{Allocator, AllocatorCreateDesc};
 
 use gfx::GfxRef;
@@ -27,14 +27,13 @@ pub struct VkQueue {
 }
 
 impl VkQueue {
-    pub fn new(queue: Queue, flags: QueueFlags, index: u32, gfx: &GfxRef) -> Arc<Self> {
+    pub fn new(device: &Device, queue: Queue, flags: QueueFlags, index: u32, gfx: &GfxRef) -> Arc<Self> {
         let ci_fence = FenceCreateInfo {
-            flags: Default::default(),
+            flags: FenceCreateFlags::SIGNALED,
             ..FenceCreateInfo::default()
         };
 
-        let device = gfx_cast_vulkan!(gfx).device.read().unwrap();
-        let fence = vk_check!(unsafe { gfx_object!(*device).device.create_fence(&ci_fence, None) });
+        let fence = vk_check!(unsafe { device.create_fence(&ci_fence, None) });
 
         Arc::new(Self {
             queue,
@@ -45,14 +44,18 @@ impl VkQueue {
         })
     }
 
+    pub fn wait(&self) {
+        let device = gfx_cast_vulkan!(self.gfx).device.read().unwrap();
+        vk_check!(unsafe { gfx_object!(*device).device.wait_for_fences(&[self.fence], true, u64::MAX) });
+    } 
+    
     pub fn submit(&self, submit_infos: SubmitInfo) {
         let device = gfx_cast_vulkan!(self.gfx).device.read().unwrap();
+        self.wait();
         vk_check!(unsafe { gfx_object!(*device).device.reset_fences(&[self.fence]) });
         vk_check!(unsafe { gfx_object!(*device).device.queue_submit(self.queue, &[submit_infos], self.fence) });
     }
     pub fn present(&self, swapchain: &Swapchain, present_infos: PresentInfoKHR) {
-        let device = gfx_cast_vulkan!(self.gfx).device.read().unwrap();
-        vk_check!(unsafe { gfx_object!(*device).device.reset_fences(&[self.fence]) });
         vk_check!(unsafe { swapchain.queue_present(self.queue, &present_infos) });
     }
 }
@@ -81,42 +84,41 @@ impl VkDevice {
             });
         }
 
-        let mut device_features = vk::PhysicalDeviceFeatures {
+        let mut extensions = get_required_device_extensions().clone();
+        if instance.enable_validation_layers() {
+            extensions.push("VK_EXT_debug_marker\0".as_ptr() as *const c_char);
+        }
+
+        let instance = gfx_object!(gfx_cast_vulkan!(gfx).instance);
+
+        let device_features = PhysicalDeviceFeatures {
             geometry_shader: false as Bool32,
             sample_rate_shading: true as Bool32, // Sample Shading
             fill_mode_non_solid: true as Bool32, // Wireframe
             wide_lines: true as Bool32,
             sampler_anisotropy: true as Bool32,
+            robust_buffer_access: instance.enable_validation_layers() as Bool32,
             ..Default::default()
         };
 
-        if gfx_object!(gfx_cast_vulkan!(gfx).instance).enable_validation_layers() {
-            device_features.robust_buffer_access = 0;
-        }
+        let index_features = PhysicalDeviceDescriptorIndexingFeatures {
+            descriptor_binding_partially_bound: true as Bool32,
+            runtime_descriptor_array: true as Bool32,
+            ..PhysicalDeviceDescriptorIndexingFeatures::default()
+        };
 
-        let index_features = [vk::PhysicalDeviceDescriptorIndexingFeatures::builder()
-            .descriptor_binding_partially_bound(true)
-            .runtime_descriptor_array(true)
-            .build()];
-
-        let index_features_2 = vk::PhysicalDeviceFeatures2 {
-            p_next: &index_features as *const vk::PhysicalDeviceDescriptorIndexingFeatures as *mut c_void,
+        let index_features_2 = PhysicalDeviceFeatures2 {
+            p_next: &index_features as *const PhysicalDeviceDescriptorIndexingFeatures as *mut c_void,
             features: device_features,
-            ..Default::default()
+            ..PhysicalDeviceFeatures2::default()
         };
 
-        let mut extensions = get_required_device_extensions().clone();
-
-        if instance.enable_validation_layers() {
-            extensions.push("VK_EXT_debug_marker\0".as_ptr() as *const c_char);
-        }
-
-        let ci_device = vk::DeviceCreateInfo {
+        let ci_device = DeviceCreateInfo {
+            p_next: &index_features_2 as *const PhysicalDeviceFeatures2 as *mut c_void,
             queue_create_info_count: ci_queues.len() as u32,
             p_queue_create_infos: ci_queues.as_ptr(),
             enabled_extension_count: extensions.len() as u32,
             pp_enabled_extension_names: extensions.as_ptr(),
-            p_enabled_features: &index_features_2 as *const vk::PhysicalDeviceFeatures2 as *const vk::PhysicalDeviceFeatures,
             ..Default::default()
         };
 
@@ -151,7 +153,7 @@ impl VkDevice {
         let mut queue_map = HashMap::<QueueFlags, Vec<Arc<VkQueue>>>::new();
         for queue_details in &gfx_object!(*physical_device).queues
         {
-            let queue = VkQueue::new( unsafe { device.get_device_queue(queue_details.index, 0) }, queue_details.flags, queue_details.index, gfx);
+            let queue = VkQueue::new(&device, unsafe { device.get_device_queue(queue_details.index, 0) }, queue_details.flags, queue_details.index, gfx);
 
             if queue_details.flags.contains(QueueFlags::GRAPHICS) {
                 match queue_map.get_mut(&QueueFlags::GRAPHICS) {

@@ -2,6 +2,7 @@ use backend_vulkan::GfxVulkan;
 use backend_vulkan_win32::vk_surface_win32::VkSurfaceWin32;
 use gfx::render_pass::FrameGraph;
 use maths::rect2d::Rect2D;
+use maths::vec4::Vec4F32;
 use plateform::Platform;
 use plateform::window::{PlatformEvent, WindowCreateInfos, WindowFlagBits, WindowFlags};
 use plateform_win32::PlatformWin32;
@@ -37,9 +38,11 @@ fn main() {
 
     // Bind graphic surface onto current window
     let main_window_surface = VkSurfaceWin32::new(&gfx_backend, main_window.clone(), 3);
+    let secondary_window_surface = VkSurfaceWin32::new(&gfx_backend, secondary_window.clone(), 3);
 
     // Create framegraph
-    let main_framegraph = FrameGraph::from_surface(&gfx_backend, &main_window_surface);
+    let main_framegraph = FrameGraph::from_surface(&gfx_backend, &main_window_surface, Vec4F32::new(1.0, 0.0, 0.0, 1.0));
+    let secondary_framegraph = FrameGraph::from_surface(&gfx_backend, &secondary_window_surface, Vec4F32::new(0.0, 1.0, 0.0, 1.0));
 
     // Game loop
     'game_loop: loop {
@@ -57,6 +60,15 @@ fn main() {
             Ok(_) => {
                 // Rendering
                 main_framegraph.submit();
+            }
+            Err(_) => {}
+        };
+
+
+        match secondary_framegraph.begin() {
+            Ok(_) => {
+                // Rendering
+                secondary_framegraph.submit();
             }
             Err(_) => {}
         };

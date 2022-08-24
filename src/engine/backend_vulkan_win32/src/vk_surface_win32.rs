@@ -9,7 +9,7 @@ use ash::vk::{Bool32, CompositeAlphaFlagsKHR, Fence, Format, Image, ImageUsageFl
 use raw_window_handle::RawWindowHandle;
 
 use backend_vulkan::{g_vulkan, G_VULKAN, gfx_cast_vulkan, gfx_object, GfxVulkan, vk_check};
-use backend_vulkan::vk_device::VkQueue;
+use backend_vulkan::vk_device::{VkQueue};
 use backend_vulkan::vk_image::VkImage;
 use backend_vulkan::vk_render_pass::VkRenderPass;
 use backend_vulkan::vk_render_pass_instance::{RbSemaphore, VkRenderPassInstance};
@@ -19,7 +19,7 @@ use gfx::GfxRef;
 use gfx::image::{GfxImage, ImageParams, ImageType, ImageUsage};
 use gfx::render_pass::{RenderPass, RenderPassCreateInfos, RenderPassInstance};
 use gfx::surface::{GfxImageID, GfxSurface};
-use gfx::types::{GfxCast, PixelFormat};
+use gfx::types::{PixelFormat};
 use maths::vec2::Vec2u32;
 use plateform::window::Window;
 
@@ -48,7 +48,7 @@ struct RbSurfaceImage {
 
 impl GfxImageBuilder<Image> for RbSurfaceImage {
     fn build(&self, _gfx: &GfxRef, _swapchain_ref: &GfxImageID) -> Image {
-        self.images[0]
+        self.images[_swapchain_ref.image_index as usize]
     }
 }
 
@@ -146,16 +146,18 @@ impl GfxSurface for VkSurfaceWin32 {
                 (0, false)
             }
         };
-
         self.current_image.store(image_index as u8, Ordering::Release);
-
-        let mut wait_sem = render_pass.as_any().downcast_ref::<VkRenderPassInstance>().unwrap().wait_semaphores.write().unwrap();
+        println!("acquired : {}", self.current_image.load(Ordering::Acquire));
+        
+        let render_pass = (**render_pass).as_any().downcast_ref::<VkRenderPassInstance>().unwrap();
+        let mut wait_sem = render_pass.wait_semaphores.write().unwrap();
         *wait_sem = Some(current_image_acquire_semaphore);
         Ok(())
     }
 
     fn submit(&self) {
         let current_image = self.get_current_ref().image_index as u32;
+        println!("present : {current_image}");
         let _present_info = PresentInfoKHR {
             wait_semaphore_count: 0,
             p_wait_semaphores: null(),
@@ -169,6 +171,7 @@ impl GfxSurface for VkSurfaceWin32 {
             None => {}
             Some(queue) => { queue.present(&self._swapchain_loader, _present_info); }
         }
+        println!("succeeded");
     }
 }
 
@@ -258,7 +261,7 @@ impl VkSurfaceWin32 {
         for _ in unsafe { instance.get_physical_device_queue_family_properties(gfx_object!(*physical_device_vk).device) } {
             if vk_check!(unsafe { surface_loader.get_physical_device_surface_support(gfx_object!(*physical_device_vk).device, index, surface) }) {
                 let queue = unsafe { gfx_object!(*device).device.get_device_queue(index, 0) };
-                present_queue = Some(VkQueue::new(queue, QueueFlags::empty(), index, &gfx));
+                present_queue = Some(VkQueue::new(&gfx_object!(*device).device, queue, QueueFlags::empty(), index, &gfx));
                 break;
             }
             index += 1;

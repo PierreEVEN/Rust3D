@@ -113,8 +113,7 @@ impl GfxImageBuilder<ImageView> for RbImageView {
             ImageType::Texture2dArray(_, _) => { ImageViewType::TYPE_2D_ARRAY }
             ImageType::TextureCube(_, _) => { ImageViewType::CUBE }
         };
-
-
+        
         let ci_view = ImageViewCreateInfo {
             image: self.images.get(&swapchain_ref),
             view_type,
@@ -174,10 +173,11 @@ impl VkImage {
     }
 
     pub fn from_existing_images(existing_images: VkSwapchainResource<Image>, image_params: ImageParams) -> Arc<dyn GfxImage> {
+        let images = Arc::new(existing_images);
         Arc::new(VkImage {
-            image: None,
+            image: Some(images.clone()),
             view: VkSwapchainResource::new(Box::new(RbImageView {
-                images: Arc::new(existing_images),
+                images,
                 create_infos: image_params
             })),
             image_params

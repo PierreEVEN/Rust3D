@@ -1,4 +1,5 @@
-﻿use std::borrow::Cow;
+﻿
+use std::borrow::Cow;
 use std::collections::HashMap;
 use std::ffi::CStr;
 use std::os::raw::c_char;
@@ -280,6 +281,7 @@ unsafe extern "system" fn vulkan_debug_callback(message_severity: vk::DebugUtils
         }
     }
 
+    #[cfg(not(debug_assertions))]
     println!(
         "[{}] {:?} {:?}: [{}] :\n\t=>{} -{}\n\t=>{}\n",
         &message_id_number.to_string(),
@@ -300,5 +302,25 @@ unsafe extern "system" fn vulkan_debug_callback(message_severity: vk::DebugUtils
         },
     );
 
+    #[cfg(debug_assertions)]
+    panic!(
+        "[{}] {:?} {:?}: [{}] :\n\t=>{} -{}\n\t=>{}\n",
+        &message_id_number.to_string(),
+        message_type,
+        message_severity,
+        message_id_name,
+        match object_type {
+            Some(obj_type) => { obj_type }
+            None => { "None" }
+        },
+        match object_handle {
+            Some(handle) => { handle }
+            None => { "None" }
+        },
+        match message_text {
+            Some(text) => { text }
+            None => { message.to_string() }
+        },
+    );
     vk::FALSE
 }

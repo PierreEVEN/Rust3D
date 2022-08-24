@@ -7,7 +7,7 @@ use gfx::GfxRef;
 use gfx::image::GfxImage;
 use gfx::render_pass::{RenderPass, RenderPassInstance};
 use gfx::surface::{GfxImageID, GfxSurface};
-use gfx::types::{ClearValues, GfxCast};
+use gfx::types::{ClearValues};
 use maths::vec2::Vec2u32;
 
 use crate::{gfx_cast_vulkan, gfx_object, GfxVulkan, vk_check, VkRenderPass};
@@ -170,17 +170,14 @@ impl RenderPassInstance for VkRenderPassInstance {
 
     fn end(&self) {
         let device = gfx_cast_vulkan!(self.gfx).device.read().unwrap();
-
-
+        
         let command_buffer = self.pass_command_buffers.get(&self.surface.get_current_ref());
-
         unsafe { gfx_object!(*device).device.cmd_end_render_pass(command_buffer) }
-
         vk_check!(unsafe { gfx_object!(*device).device.end_command_buffer(command_buffer) });
 
 
         let mut wait_semaphores = Vec::new();
-        if self.owner.as_any().downcast_ref::<VkRenderPass>().unwrap().get_config().is_present_pass {
+        if self.owner.as_ref().as_any().downcast_ref::<VkRenderPass>().unwrap().get_config().is_present_pass {
             wait_semaphores.push(self.wait_semaphores.read().unwrap().unwrap())
         }
 

@@ -25,7 +25,7 @@ pub trait RenderPass: GfxCast {
     fn get_config(&self) -> &RenderPassCreateInfos;
 }
 
-pub trait RenderPassInstance {
+pub trait RenderPassInstance : GfxCast {
     fn resize(&self, new_res: Vec2u32);
     fn begin(&self);
     fn end(&self);
@@ -37,12 +37,12 @@ pub struct FrameGraph {
 }
 
 impl FrameGraph {
-    pub fn from_surface(_gfx: &GfxRef, surface: &Arc<dyn GfxSurface>) -> Self {
+    pub fn from_surface(_gfx: &GfxRef, surface: &Arc<dyn GfxSurface>, clear_value: Vec4F32) -> Self {
         let render_pass_ci = RenderPassCreateInfos {
             name: "surface_pass".to_string(),
             color_attachments: vec![RenderPassAttachment {
                 name: "color".to_string(),
-                clear_value: ClearValues::Color(Vec4F32 { x: 1.0, y: 1.0, z: 0.0, w: 1.0 }),
+                clear_value: ClearValues::Color(clear_value),//Vec4F32 { x: 1.0, y: 1.0, z: 0.0, w: 1.0 }),
                 image_format: surface.get_surface_pixel_format(),
             }],
             depth_attachment: None,
@@ -71,7 +71,7 @@ impl FrameGraph {
 
     pub fn submit(&self) {
         self.present_pass.end();
-        self.surface.submit()
+        self.surface.submit();
     }
 }
 

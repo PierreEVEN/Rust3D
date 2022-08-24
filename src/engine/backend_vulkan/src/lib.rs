@@ -1,5 +1,4 @@
 extern crate core;
-
 use std::default::Default;
 use std::sync::{Arc, RwLock, Weak};
 

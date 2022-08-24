@@ -2,9 +2,10 @@
 use std::collections::HashMap;
 use std::os::raw::{c_char, c_void};
 use std::sync::Arc;
+use ash::extensions::khr::Swapchain;
 
 use ash::vk;
-use ash::vk::{Bool32, DeviceQueueCreateInfo, PhysicalDevice, Queue, QueueFlags};
+use ash::vk::{Bool32, DeviceQueueCreateInfo, Fence, FenceCreateInfo, PhysicalDevice, PresentInfoKHR, Queue, QueueFlags, SubmitInfo};
 use gpu_allocator::vulkan::{Allocator, AllocatorCreateDesc};
 
 use gfx::GfxRef;
@@ -18,12 +19,43 @@ pub fn get_required_device_extensions() -> Vec<*const c_char> {
 }
 
 pub struct VkQueue {
-    pub queue: Queue,
+    queue: Queue,
     pub flags: QueueFlags,
     pub index: u32,
+    gfx: GfxRef,
+    fence: Fence,
 }
 
-impl VkQueue {}
+impl VkQueue {
+    pub fn new(queue: Queue, flags: QueueFlags, index: u32, gfx: &GfxRef) -> Arc<Self> {
+        let ci_fence = FenceCreateInfo {
+            flags: Default::default(),
+            ..FenceCreateInfo::default()
+        };
+
+        let device = gfx_cast_vulkan!(gfx).device.read().unwrap();
+        let fence = vk_check!(unsafe { gfx_object!(*device).device.create_fence(&ci_fence, None) });
+
+        Arc::new(Self {
+            queue,
+            flags,
+            index,
+            gfx: gfx.clone(),
+            fence,
+        })
+    }
+
+    pub fn submit(&self, submit_infos: SubmitInfo) {
+        let device = gfx_cast_vulkan!(self.gfx).device.read().unwrap();
+        vk_check!(unsafe { gfx_object!(*device).device.reset_fences(&[self.fence]) });
+        vk_check!(unsafe { gfx_object!(*device).device.queue_submit(self.queue, &[submit_infos], self.fence) });
+    }
+    pub fn present(&self, swapchain: &Swapchain, present_infos: PresentInfoKHR) {
+        let device = gfx_cast_vulkan!(self.gfx).device.read().unwrap();
+        vk_check!(unsafe { gfx_object!(*device).device.reset_fences(&[self.fence]) });
+        vk_check!(unsafe { swapchain.queue_present(self.queue, &present_infos) });
+    }
+}
 
 pub struct VkDevice {
     pub device: ash::Device,
@@ -119,11 +151,7 @@ impl VkDevice {
         let mut queue_map = HashMap::<QueueFlags, Vec<Arc<VkQueue>>>::new();
         for queue_details in &gfx_object!(*physical_device).queues
         {
-            let queue = Arc::new(VkQueue {
-                queue: unsafe { device.get_device_queue(queue_details.index, 0) },
-                flags: queue_details.flags,
-                index: queue_details.index,
-            });
+            let queue = VkQueue::new( unsafe { device.get_device_queue(queue_details.index, 0) }, queue_details.flags, queue_details.index, gfx);
 
             if queue_details.flags.contains(QueueFlags::GRAPHICS) {
                 match queue_map.get_mut(&QueueFlags::GRAPHICS) {
@@ -150,11 +178,25 @@ impl VkDevice {
                 }
             }
         }
-        
+
         Self {
             device,
             queues: queue_map,
             allocator: Arc::new(RefCell::new(allocator)),
         }
+    }
+
+    pub fn get_queue(&self, flags: QueueFlags) -> Result<Arc<VkQueue>, ()> {
+        match self.queues.get(&flags) {
+            None => {}
+            Some(queues) => {
+                if !queues.is_empty() {
+                    return Ok(queues[0].clone());
+                }
+            }
+        }
+
+
+        Err(())
     }
 }

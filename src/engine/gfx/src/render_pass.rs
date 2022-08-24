@@ -20,7 +20,7 @@ pub struct RenderPassCreateInfos {
 }
 
 pub trait RenderPass: GfxCast {
-    fn instantiate(&self, surface: &Arc<dyn GfxSurface>, res: Vec2u32) -> Box<dyn RenderPassInstance>;
+    fn instantiate(&self, surface: &Arc<dyn GfxSurface>, res: Vec2u32) -> Arc<dyn RenderPassInstance>;
     fn get_clear_values(&self) -> &Vec<ClearValues>;
     fn get_config(&self) -> &RenderPassCreateInfos;
 }
@@ -33,7 +33,7 @@ pub trait RenderPassInstance {
 
 pub struct FrameGraph {
     surface: Arc<dyn GfxSurface>,
-    present_pass: Box<dyn RenderPassInstance>,
+    present_pass: Arc<dyn RenderPassInstance>,
 }
 
 impl FrameGraph {
@@ -52,7 +52,7 @@ impl FrameGraph {
         let res = surface.get_owning_window().get_geometry();
 
         let draw_pass = surface.create_render_pass(render_pass_ci).instantiate(surface, Vec2u32::new(res.width() as u32, res.height() as u32));
-        
+
         Self {
             surface: surface.clone(),
             present_pass: draw_pass,
@@ -60,7 +60,7 @@ impl FrameGraph {
     }
 
     pub fn begin(&self) -> Result<(), String> {
-        match self.surface.begin() {
+        match self.surface.acquire(&self.present_pass) {
             Ok(_) => {
                 self.present_pass.begin();
             }
@@ -71,8 +71,6 @@ impl FrameGraph {
 
     pub fn submit(&self) {
         self.present_pass.end();
-
-
         self.surface.submit()
     }
 }

@@ -22,8 +22,8 @@ pub struct VkRenderPass {
 }
 
 impl RenderPass for VkRenderPass {
-    fn instantiate(&self, surface: &Arc<dyn GfxSurface>, res: Vec2u32) -> Box<dyn RenderPassInstance> {
-        Box::new(VkRenderPassInstance::new(&self.gfx, surface, self.self_ref.read().unwrap().upgrade().unwrap(), res))
+    fn instantiate(&self, surface: &Arc<dyn GfxSurface>, res: Vec2u32) -> Arc<dyn RenderPassInstance> {
+        Arc::new(VkRenderPassInstance::new(&self.gfx, surface, self.self_ref.read().unwrap().upgrade().unwrap(), res))
     }
 
     fn get_clear_values(&self) -> &Vec<ClearValues> {

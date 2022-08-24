@@ -233,7 +233,9 @@ unsafe extern "system" fn vulkan_debug_callback(message_severity: vk::DebugUtils
         right += item;
         right += "]";
     }
-    right = (&right[1..right.len() - 1]).to_string();
+    if right.len() > 0 {
+        right = (&right[0..(right.len() - 1)]).to_string();
+    }
     let mut right = right.split(",");
     match right.nth(0) {
         None => {}
@@ -252,7 +254,7 @@ unsafe extern "system" fn vulkan_debug_callback(message_severity: vk::DebugUtils
         }
     }
     match right.nth(0) {
-        None => { println!("WTF 0") }
+        None => {}
         Some(right) => {
             let mut right = right.split(";");
             match right.nth(0) {
@@ -294,9 +296,9 @@ unsafe extern "system" fn vulkan_debug_callback(message_severity: vk::DebugUtils
         },
         match message_text {
             Some(text) => { text }
-            None => { "None".to_string() }
+            None => { message.to_string() }
         },
     );
-    
+
     vk::FALSE
 }

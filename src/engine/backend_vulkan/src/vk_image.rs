@@ -6,7 +6,7 @@ use ash::vk::{ComponentMapping, ComponentSwizzle, Extent3D, Image, ImageAspectFl
 use gfx::GfxRef;
 use gfx::image::{GfxImage, ImageParams, ImageType, ImageUsage};
 use gfx::surface::GfxImageID;
-use gfx::types::{GfxCast, PixelFormat};
+use gfx::types::{PixelFormat};
 
 use crate::{gfx_cast_vulkan, gfx_object, GfxVulkan, vk_check};
 use crate::vk_swapchain_resource::{GfxImageBuilder, VkSwapchainResource};
@@ -64,7 +64,7 @@ pub struct RbImage {
 }
 
 impl GfxImageBuilder<Image> for RbImage {
-    fn build(&self, gfx: &GfxRef, swapchain_ref: &GfxImageID) -> Image {
+    fn build(&self, gfx: &GfxRef, _swapchain_ref: &GfxImageID) -> Image {
         let (image_type, width, height, depth) = match self.create_infos.image_format {
             ImageType::Texture1d(x) => { (vk::ImageType::TYPE_1D, x, 1, 1) }
             ImageType::Texture2d(x, y) => { (vk::ImageType::TYPE_2D, x, y, 1) }

@@ -5,6 +5,7 @@ use plateform::window::Window;
 
 use crate::{GfxCast, GfxRef, RenderPass, RenderPassCreateInfos};
 use crate::image::GfxImage;
+use crate::render_pass::RenderPassInstance;
 use crate::types::PixelFormat;
 
 #[derive(Clone)]
@@ -52,6 +53,6 @@ pub trait GfxSurface: GfxCast {
     fn create_render_pass(&self, create_infos: RenderPassCreateInfos) -> Arc<dyn RenderPass>;
     fn get_gfx(&self) -> &GfxRef;
 
-    fn begin(&self) -> Result<(), String>;
+    fn acquire(&self, render_pass: &Arc<dyn RenderPassInstance>) -> Result<(), String>;
     fn submit(&self);
 }

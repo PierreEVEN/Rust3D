@@ -5,18 +5,19 @@ use std::sync::atomic::{AtomicU8, Ordering};
 use ash::extensions::khr;
 use ash::extensions::khr::{Surface, Swapchain};
 use ash::vk;
-use ash::vk::{Bool32, ComponentMapping, ComponentSwizzle, CompositeAlphaFlagsKHR, Fence, Format, Image, ImageAspectFlags, ImageSubresourceRange, ImageUsageFlags, ImageView, ImageViewCreateInfo, ImageViewType, PresentInfoKHR, PresentModeKHR, Semaphore, SemaphoreCreateInfo, SharingMode, SurfaceFormatKHR, SurfaceKHR, SurfaceTransformFlagsKHR, SwapchainCreateInfoKHR, SwapchainKHR, Win32SurfaceCreateInfoKHR};
+use ash::vk::{Bool32, CompositeAlphaFlagsKHR, Fence, Format, Image, ImageUsageFlags, PresentInfoKHR, PresentModeKHR, QueueFlags, Semaphore, SemaphoreCreateInfo, SharingMode, SurfaceFormatKHR, SurfaceKHR, SurfaceTransformFlagsKHR, SwapchainCreateInfoKHR, SwapchainKHR, Win32SurfaceCreateInfoKHR};
 use raw_window_handle::RawWindowHandle;
 
 use backend_vulkan::{g_vulkan, G_VULKAN, gfx_cast_vulkan, gfx_object, GfxVulkan, vk_check};
+use backend_vulkan::vk_device::VkQueue;
 use backend_vulkan::vk_image::VkImage;
 use backend_vulkan::vk_render_pass::VkRenderPass;
-use backend_vulkan::vk_render_pass_instance::RbSemaphore;
+use backend_vulkan::vk_render_pass_instance::{RbSemaphore, VkRenderPassInstance};
 use backend_vulkan::vk_swapchain_resource::{GfxImageBuilder, VkSwapchainResource};
-use backend_vulkan::vk_types::{GfxPixelFormat, VkExtent2D, VkPixelFormat};
+use backend_vulkan::vk_types::{GfxPixelFormat, VkExtent2D};
 use gfx::GfxRef;
 use gfx::image::{GfxImage, ImageParams, ImageType, ImageUsage};
-use gfx::render_pass::{RenderPass, RenderPassCreateInfos};
+use gfx::render_pass::{RenderPass, RenderPassCreateInfos, RenderPassInstance};
 use gfx::surface::{GfxImageID, GfxSurface};
 use gfx::types::{GfxCast, PixelFormat};
 use maths::vec2::Vec2u32;
@@ -36,16 +37,17 @@ pub struct VkSurfaceWin32 {
     current_image: AtomicU8,
     window: Arc<dyn Window>,
     gfx: GfxRef,
-    surface_image: RwLock<Option<Arc<dyn GfxImage>>>
+    surface_image: RwLock<Option<Arc<dyn GfxImage>>>,
+    present_queue: Option<Arc<VkQueue>>,
 }
 
 
 struct RbSurfaceImage {
-    images: Vec<Image>
+    images: Vec<Image>,
 }
 
 impl GfxImageBuilder<Image> for RbSurfaceImage {
-    fn build(&self, gfx: &GfxRef, swapchain_ref: &GfxImageID) -> Image {
+    fn build(&self, _gfx: &GfxRef, _swapchain_ref: &GfxImageID) -> Image {
         self.images[0]
     }
 }
@@ -91,7 +93,7 @@ impl GfxSurface for VkSurfaceWin32 {
             image_format: ImageType::Texture2d(800, 600),
             read_only: true,
             mip_levels: Some(1),
-            usage: ImageUsage::Any
+            usage: ImageUsage::Any,
         }));
     }
 
@@ -123,7 +125,7 @@ impl GfxSurface for VkSurfaceWin32 {
         &self.gfx
     }
 
-    fn begin(&self) -> Result<(), String> {
+    fn acquire(&self, render_pass: &Arc<dyn RenderPassInstance>) -> Result<(), String> {
         let geometry = self.window.get_geometry();
 
         if geometry.width() == 0 || geometry.height() == 0 {
@@ -147,8 +149,8 @@ impl GfxSurface for VkSurfaceWin32 {
 
         self.current_image.store(image_index as u8, Ordering::Release);
 
-        //@TODO : wait for framegraph fences
-
+        let mut wait_sem = render_pass.as_any().downcast_ref::<VkRenderPassInstance>().unwrap().wait_semaphores.write().unwrap();
+        *wait_sem = Some(current_image_acquire_semaphore);
         Ok(())
     }
 
@@ -162,6 +164,11 @@ impl GfxSurface for VkSurfaceWin32 {
             p_image_indices: &current_image,
             ..PresentInfoKHR::default()
         };
+
+        match &self.present_queue {
+            None => {}
+            Some(queue) => { queue.present(&self._swapchain_loader, _present_info); }
+        }
     }
 }
 
@@ -240,6 +247,23 @@ impl VkSurfaceWin32 {
             }
         }
 
+        let mut present_queue = None;
+
+        let instance = match &gfx_cast_vulkan!(gfx).instance {
+            None => { panic!("instance is not valid") }
+            Some(instance) => { &instance.instance }
+        };
+
+        let mut index: u32 = 0;
+        for _ in unsafe { instance.get_physical_device_queue_family_properties(gfx_object!(*physical_device_vk).device) } {
+            if vk_check!(unsafe { surface_loader.get_physical_device_surface_support(gfx_object!(*physical_device_vk).device, index, surface) }) {
+                let queue = unsafe { gfx_object!(*device).device.get_device_queue(index, 0) };
+                present_queue = Some(VkQueue::new(queue, QueueFlags::empty(), index, &gfx));
+                break;
+            }
+            index += 1;
+        }
+
         let surface = Arc::new(Self {
             surface,
             swapchain: Default::default(),
@@ -253,6 +277,7 @@ impl VkSurfaceWin32 {
             current_image: AtomicU8::new(0),
             window: window.clone(),
             gfx: gfx_copy,
+            present_queue,
             image_acquire_semaphore: VkSwapchainResource::new(Box::new(RbSemaphore {})),
             surface_image: RwLock::default(),
         });

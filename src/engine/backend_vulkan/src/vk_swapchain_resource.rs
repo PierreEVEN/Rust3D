@@ -1,10 +1,9 @@
 ﻿use std::collections::HashMap;
-use std::hash::{Hash, Hasher};
 use std::ops::Deref;
-use std::sync::{Arc, RwLock};
+use std::sync::{RwLock};
 
 use gfx::GfxRef;
-use gfx::surface::{GfxImageID, GfxSurface};
+use gfx::surface::{GfxImageID};
 
 pub trait GfxImageBuilder<T: Clone> {
     fn build(&self, gfx: &GfxRef, swapchain_ref: &GfxImageID) -> T;
@@ -13,7 +12,7 @@ pub trait GfxImageBuilder<T: Clone> {
 struct DefaultSwapchainResourceBuilder {}
 
 impl<T: Clone> GfxImageBuilder<T> for DefaultSwapchainResourceBuilder {
-    fn build(&self, gfx: &GfxRef, swapchain_ref: &GfxImageID) -> T {
+    fn build(&self, _gfx: &GfxRef, _swapchain_ref: &GfxImageID) -> T {
         todo!()
     }
 }

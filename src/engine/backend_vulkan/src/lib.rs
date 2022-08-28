@@ -26,7 +26,6 @@ pub mod vk_descriptor_set;
 pub mod vk_render_pass_instance;
 pub mod vk_command_buffer;
 pub mod vk_queue;
-pub mod vk_swapchain_resource;
 pub mod vk_image;
 pub mod vk_framebuffer;
 

@@ -1,5 +1,4 @@
 ﻿use std::collections::HashMap;
-use std::fs;
 use std::path::Path;
 use gfx::shader::{AlphaMode, Culling, FrontFace, PolygonMode, ShaderStage, Topology};
 use crate::file_iterator::FileIterator;
@@ -281,16 +280,8 @@ impl Parser {
         }
     }
 
-    pub fn new(file_path: &Path, includer: Box<dyn Includer>) -> Result<Self, ShaderErrorResult> {
+    pub fn new(shader_code: String, file_path: &Path, includer: Box<dyn Includer>) -> Result<Self, ShaderErrorResult> {
         let mut errors = ShaderErrorResult::default();
-
-        let shader_code = match fs::read_to_string(file_path) {
-            Ok(file_data) => { file_data }
-            Err(error) => {
-                errors.push(-1, -1, &format!("failed to open file : {}", error), file_path.to_str().unwrap());
-                return Err(errors);
-            }
-        };
 
         let mut parser = Self {
             file_iterator: FileIterator::new(shader_code),

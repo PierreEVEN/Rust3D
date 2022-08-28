@@ -13,8 +13,8 @@ use backend_vulkan::vk_device::VkQueue;
 use backend_vulkan::vk_image::VkImage;
 use backend_vulkan::vk_render_pass::VkRenderPass;
 use backend_vulkan::vk_render_pass_instance::{RbSemaphore, VkRenderPassInstance};
-use backend_vulkan::vk_swapchain_resource::{GfxImageBuilder, VkSwapchainResource};
 use backend_vulkan::vk_types::GfxPixelFormat;
+use gfx::gfx_resource::{GfxImageBuilder, GfxResource};
 use gfx::GfxRef;
 use gfx::image::{GfxImage, ImageParams, ImageType, ImageUsage};
 use gfx::render_pass::{RenderPass, RenderPassCreateInfos, RenderPassInstance};
@@ -26,7 +26,7 @@ use plateform::window::Window;
 pub struct VkSurfaceWin32 {
     pub surface: SurfaceKHR,
     pub swapchain: RwLock<Option<SwapchainKHR>>,
-    image_acquire_semaphore: VkSwapchainResource<Semaphore>,
+    image_acquire_semaphore: GfxResource<Semaphore>,
     surface_format: SurfaceFormatKHR,
     _surface_loader: Surface,
     _swapchain_loader: Swapchain,
@@ -115,7 +115,7 @@ impl GfxSurface for VkSurfaceWin32 {
         let images = vk_check!(unsafe { self._swapchain_loader.get_swapchain_images(swapchain) });
 
         let mut image = self.surface_image.write().unwrap();
-        *image = Some(VkImage::from_existing_images(VkSwapchainResource::new(Box::new(RbSurfaceImage {
+        *image = Some(VkImage::from_existing_images(GfxResource::new(Box::new(RbSurfaceImage {
             images,
         })), ImageParams {
             pixel_format: *GfxPixelFormat::from(self.surface_format.format),
@@ -312,7 +312,7 @@ impl VkSurfaceWin32 {
             window: window.clone(),
             gfx: gfx_copy,
             present_queue,
-            image_acquire_semaphore: VkSwapchainResource::new(Box::new(RbSemaphore {})),
+            image_acquire_semaphore: GfxResource::new(Box::new(RbSemaphore {})),
             surface_image: RwLock::default(),
             extent: RwLock::new(Extent2D { width: 0, height: 0 }),
         });

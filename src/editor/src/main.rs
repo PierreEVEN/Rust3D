@@ -1,3 +1,4 @@
+use std::path::Path;
 use backend_vulkan::GfxVulkan;
 use backend_vulkan_win32::vk_surface_win32::VkSurfaceWin32;
 use gfx::render_pass::FrameGraph;
@@ -6,6 +7,7 @@ use maths::vec4::Vec4F32;
 use plateform::Platform;
 use plateform::window::{PlatformEvent, WindowCreateInfos, WindowFlagBits, WindowFlags};
 use plateform_win32::PlatformWin32;
+use core::base_assets::material_asset::*;
 
 mod gfx_demo;
 
@@ -44,6 +46,9 @@ fn main() {
     let mut main_framegraph = Some(FrameGraph::from_surface(&gfx_backend, &main_window_surface, Vec4F32::new(1.0, 0.0, 0.0, 1.0)));
     let mut secondary_framegraph = Some(FrameGraph::from_surface(&gfx_backend, &secondary_window_surface, Vec4F32::new(0.0, 1.0, 0.0, 1.0)));
 
+    let _demo_shader = MaterialAsset::from_path(Path::new("./data/shaders/demo.shb"));
+    
+    
     // Game loop
     'game_loop: loop {
         // handle events
@@ -63,8 +68,7 @@ fn main() {
                 PlatformEvent::WindowResized(_window, _width, _height) => {}
             }
         }
-
-
+        
         match &main_framegraph {
             None => {}
             Some(main_framegraph) => {

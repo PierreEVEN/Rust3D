@@ -2,6 +2,7 @@
 
 use ash::vk;
 use ash::vk::{ClearColorValue, ClearDepthStencilValue, ClearValue, CommandBuffer, CommandBufferAllocateInfo, Extent2D, Framebuffer, FramebufferCreateInfo, Offset2D, PipelineStageFlags, QueueFlags, RenderPassBeginInfo, Semaphore, SemaphoreCreateInfo, SubmitInfo, SubpassContents};
+use gfx::gfx_resource::{GfxImageBuilder, GfxResource};
 
 use gfx::GfxRef;
 use gfx::image::GfxImage;
@@ -13,15 +14,14 @@ use maths::vec2::Vec2u32;
 use crate::{gfx_cast_vulkan, gfx_object, GfxVulkan, vk_check, VkRenderPass};
 use crate::vk_command_buffer::VkCommandBuffer;
 use crate::vk_image::VkImage;
-use crate::vk_swapchain_resource::{GfxImageBuilder, VkSwapchainResource};
 
 pub struct VkRenderPassInstance {
-    pub render_finished_semaphore: VkSwapchainResource<Semaphore>,
-    pub pass_command_buffers: VkSwapchainResource<CommandBuffer>,
+    pub render_finished_semaphore: GfxResource<Semaphore>,
+    pub pass_command_buffers: GfxResource<CommandBuffer>,
     owner: Arc<dyn RenderPass>,
     gfx: GfxRef,
     surface: Arc<dyn GfxSurface>,
-    _framebuffers: VkSwapchainResource<Framebuffer>,
+    _framebuffers: GfxResource<Framebuffer>,
     pub clear_value: Vec<ClearValues>,
     pub resolution: RwLock<Vec2u32>,
     pub wait_semaphores: RwLock<Option<Semaphore>>,
@@ -104,9 +104,9 @@ impl VkRenderPassInstance {
         }
 
         VkRenderPassInstance {
-            render_finished_semaphore: VkSwapchainResource::new(Box::new(RbSemaphore {})),
-            pass_command_buffers: VkSwapchainResource::new(Box::new(RbCommandBuffer {})),
-            _framebuffers: VkSwapchainResource::new(Box::new(RbFramebuffer { render_pass, res, images })),
+            render_finished_semaphore: GfxResource::new(Box::new(RbSemaphore {})),
+            pass_command_buffers: GfxResource::new(Box::new(RbCommandBuffer {})),
+            _framebuffers: GfxResource::new(Box::new(RbFramebuffer { render_pass, res, images })),
             owner,
             clear_value: clear_values.clone(),
             gfx: gfx.clone(),

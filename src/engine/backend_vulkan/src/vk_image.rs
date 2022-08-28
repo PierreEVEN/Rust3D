@@ -2,6 +2,7 @@
 
 use ash::vk;
 use ash::vk::{ComponentMapping, ComponentSwizzle, Extent3D, Image, ImageAspectFlags, ImageCreateInfo, ImageSubresourceRange, ImageTiling, ImageUsageFlags, ImageView, ImageViewCreateInfo, ImageViewType, SampleCountFlags, SharingMode};
+use gfx::gfx_resource::{GfxImageBuilder, GfxResource};
 
 use gfx::GfxRef;
 use gfx::image::{GfxImage, ImageParams, ImageType, ImageUsage};
@@ -9,12 +10,11 @@ use gfx::surface::GfxImageID;
 use gfx::types::{PixelFormat};
 
 use crate::{gfx_cast_vulkan, gfx_object, GfxVulkan, vk_check};
-use crate::vk_swapchain_resource::{GfxImageBuilder, VkSwapchainResource};
 use crate::vk_types::VkPixelFormat;
 
 pub struct VkImage {
-    pub image: Option<Arc<VkSwapchainResource<Image>>>,
-    pub view: VkSwapchainResource<ImageView>,
+    pub image: Option<Arc<GfxResource<Image>>>,
+    pub view: GfxResource<ImageView>,
     pub image_params: ImageParams,
 }
 
@@ -99,7 +99,7 @@ impl GfxImageBuilder<Image> for RbImage {
 }
 
 pub struct RbImageView {
-    images: Arc<VkSwapchainResource<Image>>,
+    images: Arc<GfxResource<Image>>,
     create_infos: ImageParams,
 }
 
@@ -156,13 +156,13 @@ impl VkImageUsage {
 impl VkImage {
     pub fn new(gfx: &GfxRef, create_infos: ImageParams) -> Arc<dyn GfxImage> {
         let (images, views) = if create_infos.read_only {
-            let images = Arc::new(VkSwapchainResource::new_static(gfx, Box::new(RbImage { create_infos })));
+            let images = Arc::new(GfxResource::new_static(gfx, Box::new(RbImage { create_infos })));
             (images.clone(),
-             VkSwapchainResource::new_static(gfx, Box::new(RbImageView { create_infos, images })))
+             GfxResource::new_static(gfx, Box::new(RbImageView { create_infos, images })))
         } else {
-            let images = Arc::new(VkSwapchainResource::new(Box::new(RbImage { create_infos })));
+            let images = Arc::new(GfxResource::new(Box::new(RbImage { create_infos })));
             (images.clone(),
-             VkSwapchainResource::new(Box::new(RbImageView { create_infos, images })))
+             GfxResource::new(Box::new(RbImageView { create_infos, images })))
         };
 
         Arc::new(Self {
@@ -172,11 +172,11 @@ impl VkImage {
         })
     }
 
-    pub fn from_existing_images(existing_images: VkSwapchainResource<Image>, image_params: ImageParams) -> Arc<dyn GfxImage> {
+    pub fn from_existing_images(existing_images: GfxResource<Image>, image_params: ImageParams) -> Arc<dyn GfxImage> {
         let images = Arc::new(existing_images);
         Arc::new(VkImage {
             image: Some(images.clone()),
-            view: VkSwapchainResource::new(Box::new(RbImageView {
+            view: GfxResource::new(Box::new(RbImageView {
                 images,
                 create_infos: image_params
             })),

@@ -12,6 +12,7 @@ pub mod buffer;
 pub mod shader;
 pub mod render_pass;
 pub mod image;
+pub mod gfx_resource;
 
 pub type GfxRef = Arc<dyn GfxInterface>;
 

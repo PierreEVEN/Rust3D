@@ -26,47 +26,6 @@ pub fn _demo_objects(gfx: &GfxRef, surface: &Arc<dyn GfxSurface>) {
     });
 
 
-    // Shader program example
-    let includer = Box::new(ShaderCIncluder::new());
-
-    let parse_result = match Parser::new(Path::new("./data/shaders/demo.shb"), includer) {
-        Ok(result) => {
-            println!("successfully parsed shader");
-            result
-        }
-        Err(error) => { panic!("shader syntax error : \n{}", error.to_string()) }
-    };
-
-    let shader_compiler = BackendShaderC::new();
-
-    for pass in ["gbuffer".to_string()] {
-        let interstage = InterstageData {
-            stage_outputs: Default::default(),
-            binding_index: 0,
-        };
-
-        let null_shader = Vec::new();
-        let vertex_code = match parse_result.program_data.get_data(&pass, &ShaderStage::Vertex) {
-            Ok(code) => { code }
-            Err(error) => {
-                println!("failed to get vertex shader code : \n{}", error.to_string());
-                &null_shader
-            }
-        };
-
-        let _sprv = match shader_compiler.compile_to_spirv(vertex_code, ShaderLanguage::HLSL, ShaderStage::Vertex, interstage) {
-            Ok(sprv) => {
-                println!("compilation succeeded");
-                sprv
-            }
-            Err(error) => {
-                println!("shader compilation error : \n{}", error.to_string());
-                CompilationResult { binary: vec![] }
-            }
-        };
-    }
-
-
     // Framegraph example
     let res = Vec2u32::new(800, 600);
 

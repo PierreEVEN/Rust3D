@@ -2,8 +2,8 @@
 use std::ops::Deref;
 use std::sync::{RwLock};
 
-use gfx::GfxRef;
-use gfx::surface::{GfxImageID};
+use crate::GfxRef;
+use crate::surface::{GfxImageID};
 
 pub trait GfxImageBuilder<T: Clone> {
     fn build(&self, gfx: &GfxRef, swapchain_ref: &GfxImageID) -> T;
@@ -17,13 +17,13 @@ impl<T: Clone> GfxImageBuilder<T> for DefaultSwapchainResourceBuilder {
     }
 }
 
-pub struct VkSwapchainResource<T> {
+pub struct GfxResource<T> {
     resources: RwLock<HashMap<GfxImageID, T>>,
     builder: RwLock<Box<dyn GfxImageBuilder<T>>>,
     static_resource: bool,
 }
 
-impl<T: Clone> Default for VkSwapchainResource<T> {
+impl<T: Clone> Default for GfxResource<T> {
     fn default() -> Self {
         Self {
             resources: RwLock::default(),
@@ -33,7 +33,7 @@ impl<T: Clone> Default for VkSwapchainResource<T> {
     }
 }
 
-impl<T: Clone> VkSwapchainResource<T> {
+impl<T: Clone> GfxResource<T> {
     pub fn  new(builder: Box<dyn GfxImageBuilder<T>>) -> Self {
         Self {
             static_resource: false,

@@ -51,6 +51,7 @@ dependencies = [
  "backend_vulkan",
  "gfx",
  "maths",
+ "maths_operators",
  "plateform",
  "plateform_win32",
  "raw-window-handle",

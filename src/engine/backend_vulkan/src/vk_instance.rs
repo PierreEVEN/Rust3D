@@ -1,5 +1,4 @@
-﻿
-use std::borrow::Cow;
+﻿use std::borrow::Cow;
 use std::collections::HashMap;
 use std::ffi::CStr;
 use std::os::raw::c_char;
@@ -224,7 +223,6 @@ unsafe extern "system" fn vulkan_debug_callback(message_severity: vk::DebugUtils
 
     let mut object_handle = None;
     let mut object_type = None;
-    let mut message_text = None;
 
     let mut splited = message.split("]");
     splited.next();
@@ -257,8 +255,7 @@ unsafe extern "system" fn vulkan_debug_callback(message_severity: vk::DebugUtils
     match right.nth(0) {
         None => {}
         Some(right) => {
-            let mut right = right.split(";");
-            match right.nth(0) {
+            match right.split(";").nth(0) {
                 None => {}
                 Some(obj_type) => {
                     match obj_type.split("=").nth(1) {
@@ -267,40 +264,37 @@ unsafe extern "system" fn vulkan_debug_callback(message_severity: vk::DebugUtils
                     }
                 }
             }
-            match right.nth(0) {
-                None => {
-                    message_text = Some(message.to_string())
-                }
-                Some(right) => {
-                    match right.split("|").nth(2) {
-                        None => {}
-                        Some(message) => { message_text = Some(message.to_string()); }
-                    }
-                }
-            }
         }
     }
+    let split = message.split("|");
+    let message_text = match split.last() {
+        None => { Some(message.to_string()) }
+        Some(last) => { Some(last.to_string()) }
+    };
 
     #[cfg(not(debug_assertions))]
-    println!(
-        "[{}] {:?} {:?}: [{}] :\n\t=>{} -{}\n\t=>{}\n",
-        &message_id_number.to_string(),
-        message_type,
-        message_severity,
-        message_id_name,
-        match object_type {
-            Some(obj_type) => { obj_type }
-            None => { "None" }
-        },
-        match object_handle {
-            Some(handle) => { handle }
-            None => { "None" }
-        },
-        match message_text {
-            Some(text) => { text }
-            None => { message.to_string() }
-        },
-    );
+    {
+        println!(
+            "[{}] {:?} {:?}: [{}] :\n\t=>{} -{}\n\t=>{}\n",
+            &message_id_number.to_string(),
+            message_type,
+            message_severity,
+            message_id_name,
+            match object_type {
+                Some(obj_type) => { obj_type }
+                None => { "None" }
+            },
+            match object_handle {
+                Some(handle) => { handle }
+                None => { "None" }
+            },
+            match message_text {
+                Some(text) => { text }
+                None => { message.to_string() }
+            },
+        );
+        return vk::FALSE;
+    }
 
     #[cfg(debug_assertions)]
     panic!(
@@ -322,5 +316,4 @@ unsafe extern "system" fn vulkan_debug_callback(message_severity: vk::DebugUtils
             None => { message.to_string() }
         },
     );
-    vk::FALSE
 }

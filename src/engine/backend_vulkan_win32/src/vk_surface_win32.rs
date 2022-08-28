@@ -5,21 +5,21 @@ use std::sync::atomic::{AtomicU8, Ordering};
 use ash::extensions::khr;
 use ash::extensions::khr::{Surface, Swapchain};
 use ash::vk;
-use ash::vk::{Bool32, CompositeAlphaFlagsKHR, Fence, Format, Image, ImageUsageFlags, PresentInfoKHR, PresentModeKHR, QueueFlags, Semaphore, SemaphoreCreateInfo, SharingMode, SurfaceFormatKHR, SurfaceKHR, SurfaceTransformFlagsKHR, SwapchainCreateInfoKHR, SwapchainKHR, Win32SurfaceCreateInfoKHR};
+use ash::vk::{Bool32, CompositeAlphaFlagsKHR, Extent2D, Fence, Format, Image, ImageUsageFlags, PresentInfoKHR, PresentModeKHR, QueueFlags, Semaphore, SemaphoreCreateInfo, SharingMode, SurfaceFormatKHR, SurfaceKHR, SurfaceTransformFlagsKHR, SwapchainCreateInfoKHR, SwapchainKHR, Win32SurfaceCreateInfoKHR};
 use raw_window_handle::RawWindowHandle;
 
 use backend_vulkan::{g_vulkan, G_VULKAN, gfx_cast_vulkan, gfx_object, GfxVulkan, vk_check};
-use backend_vulkan::vk_device::{VkQueue};
+use backend_vulkan::vk_device::VkQueue;
 use backend_vulkan::vk_image::VkImage;
 use backend_vulkan::vk_render_pass::VkRenderPass;
 use backend_vulkan::vk_render_pass_instance::{RbSemaphore, VkRenderPassInstance};
 use backend_vulkan::vk_swapchain_resource::{GfxImageBuilder, VkSwapchainResource};
-use backend_vulkan::vk_types::{GfxPixelFormat, VkExtent2D};
+use backend_vulkan::vk_types::GfxPixelFormat;
 use gfx::GfxRef;
 use gfx::image::{GfxImage, ImageParams, ImageType, ImageUsage};
 use gfx::render_pass::{RenderPass, RenderPassCreateInfos, RenderPassInstance};
-use gfx::surface::{GfxImageID, GfxSurface};
-use gfx::types::{PixelFormat};
+use gfx::surface::{GfxImageID, GfxSurface, SurfaceAcquireResult};
+use gfx::types::PixelFormat;
 use maths::vec2::Vec2u32;
 use plateform::window::Window;
 
@@ -28,17 +28,15 @@ pub struct VkSurfaceWin32 {
     pub swapchain: RwLock<Option<SwapchainKHR>>,
     image_acquire_semaphore: VkSwapchainResource<Semaphore>,
     surface_format: SurfaceFormatKHR,
-    transform_flags: SurfaceTransformFlagsKHR,
     _surface_loader: Surface,
     _swapchain_loader: Swapchain,
     image_count: u8,
-    composite_alpha: CompositeAlphaFlagsKHR,
-    present_mode: PresentModeKHR,
     current_image: AtomicU8,
     window: Arc<dyn Window>,
     gfx: GfxRef,
     surface_image: RwLock<Option<Arc<dyn GfxImage>>>,
     present_queue: Option<Arc<VkQueue>>,
+    extent: RwLock<Extent2D>,
 }
 
 
@@ -54,22 +52,53 @@ impl GfxImageBuilder<Image> for RbSurfaceImage {
 
 impl GfxSurface for VkSurfaceWin32 {
     fn create_or_recreate(&self) {
-        let dimensions = Vec2u32::new(self.window.get_geometry().width() as u32, self.window.get_geometry().height() as u32);
+        let device = gfx_cast_vulkan!(self.gfx).device.read().unwrap();
+        let physical_device_vk = gfx_cast_vulkan!(self.gfx).physical_device_vk.read().unwrap();
+        let surface_capabilities = match unsafe { self._surface_loader.get_physical_device_surface_capabilities(gfx_object!(*physical_device_vk).device, self.surface) } {
+            Ok(surface_capabilities) => { surface_capabilities }
+            Err(_) => {
+                return;
+            }
+        };
+        
+        if surface_capabilities.current_extent.width <= 0 || surface_capabilities.current_extent.height <= 0 {
+            return;
+        }
+
+        vk_check!(unsafe { gfx_object!(*device).device.device_wait_idle() });
+
+        let present_modes = vk_check!(unsafe { self._surface_loader.get_physical_device_surface_present_modes(gfx_object!(*physical_device_vk).device, self.surface) });
+
+        let mut composite_alpha = CompositeAlphaFlagsKHR::OPAQUE;
+        for alpha_flag in vec![CompositeAlphaFlagsKHR::OPAQUE, CompositeAlphaFlagsKHR::PRE_MULTIPLIED, CompositeAlphaFlagsKHR::POST_MULTIPLIED, CompositeAlphaFlagsKHR::INHERIT] {
+            if surface_capabilities.supported_composite_alpha.contains(alpha_flag) {
+                composite_alpha = alpha_flag;
+            }
+        }
+        let mut present_mode = PresentModeKHR::FIFO;
+        for mode in &present_modes {
+            if mode.as_raw() == PresentModeKHR::MAILBOX.as_raw() {
+                present_mode = *mode;
+                break;
+            }
+        }
+
+        let transform_flags = if surface_capabilities.supported_transforms.contains(SurfaceTransformFlagsKHR::IDENTITY) { SurfaceTransformFlagsKHR::IDENTITY } else { surface_capabilities.current_transform };
 
         let ci_swapchain = SwapchainCreateInfoKHR {
             surface: self.surface,
             min_image_count: self.image_count as u32,
             image_format: self.surface_format.format,
             image_color_space: self.surface_format.color_space,
-            image_extent: *VkExtent2D::from(dimensions),
+            image_extent: surface_capabilities.current_extent,
             image_array_layers: 1,
             image_usage: ImageUsageFlags::COLOR_ATTACHMENT,
             image_sharing_mode: SharingMode::EXCLUSIVE,
             queue_family_index_count: 0,
             p_queue_family_indices: null(),
-            pre_transform: self.transform_flags,
-            composite_alpha: self.composite_alpha,
-            present_mode: self.present_mode,
+            pre_transform: transform_flags,
+            composite_alpha,
+            present_mode,
             clipped: true as Bool32,
             old_swapchain: match *self.swapchain.read().unwrap() {
                 None => { Default::default() }
@@ -90,11 +119,13 @@ impl GfxSurface for VkSurfaceWin32 {
             images,
         })), ImageParams {
             pixel_format: *GfxPixelFormat::from(self.surface_format.format),
-            image_format: ImageType::Texture2d(800, 600),
+            image_format: ImageType::Texture2d(surface_capabilities.current_extent.width, surface_capabilities.current_extent.height),
             read_only: true,
             mip_levels: Some(1),
             usage: ImageUsage::Any,
         }));
+        
+        *self.extent.write().unwrap() = surface_capabilities.current_extent;
     }
 
     fn get_owning_window(&self) -> &Arc<dyn Window> {
@@ -117,6 +148,11 @@ impl GfxSurface for VkSurfaceWin32 {
         self.surface_image.read().unwrap().as_ref().unwrap().clone()
     }
 
+    fn get_extent(&self) -> Vec2u32 {
+        let extent = self.extent.read().unwrap();
+        Vec2u32::new(extent.width, extent.height)
+    }
+
     fn create_render_pass(&self, create_infos: RenderPassCreateInfos) -> Arc<dyn RenderPass> {
         VkRenderPass::new(&self.gfx, create_infos)
     }
@@ -125,11 +161,11 @@ impl GfxSurface for VkSurfaceWin32 {
         &self.gfx
     }
 
-    fn acquire(&self, render_pass: &Arc<dyn RenderPassInstance>) -> Result<(), String> {
+    fn acquire(&self, render_pass: &Arc<dyn RenderPassInstance>) -> Result<(), SurfaceAcquireResult> {
         let geometry = self.window.get_geometry();
 
         if geometry.width() == 0 || geometry.height() == 0 {
-            return Err("invalid resolution".to_string());
+            return Err(SurfaceAcquireResult::Failed("invalid resolution".to_string()));
         }
 
         let current_image_acquire_semaphore = self.image_acquire_semaphore.get(&self.get_current_ref());
@@ -137,30 +173,33 @@ impl GfxSurface for VkSurfaceWin32 {
         let (image_index, _acquired_image) = match unsafe { self._swapchain_loader.acquire_next_image(swapchain.unwrap(), u64::MAX, current_image_acquire_semaphore, Fence::default()) } {
             Ok(result) => { result }
             Err(acquire_error) => {
-                match acquire_error {
+                return Err(match acquire_error {
                     vk::Result::ERROR_OUT_OF_DATE_KHR => {
                         self.create_or_recreate();
+                        SurfaceAcquireResult::Resized
                     }
-                    _ => {}
-                };
-                (0, false)
+                    _ => {
+                        SurfaceAcquireResult::Failed("failed to acquire image".to_string())
+                    }
+                });
             }
         };
         self.current_image.store(image_index as u8, Ordering::Release);
-        println!("acquired : {}", self.current_image.load(Ordering::Acquire));
-        
+
         let render_pass = (**render_pass).as_any().downcast_ref::<VkRenderPassInstance>().unwrap();
         let mut wait_sem = render_pass.wait_semaphores.write().unwrap();
         *wait_sem = Some(current_image_acquire_semaphore);
+
         Ok(())
     }
 
-    fn submit(&self) {
+    fn submit(&self, render_pass: &Arc<dyn RenderPassInstance>) -> Result<(), SurfaceAcquireResult> {
         let current_image = self.get_current_ref().image_index as u32;
-        println!("present : {current_image}");
+        let render_pass = (**render_pass).as_any().downcast_ref::<VkRenderPassInstance>().unwrap();
+
         let _present_info = PresentInfoKHR {
-            wait_semaphore_count: 0,
-            p_wait_semaphores: null(),
+            wait_semaphore_count: 1,
+            p_wait_semaphores: &render_pass.render_finished_semaphore.get(&self.get_current_ref()),
             swapchain_count: 1,
             p_swapchains: &self.swapchain.read().unwrap().unwrap(),
             p_image_indices: &current_image,
@@ -168,10 +207,24 @@ impl GfxSurface for VkSurfaceWin32 {
         };
 
         match &self.present_queue {
-            None => {}
-            Some(queue) => { queue.present(&self._swapchain_loader, _present_info); }
+            None => { Err(SurfaceAcquireResult::Failed("no present queue".to_string())) }
+            Some(queue) => {
+                return match queue.present(&self._swapchain_loader, _present_info) {
+                    Ok(_) => { Ok(()) }
+                    Err(present_error) => {
+                        Err(match present_error {
+                            vk::Result::ERROR_OUT_OF_DATE_KHR | vk::Result::SUBOPTIMAL_KHR => {
+                                self.create_or_recreate();
+                                SurfaceAcquireResult::Resized
+                            }
+                            _ => {
+                                SurfaceAcquireResult::Failed(present_error.to_string())
+                            }
+                        })
+                    }
+                };
+            }
         }
-        println!("succeeded");
     }
 }
 
@@ -197,11 +250,6 @@ impl VkSurfaceWin32 {
         let surface = unsafe { surface_fn.create_win32_surface(&ci_surface, None) }.expect("failed to create surface");
         let surface_loader = Surface::new(g_vulkan!(), &gfx_object!(gfx_cast_vulkan!(gfx.clone()).instance).instance);
 
-        let surface_formats = vk_check!(unsafe { surface_loader.get_physical_device_surface_formats(gfx_object!(*physical_device_vk).device, surface) });
-        let surface_capabilities = vk_check!(unsafe { surface_loader.get_physical_device_surface_capabilities(gfx_object!(*physical_device_vk).device, surface) });
-        let present_modes = vk_check!(unsafe { surface_loader.get_physical_device_surface_present_modes(gfx_object!(*physical_device_vk).device, surface) });
-
-
         let swapchain_loader = Swapchain::new(&gfx_object!(gfx_cast_vulkan!(gfx.clone()).instance).instance, &gfx_object!(*device).device);
 
         let mut image_acquire_semaphore = Vec::new();
@@ -210,21 +258,7 @@ impl VkSurfaceWin32 {
         }
 
 
-        let mut composite_alpha = CompositeAlphaFlagsKHR::OPAQUE;
-        for alpha_flag in vec![CompositeAlphaFlagsKHR::OPAQUE, CompositeAlphaFlagsKHR::PRE_MULTIPLIED, CompositeAlphaFlagsKHR::POST_MULTIPLIED, CompositeAlphaFlagsKHR::INHERIT] {
-            if surface_capabilities.supported_composite_alpha.contains(alpha_flag) {
-                composite_alpha = alpha_flag;
-            }
-        }
-        let transform_flags = if surface_capabilities.supported_transforms.contains(SurfaceTransformFlagsKHR::IDENTITY) { SurfaceTransformFlagsKHR::IDENTITY } else { surface_capabilities.current_transform };
-        let mut present_mode = PresentModeKHR::FIFO;
-        for mode in &present_modes {
-            if mode.as_raw() == PresentModeKHR::MAILBOX.as_raw() {
-                present_mode = *mode;
-                break;
-            }
-        }
-
+        let surface_formats = vk_check!(unsafe { surface_loader.get_physical_device_surface_formats(gfx_object!(*physical_device_vk).device, surface) });
         let mut surface_format: SurfaceFormatKHR = Default::default();
         if surface_formats.len() == 1 && surface_formats[0].format == Format::UNDEFINED
         {
@@ -272,9 +306,6 @@ impl VkSurfaceWin32 {
             swapchain: Default::default(),
             _surface_loader: surface_loader,
             surface_format,
-            present_mode,
-            transform_flags,
-            composite_alpha,
             _swapchain_loader: swapchain_loader,
             image_count: image_count as u8,
             current_image: AtomicU8::new(0),
@@ -283,6 +314,7 @@ impl VkSurfaceWin32 {
             present_queue,
             image_acquire_semaphore: VkSwapchainResource::new(Box::new(RbSemaphore {})),
             surface_image: RwLock::default(),
+            extent: RwLock::new(Extent2D { width: 0, height: 0 }),
         });
 
         surface.create_or_recreate();

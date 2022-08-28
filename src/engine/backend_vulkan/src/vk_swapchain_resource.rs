@@ -19,7 +19,7 @@ impl<T: Clone> GfxImageBuilder<T> for DefaultSwapchainResourceBuilder {
 
 pub struct VkSwapchainResource<T> {
     resources: RwLock<HashMap<GfxImageID, T>>,
-    builder: Box<dyn GfxImageBuilder<T>>,
+    builder: RwLock<Box<dyn GfxImageBuilder<T>>>,
     static_resource: bool,
 }
 
@@ -27,7 +27,7 @@ impl<T: Clone> Default for VkSwapchainResource<T> {
     fn default() -> Self {
         Self {
             resources: RwLock::default(),
-            builder: Box::new(DefaultSwapchainResourceBuilder {}),
+            builder: RwLock::new(Box::new(DefaultSwapchainResourceBuilder {})),
             static_resource: true,
         }
     }
@@ -37,7 +37,7 @@ impl<T: Clone> VkSwapchainResource<T> {
     pub fn  new(builder: Box<dyn GfxImageBuilder<T>>) -> Self {
         Self {
             static_resource: false,
-            builder,
+            builder: RwLock::new(builder),
             resources: RwLock::default(),
         }
     }
@@ -46,7 +46,7 @@ impl<T: Clone> VkSwapchainResource<T> {
         Self {
             static_resource: true,
             resources: RwLock::new(HashMap::from([(static_ref.clone(), builder.build(gfx, &static_ref))])),
-            builder,
+            builder: RwLock::new(builder),
         }
     }
 
@@ -63,7 +63,19 @@ impl<T: Clone> VkSwapchainResource<T> {
             }
         }
 
-        self.resources.write().unwrap().insert(reference.clone(), self.builder.as_ref().build(&reference.gfx(), reference));
+        self.resources.write().unwrap().insert(reference.clone(), self.builder.read().unwrap().as_ref().build(&reference.gfx(), reference));
         self.resources.read().unwrap().get(reference).unwrap().clone()
+    }
+    
+    pub fn invalidate(&self, gfx: &GfxRef, builder: Box<dyn GfxImageBuilder<T>> ) {
+        let mut resource_map = self.resources.write().unwrap();
+        (*resource_map).clear();
+        let mut builder_ref = self.builder.write().unwrap();
+        *builder_ref = builder;
+        
+        if self.static_resource {
+            let static_ref = GfxImageID::new(gfx.clone(), 0, 0);
+            resource_map.insert(static_ref.clone(), builder_ref.build(gfx, &static_ref));
+        }
     }
 }

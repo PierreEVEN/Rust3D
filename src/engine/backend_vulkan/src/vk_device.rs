@@ -5,6 +5,7 @@ use std::sync::Arc;
 
 use ash::{Device, vk};
 use ash::extensions::khr::Swapchain;
+use ash::prelude::VkResult;
 use ash::vk::{Bool32, DeviceCreateInfo, DeviceQueueCreateInfo, Fence, FenceCreateFlags, FenceCreateInfo, PhysicalDevice, PhysicalDeviceDescriptorIndexingFeatures, PhysicalDeviceFeatures, PhysicalDeviceFeatures2, PresentInfoKHR, Queue, QueueFlags, SubmitInfo};
 use gpu_allocator::vulkan::{Allocator, AllocatorCreateDesc};
 
@@ -47,16 +48,16 @@ impl VkQueue {
     pub fn wait(&self) {
         let device = gfx_cast_vulkan!(self.gfx).device.read().unwrap();
         vk_check!(unsafe { gfx_object!(*device).device.wait_for_fences(&[self.fence], true, u64::MAX) });
-    } 
-    
+    }
+
     pub fn submit(&self, submit_infos: SubmitInfo) {
         let device = gfx_cast_vulkan!(self.gfx).device.read().unwrap();
         self.wait();
         vk_check!(unsafe { gfx_object!(*device).device.reset_fences(&[self.fence]) });
         vk_check!(unsafe { gfx_object!(*device).device.queue_submit(self.queue, &[submit_infos], self.fence) });
     }
-    pub fn present(&self, swapchain: &Swapchain, present_infos: PresentInfoKHR) {
-        vk_check!(unsafe { swapchain.queue_present(self.queue, &present_infos) });
+    pub fn present(&self, swapchain: &Swapchain, present_infos: PresentInfoKHR) -> VkResult<bool> {
+        unsafe { swapchain.queue_present(self.queue, &present_infos) }
     }
 }
 

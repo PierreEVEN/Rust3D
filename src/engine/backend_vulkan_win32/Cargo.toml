@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 gfx = {path = "../gfx"}
 maths = {path = "../maths"}
+maths_operators = {path = "../maths_operators"}
 backend_vulkan = { path = "../backend_vulkan" }
 plateform = {path = "../plateform"}
 plateform_win32 = {path = "../plateform_win32"}

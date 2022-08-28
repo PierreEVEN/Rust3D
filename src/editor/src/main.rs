@@ -41,8 +41,8 @@ fn main() {
     let secondary_window_surface = VkSurfaceWin32::new(&gfx_backend, secondary_window.clone(), 3);
 
     // Create framegraph
-    let main_framegraph = FrameGraph::from_surface(&gfx_backend, &main_window_surface, Vec4F32::new(1.0, 0.0, 0.0, 1.0));
-    let secondary_framegraph = FrameGraph::from_surface(&gfx_backend, &secondary_window_surface, Vec4F32::new(0.0, 1.0, 0.0, 1.0));
+    let mut main_framegraph = Some(FrameGraph::from_surface(&gfx_backend, &main_window_surface, Vec4F32::new(1.0, 0.0, 0.0, 1.0)));
+    let mut secondary_framegraph = Some(FrameGraph::from_surface(&gfx_backend, &secondary_window_surface, Vec4F32::new(0.0, 1.0, 0.0, 1.0)));
 
     // Game loop
     'game_loop: loop {
@@ -50,28 +50,46 @@ fn main() {
         while let Some(message) = platform.poll_event() {
             match message {
                 PlatformEvent::WindowClosed(_window) => {
-                    break 'game_loop;
+                    if _window.get_handle() == main_window.get_handle() {
+                        main_framegraph = None;
+                    }
+                    if _window.get_handle() == secondary_window.get_handle() {
+                        secondary_framegraph = None;
+                    }
+                    if main_framegraph.is_none() && secondary_framegraph.is_none() {
+                        break 'game_loop;
+                    }
                 }
                 PlatformEvent::WindowResized(_window, _width, _height) => {}
             }
         }
 
-        match main_framegraph.begin() {
-            Ok(_) => {
-                // Rendering
-                main_framegraph.submit();
-            }
-            Err(_) => {}
-        };
 
-
-        match secondary_framegraph.begin() {
-            Ok(_) => {
-                // Rendering
-                secondary_framegraph.submit();
+        match &main_framegraph {
+            None => {}
+            Some(main_framegraph) => {
+                match main_framegraph.begin() {
+                    Ok(_) => {
+                        // Rendering
+                        main_framegraph.submit();
+                    }
+                    Err(_) => {}
+                };
             }
-            Err(_) => {}
-        };
+        }
+
+        match &secondary_framegraph {
+            None => {}
+            Some(secondary_framegraph) => {
+                match secondary_framegraph.begin() {
+                    Ok(_) => {
+                        // Rendering
+                        secondary_framegraph.submit();
+                    }
+                    Err(_) => {}
+                };
+            }
+        }
     }
 }
 

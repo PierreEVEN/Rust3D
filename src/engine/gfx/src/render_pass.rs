@@ -1,9 +1,10 @@
-﻿use std::sync::{Arc};
+﻿use std::sync::Arc;
 
 use maths::vec2::Vec2u32;
 use maths::vec4::Vec4F32;
 
 use crate::{GfxCast, GfxRef, GfxSurface};
+use crate::surface::SurfaceAcquireResult;
 use crate::types::{ClearValues, PixelFormat};
 
 pub struct RenderPassAttachment {
@@ -25,7 +26,7 @@ pub trait RenderPass: GfxCast {
     fn get_config(&self) -> &RenderPassCreateInfos;
 }
 
-pub trait RenderPassInstance : GfxCast {
+pub trait RenderPassInstance: GfxCast {
     fn resize(&self, new_res: Vec2u32);
     fn begin(&self);
     fn end(&self);
@@ -42,7 +43,7 @@ impl FrameGraph {
             name: "surface_pass".to_string(),
             color_attachments: vec![RenderPassAttachment {
                 name: "color".to_string(),
-                clear_value: ClearValues::Color(clear_value),//Vec4F32 { x: 1.0, y: 1.0, z: 0.0, w: 1.0 }),
+                clear_value: ClearValues::Color(clear_value),
                 image_format: surface.get_surface_pixel_format(),
             }],
             depth_attachment: None,
@@ -64,14 +65,36 @@ impl FrameGraph {
             Ok(_) => {
                 self.present_pass.begin();
             }
-            Err(error) => { return Err(error); }
+            Err(error) => {
+                match error {
+                    SurfaceAcquireResult::Resized => {
+                        {
+                            self.present_pass.resize(self.surface.get_extent());
+                            self.present_pass.begin();
+                        }
+                    }
+                    SurfaceAcquireResult::Failed(error) => {
+                        return Err(error);
+                    }
+                }
+            }
         }
         Ok(())
     }
 
     pub fn submit(&self) {
         self.present_pass.end();
-        self.surface.submit();
+        match self.surface.submit(&self.present_pass) {
+            Ok(_) => {}
+            Err(error) => {
+                match error {
+                    SurfaceAcquireResult::Resized => {
+                        self.present_pass.resize(self.surface.get_extent());
+                    }
+                    SurfaceAcquireResult::Failed(_error) => { panic!("Failed to submit surface : {_error}") }
+                }
+            }
+        };
     }
 }
 

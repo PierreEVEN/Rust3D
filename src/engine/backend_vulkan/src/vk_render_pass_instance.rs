@@ -23,7 +23,7 @@ pub struct VkRenderPassInstance {
     surface: Arc<dyn GfxSurface>,
     _framebuffers: VkSwapchainResource<Framebuffer>,
     pub clear_value: Vec<ClearValues>,
-    pub resolution: Vec2u32,
+    pub resolution: RwLock<Vec2u32>,
     pub wait_semaphores: RwLock<Option<Semaphore>>,
 }
 
@@ -103,7 +103,6 @@ impl VkRenderPassInstance {
             for _att_depth in &owner.get_config().depth_attachment {}
         }
 
-
         VkRenderPassInstance {
             render_finished_semaphore: VkSwapchainResource::new(Box::new(RbSemaphore {})),
             pass_command_buffers: VkSwapchainResource::new(Box::new(RbCommandBuffer {})),
@@ -112,7 +111,7 @@ impl VkRenderPassInstance {
             clear_value: clear_values.clone(),
             gfx: gfx.clone(),
             surface: surface.clone(),
-            resolution: res,
+            resolution: RwLock::new(res),
             wait_semaphores: RwLock::new(None),
         }
     }
@@ -120,7 +119,18 @@ impl VkRenderPassInstance {
 
 impl RenderPassInstance for VkRenderPassInstance {
     fn resize(&self, _new_res: Vec2u32) {
-        todo!()
+        let render_pass = self.owner.as_ref().as_any().downcast_ref::<VkRenderPass>().unwrap().render_pass;
+
+        let mut images = Vec::new();
+        if self.owner.get_config().is_present_pass {
+            images.push(self.surface.get_surface_texture())
+        } else {
+            for _att_color in &self.owner.get_config().color_attachments {}
+            for _att_depth in &self.owner.get_config().depth_attachment {}
+        }
+        self._framebuffers.invalidate(&self.gfx, Box::new(RbFramebuffer { render_pass, res: _new_res, images }));
+        let mut res = self.resolution.write().unwrap();
+        *res = _new_res;
     }
 
     fn begin(&self) {
@@ -146,12 +156,13 @@ impl RenderPassInstance for VkRenderPassInstance {
             });
         }
 
+        let res = self.resolution.read().unwrap();
         let begin_infos = RenderPassBeginInfo {
             render_pass: self.owner.as_ref().as_any().downcast_ref::<VkRenderPass>().expect("invalid render pass").render_pass,
             framebuffer: self._framebuffers.get(&self.surface.get_current_ref()),
             render_area: vk::Rect2D {
                 offset: Offset2D { x: 0, y: 0 },
-                extent: Extent2D { width: self.resolution.x, height: self.resolution.y },
+                extent: Extent2D { width: res.x, height: res.y },
             },
             clear_value_count: clear_values.len() as u32,
             p_clear_values: clear_values.as_ptr(),
@@ -164,7 +175,6 @@ impl RenderPassInstance for VkRenderPassInstance {
 
         vk_check!(unsafe { gfx_object!(*device).device.begin_command_buffer(command_buffer, &vk::CommandBufferBeginInfo::default()) });
 
-
         unsafe { gfx_object!(*device).device.cmd_begin_render_pass(command_buffer, &begin_infos, SubpassContents::INLINE) }
     }
 
@@ -174,14 +184,12 @@ impl RenderPassInstance for VkRenderPassInstance {
         let command_buffer = self.pass_command_buffers.get(&self.surface.get_current_ref());
         unsafe { gfx_object!(*device).device.cmd_end_render_pass(command_buffer) }
         vk_check!(unsafe { gfx_object!(*device).device.end_command_buffer(command_buffer) });
-
-
+        
         let mut wait_semaphores = Vec::new();
         if self.owner.as_ref().as_any().downcast_ref::<VkRenderPass>().unwrap().get_config().is_present_pass {
-            wait_semaphores.push(self.wait_semaphores.read().unwrap().unwrap())
+            wait_semaphores.push(self.wait_semaphores.read().unwrap().unwrap());
         }
-
-
+                
         let submit_infos = SubmitInfo {
             wait_semaphore_count: wait_semaphores.len() as u32,
             p_wait_semaphores: wait_semaphores.as_ptr(),
@@ -192,7 +200,7 @@ impl RenderPassInstance for VkRenderPassInstance {
             p_signal_semaphores: &self.render_finished_semaphore.get(&self.surface.get_current_ref()),
             ..SubmitInfo::default()
         };
-
+        
         gfx_object!(*device).get_queue(QueueFlags::GRAPHICS).unwrap().submit(submit_infos);
     }
 }

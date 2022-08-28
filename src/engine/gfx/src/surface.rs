@@ -1,5 +1,6 @@
 ﻿use std::hash::{Hash, Hasher};
 use std::sync::Arc;
+use maths::vec2::Vec2u32;
 
 use plateform::window::Window;
 
@@ -42,6 +43,11 @@ impl Hash for GfxImageID {
     }
 }
 
+pub enum SurfaceAcquireResult {
+    Resized,
+    Failed(String)
+}
+
 pub trait GfxSurface: GfxCast {
     fn create_or_recreate(&self);
     fn get_owning_window(&self) -> &Arc<dyn Window>;
@@ -49,10 +55,11 @@ pub trait GfxSurface: GfxCast {
     fn get_image_count(&self) -> u8;
     fn get_current_ref(&self) -> GfxImageID;
     fn get_surface_texture(&self) -> Arc<dyn GfxImage>;
+    fn get_extent(&self) -> Vec2u32;
 
     fn create_render_pass(&self, create_infos: RenderPassCreateInfos) -> Arc<dyn RenderPass>;
     fn get_gfx(&self) -> &GfxRef;
 
-    fn acquire(&self, render_pass: &Arc<dyn RenderPassInstance>) -> Result<(), String>;
-    fn submit(&self);
+    fn acquire(&self, render_pass: &Arc<dyn RenderPassInstance>) -> Result<(), SurfaceAcquireResult>;
+    fn submit(&self, render_pass: &Arc<dyn RenderPassInstance>) -> Result<(), SurfaceAcquireResult>;
 }

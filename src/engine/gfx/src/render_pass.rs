@@ -3,7 +3,7 @@
 use maths::vec2::Vec2u32;
 use maths::vec4::Vec4F32;
 
-use crate::{GfxCast, GfxRef, GfxSurface};
+use crate::{GfxCast, GfxCommandBuffer, GfxRef, GfxSurface};
 use crate::surface::SurfaceAcquireResult;
 use crate::types::{ClearValues, PixelFormat};
 
@@ -28,7 +28,7 @@ pub trait RenderPass: GfxCast {
 
 pub trait RenderPassInstance: GfxCast {
     fn resize(&self, new_res: Vec2u32);
-    fn begin(&self);
+    fn begin(&self) -> Arc<dyn GfxCommandBuffer>;
     fn end(&self);
 }
 
@@ -60,26 +60,25 @@ impl FrameGraph {
         }
     }
 
-    pub fn begin(&self) -> Result<(), String> {
-        match self.surface.acquire(&self.present_pass) {
+    pub fn begin(&self) -> Result<Arc<dyn GfxCommandBuffer>, String> {
+        return match self.surface.acquire(&self.present_pass) {
             Ok(_) => {
-                self.present_pass.begin();
+                Ok(self.present_pass.begin())
             }
             Err(error) => {
                 match error {
                     SurfaceAcquireResult::Resized => {
                         {
                             self.present_pass.resize(self.surface.get_extent());
-                            self.present_pass.begin();
+                            Ok(self.present_pass.begin())
                         }
                     }
                     SurfaceAcquireResult::Failed(error) => {
-                        return Err(error);
+                        Err(error)
                     }
                 }
             }
         }
-        Ok(())
     }
 
     pub fn submit(&self) {

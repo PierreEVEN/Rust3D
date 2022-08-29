@@ -140,3 +140,6 @@ pub enum DescriptorType
     StorageBufferDynamic,
     InputAttachment,
 }
+
+pub trait ShaderProgram {
+}

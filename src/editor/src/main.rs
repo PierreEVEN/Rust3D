@@ -1,13 +1,19 @@
+use std::fs;
 use std::path::Path;
+use std::sync::Arc;
+
 use backend_vulkan::GfxVulkan;
 use backend_vulkan_win32::vk_surface_win32::VkSurfaceWin32;
+use core::asset::*;
+use core::asset_manager::*;
+use core::base_assets::material_asset::*;
 use gfx::render_pass::FrameGraph;
+use gfx::shader::{PassID, ShaderProgram};
 use maths::rect2d::Rect2D;
 use maths::vec4::Vec4F32;
 use plateform::Platform;
 use plateform::window::{PlatformEvent, WindowCreateInfos, WindowFlagBits, WindowFlags};
 use plateform_win32::PlatformWin32;
-use core::base_assets::material_asset::*;
 
 mod gfx_demo;
 
@@ -46,9 +52,19 @@ fn main() {
     let mut main_framegraph = Some(FrameGraph::from_surface(&gfx_backend, &main_window_surface, Vec4F32::new(1.0, 0.0, 0.0, 1.0)));
     let mut secondary_framegraph = Some(FrameGraph::from_surface(&gfx_backend, &secondary_window_surface, Vec4F32::new(0.0, 1.0, 0.0, 1.0)));
 
-    let _demo_shader = MaterialAsset::from_path(Path::new("./data/shaders/demo.shb"));
-    
-    
+    // Create asset manager
+    let asset_manager = AssetManager::new(&gfx_backend);
+
+    // Create material
+    let demo_material = MaterialAsset::new(&asset_manager);
+    demo_material.meta_data().set_save_path(Path::new("data/demo_shader"));
+    demo_material.meta_data().set_name("demo shader".to_string());
+    demo_material.set_shader_code(match fs::read_to_string("./data/shaders/demo.shb") {
+        Ok(file_data) => { file_data }
+        Err(_) => { panic!("failed to read shader_file") }
+    });
+    let surface_pass_id = "surface_pass".to_string() as PassID;
+
     // Game loop
     'game_loop: loop {
         // handle events
@@ -68,13 +84,22 @@ fn main() {
                 PlatformEvent::WindowResized(_window, _width, _height) => {}
             }
         }
-        
+
         match &main_framegraph {
             None => {}
             Some(main_framegraph) => {
                 match main_framegraph.begin() {
-                    Ok(_) => {
+                    Ok(command_buffer) => {
                         // Rendering
+
+                        match demo_material.get_program(&surface_pass_id) {
+                            None => {panic!("failed to find compatible permutation")}
+                            Some(program) => {
+                                command_buffer.bind_program(program);
+                            }
+                        };
+
+
                         main_framegraph.submit();
                     }
                     Err(_) => {}
@@ -96,6 +121,3 @@ fn main() {
         }
     }
 }
-
-
-

@@ -6,14 +6,17 @@ use ash::Entry;
 
 use gfx::{GfxInterface, GfxRef, PhysicalDevice};
 use gfx::buffer::{BufferCreateInfo, GfxBuffer};
+use gfx::command_buffer::GfxCommandBuffer;
 use gfx::render_pass::{RenderPass, RenderPassCreateInfos};
+use gfx::shader::{ShaderProgramInfos, ShaderProgram};
 
 use crate::vk_buffer::VkBuffer;
-use crate::vk_command_buffer::VkCommandPool;
+use crate::vk_command_buffer::{VkCommandBuffer, VkCommandPool};
 use crate::vk_device::VkDevice;
 use crate::vk_instance::{InstanceCreateInfos, VkInstance};
 use crate::vk_physical_device::VkPhysicalDevice;
 use crate::vk_render_pass::VkRenderPass;
+use crate::vk_shader::VkShaderProgram;
 
 pub mod vk_instance;
 pub mod vk_physical_device;
@@ -120,12 +123,20 @@ impl GfxInterface for GfxVulkan {
         gfx_object!(self.instance).find_best_suitable_gpu_vk()
     }
 
-    fn create_buffer(&self, create_infos: &BufferCreateInfo) -> Box<dyn GfxBuffer> {
-        Box::new(VkBuffer::new(&self.get_ref(), create_infos))
+    fn create_buffer(&self, create_infos: &BufferCreateInfo) -> Arc<dyn GfxBuffer> {
+        Arc::new(VkBuffer::new(&self.get_ref(), create_infos))
+    }
+
+    fn create_shader_program(&self, create_infos: &ShaderProgramInfos) -> Arc<dyn ShaderProgram> {
+        todo!()//Arc::new(VkShaderProgram::new(&self.get_ref(), create_infos))
     }
 
     fn create_render_pass(&self, create_infos: RenderPassCreateInfos) -> Arc<dyn RenderPass> {
         VkRenderPass::new(&self.get_ref(), create_infos)
+    }
+
+    fn create_command_buffer(&self) -> Arc<dyn GfxCommandBuffer> {
+        Arc::new(VkCommandBuffer::new(&self.get_ref()))
     }
 
     fn get_ref(&self) -> GfxRef {

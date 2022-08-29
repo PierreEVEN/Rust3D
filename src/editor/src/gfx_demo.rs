@@ -1,18 +1,12 @@
-﻿use std::path::Path;
-use std::sync::Arc;
+﻿use std::sync::Arc;
 
 use gfx::buffer::*;
 use gfx::GfxRef;
 use gfx::render_pass::{RenderPassAttachment, RenderPassCreateInfos};
-use gfx::shader::ShaderStage;
 use gfx::surface::GfxSurface;
 use gfx::types::*;
 use maths::vec2::{Vec2F32, Vec2u32};
 use maths::vec4::Vec4F32;
-use shader_compiler::{CompilationResult, CompilerBackend};
-use shader_compiler::backends::backend_shaderc::*;
-use shader_compiler::parser::Parser;
-use shader_compiler::types::*;
 
 pub fn _demo_objects(gfx: &GfxRef, surface: &Arc<dyn GfxSurface>) {
     // GPU Buffer example

@@ -1,55 +1,56 @@
-﻿use std::fs;
+﻿use std::collections::HashMap;
 use std::path::Path;
 use std::sync::{Arc, RwLock};
-use gfx::shader::ShaderStage;
-use shader_compiler::backends::backend_shaderc::{BackendShaderC, ShaderCIncluder};
-use shader_compiler::{CompilationResult, CompilerBackend};
+
+use gfx::shader::{PassID, ShaderProgram};
+use shader_compiler::backends::backend_shaderc::ShaderCIncluder;
 use shader_compiler::parser::Parser;
-use shader_compiler::types::{InterstageData, ShaderErrorResult, ShaderLanguage};
 
-use crate::asset::GameAsset;
+use crate::asset::{AssetFactory, AssetMetaData, GameAsset};
+use crate::asset_manager::AssetManager;
+use crate::asset_type_id::AssetTypeID;
 
-struct ShaderPermutation {
-    
+pub struct ShaderPermutation {
+    pub pass_id: PassID,
+    pub code: Vec<u32>,
+    pub shader: Arc<dyn ShaderProgram>,
 }
 
 pub struct MaterialAsset {
-    asset_name: RwLock<String>,
-   // permutations: VkSwapchainResource<ShaderPermutation>
+    virtual_path: RwLock<String>,
+    _meta_data: AssetMetaData,
+    parsed_shader: RwLock<Option<Parser>>,
+    permutations: RwLock<HashMap<PassID, ShaderPermutation>>,
 }
 
 impl MaterialAsset {
-    pub fn from_path(path: &Path) -> Arc<dyn GameAsset> {
-        let mut errors = ShaderErrorResult::default();
-        let shader_code = match fs::read_to_string(path) {
-            Ok(file_data) => { file_data }
-            Err(error) => {
-                errors.push(-1, -1, &format!("failed to open file : {}", error), path.to_str().unwrap());
-                "error : failed to open file".to_string()
-            }
-        };
-        
-        Self::from_sprv(Self::text_to_sprv(shader_code, path), "undefined".to_string())
-    }
-    
-    pub fn from_sprv(code: Vec<u32>, name: String) -> Arc<dyn GameAsset> {
+    pub fn new(asset_manager: &Arc<AssetManager>) -> Arc<MaterialAsset> {
         Arc::new(Self {
-            asset_name: RwLock::new(name)
+            _meta_data: AssetMetaData::new(asset_manager),
+            virtual_path: RwLock::default(),
+            parsed_shader: RwLock::default(),
+            permutations: RwLock::default(),
         })
     }
-    
-    pub fn text_to_sprv(text_code: String, virtual_path: &Path) -> Vec<u32> {
-        let includer = Box::new(ShaderCIncluder::new());
-        let parse_result = match Parser::new(text_code, virtual_path, includer) {
+
+    pub fn set_shader_code(&self, shader_text: String) {
+        let virtual_path = &*self.virtual_path.read().unwrap();
+        let parse_result = Parser::new(&shader_text, virtual_path, Box::new(ShaderCIncluder::new()));
+        match parse_result {
             Ok(result) => {
-                println!("successfully parsed shader");
-                result
+                *self.parsed_shader.write().unwrap() = Some(result)
             }
-            Err(error) => { panic!("shader syntax error : \n{}", error.to_string()) }
+            Err(error) => {
+                *self.parsed_shader.write().unwrap() = None;
+                panic!("shader syntax error : \n{}", error.to_string())
+            }
         };
+        self.permutations.write().unwrap().clear();
+    }
 
+    /*
+    pub fn text_to_sprv(text_code: String, virtual_path: &Path) -> Vec<u32> {
         let shader_compiler = BackendShaderC::new();
-
         for pass in ["gbuffer".to_string()] {
             let interstage = InterstageData {
                 stage_outputs: Default::default(),
@@ -76,13 +77,51 @@ impl MaterialAsset {
                 }
             };
         }
-        
         Vec::new()
+    }
+    */
+
+    pub fn get_program(&self, pass: &PassID) -> Option<Arc<dyn ShaderProgram>> {
+        match self.permutations.read().unwrap().get(pass) {
+            None => {
+                None
+            }
+            Some(permutation) => {
+                Some(permutation.shader.clone())
+            }
+        }
     }
 }
 
 impl GameAsset for MaterialAsset {
-    fn get_name(&self) -> String {
-        self.asset_name.read().unwrap().clone()
+    fn save(&self) -> Result<(), String> {
+        todo!()
+    }
+
+    fn reload(&self) -> Result<(), String> {
+        todo!()
+    }
+
+    fn meta_data(&self) -> &AssetMetaData {
+        &self._meta_data
+    }
+}
+
+pub struct MaterialAssetFactory {}
+
+impl MaterialAssetFactory {
+    pub fn new() -> Arc<Self> {
+        Arc::new(Self {})
+    }
+}
+
+
+impl AssetFactory for MaterialAssetFactory {
+    fn instantiate_from_asset_path(&self, _path: &Path) -> Arc<dyn GameAsset> {
+        todo!()
+    }
+
+    fn asset_id(&self) -> AssetTypeID {
+        AssetTypeID::from("material")
     }
 }

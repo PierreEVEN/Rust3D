@@ -2,6 +2,7 @@
 
 use ash::vk;
 use ash::vk::{ClearColorValue, ClearDepthStencilValue, ClearValue, CommandBuffer, CommandBufferAllocateInfo, Extent2D, Framebuffer, FramebufferCreateInfo, Offset2D, PipelineStageFlags, QueueFlags, RenderPassBeginInfo, Semaphore, SemaphoreCreateInfo, SubmitInfo, SubpassContents};
+use gfx::command_buffer::GfxCommandBuffer;
 use gfx::gfx_resource::{GfxImageBuilder, GfxResource};
 
 use gfx::GfxRef;
@@ -17,7 +18,7 @@ use crate::vk_image::VkImage;
 
 pub struct VkRenderPassInstance {
     pub render_finished_semaphore: GfxResource<Semaphore>,
-    pub pass_command_buffers: GfxResource<CommandBuffer>,
+    pub pass_command_buffers: Arc<VkCommandBuffer>, //GfxResource<CommandBuffer>,
     owner: Arc<dyn RenderPass>,
     gfx: GfxRef,
     surface: Arc<dyn GfxSurface>,
@@ -105,7 +106,7 @@ impl VkRenderPassInstance {
 
         VkRenderPassInstance {
             render_finished_semaphore: GfxResource::new(Box::new(RbSemaphore {})),
-            pass_command_buffers: GfxResource::new(Box::new(RbCommandBuffer {})),
+            pass_command_buffers: VkCommandBuffer::new(gfx), //GfxResource::new(Box::new(RbCommandBuffer {})),
             _framebuffers: GfxResource::new(Box::new(RbFramebuffer { render_pass, res, images })),
             owner,
             clear_value: clear_values.clone(),
@@ -133,7 +134,7 @@ impl RenderPassInstance for VkRenderPassInstance {
         *res = _new_res;
     }
 
-    fn begin(&self) {
+    fn begin(&self) -> Arc<dyn GfxCommandBuffer>{
         let mut clear_values = Vec::new();
         for clear_value in &self.clear_value {
             clear_values.push(match clear_value {
@@ -157,50 +158,20 @@ impl RenderPassInstance for VkRenderPassInstance {
         }
 
         let res = self.resolution.read().unwrap();
-        let begin_infos = RenderPassBeginInfo {
-            render_pass: self.owner.as_ref().as_any().downcast_ref::<VkRenderPass>().expect("invalid render pass").render_pass,
-            framebuffer: self._framebuffers.get(&self.surface.get_current_ref()),
-            render_area: vk::Rect2D {
-                offset: Offset2D { x: 0, y: 0 },
-                extent: Extent2D { width: res.x, height: res.y },
-            },
-            clear_value_count: clear_values.len() as u32,
-            p_clear_values: clear_values.as_ptr(),
-            ..RenderPassBeginInfo::default()
-        };
 
-        let command_buffer = self.pass_command_buffers.get(&self.surface.get_current_ref());
-
-        let device = gfx_cast_vulkan!(self.gfx).device.read().unwrap();
-
-        vk_check!(unsafe { gfx_object!(*device).device.begin_command_buffer(command_buffer, &vk::CommandBufferBeginInfo::default()) });
-
-        unsafe { gfx_object!(*device).device.cmd_begin_render_pass(command_buffer, &begin_infos, SubpassContents::INLINE) }
+        self.pass_command_buffers.init();
+        self.pass_command_buffers.begin_pass(self);
+        self.pass_command_buffers
     }
 
     fn end(&self) {
-        let device = gfx_cast_vulkan!(self.gfx).device.read().unwrap();
-        
-        let command_buffer = self.pass_command_buffers.get(&self.surface.get_current_ref());
-        unsafe { gfx_object!(*device).device.cmd_end_render_pass(command_buffer) }
-        vk_check!(unsafe { gfx_object!(*device).device.end_command_buffer(command_buffer) });
+        self.pass_command_buffers.end_pass(self);
         
         let mut wait_semaphores = Vec::new();
         if self.owner.as_ref().as_any().downcast_ref::<VkRenderPass>().unwrap().get_config().is_present_pass {
             wait_semaphores.push(self.wait_semaphores.read().unwrap().unwrap());
         }
-                
-        let submit_infos = SubmitInfo {
-            wait_semaphore_count: wait_semaphores.len() as u32,
-            p_wait_semaphores: wait_semaphores.as_ptr(),
-            p_wait_dst_stage_mask: &PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT,
-            command_buffer_count: 1,
-            p_command_buffers: &command_buffer,
-            signal_semaphore_count: 1,
-            p_signal_semaphores: &self.render_finished_semaphore.get(&self.surface.get_current_ref()),
-            ..SubmitInfo::default()
-        };
         
-        gfx_object!(*device).get_queue(QueueFlags::GRAPHICS).unwrap().submit(submit_infos);
+        self.pass_command_buffers.submit(wait_semaphores);
     }
 }

@@ -1,5 +1,4 @@
 ﻿use std::collections::HashMap;
-use std::path::Path;
 use gfx::shader::{AlphaMode, Culling, FrontFace, PolygonMode, ShaderStage, Topology};
 use crate::file_iterator::FileIterator;
 use crate::includer::Includer;
@@ -74,7 +73,7 @@ pub struct Parser {
 
 #[derive(Clone, Default)]
 pub struct ShaderChunk {
-    pub file: String,
+    pub virtual_path: String,
     pub line_start: u32,
     pub content: String,
 }
@@ -105,7 +104,7 @@ impl Parser {
         return line;
     }
 
-    fn get_next_chunk(&mut self, file_path: &Path) -> Result<ShaderChunk, ShaderErrorResult>
+    fn get_next_chunk(&mut self, virtual_path: &String) -> Result<ShaderChunk, ShaderErrorResult>
     {
         let mut current_indentation: i64 = 0;
         let mut found_body = false;
@@ -123,16 +122,16 @@ impl Parser {
                 self.file_iterator += 2;
                 found_body = true;
                 let file = Self::trim_string(&self.file_iterator.get_next_line());
-                let result = (*self.includer).include_local(&file, &file_path);
+                let result = (*self.includer).include_local(&file, &virtual_path);
                 match result {
                     Ok((name, data)) => {
                         chunk.line_start = 0;
                         chunk.content = data;
-                        chunk.file = name;
-                        self.includer.release_include(&file, &file_path);
+                        chunk.virtual_path = name;
+                        self.includer.release_include(&file, &virtual_path);
                     }
                     Err(new_error) => {
-                        self.includer.release_include(&file, &file_path);
+                        self.includer.release_include(&file, &virtual_path);
                         error += new_error;
                     }
                 }
@@ -159,7 +158,7 @@ impl Parser {
             else {
                 if !found_body && !Self::is_void(self.file_iterator.current())
                 {
-                    error.push(self.file_iterator.current_line() as isize, -1, format!("expected '[' but found {}", self.file_iterator.get_next_line()).as_str(), file_path.to_str().unwrap());
+                    error.push(self.file_iterator.current_line() as isize, -1, format!("expected '[' but found {}", self.file_iterator.get_next_line()).as_str(), virtual_path);
                     break;
                 }
 
@@ -176,11 +175,11 @@ impl Parser {
         }
         // No end
         if current_indentation != 0 {
-            error.push(self.file_iterator.current_line() as isize, -1, format!("chunk doesn't end correctly : {}", chunk.content).as_str(), file_path.to_str().unwrap());
+            error.push(self.file_iterator.current_line() as isize, -1, format!("chunk doesn't end correctly : {}", chunk.content).as_str(), virtual_path);
         }
         // No body
         if !found_body {
-            error.push(self.file_iterator.current_line() as isize, -1, "failed to find chunk body", file_path.to_str().unwrap());
+            error.push(self.file_iterator.current_line() as isize, -1, "failed to find chunk body", virtual_path);
         }
 
         if error.empty() {
@@ -280,7 +279,7 @@ impl Parser {
         }
     }
 
-    pub fn new(shader_code: String, file_path: &Path, includer: Box<dyn Includer>) -> Result<Self, ShaderErrorResult> {
+    pub fn new(shader_code: &String, file_path: &String, includer: Box<dyn Includer>) -> Result<Self, ShaderErrorResult> {
         let mut errors = ShaderErrorResult::default();
 
         let mut parser = Self {
@@ -304,7 +303,7 @@ impl Parser {
         }
     }
 
-    fn parse_shader(&mut self, file_path: &Path) -> Result<(), ShaderErrorResult>
+    fn parse_shader(&mut self, file_path: &String) -> Result<(), ShaderErrorResult>
     {
         let mut errors = ShaderErrorResult::default();
 
@@ -331,13 +330,13 @@ impl Parser {
                             }
                             Err(error) => {
                                 errors += error;
-                                errors.push(self.file_iterator.current_line() as isize, 0, "failed to parse header for 'head' chunk", file_path.to_str().unwrap())
+                                errors.push(self.file_iterator.current_line() as isize, 0, "failed to parse header for 'head' chunk", file_path)
                             }
                         }
                     }
                     Err(error) => {
                         errors += error;
-                        errors.push(self.file_iterator.current_line() as isize, 0, "failed to read 'head' chunk", file_path.to_str().unwrap());
+                        errors.push(self.file_iterator.current_line() as isize, 0, "failed to read 'head' chunk", file_path);
                     }
                 };
             }
@@ -348,8 +347,8 @@ impl Parser {
                 match self.get_next_chunk(file_path) {
                     Ok(chunk) => {
                         let mut chunk_data = chunk.clone();
-                        if chunk_data.file.is_empty() {
-                            chunk_data.file = file_path.to_str().unwrap().to_string();
+                        if chunk_data.virtual_path.is_empty() {
+                            chunk_data.virtual_path = file_path.clone();
                         }
                         for pass in Self::parse_chunk_head(&global_args) {
                             self.program_data.push_chunk(&pass, &ShaderStage::Vertex, chunk_data.clone());
@@ -358,7 +357,7 @@ impl Parser {
                     }
                     Err(error) => {
                         errors += error;
-                        errors.push(self.file_iterator.current_line() as isize, 0, "failed to read 'global' chunk", file_path.to_str().unwrap());
+                        errors.push(self.file_iterator.current_line() as isize, 0, "failed to read 'global' chunk", file_path);
                     }
                 };
             }
@@ -369,8 +368,8 @@ impl Parser {
                 match self.get_next_chunk(&file_path) {
                     Ok(vertex_chunk) => {
                         let mut chunk_data = vertex_chunk.clone();
-                        if chunk_data.file.is_empty() {
-                            chunk_data.file = file_path.to_str().unwrap().to_string();
+                        if chunk_data.virtual_path.is_empty() {
+                            chunk_data.virtual_path = file_path.clone();
                         }
                         for pass in Self::parse_chunk_head(&vertex_args) {
                             self.program_data.push_chunk(&pass, &ShaderStage::Vertex,chunk_data.clone());
@@ -378,7 +377,7 @@ impl Parser {
                     }
                     Err(error) => {
                         errors += error;
-                        errors.push(self.file_iterator.current_line() as isize, 0, "failed to read 'vertex' chunk", file_path.to_str().unwrap());
+                        errors.push(self.file_iterator.current_line() as isize, 0, "failed to read 'vertex' chunk", file_path);
                     }
                 };
             }
@@ -389,8 +388,8 @@ impl Parser {
                 match self.get_next_chunk(&file_path) {
                     Ok(fragment_chunk) => {
                         let mut chunk_data = fragment_chunk.clone();
-                        if chunk_data.file.is_empty() {
-                            chunk_data.file = file_path.to_str().unwrap().to_string();
+                        if chunk_data.virtual_path.is_empty() {
+                            chunk_data.virtual_path = file_path.clone();
                         }
                         for pass in Self::parse_chunk_head(&fragment_args) {
                             self.program_data.push_chunk(&pass, &ShaderStage::Fragment,chunk_data.clone());
@@ -398,7 +397,7 @@ impl Parser {
                     }
                     Err(error) => {
                         errors += error;
-                        errors.push(self.file_iterator.current_line() as isize, 0, "failed to read 'fragment' chunk", file_path.to_str().unwrap());
+                        errors.push(self.file_iterator.current_line() as isize, 0, "failed to read 'fragment' chunk", file_path);
                     }
                 }
             }

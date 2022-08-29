@@ -60,11 +60,11 @@ impl PartialEq<char> for FileIterator {
 }
 
 impl FileIterator {
-    pub fn new(shader_code: String) -> Self {
+    pub fn new(shader_code: &String) -> Self {
         Self {
             line_count: 1,
             ptr: 0,
-            shader: shader_code,
+            shader: shader_code.clone(),
             end: '\0',
         }
     }

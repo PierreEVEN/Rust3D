@@ -6,7 +6,7 @@ use std::sync::Arc;
 use ash::vk::{Bool32, CompareOp, CullModeFlags, DynamicState, GraphicsPipelineCreateInfo, Pipeline, PipelineCache, PipelineColorBlendAttachmentState, PipelineColorBlendStateCreateInfo, PipelineDepthStencilStateCreateInfo, PipelineDynamicStateCreateInfo, PipelineInputAssemblyStateCreateInfo, PipelineLayout, PipelineLayoutCreateInfo, PipelineMultisampleStateCreateInfo, PipelineRasterizationStateCreateInfo, PipelineShaderStageCreateInfo, PipelineVertexInputStateCreateInfo, PipelineViewportStateCreateInfo, PrimitiveTopology, PushConstantRange, RenderPass, SampleCountFlags, ShaderModule, ShaderModuleCreateFlags, ShaderModuleCreateInfo, ShaderStageFlags, StructureType, VertexInputAttributeDescription, VertexInputBindingDescription, VertexInputRate};
 use gfx::GfxRef;
 
-use gfx::shader::{Culling, FrontFace, PolygonMode, ShaderProgramInfos, Topology};
+use gfx::shader::{Culling, FrontFace, PolygonMode, ShaderProgram, ShaderProgramInfos, Topology};
 
 use crate::{gfx_cast_vulkan, gfx_object, GfxVulkan, vk_check};
 use crate::vk_descriptor_set::VkDescriptorSetLayout;
@@ -67,6 +67,9 @@ pub struct VkShaderProgram {
     _pipeline: Pipeline,
     _pipeline_layout: PipelineLayout,
     _descriptor_set_layout: Arc<VkDescriptorSetLayout>,
+}
+
+impl ShaderProgram for VkShaderProgram {
 }
 
 impl VkShaderProgram {

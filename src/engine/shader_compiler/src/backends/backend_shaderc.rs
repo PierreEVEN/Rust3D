@@ -1,5 +1,4 @@
-﻿use std::path::Path;
-
+﻿
 use shaderc::{CompileOptions, Compiler, EnvVersion, IncludeCallbackResult, IncludeType, SourceLanguage, SpirvVersion, TargetEnv};
 use gfx::shader::ShaderStage;
 
@@ -87,17 +86,17 @@ impl ShaderCIncluder {
 }
 
 impl Includer for ShaderCIncluder {
-    fn include_local(&self, file: &String, shader_path: &Path) -> Result<(String, String), ShaderErrorResult> {
+    fn include_local(&self, file: &String, _virtual_path: &String) -> Result<(String, String), ShaderErrorResult> {
         let mut errors = ShaderErrorResult::default();
-        errors.push(-1, -1, format!("failed to include '{}' : include are not supported yet", file).as_str(), shader_path.to_str().unwrap());
+        errors.push(-1, -1, format!("failed to include '{}' : include are not supported yet", file).as_str(), _virtual_path);
         Err(errors)
     }
 
-    fn include_system(&self, _file: &String, _shader_path: &Path) -> Result<(String, String), ShaderErrorResult> {
+    fn include_system(&self, _file: &String, _virtual_path: &String) -> Result<(String, String), ShaderErrorResult> {
         todo!()
     }
 
-    fn release_include(&self, _file: &String, _shader_path: &Path) {}
+    fn release_include(&self, _file: &String, _virtual_path: &String) {}
 
-    fn add_include_path(&self, _include_path: &Path) {}
+    fn add_include_path(&self, _include_path: &String) {}
 }

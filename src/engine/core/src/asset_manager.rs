@@ -9,14 +9,14 @@ use crate::base_assets::mesh_asset::MeshAssetFactory;
 
 pub struct AssetManager {
     factories: RwLock<HashMap<AssetTypeID, Arc<dyn AssetFactory>>>,
-    assets: RwLock<HashMap<AssetID, Arc<dyn GameAsset>>>,
+    _assets: RwLock<HashMap<AssetID, Arc<dyn GameAsset>>>,
     gfx: GfxRef,
 }
 
 impl AssetManager {
     pub fn new(gfx: &GfxRef) -> Arc<Self> {
         let asset_manager = Arc::new(Self {
-            assets: RwLock::default(),
+            _assets: RwLock::default(),
             factories: RwLock::default(),
             gfx: gfx.clone(),
         });

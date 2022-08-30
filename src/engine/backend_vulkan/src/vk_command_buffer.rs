@@ -1,13 +1,15 @@
-﻿use std::sync::Arc;
-use ash::vk::{CommandBuffer, CommandBufferAllocateInfo, CommandPool, CommandPoolCreateFlags, CommandPoolCreateInfo, QueueFlags, RenderPassBeginInfo, SubpassContents};
+﻿use std::sync::{Arc, RwLock};
+
+use ash::vk::{CommandBuffer, CommandBufferAllocateInfo, CommandPool, CommandPoolCreateFlags, CommandPoolCreateInfo, PipelineBindPoint, QueueFlags};
+
 use gfx::buffer::GfxBuffer;
-
 use gfx::command_buffer::GfxCommandBuffer;
+use gfx::gfx_resource::{GfxImageBuilder, GfxResource};
 use gfx::GfxRef;
-use gfx::render_pass::RenderPassInstance;
-use gfx::shader::ShaderProgram;
+use gfx::shader::{PassID, ShaderProgram};
+use gfx::surface::GfxImageID;
 
-use crate::{gfx_cast_vulkan, gfx_object, GfxVulkan, vk_check};
+use crate::{gfx_cast_vulkan, gfx_object, GfxVulkan, vk_check, VkShaderProgram};
 
 pub struct VkCommandPool {
     pub command_pool: CommandPool,
@@ -36,51 +38,62 @@ impl VkCommandPool {
 }
 
 pub struct VkCommandBuffer {
-    pub command_buffer: CommandBuffer,
+    pub command_buffer: GfxResource<CommandBuffer>,
     gfx: GfxRef,
+    pass_id: RwLock<PassID>,
+}
+
+pub struct RbCommandBuffer {
     
 }
 
-impl VkCommandBuffer {
-    pub fn new(gfx: &GfxRef) -> Arc<VkCommandBuffer> {
+impl GfxImageBuilder<CommandBuffer> for RbCommandBuffer {
+    fn build(&self, gfx: &GfxRef, _: &GfxImageID) -> CommandBuffer {
         let device = gfx_cast_vulkan!(gfx).device.read().unwrap();
         let command_pool = gfx_cast_vulkan!(gfx).command_pool.read().unwrap();
-
         let create_infos = CommandBufferAllocateInfo {
             command_pool: gfx_object!(*command_pool).command_pool,
             command_buffer_count: 1,
             ..CommandBufferAllocateInfo::default()
         };
+        vk_check!(unsafe { gfx_object!(*device).device.allocate_command_buffers(&create_infos) })[0]
+    }
+}
 
-        let command_buffer = vk_check!(unsafe { gfx_object!(*device).device.allocate_command_buffers(&create_infos) });
+impl VkCommandBuffer {
+    pub fn new(gfx: &GfxRef) -> Arc<VkCommandBuffer> {
+        Arc::new(VkCommandBuffer { command_buffer: GfxResource::new(Box::new(RbCommandBuffer {})), gfx: gfx.clone(), pass_id: RwLock::new(PassID::new("undefined")) })
+    }
 
-        Arc::new(VkCommandBuffer { command_buffer: command_buffer[0], gfx: gfx.clone() })
+    pub fn set_pass_id(&self, new_id: PassID) {
+        *self.pass_id.write().unwrap() = new_id;
     }
 }
 
 impl GfxCommandBuffer for VkCommandBuffer {
-    fn bind_program(&self, material: Arc<dyn ShaderProgram>) {
+    fn bind_program(&self, image: &GfxImageID, program: Arc<dyn ShaderProgram>) {
         let device = gfx_cast_vulkan!(self.gfx).device.read().unwrap();
-
-        // gfx_object!(*device).device.cmd_bind_descriptor_sets()
+        let vk_program = program.as_ref().as_any().downcast_ref::<VkShaderProgram>().unwrap();
+        unsafe { gfx_object!(*device).device.cmd_bind_pipeline(self.command_buffer.get(image), PipelineBindPoint::GRAPHICS, vk_program.pipeline); }
     }
 
-    fn draw_mesh(&self, mesh: Arc<dyn GfxBuffer>, instance_count: u32, first_instance: u32) {
-        let device = gfx_cast_vulkan!(self.gfx).device.read().unwrap();
+    fn draw_mesh(&self, _image: &GfxImageID, _mesh: Arc<dyn GfxBuffer>, _instance_count: u32, _first_instance: u32) {
+        let _device = gfx_cast_vulkan!(self.gfx).device.read().unwrap();
         //gfx_object!(*device).device.draw
         todo!()
     }
 
-    fn draw_mesh_advanced(&self, mesh: Arc<dyn GfxBuffer>, first_index: u32, vertex_offset: u32, index_count: u32, instance_count: u32, first_instance: u32) {
+    fn draw_mesh_advanced(&self, _image: &GfxImageID, _mesh: Arc<dyn GfxBuffer>, _first_index: u32, _vertex_offset: u32, _index_count: u32, _instance_count: u32, _first_instance: u32) {
         todo!()
     }
 
-    fn draw_mesh_indirect(&self, mesh: Arc<dyn GfxBuffer>) {
+    fn draw_mesh_indirect(&self, _image: &GfxImageID, _mesh: Arc<dyn GfxBuffer>) {
         todo!()
     }
 
-    fn draw_procedural(&self, vertex_count: u32, first_vertex: u32, instance_count: u32, first_instance: u32) {
-        todo!()
+    fn draw_procedural(&self, image: &GfxImageID, vertex_count: u32, first_vertex: u32, instance_count: u32, first_instance: u32) {
+        let device = gfx_cast_vulkan!(self.gfx).device.read().unwrap();
+        unsafe { gfx_object!(*device).device.cmd_draw(self.command_buffer.get(image), vertex_count, instance_count, first_vertex, first_instance) }
     }
 
     fn set_scissor(&self) {
@@ -91,44 +104,7 @@ impl GfxCommandBuffer for VkCommandBuffer {
         todo!()
     }
 
-    fn init(&self) {
-        let device = gfx_cast_vulkan!(self.gfx).device.read().unwrap();
-
-        vk_check!(unsafe { gfx_object!(*device).device.begin_command_buffer(command_buffer, &vk::CommandBufferBeginInfo::default()) });
-    }
-
-    fn submit(&self) {
-
-        let submit_infos = SubmitInfo {
-            wait_semaphore_count: wait_semaphores.len() as u32,
-            p_wait_semaphores: wait_semaphores.as_ptr(),
-            p_wait_dst_stage_mask: &PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT,
-            command_buffer_count: 1,
-            p_command_buffers: &command_buffer,
-            signal_semaphore_count: 1,
-            p_signal_semaphores: &self.render_finished_semaphore.get(&self.surface.get_current_ref()),
-            ..SubmitInfo::default()
-        };
-
-        gfx_object!(*device).get_queue(QueueFlags::GRAPHICS).unwrap().submit(submit_infos);
-    }
-
-    fn begin_pass(&self, pass: &dyn RenderPassInstance) {
-        let begin_infos = RenderPassBeginInfo {
-            render_pass: self.owner.as_ref().as_any().downcast_ref::<VkRenderPass>().expect("invalid render pass").render_pass,
-            framebuffer: self._framebuffers.get(&self.surface.get_current_ref()),
-            render_area: vk::Rect2D {
-                offset: Offset2D { x: 0, y: 0 },
-                extent: Extent2D { width: res.x, height: res.y },
-            },
-            clear_value_count: clear_values.len() as u32,
-            p_clear_values: clear_values.as_ptr(),
-            ..RenderPassBeginInfo::default()
-        };
-        unsafe { gfx_object!(*device).device.cmd_begin_render_pass(command_buffer, &begin_infos, SubpassContents::INLINE) };
-    }
-
-    fn end_pass(&self, pass: &dyn RenderPassInstance) {
-        todo!()
+    fn get_pass_id(&self) -> PassID {
+        self.pass_id.read().unwrap().clone()
     }
 }

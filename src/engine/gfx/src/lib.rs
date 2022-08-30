@@ -1,10 +1,10 @@
 use std::hash::{Hash, Hasher};
-use std::sync::{Arc};
+use std::sync::Arc;
 
 use crate::buffer::{BufferCreateInfo, GfxBuffer};
 use crate::command_buffer::GfxCommandBuffer;
 use crate::render_pass::{RenderPass, RenderPassCreateInfos};
-use crate::shader::{ShaderProgramInfos, ShaderProgram};
+use crate::shader::{PassID, ShaderProgram, ShaderProgramInfos};
 use crate::surface::GfxSurface;
 use crate::types::GfxCast;
 
@@ -24,8 +24,9 @@ pub trait GfxInterface: GfxCast {
     fn enumerate_physical_devices(&self) -> Vec<PhysicalDevice>;
     fn find_best_suitable_physical_device(&self) -> Result<PhysicalDevice, String>;
     fn create_buffer(&self, create_infos: &BufferCreateInfo) -> Arc<dyn GfxBuffer>;
-    fn create_shader_program(&self, create_infos: &ShaderProgramInfos) -> Arc<dyn ShaderProgram>;
+    fn create_shader_program(&self, render_pass: &Arc<dyn RenderPass>, create_infos: &ShaderProgramInfos) -> Arc<dyn ShaderProgram>;
     fn create_render_pass(&self, create_infos: RenderPassCreateInfos) -> Arc<dyn RenderPass>;
+    fn find_render_pass(&self, pass_id: &PassID) -> Option<Arc<dyn RenderPass>>;
     fn create_command_buffer(&self) -> Arc<dyn GfxCommandBuffer>;
     fn get_ref(&self) -> GfxRef;
 }

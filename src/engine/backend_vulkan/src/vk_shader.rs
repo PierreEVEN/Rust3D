@@ -3,12 +3,13 @@ use std::os::raw::c_char;
 use std::ptr::null;
 use std::sync::Arc;
 
-use ash::vk::{Bool32, CompareOp, CullModeFlags, DynamicState, GraphicsPipelineCreateInfo, Pipeline, PipelineCache, PipelineColorBlendAttachmentState, PipelineColorBlendStateCreateInfo, PipelineDepthStencilStateCreateInfo, PipelineDynamicStateCreateInfo, PipelineInputAssemblyStateCreateInfo, PipelineLayout, PipelineLayoutCreateInfo, PipelineMultisampleStateCreateInfo, PipelineRasterizationStateCreateInfo, PipelineShaderStageCreateInfo, PipelineVertexInputStateCreateInfo, PipelineViewportStateCreateInfo, PrimitiveTopology, PushConstantRange, RenderPass, SampleCountFlags, ShaderModule, ShaderModuleCreateFlags, ShaderModuleCreateInfo, ShaderStageFlags, StructureType, VertexInputAttributeDescription, VertexInputBindingDescription, VertexInputRate};
+use ash::vk::{BlendFactor, BlendOp, Bool32, ColorComponentFlags, CompareOp, CullModeFlags, DynamicState, GraphicsPipelineCreateInfo, Pipeline, PipelineCache, PipelineColorBlendAttachmentState, PipelineColorBlendStateCreateInfo, PipelineDepthStencilStateCreateInfo, PipelineDynamicStateCreateInfo, PipelineInputAssemblyStateCreateInfo, PipelineLayout, PipelineLayoutCreateInfo, PipelineMultisampleStateCreateInfo, PipelineRasterizationStateCreateInfo, PipelineShaderStageCreateInfo, PipelineVertexInputStateCreateInfo, PipelineViewportStateCreateInfo, PrimitiveTopology, PushConstantRange, SampleCountFlags, ShaderModule, ShaderModuleCreateFlags, ShaderModuleCreateInfo, ShaderStageFlags, StructureType, VertexInputAttributeDescription, VertexInputBindingDescription, VertexInputRate};
 use gfx::GfxRef;
+use gfx::render_pass::RenderPass;
 
-use gfx::shader::{Culling, FrontFace, PolygonMode, ShaderProgram, ShaderProgramInfos, Topology};
+use gfx::shader::{AlphaMode, Culling, FrontFace, PolygonMode, ShaderBinding, ShaderProgram, ShaderProgramInfos, Topology};
 
-use crate::{gfx_cast_vulkan, gfx_object, GfxVulkan, vk_check};
+use crate::{gfx_cast_vulkan, gfx_object, GfxVulkan, vk_check, VkRenderPass};
 use crate::vk_descriptor_set::VkDescriptorSetLayout;
 use crate::vk_types::VkPixelFormat;
 
@@ -64,16 +65,18 @@ pub struct VkShaderProgram {
     _gfx: GfxRef,
     _vertex_module: Arc<VkShaderModule>,
     _fragment_module: Arc<VkShaderModule>,
-    _pipeline: Pipeline,
-    _pipeline_layout: PipelineLayout,
-    _descriptor_set_layout: Arc<VkDescriptorSetLayout>,
+    pub pipeline: Pipeline,
+    pub pipeline_layout: PipelineLayout,
+    pub descriptor_set_layout: Arc<VkDescriptorSetLayout>,
 }
 
 impl ShaderProgram for VkShaderProgram {
 }
 
 impl VkShaderProgram {
-    pub fn new(gfx: &GfxRef, create_infos: &ShaderProgramInfos, descriptor_set_layout: &Arc<VkDescriptorSetLayout>) -> Arc<Self> {
+    pub fn new(gfx: &GfxRef, render_pass: &Arc<dyn RenderPass>, create_infos: &ShaderProgramInfos, vertex_bindings: &Vec<ShaderBinding>, fragment_bindings: &Vec<ShaderBinding>) -> Arc<Self> {
+        let descriptor_set_layout = VkDescriptorSetLayout::new(gfx, vertex_bindings, fragment_bindings);
+        
         let device = gfx_cast_vulkan!(gfx).device.read().unwrap();
         
         let vertex_module = VkShaderModule::new(gfx, &create_infos.vertex_stage.spirv);
@@ -141,8 +144,7 @@ impl VkShaderProgram {
             p_vertex_attribute_descriptions: vertex_attribute_description.as_ptr(),
             ..PipelineVertexInputStateCreateInfo::default()
         };
-
-
+        
         let input_assembly = PipelineInputAssemblyStateCreateInfo {
             topology: VkTopology::from(&create_infos.topology).0,
             primitive_restart_enable: false as Bool32,
@@ -192,10 +194,9 @@ impl VkShaderProgram {
             ..PipelineDepthStencilStateCreateInfo::default()
         };
 
-        let color_blend_attachment = Vec::<PipelineColorBlendAttachmentState>::new();
+        let mut color_blend_attachment = Vec::<PipelineColorBlendAttachmentState>::new();
 
-        /*
-        for i in 0..render_pass.color_attachment_count
+        for _ in &render_pass.get_config().color_attachments
         {
             color_blend_attachment.push(PipelineColorBlendAttachmentState {
                 blend_enable: if create_infos.alpha_mode == AlphaMode::Opaque { false } else { true } as Bool32,
@@ -209,23 +210,21 @@ impl VkShaderProgram {
                 ..PipelineColorBlendAttachmentState::default()
             });
         }
-        */
 
         let shader_stages = Vec::<PipelineShaderStageCreateInfo>::from([
             PipelineShaderStageCreateInfo {
                 stage: ShaderStageFlags::VERTEX,
                 module: vertex_module.get_module(),
-                p_name: "main".as_ptr() as *const c_char,
+                p_name: "main\0".as_ptr() as *const c_char,
                 ..PipelineShaderStageCreateInfo::default()
             },
             PipelineShaderStageCreateInfo {
                 stage: ShaderStageFlags::FRAGMENT,
                 module: fragment_module.get_module(),
-                p_name: "main".as_ptr() as *const c_char,
+                p_name: "main\0".as_ptr() as *const c_char,
                 ..PipelineShaderStageCreateInfo::default()
             }
         ]);
-
 
         let color_blending = PipelineColorBlendStateCreateInfo {
             attachment_count: color_blend_attachment.len() as u32,
@@ -246,6 +245,7 @@ impl VkShaderProgram {
             ..PipelineDynamicStateCreateInfo::default()
         };
 
+        let render_pass = render_pass.as_ref().as_any().downcast_ref::<VkRenderPass>().unwrap();
 
         let ci_pipeline = GraphicsPipelineCreateInfo {
             stage_count: shader_stages.len() as u32,
@@ -259,7 +259,7 @@ impl VkShaderProgram {
             p_color_blend_state: &color_blending,
             p_dynamic_state: &dynamic_states,
             layout: pipeline_layout,
-            render_pass: RenderPass::default(),//render_pass.get_render_pass(),
+            render_pass: render_pass.render_pass,
             subpass: 0,
             base_pipeline_handle: Pipeline::default(),
             base_pipeline_index: -1,
@@ -276,9 +276,9 @@ impl VkShaderProgram {
             _gfx: gfx.clone(),
             _vertex_module: vertex_module,
             _fragment_module: fragment_module,
-            _pipeline: pipeline,
-            _pipeline_layout: pipeline_layout,
-            _descriptor_set_layout: descriptor_set_layout.clone()
+            pipeline,
+            pipeline_layout,
+            descriptor_set_layout: descriptor_set_layout.clone()
         })
     }
 }

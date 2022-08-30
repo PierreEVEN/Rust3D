@@ -1,13 +1,15 @@
-﻿use std::collections::HashMap;
-use std::{ops};
+﻿use std::ops;
+use std::collections::HashMap;
+
 use gfx::shader::{Culling, FrontFace, PolygonMode, Topology};
 
 #[derive(Clone)]
 pub struct ShaderError {
     text: String,
     file_path: String,
-    line: isize,
-    column: isize,
+    error_id: String,
+    line: Option<isize>,
+    column: Option<isize>,
 }
 
 #[derive(Clone, Default)]
@@ -16,10 +18,11 @@ pub struct ShaderErrorResult {
 }
 
 impl ShaderErrorResult {
-    pub fn push(&mut self, line: isize, column: isize, message: &str, file_path: &str) {
+    pub fn push(&mut self, line: Option<isize>, column: Option<isize>, error_id: &str, error_message: &str, file_path: &str) {
         self.error_list.push(ShaderError {
-            text: message.to_string(),
+            text: error_message.to_string(),
             file_path: file_path.to_string(),
+            error_id: error_id.to_string(),
             line,
             column,
         })
@@ -31,19 +34,31 @@ impl ShaderErrorResult {
 
 impl ToString for ShaderErrorResult {
     fn to_string(&self) -> String {
-        let mut result = String::from("failed to parse shader :\n");
+        
+        
+        let mut result = String::from("stack backtrace:\n");
         let mut index = 1;
         for error in &self.error_list {
-            if error.line >= 0 && error.column >= 0 {
-                result += format!("\t{}: [{}:{}:{}]\n\t\t{}\n", index, error.file_path, error.line, error.column, error.text).as_str();                
+            let mut text = String::new();
+            let multiline = error.text.contains("\n");
+            for line in error.text.split("\n") {
+                text += "\t\t\t";
+                if multiline {
+                    text += "| ";
+                }
+                text += line;
+                text += "\n";
             }
-            else if error.line >= 0 {
-                result += format!("\t{}: [{}:{}]\n\t\t{}\n", index, error.file_path, error.line, error.text).as_str();
+
+
+            if error.line.is_some() && error.column.is_some() {
+                result += format!("\t{}: {}\n\t\tat {}:{}:{}\n{}\n", index, error.error_id, error.file_path, error.line.unwrap(), error.column.unwrap(), text).as_str();
+            } else if error.line.is_some() {
+                result += format!("\t{}: {}\n\t\tat {}:{}:0\n{}\n", index, error.error_id, error.file_path, error.line.unwrap(), text).as_str();
+            } else {
+                result += format!("\t{}: {}\n\t\tat {}:0:0\n{}\n", index, error.error_id, error.file_path, text).as_str();
             }
-            else {
-                result += format!("\t{}: [{}]\n\t\t{}\n", index, error.file_path, error.text).as_str();                
-            }
-            
+
             index += 1;
         }
         result

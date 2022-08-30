@@ -4,7 +4,7 @@ use maths::vec2::Vec2u32;
 
 use plateform::window::Window;
 
-use crate::{GfxCast, GfxRef, RenderPass, RenderPassCreateInfos};
+use crate::{GfxCast, GfxRef};
 use crate::image::GfxImage;
 use crate::render_pass::RenderPassInstance;
 use crate::types::PixelFormat;
@@ -57,7 +57,6 @@ pub trait GfxSurface: GfxCast {
     fn get_surface_texture(&self) -> Arc<dyn GfxImage>;
     fn get_extent(&self) -> Vec2u32;
 
-    fn create_render_pass(&self, create_infos: RenderPassCreateInfos) -> Arc<dyn RenderPass>;
     fn get_gfx(&self) -> &GfxRef;
 
     fn acquire(&self, render_pass: &Arc<dyn RenderPassInstance>) -> Result<(), SurfaceAcquireResult>;

@@ -5,6 +5,7 @@ use ash::vk::{AccessFlags, AttachmentDescription, AttachmentLoadOp, AttachmentRe
 
 use gfx::{GfxRef};
 use gfx::render_pass::{RenderPass, RenderPassCreateInfos, RenderPassInstance};
+use gfx::shader::PassID;
 use gfx::surface::GfxSurface;
 use gfx::types::{ClearValues, PixelFormat};
 use maths::vec2::Vec2u32;
@@ -18,7 +19,8 @@ pub struct VkRenderPass {
     gfx: GfxRef,
     self_ref: RwLock<Weak<VkRenderPass>>,
     default_clear_values: Vec<ClearValues>,
-    config: RenderPassCreateInfos
+    config: RenderPassCreateInfos,
+    pass_id: PassID,
 }
 
 impl RenderPass for VkRenderPass {
@@ -32,6 +34,10 @@ impl RenderPass for VkRenderPass {
 
     fn get_config(&self) -> &RenderPassCreateInfos {
         &self.config
+    }
+
+    fn get_pass_id(&self) -> PassID {
+        self.pass_id.clone()
     }
 }
 
@@ -169,7 +175,8 @@ impl VkRenderPass {
             gfx: gfx.clone(),
             self_ref: RwLock::new(Weak::new()),
             default_clear_values: clear_values,
-            config: create_infos
+            pass_id: PassID::new(create_infos.name.as_str()),
+            config: create_infos,
         });
 
         {

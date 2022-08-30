@@ -1,3 +1,4 @@
+use std::path::Path;
 use gfx::shader::ShaderStage;
 use crate::parser::ShaderChunk;
 use crate::types::{InterstageData, ShaderErrorResult, ShaderLanguage};
@@ -16,5 +17,5 @@ pub struct CompilationResult {
 }
 
 pub trait CompilerBackend {
-    fn compile_to_spirv(&self, shader_code: &Vec<ShaderChunk>, source_language: ShaderLanguage, shader_stage: ShaderStage, previous_stage_data: InterstageData) -> Result<CompilationResult, ShaderErrorResult>;
+    fn compile_to_spirv(&self, shader_code: &Vec<ShaderChunk>, virtual_path: &Path, source_language: ShaderLanguage, shader_stage: ShaderStage, previous_stage_data: InterstageData) -> Result<CompilationResult, ShaderErrorResult>;
 }

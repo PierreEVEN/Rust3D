@@ -3,7 +3,7 @@
 use maths::vec2::Vec2u32;
 use maths::vec4::Vec4F32;
 
-use crate::{GfxCast, GfxCommandBuffer, GfxRef, GfxSurface};
+use crate::{GfxCast, GfxCommandBuffer, GfxRef, GfxSurface, PassID};
 use crate::surface::SurfaceAcquireResult;
 use crate::types::{ClearValues, PixelFormat};
 
@@ -24,6 +24,7 @@ pub trait RenderPass: GfxCast {
     fn instantiate(&self, surface: &Arc<dyn GfxSurface>, res: Vec2u32) -> Arc<dyn RenderPassInstance>;
     fn get_clear_values(&self) -> &Vec<ClearValues>;
     fn get_config(&self) -> &RenderPassCreateInfos;
+    fn get_pass_id(&self) -> PassID;
 }
 
 pub trait RenderPassInstance: GfxCast {
@@ -52,7 +53,7 @@ impl FrameGraph {
 
         let res = surface.get_owning_window().get_geometry();
 
-        let draw_pass = surface.create_render_pass(render_pass_ci).instantiate(surface, Vec2u32::new(res.width() as u32, res.height() as u32));
+        let draw_pass = _gfx.create_render_pass(render_pass_ci).instantiate(surface, Vec2u32::new(res.width() as u32, res.height() as u32));
 
         Self {
             surface: surface.clone(),
@@ -68,17 +69,15 @@ impl FrameGraph {
             Err(error) => {
                 match error {
                     SurfaceAcquireResult::Resized => {
-                        {
-                            self.present_pass.resize(self.surface.get_extent());
-                            Ok(self.present_pass.begin())
-                        }
+                        self.present_pass.resize(self.surface.get_extent());
+                        Err("framebuffer resized".to_string())
                     }
                     SurfaceAcquireResult::Failed(error) => {
                         Err(error)
                     }
                 }
             }
-        }
+        };
     }
 
     pub fn submit(&self) {

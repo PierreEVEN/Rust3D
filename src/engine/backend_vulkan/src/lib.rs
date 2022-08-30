@@ -1,4 +1,6 @@
 extern crate core;
+
+use std::collections::HashMap;
 use std::default::Default;
 use std::sync::{Arc, RwLock, Weak};
 
@@ -8,7 +10,7 @@ use gfx::{GfxInterface, GfxRef, PhysicalDevice};
 use gfx::buffer::{BufferCreateInfo, GfxBuffer};
 use gfx::command_buffer::GfxCommandBuffer;
 use gfx::render_pass::{RenderPass, RenderPassCreateInfos};
-use gfx::shader::{ShaderProgramInfos, ShaderProgram};
+use gfx::shader::{PassID, ShaderProgram, ShaderProgramInfos};
 
 use crate::vk_buffer::VkBuffer;
 use crate::vk_command_buffer::{VkCommandBuffer, VkCommandPool};
@@ -86,6 +88,7 @@ pub struct GfxVulkan {
     pub device: RwLock<Option<VkDevice>>,
     pub gfx_ref: RwLock<Weak<GfxVulkan>>,
     pub command_pool: RwLock<Option<VkCommandPool>>,
+    render_passes: RwLock<HashMap<PassID, Arc<dyn RenderPass>>>,
 }
 
 impl GfxInterface for GfxVulkan {
@@ -127,16 +130,26 @@ impl GfxInterface for GfxVulkan {
         Arc::new(VkBuffer::new(&self.get_ref(), create_infos))
     }
 
-    fn create_shader_program(&self, create_infos: &ShaderProgramInfos) -> Arc<dyn ShaderProgram> {
-        todo!()//Arc::new(VkShaderProgram::new(&self.get_ref(), create_infos))
+    fn create_shader_program(&self, render_pass: &Arc<dyn RenderPass>, create_infos: &ShaderProgramInfos) -> Arc<dyn ShaderProgram> {
+        VkShaderProgram::new(&self.get_ref(), render_pass, create_infos, &vec![], &vec![])
     }
 
     fn create_render_pass(&self, create_infos: RenderPassCreateInfos) -> Arc<dyn RenderPass> {
-        VkRenderPass::new(&self.get_ref(), create_infos)
+        let pass_id = PassID::new(create_infos.name.as_str());
+        let pass = VkRenderPass::new(&self.get_ref(), create_infos);
+        self.render_passes.write().unwrap().insert(pass_id, pass.clone());
+        pass
+    }
+
+    fn find_render_pass(&self, pass_id: &PassID) -> Option<Arc<dyn RenderPass>> {
+        match self.render_passes.read().unwrap().get(pass_id) {
+            None => { None }
+            Some(pass) => { Some(pass.clone()) }
+        }
     }
 
     fn create_command_buffer(&self) -> Arc<dyn GfxCommandBuffer> {
-        Arc::new(VkCommandBuffer::new(&self.get_ref()))
+        VkCommandBuffer::new(&self.get_ref())
     }
 
     fn get_ref(&self) -> GfxRef {
@@ -160,6 +173,7 @@ impl GfxVulkan {
             device: RwLock::default(),
             gfx_ref: RwLock::new(Weak::new()),
             command_pool: RwLock::default(),
+            render_passes: RwLock::default(),
         });
 
         {

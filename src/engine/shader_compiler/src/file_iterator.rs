@@ -39,11 +39,11 @@ impl Sub<i64> for FileIterator {
 
 impl AddAssign<i64> for FileIterator {
     fn add_assign(&mut self, rhs: i64) {
-        for _i in 0..rhs {
+        for _ in 0..rhs {
             match self.shader.chars().nth((self.ptr) as usize) {
                 None => {}
                 Some(value) => {
-                    if value == '\0' {
+                    if value == '\n' {
                         self.line_count += 1;
                     }
                 }
@@ -78,16 +78,12 @@ impl FileIterator {
     }
 
     pub fn match_string(&mut self, str: &str) -> bool {
-        let mut offset = 0;
-        while self.valid() && offset < str.len() {
-            let current_char = str.chars().nth(offset).expect("failed to read char");
-            if self.current() != current_char {
-                return false;
-            }
-            self.add_assign(1);
-            offset += 1;
+        if self.match_string_in_place(str) {
+            self.add_assign(str.len() as i64);
+            true
+        } else {
+            false
         }
-        offset == str.len()
     }
 
     pub fn match_string_in_place(&mut self, str: &str) -> bool {

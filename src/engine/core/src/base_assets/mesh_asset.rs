@@ -12,11 +12,14 @@ pub struct MeshAsset {
 }
 
 impl MeshAsset {
-    pub fn new(asset_manager: &Arc<AssetManager>) -> Arc<MeshAsset> {
+    pub fn new(_asset_manager: &Arc<AssetManager>) -> Arc<MeshAsset> {
+        todo!()
+        /*
         Arc::new(Self {
             _meta_data: AssetMetaData::new(asset_manager),
             material: todo!()
         })
+         */
     }
 
     pub fn set_material(&self, material: &Arc<MaterialAsset>) {

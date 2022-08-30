@@ -11,13 +11,12 @@ use raw_window_handle::RawWindowHandle;
 use backend_vulkan::{g_vulkan, G_VULKAN, gfx_cast_vulkan, gfx_object, GfxVulkan, vk_check};
 use backend_vulkan::vk_device::VkQueue;
 use backend_vulkan::vk_image::VkImage;
-use backend_vulkan::vk_render_pass::VkRenderPass;
 use backend_vulkan::vk_render_pass_instance::{RbSemaphore, VkRenderPassInstance};
 use backend_vulkan::vk_types::GfxPixelFormat;
 use gfx::gfx_resource::{GfxImageBuilder, GfxResource};
 use gfx::GfxRef;
 use gfx::image::{GfxImage, ImageParams, ImageType, ImageUsage};
-use gfx::render_pass::{RenderPass, RenderPassCreateInfos, RenderPassInstance};
+use gfx::render_pass::{RenderPassInstance};
 use gfx::surface::{GfxImageID, GfxSurface, SurfaceAcquireResult};
 use gfx::types::PixelFormat;
 use maths::vec2::Vec2u32;
@@ -53,6 +52,8 @@ impl GfxImageBuilder<Image> for RbSurfaceImage {
 impl GfxSurface for VkSurfaceWin32 {
     fn create_or_recreate(&self) {
         let device = gfx_cast_vulkan!(self.gfx).device.read().unwrap();
+        vk_check!(unsafe { gfx_object!(*device).device.device_wait_idle() });
+
         let physical_device_vk = gfx_cast_vulkan!(self.gfx).physical_device_vk.read().unwrap();
         let surface_capabilities = match unsafe { self._surface_loader.get_physical_device_surface_capabilities(gfx_object!(*physical_device_vk).device, self.surface) } {
             Ok(surface_capabilities) => { surface_capabilities }
@@ -64,8 +65,6 @@ impl GfxSurface for VkSurfaceWin32 {
         if surface_capabilities.current_extent.width <= 0 || surface_capabilities.current_extent.height <= 0 {
             return;
         }
-
-        vk_check!(unsafe { gfx_object!(*device).device.device_wait_idle() });
 
         let present_modes = vk_check!(unsafe { self._surface_loader.get_physical_device_surface_present_modes(gfx_object!(*physical_device_vk).device, self.surface) });
 
@@ -151,10 +150,6 @@ impl GfxSurface for VkSurfaceWin32 {
     fn get_extent(&self) -> Vec2u32 {
         let extent = self.extent.read().unwrap();
         Vec2u32::new(extent.width, extent.height)
-    }
-
-    fn create_render_pass(&self, create_infos: RenderPassCreateInfos) -> Arc<dyn RenderPass> {
-        VkRenderPass::new(&self.gfx, create_infos)
     }
 
     fn get_gfx(&self) -> &GfxRef {

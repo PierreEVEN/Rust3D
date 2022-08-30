@@ -1,5 +1,5 @@
 ﻿use std::collections::HashMap;
-use gfx::shader::{AlphaMode, Culling, FrontFace, PolygonMode, ShaderStage, Topology};
+use gfx::shader::{AlphaMode, Culling, FrontFace, PassID, PolygonMode, ShaderStage, Topology};
 use crate::file_iterator::FileIterator;
 use crate::includer::Includer;
 use crate::{ShaderLanguage};
@@ -8,11 +8,11 @@ use crate::types::{ShaderErrorResult, ShaderProperties};
 #[derive(Default)]
 pub struct ProgramData
 {
-    chunks: HashMap<ShaderStage, HashMap<String, Vec<ShaderChunk>>>,
+    chunks: HashMap<ShaderStage, HashMap<PassID, Vec<ShaderChunk>>>,
 }
 
 impl ProgramData {
-    pub fn push_chunk(&mut self, pass: &String, stage: &ShaderStage, chunk: ShaderChunk) {
+    pub fn push_chunk(&mut self, pass: &PassID, stage: &ShaderStage, chunk: ShaderChunk) {
         match self.chunks.get_mut(stage) {
             None => {
                 self.chunks.insert(stage.clone(), HashMap::from([(pass.clone(), vec![chunk])]));
@@ -30,17 +30,17 @@ impl ProgramData {
         }
     }
 
-    pub fn get_data(&self, pass: &String, stage: &ShaderStage) -> Result<&Vec<ShaderChunk>, ShaderErrorResult> {
+    pub fn get_data(&self, pass: &PassID, stage: &ShaderStage) -> Result<&Vec<ShaderChunk>, ShaderErrorResult> {
         let mut errors = ShaderErrorResult::default();
         match self.chunks.get(stage) {
             None => {
-                errors.push(-1, -1, format!("failed to find pass {pass}").as_str(), "");
+                errors.push(None, None, "ProgramData::get_data", format!("failed to find pass {pass}").as_str(), "");
                 Err(errors)
             }
             Some(passes) => {
                 match passes.get(pass) {
                     None => {
-                        errors.push(-1, -1, format!("failed to find pass {pass} for stage {stage}").as_str(), "");
+                        errors.push(None, None, "ProgramData::get_data", format!("failed to find pass {pass} for stage {stage}").as_str(), "");
                         Err(errors)
                     }
                     Some(chunks) => { Ok(chunks) }
@@ -49,8 +49,8 @@ impl ProgramData {
         }
     }
 
-    pub fn get_available_passes(&self) -> Vec<String> {
-        let mut result = Vec::<String>::new();
+    pub fn get_available_passes(&self) -> Vec<PassID> {
+        let mut result = Vec::<PassID>::new();
         for (_, value) in &self.chunks {
             for (key, _) in value {
                 if !result.contains(&key) {
@@ -117,7 +117,7 @@ impl Parser {
             self.skip_comment();
 
             // File inclusion            
-            if self.file_iterator.match_string("=>")
+            if !found_body && self.file_iterator.match_string("=>")
             {
                 self.file_iterator += 2;
                 found_body = true;
@@ -125,7 +125,7 @@ impl Parser {
                 let result = (*self.includer).include_local(&file, &virtual_path);
                 match result {
                     Ok((name, data)) => {
-                        chunk.line_start = 0;
+                        chunk.line_start = self.file_iterator.current_line() as u32;
                         chunk.content = data;
                         chunk.virtual_path = name;
                         self.includer.release_include(&file, &virtual_path);
@@ -154,11 +154,11 @@ impl Parser {
                 }
                 current_indentation -= 1;
             }
-            // Failed to find chunk
+            // Failed to find chunk limits
             else {
                 if !found_body && !Self::is_void(self.file_iterator.current())
                 {
-                    error.push(self.file_iterator.current_line() as isize, -1, format!("expected '[' but found {}", self.file_iterator.get_next_line()).as_str(), virtual_path);
+                    error.push(Some(self.file_iterator.current_line() as isize), None, "Parser::get_next_chunk", format!("expected '[' but found {}", self.file_iterator.get_next_line()).as_str(), virtual_path);
                     break;
                 }
 
@@ -173,13 +173,14 @@ impl Parser {
 
             self.file_iterator += 1;
         }
+        
         // No end
         if current_indentation != 0 {
-            error.push(self.file_iterator.current_line() as isize, -1, format!("chunk doesn't end correctly : {}", chunk.content).as_str(), virtual_path);
+            error.push(Some(self.file_iterator.current_line() as isize), None, "Parser::get_next_chunk", format!("chunk doesn't end correctly : {}", chunk.content).as_str(), virtual_path);
         }
         // No body
         if !found_body {
-            error.push(self.file_iterator.current_line() as isize, -1, "failed to find chunk body", virtual_path);
+            error.push(Some(self.file_iterator.current_line() as isize), None, "Parser::get_next_chunk", "failed to find chunk body", virtual_path);
         }
 
         if error.empty() {
@@ -250,7 +251,7 @@ impl Parser {
             let prop_field = Self::split_string(&head_lines[i], &vec!['=']);
             if prop_field.len() != 2
             {
-                errors.push(i as isize, -1, &format!("syntax error").to_string(), "");
+                errors.push(Some(i as isize), None, "Parser::parse_head", &format!("syntax error").to_string(), "");
                 continue;
             }
 
@@ -262,11 +263,11 @@ impl Parser {
         Ok(fields)
     }
 
-    fn parse_chunk_head(header: &String) -> Vec<String>
+    fn parse_chunk_head(header: &String) -> Vec<PassID>
     {
         let mut passes = Vec::new();
         for field in Self::split_string(header, &vec![',']) {
-            passes.push(Self::trim_string(&field));
+            passes.push(PassID::new(Self::trim_string(&field).as_str()));
         }
         return passes;
     }
@@ -330,13 +331,13 @@ impl Parser {
                             }
                             Err(error) => {
                                 errors += error;
-                                errors.push(self.file_iterator.current_line() as isize, 0, "failed to parse header for 'head' chunk", file_path)
+                                errors.push(Some(self.file_iterator.current_line() as isize), None, "Parser::parse_shader", "failed to parse header for 'head' chunk", file_path)
                             }
                         }
                     }
                     Err(error) => {
                         errors += error;
-                        errors.push(self.file_iterator.current_line() as isize, 0, "failed to read 'head' chunk", file_path);
+                        errors.push(Some(self.file_iterator.current_line() as isize), None, "Parser::parse_shader", "failed to read 'head' chunk", file_path);
                     }
                 };
             }
@@ -357,7 +358,7 @@ impl Parser {
                     }
                     Err(error) => {
                         errors += error;
-                        errors.push(self.file_iterator.current_line() as isize, 0, "failed to read 'global' chunk", file_path);
+                        errors.push(Some(self.file_iterator.current_line() as isize), None, "Parser::parse_shader", "failed to read 'global' chunk", file_path);
                     }
                 };
             }
@@ -377,7 +378,7 @@ impl Parser {
                     }
                     Err(error) => {
                         errors += error;
-                        errors.push(self.file_iterator.current_line() as isize, 0, "failed to read 'vertex' chunk", file_path);
+                        errors.push(Some(self.file_iterator.current_line() as isize), None, "Parser::parse_shader", "failed to read 'vertex' chunk", file_path);
                     }
                 };
             }
@@ -397,7 +398,7 @@ impl Parser {
                     }
                     Err(error) => {
                         errors += error;
-                        errors.push(self.file_iterator.current_line() as isize, 0, "failed to read 'fragment' chunk", file_path);
+                        errors.push(Some(self.file_iterator.current_line() as isize), None, "Parser::parse_shader", "failed to read 'fragment' chunk", file_path);
                     }
                 }
             }

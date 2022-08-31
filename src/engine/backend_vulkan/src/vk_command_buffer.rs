@@ -1,6 +1,6 @@
 ﻿use std::sync::{Arc, RwLock};
 
-use ash::vk::{CommandBuffer, CommandBufferAllocateInfo, CommandPool, CommandPoolCreateFlags, CommandPoolCreateInfo, PipelineBindPoint, QueueFlags};
+use ash::vk::{CommandBuffer, CommandBufferAllocateInfo, CommandBufferBeginInfo, CommandBufferLevel, CommandBufferUsageFlags, CommandPool, CommandPoolCreateFlags, CommandPoolCreateInfo, PipelineBindPoint, QueueFlags, SubmitInfo};
 
 use gfx::buffer::GfxBuffer;
 use gfx::command_buffer::GfxCommandBuffer;
@@ -14,6 +14,48 @@ use crate::{gfx_cast_vulkan, gfx_object, GfxVulkan, vk_check, VkShaderProgram};
 pub struct VkCommandPool {
     pub command_pool: CommandPool,
 }
+
+pub fn create_command_buffer(gfx: &GfxRef) -> CommandBuffer {
+    let device = gfx_cast_vulkan!(gfx).device.read().unwrap();
+    let command_pool = gfx_cast_vulkan!(gfx).command_pool.read().unwrap();
+    let create_infos = CommandBufferAllocateInfo {
+        command_pool: gfx_object!(*command_pool).command_pool,
+        command_buffer_count: 1,
+        level: CommandBufferLevel::PRIMARY,
+        ..CommandBufferAllocateInfo::default()
+    };
+    vk_check!(unsafe { gfx_object!(*device).device.allocate_command_buffers(&create_infos) })[0]
+}
+
+pub fn begin_command_buffer(gfx: &GfxRef, command_buffer: CommandBuffer, one_time: bool) {
+    let device = gfx_cast_vulkan!(gfx).device.read().unwrap();
+    vk_check!(unsafe { gfx_object!(*device).device.begin_command_buffer(command_buffer, &CommandBufferBeginInfo { 
+        flags: if one_time { CommandBufferUsageFlags::ONE_TIME_SUBMIT } else { CommandBufferUsageFlags::empty() },
+        ..CommandBufferBeginInfo::default() 
+    })})
+}
+
+pub fn end_command_buffer(gfx: &GfxRef, command_buffer: CommandBuffer) {
+    let device = gfx_cast_vulkan!(gfx).device.read().unwrap();
+    vk_check!(unsafe { gfx_object!(*device).device.end_command_buffer(command_buffer)})
+}
+
+pub fn submit_command_buffer(gfx: &GfxRef, command_buffer: CommandBuffer, queue_flags: QueueFlags) {
+    let device = gfx_cast_vulkan!(gfx).device.read().unwrap();
+    match gfx_object!(*device).get_queue(queue_flags) {
+        Ok(queue) => {
+            queue.submit(SubmitInfo {
+                command_buffer_count: 1,
+                p_command_buffers: &command_buffer,
+                ..SubmitInfo::default()
+            });
+        }
+        Err(_) => {
+            panic!("failed to find queue");
+        }
+    }
+}
+
 
 impl VkCommandPool {
     pub fn new(gfx: &GfxRef) -> VkCommandPool {
@@ -43,20 +85,11 @@ pub struct VkCommandBuffer {
     pass_id: RwLock<PassID>,
 }
 
-pub struct RbCommandBuffer {
-    
-}
+pub struct RbCommandBuffer {}
 
 impl GfxImageBuilder<CommandBuffer> for RbCommandBuffer {
     fn build(&self, gfx: &GfxRef, _: &GfxImageID) -> CommandBuffer {
-        let device = gfx_cast_vulkan!(gfx).device.read().unwrap();
-        let command_pool = gfx_cast_vulkan!(gfx).command_pool.read().unwrap();
-        let create_infos = CommandBufferAllocateInfo {
-            command_pool: gfx_object!(*command_pool).command_pool,
-            command_buffer_count: 1,
-            ..CommandBufferAllocateInfo::default()
-        };
-        vk_check!(unsafe { gfx_object!(*device).device.allocate_command_buffers(&create_infos) })[0]
+        create_command_buffer(gfx)
     }
 }
 

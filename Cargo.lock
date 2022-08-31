@@ -50,6 +50,7 @@ dependencies = [
  "ash",
  "backend_vulkan",
  "gfx",
+ "gpu-allocator",
  "maths",
  "maths_operators",
  "plateform",
@@ -138,6 +139,7 @@ dependencies = [
  "plateform",
  "plateform_win32",
  "shader_compiler",
+ "third_party_io",
 ]
 
 [[package]]
@@ -408,6 +410,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "stb_image_rust"
+version = "2.27.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d682a002ab01d5e09f47d22cfe4a55a8451cdaef5b0f87d6c8b8c3bc4360b6aa"
+
+[[package]]
+name = "stb_image_write_rust"
+version = "1.16.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "aef88b44d5213ff7bc36e770daba304a230b15685969823ad63790b915b263b4"
+
+[[package]]
 name = "syn"
 version = "1.0.98"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -416,6 +430,15 @@ dependencies = [
  "proc-macro2",
  "quote",
  "unicode-ident",
+]
+
+[[package]]
+name = "third_party_io"
+version = "0.1.0"
+dependencies = [
+ "gfx",
+ "stb_image_rust",
+ "stb_image_write_rust",
 ]
 
 [[package]]

@@ -6,12 +6,14 @@ use backend_vulkan_win32::vk_surface_win32::VkSurfaceWin32;
 use core::asset::*;
 use core::asset_manager::*;
 use core::base_assets::material_asset::*;
+use gfx::image_sampler::SamplerCreateInfos;
 use gfx::render_pass::FrameGraph;
 use maths::rect2d::Rect2D;
 use maths::vec4::Vec4F32;
 use plateform::Platform;
 use plateform::window::{PlatformEvent, WindowCreateInfos, WindowFlagBits, WindowFlags};
 use plateform_win32::PlatformWin32;
+use third_party_io::image::read_image_from_file;
 
 mod gfx_demo;
 
@@ -62,6 +64,15 @@ fn main() {
         Err(_) => { panic!("failed to read shader_file") }
     });
 
+    // Create images
+    let _image = match read_image_from_file(&gfx_backend, Path::new("data/textures/raw.jpg")) {
+        Ok(image) => { image }
+        Err(error) => { panic!("failed to create image : {}", error.to_string()) }
+    };
+
+    // Create sampler
+    let _sampler = gfx_backend.create_image_sampler(SamplerCreateInfos {});
+    
     // Game loop
     'game_loop: loop {
         // handle events

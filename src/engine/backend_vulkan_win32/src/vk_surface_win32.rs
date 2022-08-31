@@ -6,6 +6,7 @@ use ash::extensions::khr;
 use ash::extensions::khr::{Surface, Swapchain};
 use ash::vk;
 use ash::vk::{Bool32, CompositeAlphaFlagsKHR, Extent2D, Fence, Format, Image, ImageUsageFlags, PresentInfoKHR, PresentModeKHR, QueueFlags, Semaphore, SemaphoreCreateInfo, SharingMode, SurfaceFormatKHR, SurfaceKHR, SurfaceTransformFlagsKHR, SwapchainCreateInfoKHR, SwapchainKHR, Win32SurfaceCreateInfoKHR};
+use gpu_allocator::vulkan::Allocation;
 use raw_window_handle::RawWindowHandle;
 
 use backend_vulkan::{g_vulkan, G_VULKAN, gfx_cast_vulkan, gfx_object, GfxVulkan, vk_check};
@@ -43,9 +44,9 @@ struct RbSurfaceImage {
     images: Vec<Image>,
 }
 
-impl GfxImageBuilder<Image> for RbSurfaceImage {
-    fn build(&self, _gfx: &GfxRef, _swapchain_ref: &GfxImageID) -> Image {
-        self.images[_swapchain_ref.image_index as usize]
+impl GfxImageBuilder<(Image, Arc<Allocation>)> for RbSurfaceImage {
+    fn build(&self, _gfx: &GfxRef, _swapchain_ref: &GfxImageID) -> (Image, Arc<Allocation>) {
+        (self.images[_swapchain_ref.image_index as usize], Arc::new(Allocation::default()))
     }
 }
 
@@ -114,7 +115,7 @@ impl GfxSurface for VkSurfaceWin32 {
         let images = vk_check!(unsafe { self._swapchain_loader.get_swapchain_images(swapchain) });
 
         let mut image = self.surface_image.write().unwrap();
-        *image = Some(VkImage::from_existing_images(GfxResource::new(Box::new(RbSurfaceImage {
+        *image = Some(VkImage::from_existing_images(&self.gfx, GfxResource::new(Box::new(RbSurfaceImage {
             images,
         })), ImageParams {
             pixel_format: *GfxPixelFormat::from(self.surface_format.format),
@@ -140,7 +141,7 @@ impl GfxSurface for VkSurfaceWin32 {
     }
 
     fn get_current_ref(&self) -> GfxImageID {
-        GfxImageID::new(self.gfx.clone(), self.current_image.load(Ordering::Acquire), 0)
+        GfxImageID::new(&self.gfx, self.current_image.load(Ordering::Acquire), 0)
     }
 
     fn get_surface_texture(&self) -> Arc<dyn GfxImage> {

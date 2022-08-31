@@ -9,12 +9,16 @@ use ash::Entry;
 use gfx::{GfxInterface, GfxRef, PhysicalDevice};
 use gfx::buffer::{BufferCreateInfo, GfxBuffer};
 use gfx::command_buffer::GfxCommandBuffer;
+use gfx::image::{GfxImage, ImageCreateInfos};
+use gfx::image_sampler::{ImageSampler, SamplerCreateInfos};
 use gfx::render_pass::{RenderPass, RenderPassCreateInfos};
 use gfx::shader::{PassID, ShaderProgram, ShaderProgramInfos};
 
 use crate::vk_buffer::VkBuffer;
 use crate::vk_command_buffer::{VkCommandBuffer, VkCommandPool};
 use crate::vk_device::VkDevice;
+use crate::vk_image::VkImage;
+use crate::vk_image_sampler::VkImageSampler;
 use crate::vk_instance::{InstanceCreateInfos, VkInstance};
 use crate::vk_physical_device::VkPhysicalDevice;
 use crate::vk_render_pass::VkRenderPass;
@@ -33,6 +37,7 @@ pub mod vk_command_buffer;
 pub mod vk_queue;
 pub mod vk_image;
 pub mod vk_framebuffer;
+pub mod vk_image_sampler;
 
 pub static mut G_VULKAN: Option<Entry> = None;
 
@@ -139,6 +144,14 @@ impl GfxInterface for GfxVulkan {
         let pass = VkRenderPass::new(&self.get_ref(), create_infos);
         self.render_passes.write().unwrap().insert(pass_id, pass.clone());
         pass
+    }
+
+    fn create_image(&self, create_infos: ImageCreateInfos) -> Arc<dyn GfxImage> {
+        VkImage::new(&self.get_ref(), create_infos)
+    }
+
+    fn create_image_sampler(&self, create_infos: SamplerCreateInfos) -> Arc<dyn ImageSampler> {
+        VkImageSampler::new(&self.get_ref(), create_infos)
     }
 
     fn find_render_pass(&self, pass_id: &PassID) -> Option<Arc<dyn RenderPass>> {

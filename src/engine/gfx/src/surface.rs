@@ -17,9 +17,9 @@ pub struct GfxImageID {
 }
 
 impl GfxImageID {
-    pub fn new(gfx: GfxRef, image_index: u8, render_pass_index: u8) -> Self {
+    pub fn new(gfx: &GfxRef, image_index: u8, render_pass_index: u8) -> Self {
         Self {
-            _gfx: gfx,
+            _gfx: gfx.clone(),
             image_index,
             render_pass_index,
         }

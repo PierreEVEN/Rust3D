@@ -1,18 +1,25 @@
 ﻿use std::cell::RefCell;
-use std::ffi::c_void;
-use std::ptr::NonNull;
+use std::ops::Deref;
 use std::sync::Arc;
 
 use ash::vk::{Buffer, BufferUsageFlags, DeviceSize};
 use gpu_allocator::{AllocationError, MemoryLocation};
 use gpu_allocator::vulkan::{Allocation, AllocationCreateDesc, Allocator};
 
-use gfx::buffer::{BufferAccess, BufferCreateInfo, BufferType, BufferUsage, GfxBuffer};
+use gfx::buffer::{BufferAccess, BufferCreateInfo, BufferMemory, BufferType, BufferUsage, GfxBuffer};
 use gfx::GfxRef;
 
 use crate::{gfx_cast_vulkan, gfx_object, GfxVulkan};
 
 pub struct VkBufferAccess(MemoryLocation);
+
+impl Deref for VkBufferAccess {
+    type Target = MemoryLocation;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
 
 impl From<BufferAccess> for VkBufferAccess {
     fn from(access: BufferAccess) -> Self {
@@ -49,21 +56,24 @@ pub struct VkBuffer {
 }
 
 impl GfxBuffer for VkBuffer {
-    fn submit_data(&self) {}
-
     fn resize_buffer(&self) {
         todo!()
     }
 
-    fn get_data_buffer(&self) -> Option<NonNull<c_void>> {
-        self.allocation.mapped_ptr()
+    fn get_buffer_memory(&self) -> BufferMemory {
+        BufferMemory::from(match self.allocation.mapped_ptr() {
+            None => { panic!("memory is not host visible") }
+            Some(allocation) => { allocation }
+        }.as_ptr())
     }
+
+    fn submit_data(&self, _: &BufferMemory) {}
 }
 
 impl VkBuffer {
     pub fn new(gfx: &GfxRef, create_infos: &BufferCreateInfo) -> Self {
         let mut usage = VkBufferUsage::from(create_infos.usage).0;
-        
+
         let device = gfx_cast_vulkan!(gfx).device.read().unwrap();
 
         if create_infos.buffer_type != BufferType::Immutable
@@ -77,13 +87,13 @@ impl VkBuffer {
 
         let buffer = unsafe { gfx_object!(*device).device.create_buffer(&ci_buffer, None) }.unwrap();
         let requirements = unsafe { gfx_object!(*device).device.get_buffer_memory_requirements(buffer) };
-
+        
         let allocator = gfx_object!(*device).allocator.clone();
 
         let allocation = (&*allocator).borrow_mut().allocate(&AllocationCreateDesc {
             name: "buffer allocation",
             requirements,
-            location: VkBufferAccess::from(create_infos.access.clone()).0,
+            location: *VkBufferAccess::from(create_infos.access),
             linear: false,
         });
 

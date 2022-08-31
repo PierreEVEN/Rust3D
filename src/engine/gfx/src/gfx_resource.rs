@@ -42,7 +42,7 @@ impl<T: Clone> GfxResource<T> {
         }
     }
     pub fn new_static(gfx: &GfxRef, builder: Box<dyn GfxImageBuilder<T>>) -> Self {
-        let static_ref = GfxImageID::new(gfx.clone(), 0, 0);
+        let static_ref = GfxImageID::new(gfx, 0, 0);
         Self {
             static_resource: true,
             resources: RwLock::new(HashMap::from([(static_ref.clone(), builder.build(gfx, &static_ref))])),
@@ -52,7 +52,7 @@ impl<T: Clone> GfxResource<T> {
 
     pub fn get(&self, reference: &GfxImageID) -> T {
         if self.static_resource {
-            let image_id = GfxImageID::new(reference.gfx().clone(), 0, 0);
+            let image_id = GfxImageID::new(reference.gfx(), 0, 0);
             return self.resources.read().unwrap().deref().get(&image_id).unwrap().clone();
         }
 
@@ -74,7 +74,7 @@ impl<T: Clone> GfxResource<T> {
         *builder_ref = builder;
         
         if self.static_resource {
-            let static_ref = GfxImageID::new(gfx.clone(), 0, 0);
+            let static_ref = GfxImageID::new(gfx, 0, 0);
             resource_map.insert(static_ref.clone(), builder_ref.build(gfx, &static_ref));
         }
     }

@@ -1,5 +1,5 @@
 ﻿use std::ffi::c_void;
-use std::ptr::NonNull;
+use crate::GfxCast;
 
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub enum BufferType
@@ -52,8 +52,22 @@ pub struct BufferCreateInfo {
     pub memory_type_bits: u32,
 }
 
-pub trait GfxBuffer {
-    fn submit_data(&self);
+pub struct BufferMemory {
+    data: *const c_void,
+}
+
+impl BufferMemory {
+    pub fn from(data: *const c_void) -> Self {
+        Self { data }
+    }
+    pub fn get_ptr(&self, offset: usize) -> *mut u8 {
+        let data = self.data as *mut u8;
+        unsafe { data.offset(offset as isize) }
+    }
+}
+
+pub trait GfxBuffer : GfxCast {
     fn resize_buffer(&self);
-    fn get_data_buffer(&self) -> Option<NonNull<c_void>>;
+    fn get_buffer_memory(&self) -> BufferMemory;
+    fn submit_data(&self, memory: &BufferMemory);
 }

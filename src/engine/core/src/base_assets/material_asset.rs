@@ -11,6 +11,7 @@ use shader_compiler::types::{InterstageData, ShaderLanguage};
 use crate::asset::{AssetFactory, AssetMetaData, GameAsset};
 use crate::asset_manager::AssetManager;
 use crate::asset_type_id::AssetTypeID;
+use crate::base_assets::material_instance_asset::MaterialInstanceAsset;
 
 pub struct ShaderPermutation {
     pub shader: Arc<dyn ShaderProgram>,
@@ -18,21 +19,27 @@ pub struct ShaderPermutation {
 
 pub struct MaterialAsset {
     virtual_path: RwLock<String>,
-    _meta_data: AssetMetaData,
+    meta_data: AssetMetaData,
     parsed_shader: RwLock<Option<Parser>>,
     permutations: RwLock<HashMap<PassID, ShaderPermutation>>,
     shader_backend: Box<dyn CompilerBackend>,
 }
 
 impl MaterialAsset {
-    pub fn new(asset_manager: &Arc<AssetManager>) -> Arc<MaterialAsset> {
+    pub fn new(asset_manager: &Arc<AssetManager>) -> Arc<Self> {
         Arc::new(Self {
-            _meta_data: AssetMetaData::new(asset_manager),
+            meta_data: AssetMetaData::new(asset_manager),
             virtual_path: RwLock::default(),
             parsed_shader: RwLock::default(),
             permutations: RwLock::default(),
             shader_backend: Box::new(BackendShaderC::new()),
         })
+    }
+    
+    pub fn instantiate(&self) -> Arc<MaterialInstanceAsset> {
+        let instance = MaterialInstanceAsset::new(&self.meta_data.asset_manager);
+        
+        instance
     }
 
     pub fn set_shader_code(&self, virtual_path: &Path, shader_text: String) {
@@ -104,11 +111,13 @@ impl MaterialAsset {
                 let ci_shader = ShaderProgramInfos {
                     vertex_stage: ShaderProgramStage {
                         spirv: vertex_sprv.binary,
+                        descriptor_bindings: vertex_sprv.bindings,
                         push_constant_size: 0,
                         stage_input: vec![],
                     },
                     fragment_stage: ShaderProgramStage {
                         spirv: fragment_sprv.binary,
+                        descriptor_bindings: fragment_sprv.bindings,
                         push_constant_size: 0,
                         stage_input: vec![],
                     },
@@ -121,12 +130,12 @@ impl MaterialAsset {
                     line_width: 1.0,
                 };
 
-                let render_pass = match self._meta_data.asset_manager.graphics().find_render_pass(pass) {
+                let render_pass = match self.meta_data.asset_manager.graphics().find_render_pass(pass) {
                     None => { panic!("failed to find render pass [{pass}]") }
                     Some(pass) => { pass }
                 };
 
-                let program = self._meta_data.asset_manager.graphics().create_shader_program(&render_pass, &ci_shader);
+                let program = self.meta_data.asset_manager.graphics().create_shader_program(&render_pass, &ci_shader);
                 self.permutations.write().unwrap().insert(pass.clone(), ShaderPermutation {
                     shader: program.clone()
                 });
@@ -148,7 +157,7 @@ impl GameAsset for MaterialAsset {
     }
 
     fn meta_data(&self) -> &AssetMetaData {
-        &self._meta_data
+        &self.meta_data
     }
 }
 

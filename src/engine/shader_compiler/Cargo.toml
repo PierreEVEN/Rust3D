@@ -5,5 +5,5 @@ edition = "2021"
 
 [dependencies]
 shaderc = "0.8.0"
-spirv-reflect = "0.2.3"
 gfx = { path = "../gfx" }
+rspirv-reflect = "0.7.0"

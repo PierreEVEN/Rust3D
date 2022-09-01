@@ -7,6 +7,7 @@ use crate::image::{GfxImage, ImageCreateInfos};
 use crate::image_sampler::{ImageSampler, SamplerCreateInfos};
 use crate::render_pass::{RenderPass, RenderPassCreateInfos};
 use crate::shader::{PassID, ShaderProgram, ShaderProgramInfos};
+use crate::shader_instance::{ShaderInstance, ShaderInstanceCreateInfos};
 use crate::surface::GfxSurface;
 use crate::types::GfxCast;
 
@@ -19,6 +20,7 @@ pub mod image;
 pub mod gfx_resource;
 pub mod command_buffer;
 pub mod image_sampler;
+pub mod shader_instance;
 
 pub type GfxRef = Arc<dyn GfxInterface>;
 
@@ -31,6 +33,7 @@ pub trait GfxInterface: GfxCast {
     fn create_render_pass(&self, create_infos: RenderPassCreateInfos) -> Arc<dyn RenderPass>;
     fn create_image(&self, create_infos: ImageCreateInfos) -> Arc<dyn GfxImage>;
     fn create_image_sampler(&self, create_infos: SamplerCreateInfos) -> Arc<dyn ImageSampler>;
+    fn create_shader_instance(&self, create_infos: ShaderInstanceCreateInfos, parent: &dyn ShaderProgram) -> Arc<dyn ShaderInstance>;
     fn find_render_pass(&self, pass_id: &PassID) -> Option<Arc<dyn RenderPass>>;
     fn create_command_buffer(&self) -> Arc<dyn GfxCommandBuffer>;
     fn get_ref(&self) -> GfxRef;

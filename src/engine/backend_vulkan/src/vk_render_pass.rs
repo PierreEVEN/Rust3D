@@ -10,7 +10,7 @@ use gfx::surface::GfxSurface;
 use gfx::types::{ClearValues, PixelFormat};
 use maths::vec2::Vec2u32;
 
-use crate::{gfx_cast_vulkan, gfx_object, GfxVulkan, vk_check};
+use crate::{gfx_cast_vulkan, GfxVulkan, vk_check};
 use crate::vk_render_pass_instance::VkRenderPassInstance;
 use crate::vk_types::VkPixelFormat;
 
@@ -167,8 +167,8 @@ impl VkRenderPass {
         };
 
         let gfx_copy = gfx.clone();
-        let device = gfx_cast_vulkan!(gfx_copy).device.read().unwrap();
-        let render_pass = vk_check!(unsafe { gfx_object!(*device).device.create_render_pass(&render_pass_infos, None) });
+        let device = &gfx_cast_vulkan!(gfx_copy).device;
+        let render_pass = vk_check!(unsafe { (*device).device.create_render_pass(&render_pass_infos, None) });
 
         let vk_render_pass = Arc::new(Self {
             render_pass,

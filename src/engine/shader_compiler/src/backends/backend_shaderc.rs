@@ -6,6 +6,7 @@ use gfx::shader::ShaderStage;
 
 use crate::{CompilationResult, CompilerBackend, InterstageData, ShaderChunk, ShaderLanguage};
 use crate::includer::Includer;
+use crate::reflect::SpirvReflector;
 use crate::types::ShaderErrorResult;
 
 pub struct BackendShaderC {}
@@ -111,11 +112,14 @@ impl CompilerBackend for BackendShaderC {
                 return Err(errors);
             }
         };
-
         let binary_result = Vec::from(binary_result.as_binary());
 
+        let reflector = SpirvReflector::new(&binary_result);
+
+
         Ok(CompilationResult {
-            binary: binary_result
+            binary: binary_result,
+            bindings: reflector.bindings,
         })
     }
 }

@@ -1,7 +1,7 @@
 ﻿use std::sync::{Arc, RwLock};
 
 use ash::vk;
-use ash::vk::{AccessFlags, BufferImageCopy, CommandBuffer, ComponentMapping, ComponentSwizzle, DependencyFlags, DeviceSize, Extent3D, Image, ImageAspectFlags, ImageCreateInfo, ImageLayout, ImageMemoryBarrier, ImageSubresourceLayers, ImageSubresourceRange, ImageTiling, ImageUsageFlags, ImageView, ImageViewCreateInfo, ImageViewType, Offset3D, PipelineStageFlags, QUEUE_FAMILY_IGNORED, QueueFlags, SampleCountFlags, SharingMode};
+use ash::vk::{AccessFlags, BufferImageCopy, CommandBuffer, ComponentMapping, ComponentSwizzle, DependencyFlags, DescriptorImageInfo, DeviceSize, Extent3D, Image, ImageAspectFlags, ImageCreateInfo, ImageLayout, ImageMemoryBarrier, ImageSubresourceLayers, ImageSubresourceRange, ImageTiling, ImageUsageFlags, ImageView, ImageViewCreateInfo, ImageViewType, Offset3D, PipelineStageFlags, QUEUE_FAMILY_IGNORED, QueueFlags, SampleCountFlags, SharingMode};
 use gpu_allocator::vulkan::{Allocation, AllocationCreateDesc};
 
 use gfx::buffer::{BufferAccess, BufferCreateInfo, BufferType, BufferUsage};
@@ -11,15 +11,17 @@ use gfx::image::{GfxImage, GfxImageUsageFlags, ImageCreateInfos, ImageParams, Im
 use gfx::surface::GfxImageID;
 use gfx::types::PixelFormat;
 
-use crate::{gfx_cast_vulkan, gfx_object, GfxVulkan, vk_check, VkBuffer};
+use crate::{gfx_cast_vulkan, GfxVulkan, vk_check, VkBuffer};
 use crate::vk_buffer::VkBufferAccess;
 use crate::vk_command_buffer::{begin_command_buffer, create_command_buffer, end_command_buffer, submit_command_buffer};
 use crate::vk_types::VkPixelFormat;
 
+type CombinedImageData = (Image, Arc<Allocation>);
+
 pub struct VkImage {
     gfx: GfxRef,
-    pub image: Arc<GfxResource<(Image, Arc<Allocation>)>>,
-    pub view: GfxResource<ImageView>,
+    pub image: Arc<GfxResource<CombinedImageData>>,
+    pub view: GfxResource<(ImageView, DescriptorImageInfo)>,
     pub image_params: ImageParams,
     pub image_layout: RwLock<ImageLayout>,
 }
@@ -107,12 +109,12 @@ impl GfxImage for VkImage {
             image_extent: Extent3D { width: dim_x, height: dim_y, depth: dim_z },
         };
 
-        let device = gfx_cast_vulkan!(self.gfx).device.read().unwrap();
+        let device = &gfx_cast_vulkan!(self.gfx).device;
 
 
         let (image, _) = self.image.get(&GfxImageID::new(&self.gfx, 0, 0));
 
-        unsafe { gfx_object!(*device).device.cmd_copy_buffer_to_image(command_buffer, transfer_buffer.as_ref().as_any().downcast_ref::<VkBuffer>().unwrap().buffer, image, ImageLayout::TRANSFER_DST_OPTIMAL, &[region]); }
+        unsafe { (*device).device.cmd_copy_buffer_to_image(command_buffer, transfer_buffer.as_ref().as_any().downcast_ref::<VkBuffer>().unwrap().buffer, image, ImageLayout::TRANSFER_DST_OPTIMAL, &[region]); }
 
         self.set_image_layout(&GfxImageID::new(&self.gfx, 0, 0), command_buffer, ImageLayout::SHADER_READ_ONLY_OPTIMAL);
 
@@ -146,8 +148,8 @@ pub struct RbImage {
     create_infos: ImageParams,
 }
 
-impl GfxImageBuilder<(Image, Arc<Allocation>)> for RbImage {
-    fn build(&self, gfx: &GfxRef, _swapchain_ref: &GfxImageID) -> (Image, Arc<Allocation>) {
+impl GfxImageBuilder<CombinedImageData> for RbImage {
+    fn build(&self, gfx: &GfxRef, _swapchain_ref: &GfxImageID) -> CombinedImageData {
         // Convert image details
         let (image_type, width, height, depth) = match self.create_infos.image_format {
             ImageType::Texture1d(x) => { (vk::ImageType::TYPE_1D, x, 1, 1) }
@@ -177,13 +179,13 @@ impl GfxImageBuilder<(Image, Arc<Allocation>)> for RbImage {
             sharing_mode: SharingMode::EXCLUSIVE,
             ..ImageCreateInfo::default()
         };
-        let device = gfx_cast_vulkan!(gfx).device.read().unwrap();
-        let image = vk_check!(unsafe {gfx_object!(*device).device.create_image(&ci_image, None)});
+        let device = &gfx_cast_vulkan!(gfx).device;
+        let image = vk_check!(unsafe {(*device).device.create_image(&ci_image, None)});
 
         // Allocate image memory        
-        let requirements = unsafe { gfx_object!(*device).device.get_image_memory_requirements(image) };
+        let requirements = unsafe { (*device).device.get_image_memory_requirements(image) };
 
-        let allocation = gfx_object!(*device).allocator.borrow_mut().allocate(&AllocationCreateDesc {
+        let allocation = (*device).allocator.borrow_mut().allocate(&AllocationCreateDesc {
             name: "buffer allocation",
             requirements,
             location: *VkBufferAccess::from(BufferAccess::GpuOnly),
@@ -196,8 +198,7 @@ impl GfxImageBuilder<(Image, Arc<Allocation>)> for RbImage {
 
         let allocation = allocation.unwrap();
 
-        vk_check!(unsafe { gfx_object!(*device).device.bind_image_memory(image, allocation.memory(), 0 as DeviceSize)});
-
+        vk_check!(unsafe { (*device).device.bind_image_memory(image, allocation.memory(), 0 as DeviceSize)});
         (image, Arc::new(allocation))
     }
 }
@@ -207,8 +208,8 @@ pub struct RbImageView {
     create_infos: ImageParams,
 }
 
-impl GfxImageBuilder<ImageView> for RbImageView {
-    fn build(&self, gfx: &GfxRef, swapchain_ref: &GfxImageID) -> ImageView {
+impl GfxImageBuilder<(ImageView, DescriptorImageInfo)> for RbImageView {
+    fn build(&self, gfx: &GfxRef, swapchain_ref: &GfxImageID) -> (ImageView, DescriptorImageInfo) {
         let view_type = match self.create_infos.image_format {
             ImageType::Texture1d(_) => { ImageViewType::TYPE_1D }
             ImageType::Texture2d(_, _) => { ImageViewType::TYPE_2D }
@@ -239,8 +240,13 @@ impl GfxImageBuilder<ImageView> for RbImageView {
             ..ImageViewCreateInfo::default()
         };
 
-        let device = gfx_cast_vulkan!(gfx).device.read().unwrap();
-        vk_check!(unsafe { gfx_object!(*device).device.create_image_view(&ci_view, None) })
+        let device = &gfx_cast_vulkan!(gfx).device;
+        let view = vk_check!(unsafe { (*device).device.create_image_view(&ci_view, None) });
+        (view, DescriptorImageInfo {
+            sampler: Default::default(),
+            image_view: view,
+            image_layout: Default::default()
+        })
     }
 }
 
@@ -275,7 +281,7 @@ impl VkImage {
         image
     }
 
-    pub fn from_existing_images(gfx: &GfxRef, existing_images: GfxResource<(Image, Arc<Allocation>)>, image_params: ImageParams) -> Arc<dyn GfxImage> {
+    pub fn from_existing_images(gfx: &GfxRef, existing_images: GfxResource<CombinedImageData>, image_params: ImageParams) -> Arc<dyn GfxImage> {
         let images = Arc::new(existing_images);
         Arc::new(VkImage {
             gfx: gfx.clone(),
@@ -334,7 +340,7 @@ impl VkImage {
 
         *old_layout = layout;
 
-        let device = gfx_cast_vulkan!(self.gfx).device.read().unwrap();
-        unsafe { gfx_object!(*device).device.cmd_pipeline_barrier(command_buffer, source_stage, destination_stage, DependencyFlags::empty(), &[], &[], &[barrier]); }
+        let device = &gfx_cast_vulkan!(self.gfx).device;
+        unsafe { (*device).device.cmd_pipeline_barrier(command_buffer, source_stage, destination_stage, DependencyFlags::empty(), &[], &[], &[barrier]); }
     }
 }

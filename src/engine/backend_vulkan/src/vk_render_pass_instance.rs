@@ -12,7 +12,7 @@ use gfx::surface::{GfxImageID, GfxSurface};
 use gfx::types::ClearValues;
 use maths::vec2::Vec2u32;
 
-use crate::{gfx_cast_vulkan, gfx_object, GfxVulkan, vk_check, VkRenderPass};
+use crate::{gfx_cast_vulkan, GfxVulkan, vk_check, VkRenderPass};
 use crate::vk_command_buffer::VkCommandBuffer;
 use crate::vk_image::VkImage;
 
@@ -37,8 +37,8 @@ impl GfxImageBuilder<Semaphore> for RbSemaphore {
             ..SemaphoreCreateInfo::default()
         };
 
-        let device = gfx_cast_vulkan!(gfx).device.read().unwrap();
-        vk_check!(unsafe {gfx_object!(*device).device.create_semaphore(&ci_semaphore, None)})
+        let device = &gfx_cast_vulkan!(gfx).device;
+        vk_check!(unsafe {(*device).device.create_semaphore(&ci_semaphore, None)})
     }
 }
 
@@ -47,13 +47,13 @@ pub struct RbCommandBuffer {}
 impl GfxImageBuilder<CommandBuffer> for RbCommandBuffer {
     fn build(&self, gfx: &GfxRef, _swapchain_ref: &GfxImageID) -> CommandBuffer {
         let ci_command_buffer = CommandBufferAllocateInfo {
-            command_pool: gfx_object!(*gfx_cast_vulkan!(gfx).command_pool.read().unwrap()).command_pool,
+            command_pool: gfx_cast_vulkan!(gfx).command_pool.command_pool,
             command_buffer_count: 1,
             ..CommandBufferAllocateInfo::default()
         };
 
-        let device = gfx_cast_vulkan!(gfx).device.read().unwrap();
-        vk_check!(unsafe {gfx_object!(*device).device.allocate_command_buffers(&ci_command_buffer)})[0]
+        let device = &gfx_cast_vulkan!(gfx).device;
+        vk_check!(unsafe {device.device.allocate_command_buffers(&ci_command_buffer)})[0]
     }
 }
 
@@ -68,7 +68,8 @@ impl GfxImageBuilder<Framebuffer> for RbFramebuffer {
         let mut attachments = Vec::new();
 
         for image in &self.images {
-            attachments.push(image.as_ref().as_any().downcast_ref::<VkImage>().unwrap().view.get(_swapchain_ref));
+            let (view, _) = image.as_ref().as_any().downcast_ref::<VkImage>().unwrap().view.get(_swapchain_ref);
+            attachments.push(view);
         }
 
         let create_infos = FramebufferCreateInfo {
@@ -80,8 +81,8 @@ impl GfxImageBuilder<Framebuffer> for RbFramebuffer {
             layers: 1,
             ..FramebufferCreateInfo::default()
         };
-        let device = gfx_cast_vulkan!(gfx).device.read().unwrap();
-        vk_check!(unsafe { gfx_object!(*device).device.create_framebuffer(&create_infos, None) })
+        let device = &gfx_cast_vulkan!(gfx).device;
+        vk_check!(unsafe { (*device).device.create_framebuffer(&create_infos, None) })
     }
 }
 
@@ -136,10 +137,10 @@ impl RenderPassInstance for VkRenderPassInstance {
 
     fn begin(&self) -> Arc<dyn GfxCommandBuffer> {
         
-        let device = gfx_cast_vulkan!(self.gfx).device.read().unwrap();
+        let device = &gfx_cast_vulkan!(self.gfx).device;
 
         // Begin buffer
-        vk_check!(unsafe { gfx_object!(*device).device.begin_command_buffer(self.pass_command_buffers.command_buffer.get(&self.surface.get_current_ref()), &vk::CommandBufferBeginInfo::default()) });
+        vk_check!(unsafe { (*device).device.begin_command_buffer(self.pass_command_buffers.command_buffer.get(&self.surface.get_current_ref()), &vk::CommandBufferBeginInfo::default()) });
 
         let mut clear_values = Vec::new();
         for clear_value in &self.clear_value {
@@ -177,11 +178,11 @@ impl RenderPassInstance for VkRenderPassInstance {
             p_clear_values: clear_values.as_ptr(),
             ..RenderPassBeginInfo::default()
         };
-        unsafe { gfx_object!(*device).device.cmd_begin_render_pass(command_buffer, &begin_infos, SubpassContents::INLINE) };
+        unsafe { (*device).device.cmd_begin_render_pass(command_buffer, &begin_infos, SubpassContents::INLINE) };
 
 
         unsafe {
-            gfx_object!(*device).device.cmd_set_viewport(command_buffer, 0, &[Viewport {
+            (*device).device.cmd_set_viewport(command_buffer, 0, &[Viewport {
                 x: 0.0,
                 y: 0.0,
                 width: res.x as f32,
@@ -192,7 +193,7 @@ impl RenderPassInstance for VkRenderPassInstance {
         };
 
         unsafe {
-            gfx_object!(*device).device.cmd_set_scissor(command_buffer, 0, &[Rect2D {
+            (*device).device.cmd_set_scissor(command_buffer, 0, &[Rect2D {
                 offset: Offset2D { x: 0, y: 0 },
                 extent: Extent2D { width: res.x, height: res.y }
             }])
@@ -204,11 +205,11 @@ impl RenderPassInstance for VkRenderPassInstance {
 
     fn end(&self) {
         let command_buffer = self.pass_command_buffers.command_buffer.get(&self.surface.get_current_ref());
-        let device = gfx_cast_vulkan!(self.gfx).device.read().unwrap();
+        let device = &gfx_cast_vulkan!(self.gfx).device;
 
         // End pass
-        unsafe { gfx_object!(*device).device.cmd_end_render_pass(command_buffer) };
-        vk_check!(unsafe { gfx_object!(*device).device.end_command_buffer(command_buffer) });
+        unsafe { (*device).device.cmd_end_render_pass(command_buffer) };
+        vk_check!(unsafe { (*device).device.end_command_buffer(command_buffer) });
 
         // Submit buffer
         let mut wait_semaphores = Vec::new();
@@ -227,6 +228,6 @@ impl RenderPassInstance for VkRenderPassInstance {
             ..SubmitInfo::default()
         };
 
-        gfx_object!(*device).get_queue(QueueFlags::GRAPHICS).unwrap().submit(submit_infos);
+        (*device).get_queue(QueueFlags::GRAPHICS).unwrap().submit(submit_infos);
     }
 }

@@ -9,7 +9,7 @@ use gpu_allocator::vulkan::{Allocation, AllocationCreateDesc, Allocator};
 use gfx::buffer::{BufferAccess, BufferCreateInfo, BufferMemory, BufferType, BufferUsage, GfxBuffer};
 use gfx::GfxRef;
 
-use crate::{gfx_cast_vulkan, gfx_object, GfxVulkan};
+use crate::{gfx_cast_vulkan, GfxVulkan};
 
 pub struct VkBufferAccess(MemoryLocation);
 
@@ -74,7 +74,7 @@ impl VkBuffer {
     pub fn new(gfx: &GfxRef, create_infos: &BufferCreateInfo) -> Self {
         let mut usage = VkBufferUsage::from(create_infos.usage).0;
 
-        let device = gfx_cast_vulkan!(gfx).device.read().unwrap();
+        let device = &gfx_cast_vulkan!(gfx).device;
 
         if create_infos.buffer_type != BufferType::Immutable
         {
@@ -85,10 +85,10 @@ impl VkBuffer {
             .size(create_infos.size as DeviceSize)
             .usage(usage);
 
-        let buffer = unsafe { gfx_object!(*device).device.create_buffer(&ci_buffer, None) }.unwrap();
-        let requirements = unsafe { gfx_object!(*device).device.get_buffer_memory_requirements(buffer) };
+        let buffer = unsafe { (*device).device.create_buffer(&ci_buffer, None) }.unwrap();
+        let requirements = unsafe { (*device).device.get_buffer_memory_requirements(buffer) };
         
-        let allocator = gfx_object!(*device).allocator.clone();
+        let allocator = (*device).allocator.clone();
 
         let allocation = (&*allocator).borrow_mut().allocate(&AllocationCreateDesc {
             name: "buffer allocation",
@@ -100,7 +100,7 @@ impl VkBuffer {
         Self {
             allocation: match allocation {
                 Ok(alloc) => {
-                    unsafe { gfx_object!(*device).device.bind_buffer_memory(buffer, alloc.memory(), alloc.offset()).unwrap() };
+                    unsafe { (*device).device.bind_buffer_memory(buffer, alloc.memory(), alloc.offset()).unwrap() };
                     alloc
                 }
                 Err(alloc_error) => {

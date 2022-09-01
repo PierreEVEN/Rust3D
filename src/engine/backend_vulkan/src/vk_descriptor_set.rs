@@ -4,9 +4,9 @@ use std::sync::Arc;
 use ash::vk::{DescriptorSetLayout, DescriptorSetLayoutBinding, DescriptorSetLayoutCreateInfo, ShaderStageFlags};
 use gfx::GfxRef;
 
-use gfx::shader::{DescriptorType, ShaderBinding};
+use gfx::shader::{DescriptorBinding, DescriptorType};
 
-use crate::{gfx_cast_vulkan, gfx_object, GfxVulkan, vk_check};
+use crate::{gfx_cast_vulkan, GfxVulkan, vk_check};
 
 pub struct VkDescriptorType(ash::vk::DescriptorType);
 
@@ -35,7 +35,7 @@ pub struct VkDescriptorSetLayout {
 }
 
 impl VkDescriptorSetLayout {
-    pub fn new(gfx: &GfxRef, vertex_bindings: &Vec<ShaderBinding>, fragment_bindings: &Vec<ShaderBinding>) -> Arc<Self> {
+    pub fn new(gfx: &GfxRef, vertex_bindings: &Vec<DescriptorBinding>, fragment_bindings: &Vec<DescriptorBinding>) -> Arc<Self> {
         let mut bindings = Vec::<DescriptorSetLayoutBinding>::new();
         for binding in vertex_bindings
         {
@@ -67,21 +67,13 @@ impl VkDescriptorSetLayout {
             ..DescriptorSetLayoutCreateInfo::default()
         };
 
-        let device = gfx_cast_vulkan!(gfx).device.read().unwrap();
-        let descriptor_set_layout = vk_check!(unsafe {gfx_object!(*device).device.create_descriptor_set_layout(&ci_descriptor_set_layout, None)});
+        let device = &gfx_cast_vulkan!(gfx).device;
+        let descriptor_set_layout = vk_check!(unsafe {device.device.create_descriptor_set_layout(&ci_descriptor_set_layout, None)});
 
         Arc::new(Self {
             descriptor_set_layout,
             gfx: gfx.clone(),
         })
-    }
-}
-
-pub struct VkDescriptorPool {}
-
-impl VkDescriptorPool {
-    pub fn new() -> Arc<Self> {
-        Arc::new(Self {})
     }
 }
 

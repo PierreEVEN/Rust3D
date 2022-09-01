@@ -9,7 +9,7 @@ use ash::vk::{Bool32, CompositeAlphaFlagsKHR, Extent2D, Fence, Format, Image, Im
 use gpu_allocator::vulkan::Allocation;
 use raw_window_handle::RawWindowHandle;
 
-use backend_vulkan::{g_vulkan, G_VULKAN, gfx_cast_vulkan, gfx_object, GfxVulkan, vk_check};
+use backend_vulkan::{g_vulkan, G_VULKAN, gfx_cast_vulkan, GfxVulkan, vk_check};
 use backend_vulkan::vk_device::VkQueue;
 use backend_vulkan::vk_image::VkImage;
 use backend_vulkan::vk_render_pass_instance::{RbSemaphore, VkRenderPassInstance};
@@ -52,11 +52,11 @@ impl GfxImageBuilder<(Image, Arc<Allocation>)> for RbSurfaceImage {
 
 impl GfxSurface for VkSurfaceWin32 {
     fn create_or_recreate(&self) {
-        let device = gfx_cast_vulkan!(self.gfx).device.read().unwrap();
-        vk_check!(unsafe { gfx_object!(*device).device.device_wait_idle() });
+        let device = &gfx_cast_vulkan!(self.gfx).device;
+        vk_check!(unsafe { (*device).device.device_wait_idle() });
 
-        let physical_device_vk = gfx_cast_vulkan!(self.gfx).physical_device_vk.read().unwrap();
-        let surface_capabilities = match unsafe { self._surface_loader.get_physical_device_surface_capabilities(gfx_object!(*physical_device_vk).device, self.surface) } {
+        let physical_device_vk = &gfx_cast_vulkan!(self.gfx).physical_device_vk;
+        let surface_capabilities = match unsafe { self._surface_loader.get_physical_device_surface_capabilities((*physical_device_vk).device, self.surface) } {
             Ok(surface_capabilities) => { surface_capabilities }
             Err(_) => {
                 return;
@@ -67,7 +67,7 @@ impl GfxSurface for VkSurfaceWin32 {
             return;
         }
 
-        let present_modes = vk_check!(unsafe { self._surface_loader.get_physical_device_surface_present_modes(gfx_object!(*physical_device_vk).device, self.surface) });
+        let present_modes = vk_check!(unsafe { self._surface_loader.get_physical_device_surface_present_modes((*physical_device_vk).device, self.surface) });
 
         let mut composite_alpha = CompositeAlphaFlagsKHR::OPAQUE;
         for alpha_flag in vec![CompositeAlphaFlagsKHR::OPAQUE, CompositeAlphaFlagsKHR::PRE_MULTIPLIED, CompositeAlphaFlagsKHR::POST_MULTIPLIED, CompositeAlphaFlagsKHR::INHERIT] {
@@ -227,8 +227,8 @@ impl GfxSurface for VkSurfaceWin32 {
 impl VkSurfaceWin32 {
     pub fn new(gfx: &GfxRef, window: Arc<dyn Window>, image_count: u32) -> Arc<dyn GfxSurface> {
         let gfx_copy = gfx.clone();
-        let device = gfx_cast_vulkan!(gfx).device.read().unwrap();
-        let physical_device_vk = gfx_cast_vulkan!(gfx).physical_device_vk.read().unwrap();
+        let device = &gfx_cast_vulkan!(gfx).device;
+        let physical_device_vk = &gfx_cast_vulkan!(gfx).physical_device_vk;
 
         let handle = match window.get_handle() {
             RawWindowHandle::Win32(handle) => { handle }
@@ -242,19 +242,19 @@ impl VkSurfaceWin32 {
             ..Default::default()
         };
 
-        let surface_fn = khr::Win32Surface::new(g_vulkan!(), &gfx_object!(gfx_cast_vulkan!(gfx.clone()).instance).instance);
+        let surface_fn = khr::Win32Surface::new(g_vulkan!(), &gfx_cast_vulkan!(gfx.clone()).instance.instance);
         let surface = unsafe { surface_fn.create_win32_surface(&ci_surface, None) }.expect("failed to create surface");
-        let surface_loader = Surface::new(g_vulkan!(), &gfx_object!(gfx_cast_vulkan!(gfx.clone()).instance).instance);
+        let surface_loader = Surface::new(g_vulkan!(), &gfx_cast_vulkan!(gfx.clone()).instance.instance);
 
-        let swapchain_loader = Swapchain::new(&gfx_object!(gfx_cast_vulkan!(gfx.clone()).instance).instance, &gfx_object!(*device).device);
+        let swapchain_loader = Swapchain::new(&gfx_cast_vulkan!(gfx.clone()).instance.instance, &(*device).device);
 
         let mut image_acquire_semaphore = Vec::new();
         for _ in 0..image_count {
-            image_acquire_semaphore.push(vk_check!(unsafe { gfx_object!(*device).device.create_semaphore(&SemaphoreCreateInfo::default(), None) }))
+            image_acquire_semaphore.push(vk_check!(unsafe { (*device).device.create_semaphore(&SemaphoreCreateInfo::default(), None) }))
         }
 
 
-        let surface_formats = vk_check!(unsafe { surface_loader.get_physical_device_surface_formats(gfx_object!(*physical_device_vk).device, surface) });
+        let surface_formats = vk_check!(unsafe { surface_loader.get_physical_device_surface_formats((*physical_device_vk).device, surface) });
         let mut surface_format: SurfaceFormatKHR = Default::default();
         if surface_formats.len() == 1 && surface_formats[0].format == Format::UNDEFINED
         {
@@ -282,16 +282,13 @@ impl VkSurfaceWin32 {
 
         let mut present_queue = None;
 
-        let instance = match &gfx_cast_vulkan!(gfx).instance {
-            None => { panic!("instance is not valid") }
-            Some(instance) => { &instance.instance }
-        };
+        let instance = &gfx_cast_vulkan!(gfx).instance.instance;
 
         let mut index: u32 = 0;
-        for _ in unsafe { instance.get_physical_device_queue_family_properties(gfx_object!(*physical_device_vk).device) } {
-            if vk_check!(unsafe { surface_loader.get_physical_device_surface_support(gfx_object!(*physical_device_vk).device, index, surface) }) {
-                let queue = unsafe { gfx_object!(*device).device.get_device_queue(index, 0) };
-                present_queue = Some(VkQueue::new(&gfx_object!(*device).device, queue, QueueFlags::empty(), index, &gfx));
+        for _ in unsafe { instance.get_physical_device_queue_family_properties((*physical_device_vk).device) } {
+            if vk_check!(unsafe { surface_loader.get_physical_device_surface_support((*physical_device_vk).device, index, surface) }) {
+                let queue = unsafe { (*device).device.get_device_queue(index, 0) };
+                present_queue = Some(VkQueue::new(&(*device).device, queue, QueueFlags::empty(), index, &gfx));
                 break;
             }
             index += 1;

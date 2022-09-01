@@ -8,6 +8,8 @@ use core::asset_manager::*;
 use core::base_assets::material_asset::*;
 use gfx::image_sampler::SamplerCreateInfos;
 use gfx::render_pass::FrameGraph;
+use gfx::shader::{PassID};
+use gfx::shader_instance::{BindPoint, ShaderInstanceCreateInfos};
 use maths::rect2d::Rect2D;
 use maths::vec4::Vec4F32;
 use plateform::Platform;
@@ -64,14 +66,25 @@ fn main() {
         Err(_) => { panic!("failed to read shader_file") }
     });
 
+    /*
     // Create images
-    let _image = match read_image_from_file(&gfx_backend, Path::new("data/textures/raw.jpg")) {
+    let image = match read_image_from_file(&gfx_backend, Path::new("data/textures/raw.jpg")) {
         Ok(image) => { image }
         Err(error) => { panic!("failed to create image : {}", error.to_string()) }
     };
 
     // Create sampler
-    let _sampler = gfx_backend.create_image_sampler(SamplerCreateInfos {});
+    let sampler = gfx_backend.create_image_sampler(SamplerCreateInfos {});
+    
+    // Create material instance
+    let shader_instance = gfx_backend.create_shader_instance(ShaderInstanceCreateInfos {
+        bindings: demo_material.get_program(&PassID::new("surface_pass")).unwrap().get_bindings()
+    }, &*demo_material.get_program(&PassID::new("surface_pass")).unwrap());
+    shader_instance.bind_texture(&BindPoint::new("ui_result"), &image);
+    shader_instance.bind_sampler(&BindPoint::new("ui_sampler"), &sampler);
+    
+    
+     */
     
     // Game loop
     'game_loop: loop {
@@ -105,8 +118,9 @@ fn main() {
                                 panic!("failed to find compatible permutation [{}]", command_buffer.get_pass_id());
                             }
                             Some(program) => {
-                                command_buffer.bind_program(&main_window_surface.get_current_ref(), program);
-                                command_buffer.draw_procedural(&main_window_surface.get_current_ref(), 10, 0, 1, 0);
+                                command_buffer.bind_program(&main_window_surface.get_current_ref(), &program);
+                                // command_buffer.bind_shader_instance(&main_window_surface.get_current_ref(), &shader_instance);
+                                // command_buffer.draw_procedural(&main_window_surface.get_current_ref(), 4, 0, 1, 0);
                             }
                         };
                         main_framegraph.submit();

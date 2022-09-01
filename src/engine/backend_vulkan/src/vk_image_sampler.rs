@@ -3,7 +3,7 @@ use ash::vk::{Bool32, BorderColor, CompareOp, DescriptorImageInfo, Filter, Image
 use gfx::GfxRef;
 
 use gfx::image_sampler::{ImageSampler, SamplerCreateInfos};
-use crate::{gfx_cast_vulkan, gfx_object, GfxVulkan, vk_check};
+use crate::{gfx_cast_vulkan, GfxVulkan, vk_check};
 
 pub struct VkImageSampler {
     pub sampler: Sampler,
@@ -33,9 +33,9 @@ impl VkImageSampler {
             ..SamplerCreateInfo::default()
         };
         
-        let device = gfx_cast_vulkan!(gfx).device.read().unwrap();
+        let device = &gfx_cast_vulkan!(gfx).device;
 
-        let sampler = vk_check!(unsafe { gfx_object!(*device).device.create_sampler(&sampler_create_infos, None) });
+        let sampler = vk_check!(unsafe { (*device).device.create_sampler(&sampler_create_infos, None) });
         
         let image_infos = DescriptorImageInfo {
             sampler,

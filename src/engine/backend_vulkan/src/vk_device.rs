@@ -11,7 +11,7 @@ use gpu_allocator::vulkan::{Allocator, AllocatorCreateDesc};
 
 use gfx::GfxRef;
 
-use crate::{gfx_cast_vulkan, gfx_object, GfxVulkan, vk_check};
+use crate::{gfx_cast_vulkan, GfxVulkan, vk_check};
 
 pub fn get_required_device_extensions() -> Vec<*const c_char> {
     let mut result = Vec::new();
@@ -46,15 +46,15 @@ impl VkQueue {
     }
 
     pub fn wait(&self) {
-        let device = gfx_cast_vulkan!(self.gfx).device.read().unwrap();
-        vk_check!(unsafe { gfx_object!(*device).device.wait_for_fences(&[self.fence], true, u64::MAX) });
+        let device = &gfx_cast_vulkan!(self.gfx).device;
+        vk_check!(unsafe { (*device).device.wait_for_fences(&[self.fence], true, u64::MAX) });
     }
 
     pub fn submit(&self, submit_infos: SubmitInfo) {
-        let device = gfx_cast_vulkan!(self.gfx).device.read().unwrap();
+        let device = &gfx_cast_vulkan!(self.gfx).device;
         self.wait();
-        vk_check!(unsafe { gfx_object!(*device).device.reset_fences(&[self.fence]) });
-        vk_check!(unsafe { gfx_object!(*device).device.queue_submit(self.queue, &[submit_infos], self.fence) });
+        vk_check!(unsafe { (*device).device.reset_fences(&[self.fence]) });
+        vk_check!(unsafe { (*device).device.queue_submit(self.queue, &[submit_infos], self.fence) });
     }
     pub fn present(&self, swapchain: &Swapchain, present_infos: PresentInfoKHR) -> VkResult<bool> {
         unsafe { swapchain.queue_present(self.queue, &present_infos) }
@@ -67,14 +67,15 @@ pub struct VkDevice {
     pub allocator: Arc<RefCell<Allocator>>,
 }
 
+
 impl VkDevice {
     pub fn new(gfx: &GfxRef) -> VkDevice {
         let mut ci_queues = Vec::<vk::DeviceQueueCreateInfo>::new();
-        let physical_device = gfx_cast_vulkan!(gfx).physical_device_vk.read().unwrap();
-        let instance = gfx_object!(gfx_cast_vulkan!(gfx).instance);
+        let physical_device = &gfx_cast_vulkan!(gfx).physical_device_vk;
+        let instance = &gfx_cast_vulkan!(gfx).instance;
 
         let queue_priorities: f32 = 1.0;
-        for queue in &gfx_object!(*physical_device).queues {
+        for queue in &(*physical_device).queues {
             ci_queues.push({
                 DeviceQueueCreateInfo {
                     queue_family_index: queue.index,
@@ -89,8 +90,6 @@ impl VkDevice {
         if instance.enable_validation_layers() {
             extensions.push("VK_EXT_debug_marker\0".as_ptr() as *const c_char);
         }
-
-        let instance = gfx_object!(gfx_cast_vulkan!(gfx).instance);
 
         let device_features = PhysicalDeviceFeatures {
             geometry_shader: false as Bool32,
@@ -143,7 +142,7 @@ impl VkDevice {
         let allocator = Allocator::new(&AllocatorCreateDesc {
             instance: instance.instance.clone(),
             device: device.clone(),
-            physical_device: gfx_object!(*physical_device).device,
+            physical_device: (*physical_device).device,
             debug_settings: gpu_allocator::AllocatorDebugSettings {
                 log_leaks_on_shutdown: true,
                 ..Default::default()
@@ -152,7 +151,7 @@ impl VkDevice {
         }).expect("failed to create AMD Vulkan memory allocator");
 
         let mut queue_map = HashMap::<QueueFlags, Vec<Arc<VkQueue>>>::new();
-        for queue_details in &gfx_object!(*physical_device).queues
+        for queue_details in &(*physical_device).queues
         {
             let queue = VkQueue::new(&device, unsafe { device.get_device_queue(queue_details.index, 0) }, queue_details.flags, queue_details.index, gfx);
 
@@ -184,8 +183,8 @@ impl VkDevice {
 
         Self {
             device,
-            queues: queue_map,
-            allocator: Arc::new(RefCell::new(allocator)),
+            queues : queue_map,
+            allocator : Arc::new(RefCell::new(allocator)),
         }
     }
 

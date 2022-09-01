@@ -1,5 +1,5 @@
 use std::path::Path;
-use gfx::shader::ShaderStage;
+use gfx::shader::{DescriptorBinding, ShaderStage};
 use crate::parser::ShaderChunk;
 use crate::types::{InterstageData, ShaderErrorResult, ShaderLanguage};
 
@@ -7,13 +7,15 @@ pub mod parser;
 mod file_iterator;
 mod includer;
 pub mod types;
+mod reflect;
 
 pub mod backends {
     pub mod backend_shaderc;
 }
 
 pub struct CompilationResult {
-    pub binary: Vec<u32>
+    pub binary: Vec<u32>,
+    pub bindings: Vec<DescriptorBinding>
 }
 
 pub trait CompilerBackend {

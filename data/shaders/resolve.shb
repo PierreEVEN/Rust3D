@@ -6,7 +6,7 @@ global(surface_pass)
     struct VsToFsStruct
     {
         float4 Pos : SV_Position;
-        //float2 Uv : TEXCOORD;
+        float2 Uv : TEXCOORD;
     };
 ]
 
@@ -17,25 +17,25 @@ vertex(surface_pass)
         VsToFsStruct output;
         float2 uv = float2((vertex_index << 1) & 2, vertex_index & 2);
         output.Pos = float4(uv * 2.0f - 1.0f, 0.0f, 1.0f);
-        //output.Uv = uv * float2(1, -1);
+        output.Uv = uv * float2(1, -1);
         return output;
     }
 ]
 
 fragment(surface_pass)
 [
-    // SamplerState ui_sampler;
+    SamplerState ui_sampler;
     // Texture2D combine_albedo;
-    // Texture2D ui_result;
+    Texture2D ui_result;
     
     float4 main(VsToFsStruct input) : SV_Target
     {
         /*
         float4 combine = combine_albedo.Sample(ui_sampler, input.Uv);
-        float4 ui = ui_result.Sample(ui_sampler, input.Uv);
     
         return lerp(float4(ui.rgb, 1), combine, ui.a);
         */
-        return input.Pos;
+        float4 ui = ui_result.Sample(ui_sampler, input.Uv);
+        return ui;
     }
 ]

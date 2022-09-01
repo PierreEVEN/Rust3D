@@ -2,6 +2,7 @@
 use std::fmt::{Debug, Display, Formatter};
 use std::hash::{Hash, Hasher};
 use crate::GfxCast;
+use crate::shader_instance::BindPoint;
 
 use crate::types::PixelFormat;
 
@@ -73,28 +74,18 @@ pub struct ShaderStageInput {
     pub property_type: ShaderPropertyType,
 }
 
-pub struct ShaderProgramStage {
-    pub spirv: Vec<u32>,
-    pub push_constant_size: u32,
-    pub stage_input: Vec<ShaderStageInput>,
-}
-
-pub struct ShaderProgramInfos {
-    pub vertex_stage: ShaderProgramStage,
-    pub fragment_stage: ShaderProgramStage,
-
-    pub culling: Culling,
-    pub front_face: FrontFace,
-    pub topology: Topology,
-    pub polygon_mode: PolygonMode,
-    pub alpha_mode: AlphaMode,
-    pub depth_test: bool,
-    pub line_width: f32,
-}
-
-pub struct ShaderBinding {
+#[derive(Clone)]
+pub struct DescriptorBinding {
+    pub bind_point: BindPoint,
     pub binding: u32,
     pub descriptor_type: DescriptorType,
+}
+
+pub struct ShaderProgramStage {
+    pub spirv: Vec<u32>,
+    pub descriptor_bindings: Vec<DescriptorBinding>,
+    pub push_constant_size: u32,
+    pub stage_input: Vec<ShaderStageInput>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -199,4 +190,20 @@ pub enum DescriptorType
     InputAttachment,
 }
 
-pub trait ShaderProgram : GfxCast {}
+pub struct ShaderProgramInfos {
+    pub vertex_stage: ShaderProgramStage,
+    pub fragment_stage: ShaderProgramStage,
+
+    pub culling: Culling,
+    pub front_face: FrontFace,
+    pub topology: Topology,
+    pub polygon_mode: PolygonMode,
+    pub alpha_mode: AlphaMode,
+    pub depth_test: bool,
+    pub line_width: f32,
+}
+
+pub trait ShaderProgram : GfxCast {
+    fn get_bindings(&self) -> Vec<DescriptorBinding>;
+    
+}

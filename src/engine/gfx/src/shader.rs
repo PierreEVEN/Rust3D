@@ -1,4 +1,7 @@
-﻿use std::fmt;
+﻿
+#[cfg(not(debug_assertions))]
+use std::collections::hash_map::DefaultHasher;
+use std::fmt;
 use std::fmt::{Debug, Display, Formatter};
 use std::hash::{Hash, Hasher};
 use crate::GfxCast;
@@ -86,6 +89,50 @@ pub struct ShaderProgramStage {
     pub descriptor_bindings: Vec<DescriptorBinding>,
     pub push_constant_size: u32,
     pub stage_input: Vec<ShaderStageInput>,
+}
+
+
+#[derive(Clone, Debug)]
+pub enum ShaderLanguage
+{
+    HLSL,
+    GLSL,
+}
+
+impl Default for ShaderLanguage {
+    fn default() -> Self {
+        ShaderLanguage::HLSL
+    }
+}
+
+#[derive(Clone)]
+pub struct ShaderProperties
+{
+    pub shader_version: String,
+    pub shader_language: ShaderLanguage,
+    pub culling: Culling,
+    pub front_face: FrontFace,
+    pub topology: Topology,
+    pub polygon_mode: PolygonMode,
+    pub alpha_mode: AlphaMode,
+    pub depth_test: bool,
+    pub line_width: f32,
+}
+
+impl Default for ShaderProperties {
+    fn default() -> Self {
+        Self {
+            shader_version: "1.0".to_string(),
+            shader_language: Default::default(),
+            culling: Default::default(),
+            front_face: Default::default(),
+            topology: Default::default(),
+            polygon_mode: Default::default(),
+            alpha_mode: Default::default(),
+            depth_test: true,
+            line_width: 1.0,
+        }
+    }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -194,13 +241,7 @@ pub struct ShaderProgramInfos {
     pub vertex_stage: ShaderProgramStage,
     pub fragment_stage: ShaderProgramStage,
 
-    pub culling: Culling,
-    pub front_face: FrontFace,
-    pub topology: Topology,
-    pub polygon_mode: PolygonMode,
-    pub alpha_mode: AlphaMode,
-    pub depth_test: bool,
-    pub line_width: f32,
+    pub shader_properties: ShaderProperties,
 }
 
 pub trait ShaderProgram : GfxCast {

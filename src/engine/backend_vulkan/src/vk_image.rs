@@ -245,7 +245,7 @@ impl GfxImageBuilder<(ImageView, DescriptorImageInfo)> for RbImageView {
         (view, DescriptorImageInfo {
             sampler: Default::default(),
             image_view: view,
-            image_layout: Default::default()
+            image_layout: ImageLayout::SHADER_READ_ONLY_OPTIMAL
         })
     }
 }

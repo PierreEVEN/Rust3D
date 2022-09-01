@@ -7,7 +7,7 @@ use crate::{gfx_cast_vulkan, GfxVulkan, vk_check};
 
 pub struct VkImageSampler {
     pub sampler: Sampler,
-    pub image_infos: DescriptorImageInfo,
+    pub sampler_info: DescriptorImageInfo,
 }
 
 impl ImageSampler for VkImageSampler {}
@@ -37,7 +37,7 @@ impl VkImageSampler {
 
         let sampler = vk_check!(unsafe { (*device).device.create_sampler(&sampler_create_infos, None) });
         
-        let image_infos = DescriptorImageInfo {
+        let sampler_info = DescriptorImageInfo {
             sampler,
             image_view   : ImageView::null(),
             image_layout : ImageLayout::SHADER_READ_ONLY_OPTIMAL,
@@ -45,7 +45,7 @@ impl VkImageSampler {
         
         Arc::new(Self {
             sampler,
-            image_infos
+            sampler_info
         })
     }
 }

@@ -80,48 +80,6 @@ pub struct ShaderBlock
     pub raw_text: String,
 }
 
-#[derive(Clone, Debug)]
-pub enum ShaderLanguage
-{
-    HLSL,
-    GLSL,
-}
-
-impl Default for ShaderLanguage {
-    fn default() -> Self {
-        ShaderLanguage::HLSL
-    }
-}
-
-pub struct ShaderProperties
-{
-    pub shader_version: String,
-    pub shader_language: ShaderLanguage,
-    pub culling: Culling,
-    pub front_face: FrontFace,
-    pub topology: Topology,
-    pub polygon_mode: PolygonMode,
-    pub alpha_mode: gfx::shader::AlphaMode,
-    pub depth_test: bool,
-    pub line_width: f32,
-}
-
-impl Default for ShaderProperties {
-    fn default() -> Self {
-        Self {
-            shader_version: "1.0".to_string(),
-            shader_language: Default::default(),
-            culling: Default::default(),
-            front_face: Default::default(),
-            topology: Default::default(),
-            polygon_mode: Default::default(),
-            alpha_mode: Default::default(),
-            depth_test: true,
-            line_width: 1.0,
-        }
-    }
-}
-
 pub struct InterstageData
 {
     pub stage_outputs: HashMap<String, u32>,

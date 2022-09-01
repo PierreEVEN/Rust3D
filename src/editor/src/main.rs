@@ -66,7 +66,6 @@ fn main() {
         Err(_) => { panic!("failed to read shader_file") }
     });
 
-    /*
     // Create images
     let image = match read_image_from_file(&gfx_backend, Path::new("data/textures/raw.jpg")) {
         Ok(image) => { image }
@@ -82,9 +81,6 @@ fn main() {
     }, &*demo_material.get_program(&PassID::new("surface_pass")).unwrap());
     shader_instance.bind_texture(&BindPoint::new("ui_result"), &image);
     shader_instance.bind_sampler(&BindPoint::new("ui_sampler"), &sampler);
-    
-    
-     */
     
     // Game loop
     'game_loop: loop {
@@ -119,8 +115,8 @@ fn main() {
                             }
                             Some(program) => {
                                 command_buffer.bind_program(&main_window_surface.get_current_ref(), &program);
-                                // command_buffer.bind_shader_instance(&main_window_surface.get_current_ref(), &shader_instance);
-                                // command_buffer.draw_procedural(&main_window_surface.get_current_ref(), 4, 0, 1, 0);
+                                command_buffer.bind_shader_instance(&main_window_surface.get_current_ref(), &shader_instance);
+                                command_buffer.draw_procedural(&main_window_surface.get_current_ref(), 10, 0, 1, 0);
                             }
                         };
                         main_framegraph.submit();

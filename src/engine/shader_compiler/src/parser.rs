@@ -1,9 +1,8 @@
 ﻿use std::collections::HashMap;
-use gfx::shader::{AlphaMode, Culling, FrontFace, PassID, PolygonMode, ShaderStage, Topology};
+use gfx::shader::{AlphaMode, Culling, FrontFace, PassID, PolygonMode, ShaderLanguage, ShaderProperties, ShaderStage, Topology};
 use crate::file_iterator::FileIterator;
 use crate::includer::Includer;
-use crate::{ShaderLanguage};
-use crate::types::{ShaderErrorResult, ShaderProperties};
+use crate::types::{ShaderErrorResult};
 
 #[derive(Default)]
 pub struct ProgramData
@@ -316,7 +315,17 @@ impl Parser {
             {
                 let pragma_directive = self.file_iterator.get_next_line();
                 let fields = Self::split_string(&pragma_directive, &vec![' ', '\t']);
-                self.internal_properties.insert(fields[0].clone(), if fields.len() < 2 { String::default() } else { fields[1].clone() });
+                
+                let mut content = String::from("");
+                
+                for i in 1..fields.len() {
+                    if fields[i].chars().any(|c| c.is_ascii_alphanumeric()) {
+                        content = Self::trim_string(&fields[i]);
+                        break;
+                    }
+                }
+                
+                self.internal_properties.insert(Self::trim_string(&fields[0].to_lowercase()), if fields.len() < 2 { String::default() } else { content.to_uppercase() });
             }
 
             if self.file_iterator.match_string("head")
@@ -446,7 +455,7 @@ impl Parser {
             depth_test: false,
             line_width: 0.0,
         };
-
+        
         if errors.empty() {
             Ok(())
         } else {

@@ -2,11 +2,11 @@
 use std::path::Path;
 use std::sync::{Arc, RwLock};
 
-use gfx::shader::{PassID, ShaderProgram, ShaderProgramInfos, ShaderProgramStage, ShaderStage};
+use gfx::shader::{PassID, ShaderLanguage, ShaderProgram, ShaderProgramInfos, ShaderProgramStage, ShaderStage};
 use shader_compiler::backends::backend_shaderc::{BackendShaderC, ShaderCIncluder};
 use shader_compiler::CompilerBackend;
 use shader_compiler::parser::Parser;
-use shader_compiler::types::{InterstageData, ShaderLanguage};
+use shader_compiler::types::{InterstageData};
 
 use crate::asset::{AssetFactory, AssetMetaData, GameAsset};
 use crate::asset_manager::AssetManager;
@@ -121,13 +121,7 @@ impl MaterialAsset {
                         push_constant_size: 0,
                         stage_input: vec![],
                     },
-                    culling: Default::default(),
-                    front_face: Default::default(),
-                    topology: Default::default(),
-                    polygon_mode: Default::default(),
-                    alpha_mode: Default::default(),
-                    depth_test: false,
-                    line_width: 1.0,
+                    shader_properties: parser.properties.clone()
                 };
 
                 let render_pass = match self.meta_data.asset_manager.graphics().find_render_pass(pass) {

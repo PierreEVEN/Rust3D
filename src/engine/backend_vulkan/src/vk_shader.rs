@@ -153,7 +153,7 @@ impl VkShaderProgram {
         };
         
         let input_assembly = PipelineInputAssemblyStateCreateInfo {
-            topology: VkTopology::from(&create_infos.topology).0,
+            topology: VkTopology::from(&create_infos.shader_properties.topology).0,
             primitive_restart_enable: false as Bool32,
             ..PipelineInputAssemblyStateCreateInfo::default()
         };
@@ -167,14 +167,14 @@ impl VkShaderProgram {
         let rasterizer = PipelineRasterizationStateCreateInfo {
             depth_clamp_enable: false as Bool32,
             rasterizer_discard_enable: false as Bool32,
-            polygon_mode: VkPolygonMode::from(&create_infos.polygon_mode).0,
-            cull_mode: VkCullMode::from(&create_infos.culling).0,
-            front_face: VkFrontFace::from(&create_infos.front_face).0,
+            polygon_mode: VkPolygonMode::from(&create_infos.shader_properties.polygon_mode).0,
+            cull_mode: VkCullMode::from(&create_infos.shader_properties.culling).0,
+            front_face: VkFrontFace::from(&create_infos.shader_properties.front_face).0,
             depth_bias_enable: false as Bool32,
             depth_bias_constant_factor: 0.0,
             depth_bias_clamp: 0.0,
             depth_bias_slope_factor: 0.0,
-            line_width: create_infos.line_width,
+            line_width: create_infos.shader_properties.line_width,
             ..PipelineRasterizationStateCreateInfo::default()
         };
 
@@ -191,8 +191,8 @@ impl VkShaderProgram {
 
 
         let depth_stencil = PipelineDepthStencilStateCreateInfo {
-            depth_test_enable: create_infos.depth_test as Bool32,
-            depth_write_enable: create_infos.depth_test as Bool32,
+            depth_test_enable: create_infos.shader_properties.depth_test as Bool32,
+            depth_write_enable: create_infos.shader_properties.depth_test as Bool32,
             depth_compare_op: CompareOp::LESS,
             depth_bounds_test_enable: false as Bool32,
             stencil_test_enable: false as Bool32,
@@ -206,11 +206,11 @@ impl VkShaderProgram {
         for _ in &render_pass.get_config().color_attachments
         {
             color_blend_attachment.push(PipelineColorBlendAttachmentState {
-                blend_enable: if create_infos.alpha_mode == AlphaMode::Opaque { false } else { true } as Bool32,
-                src_color_blend_factor: if create_infos.alpha_mode == AlphaMode::Opaque { BlendFactor::ZERO } else { BlendFactor::SRC_ALPHA },
-                dst_color_blend_factor: if create_infos.alpha_mode == AlphaMode::Opaque { BlendFactor::ZERO } else { BlendFactor::ONE_MINUS_SRC_ALPHA },
+                blend_enable: if create_infos.shader_properties.alpha_mode == AlphaMode::Opaque { false } else { true } as Bool32,
+                src_color_blend_factor: if create_infos.shader_properties.alpha_mode == AlphaMode::Opaque { BlendFactor::ZERO } else { BlendFactor::SRC_ALPHA },
+                dst_color_blend_factor: if create_infos.shader_properties.alpha_mode == AlphaMode::Opaque { BlendFactor::ZERO } else { BlendFactor::ONE_MINUS_SRC_ALPHA },
                 color_blend_op: BlendOp::ADD,
-                src_alpha_blend_factor: if create_infos.alpha_mode == AlphaMode::Opaque { BlendFactor::ONE } else { BlendFactor::ONE_MINUS_SRC_ALPHA },
+                src_alpha_blend_factor: if create_infos.shader_properties.alpha_mode == AlphaMode::Opaque { BlendFactor::ONE } else { BlendFactor::ONE_MINUS_SRC_ALPHA },
                 dst_alpha_blend_factor: BlendFactor::ZERO,
                 alpha_blend_op: BlendOp::ADD,
                 color_write_mask: ColorComponentFlags::R | ColorComponentFlags::G | ColorComponentFlags::B | ColorComponentFlags::A,
@@ -241,7 +241,7 @@ impl VkShaderProgram {
 
 
         let mut dynamic_states_array = Vec::from([DynamicState::SCISSOR, DynamicState::VIEWPORT]);
-        if create_infos.line_width != 1.0 {
+        if create_infos.shader_properties.line_width != 1.0 {
             dynamic_states_array.push(DynamicState::LINE_WIDTH);
         }
 

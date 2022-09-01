@@ -99,7 +99,7 @@ impl GfxInterface for GfxVulkan {
         unsafe { (&self.physical_device_vk as *const VkPhysicalDevice as *mut VkPhysicalDevice).write(self.instance.get_vk_device(&selected_device).expect("failed to get physical device information for vulkan").clone()) };
         unsafe { (&self.device as *const VkDevice as *mut VkDevice).write(VkDevice::new(&self.get_ref())) };
         unsafe { (&self.command_pool as *const VkCommandPool as *mut VkCommandPool).write(VkCommandPool::new(&self.get_ref())) };
-        unsafe { (&self.descriptor_pool as *const VkDescriptorPool as *mut VkDescriptorPool).write(VkDescriptorPool::new(&self.get_ref())) };
+        unsafe { (&self.descriptor_pool as *const VkDescriptorPool as *mut VkDescriptorPool).write(VkDescriptorPool::new(&self.get_ref(), 64, 64)) };
     }
 
 
@@ -136,7 +136,7 @@ impl GfxInterface for GfxVulkan {
 
     fn create_shader_instance(&self, create_infos: ShaderInstanceCreateInfos, parent: &dyn ShaderProgram) -> Arc<dyn ShaderInstance> {
         let parent = parent.as_any().downcast_ref::<VkShaderProgram>().unwrap();
-        VkShaderInstance::new(&self.get_ref(), create_infos, parent.pipeline_layout.clone())
+        VkShaderInstance::new(&self.get_ref(), create_infos, parent.pipeline_layout.clone(), parent.descriptor_set_layout.clone())
     }
 
     fn find_render_pass(&self, pass_id: &PassID) -> Option<Arc<dyn RenderPass>> {

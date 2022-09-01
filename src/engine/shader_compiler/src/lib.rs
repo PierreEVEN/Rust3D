@@ -1,7 +1,7 @@
 use std::path::Path;
-use gfx::shader::{DescriptorBinding, ShaderStage};
+use gfx::shader::{DescriptorBinding, ShaderLanguage, ShaderStage};
 use crate::parser::ShaderChunk;
-use crate::types::{InterstageData, ShaderErrorResult, ShaderLanguage};
+use crate::types::{InterstageData, ShaderErrorResult};
 
 pub mod parser;
 mod file_iterator;

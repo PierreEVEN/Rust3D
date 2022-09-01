@@ -1,8 +1,6 @@
 ﻿use std::ops;
 use std::collections::HashMap;
 
-use gfx::shader::{Culling, FrontFace, PolygonMode, Topology};
-
 #[derive(Clone)]
 pub struct ShaderError {
     text: String,

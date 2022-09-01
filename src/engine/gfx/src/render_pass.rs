@@ -27,10 +27,12 @@ pub trait RenderPass: GfxCast {
     fn get_pass_id(&self) -> PassID;
 }
 
+pub type RenderCallback = fn(&Arc<dyn GfxCommandBuffer>);
+
 pub trait RenderPassInstance: GfxCast {
     fn resize(&self, new_res: Vec2u32);
-    fn begin(&self) -> Arc<dyn GfxCommandBuffer>;
-    fn end(&self);
+    fn draw(&self);
+    fn on_render(&self, f: RenderCallback);
 }
 
 pub struct FrameGraph {
@@ -60,11 +62,16 @@ impl FrameGraph {
             present_pass: draw_pass,
         }
     }
+    
+    pub fn main_pass(&self) -> &Arc<dyn RenderPassInstance> {
+        &self.present_pass
+    }
 
-    pub fn begin(&self) -> Result<Arc<dyn GfxCommandBuffer>, String> {
+    pub fn begin(&self) -> Result<(), String> {
         return match self.surface.acquire(&self.present_pass) {
             Ok(_) => {
-                Ok(self.present_pass.begin())
+                // @TODO : draw children passes
+                Ok(self.present_pass.draw())
             }
             Err(error) => {
                 match error {
@@ -81,7 +88,6 @@ impl FrameGraph {
     }
 
     pub fn submit(&self) {
-        self.present_pass.end();
         match self.surface.submit(&self.present_pass) {
             Ok(_) => {}
             Err(error) => {

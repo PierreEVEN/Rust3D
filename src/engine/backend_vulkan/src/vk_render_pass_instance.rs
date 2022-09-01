@@ -7,7 +7,7 @@ use gfx::command_buffer::GfxCommandBuffer;
 use gfx::gfx_resource::{GfxImageBuilder, GfxResource};
 use gfx::GfxRef;
 use gfx::image::GfxImage;
-use gfx::render_pass::{RenderPass, RenderPassInstance};
+use gfx::render_pass::{RenderCallback, RenderPass, RenderPassInstance};
 use gfx::surface::{GfxImageID, GfxSurface};
 use gfx::types::ClearValues;
 use maths::vec2::Vec2u32;
@@ -27,6 +27,7 @@ pub struct VkRenderPassInstance {
     pub clear_value: Vec<ClearValues>,
     pub resolution: RwLock<Vec2u32>,
     pub wait_semaphores: RwLock<Option<Semaphore>>,
+    pub render_callback: RwLock<Option<RenderCallback>>,
 }
 
 pub struct RbSemaphore {}
@@ -115,6 +116,7 @@ impl VkRenderPassInstance {
             surface: surface.clone(),
             resolution: RwLock::new(res),
             wait_semaphores: RwLock::new(None),
+            render_callback: RwLock::new(Some(|_| {})),
         }
     }
 }
@@ -135,8 +137,7 @@ impl RenderPassInstance for VkRenderPassInstance {
         *res = _new_res;
     }
 
-    fn begin(&self) -> Arc<dyn GfxCommandBuffer> {
-        
+    fn draw(&self) {
         let device = &gfx_cast_vulkan!(self.gfx).device;
 
         // Begin buffer
@@ -195,15 +196,19 @@ impl RenderPassInstance for VkRenderPassInstance {
         unsafe {
             (*device).device.cmd_set_scissor(command_buffer, 0, &[Rect2D {
                 offset: Offset2D { x: 0, y: 0 },
-                extent: Extent2D { width: res.x, height: res.y }
+                extent: Extent2D { width: res.x, height: res.y },
             }])
         };
 
         self.pass_command_buffers.set_pass_id(self.owner.get_pass_id());
-        self.pass_command_buffers.clone()
-    }
 
-    fn end(&self) {
+        // Draw content
+        match *self.render_callback.read().unwrap() {
+            None => {}
+            Some(callback) => { callback(&(self.pass_command_buffers.clone() as Arc<dyn GfxCommandBuffer>)) }
+        }
+
+
         let command_buffer = self.pass_command_buffers.command_buffer.get(&self.surface.get_current_ref());
         let device = &gfx_cast_vulkan!(self.gfx).device;
 
@@ -229,5 +234,9 @@ impl RenderPassInstance for VkRenderPassInstance {
         };
 
         (*device).get_queue(QueueFlags::GRAPHICS).unwrap().submit(submit_infos);
+    }
+
+    fn on_render(&self, f: RenderCallback) {
+        *self.render_callback.write().unwrap() = Some(f);
     }
 }

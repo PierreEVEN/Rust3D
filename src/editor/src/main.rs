@@ -8,7 +8,7 @@ use core::asset_manager::*;
 use core::base_assets::material_asset::*;
 use gfx::image_sampler::SamplerCreateInfos;
 use gfx::render_pass::FrameGraph;
-use gfx::shader::{PassID};
+use gfx::shader::PassID;
 use gfx::shader_instance::{BindPoint, ShaderInstanceCreateInfos};
 use maths::rect2d::Rect2D;
 use maths::vec4::Vec4F32;
@@ -74,29 +74,36 @@ fn main() {
 
     // Create sampler
     let sampler = gfx_backend.create_image_sampler(SamplerCreateInfos {});
-    
+
     // Create material instance
     let shader_instance = gfx_backend.create_shader_instance(ShaderInstanceCreateInfos {
         bindings: demo_material.get_program(&PassID::new("surface_pass")).unwrap().get_bindings()
     }, &*demo_material.get_program(&PassID::new("surface_pass")).unwrap());
     shader_instance.bind_texture(&BindPoint::new("ui_result"), &image);
     shader_instance.bind_sampler(&BindPoint::new("ui_sampler"), &sampler);
-    
+
+    main_framegraph.unwrap().main_pass().on_render(|command_buffer| {
+        match demo_material.get_program(&command_buffer.get_pass_id()) {
+            None => {
+                panic!("failed to find compatible permutation [{}]", command_buffer.get_pass_id());
+            }
+            Some(program) => {
+                command_buffer.bind_program(&main_window_surface.get_current_ref(), &program);
+                command_buffer.bind_shader_instance(&main_window_surface.get_current_ref(), &shader_instance);
+                command_buffer.draw_procedural(&main_window_surface.get_current_ref(), 10, 0, 1, 0);
+            }
+        };
+    });
+
     // Game loop
     'game_loop: loop {
         // handle events
         while let Some(message) = platform.poll_event() {
             match message {
                 PlatformEvent::WindowClosed(window) => {
-                    if window.get_handle() == main_window.get_handle() {
-                        main_framegraph = None;
-                    }
-                    if window.get_handle() == secondary_window.get_handle() {
-                        secondary_framegraph = None;
-                    }
-                    if main_framegraph.is_none() && secondary_framegraph.is_none() {
-                        break 'game_loop;
-                    }
+                    if window.get_handle() == main_window.get_handle() { main_framegraph = None; }
+                    if window.get_handle() == secondary_window.get_handle() { secondary_framegraph = None; }
+                    if main_framegraph.is_none() && secondary_framegraph.is_none() { break 'game_loop; }
                 }
                 PlatformEvent::WindowResized(_window, _width, _height) => {}
             }
@@ -106,21 +113,7 @@ fn main() {
             None => {}
             Some(main_framegraph) => {
                 match main_framegraph.begin() {
-                    Ok(command_buffer) => {
-                        // Rendering
-
-                        match demo_material.get_program(&command_buffer.get_pass_id()) {
-                            None => {
-                                panic!("failed to find compatible permutation [{}]", command_buffer.get_pass_id());
-                            }
-                            Some(program) => {
-                                command_buffer.bind_program(&main_window_surface.get_current_ref(), &program);
-                                command_buffer.bind_shader_instance(&main_window_surface.get_current_ref(), &shader_instance);
-                                command_buffer.draw_procedural(&main_window_surface.get_current_ref(), 10, 0, 1, 0);
-                            }
-                        };
-                        main_framegraph.submit();
-                    }
+                    Ok(_) => { main_framegraph.submit(); }
                     Err(_) => {}
                 };
             }
@@ -130,10 +123,7 @@ fn main() {
             None => {}
             Some(secondary_framegraph) => {
                 match secondary_framegraph.begin() {
-                    Ok(_) => {
-                        // Rendering
-                        secondary_framegraph.submit();
-                    }
+                    Ok(_) => { secondary_framegraph.submit(); }
                     Err(_) => {}
                 };
             }

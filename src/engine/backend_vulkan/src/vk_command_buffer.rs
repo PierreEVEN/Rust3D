@@ -84,6 +84,7 @@ pub struct VkCommandBuffer {
     pub command_buffer: GfxResource<CommandBuffer>,
     gfx: GfxRef,
     pass_id: RwLock<PassID>,
+    image_id: RwLock<GfxImageID>,
 }
 
 pub struct RbCommandBuffer {}
@@ -96,50 +97,58 @@ impl GfxImageBuilder<CommandBuffer> for RbCommandBuffer {
 
 impl VkCommandBuffer {
     pub fn new(gfx: &GfxRef) -> Arc<VkCommandBuffer> {
-        Arc::new(VkCommandBuffer { command_buffer: GfxResource::new(Box::new(RbCommandBuffer {})), gfx: gfx.clone(), pass_id: RwLock::new(PassID::new("undefined")) })
+        Arc::new(VkCommandBuffer {
+            command_buffer: GfxResource::new(Box::new(RbCommandBuffer {})),
+            gfx: gfx.clone(),
+            pass_id: RwLock::new(PassID::new("undefined")),
+            image_id: RwLock::new(GfxImageID::new(gfx, 0, 0)),
+        })
     }
 
-    pub fn set_pass_id(&self, new_id: PassID) {
+    pub fn init_for(&self, new_id: PassID, image_id: GfxImageID) {
         *self.pass_id.write().unwrap() = new_id;
+        *self.image_id.write().unwrap() = image_id;
     }
 }
 
 impl GfxCommandBuffer for VkCommandBuffer {
-    fn bind_program(&self, image: &GfxImageID, program: &Arc<dyn ShaderProgram>) {
+    fn bind_program(&self, program: &Arc<dyn ShaderProgram>) {
         let device = &gfx_cast_vulkan!(self.gfx).device;
         let vk_program = program.as_ref().as_any().downcast_ref::<VkShaderProgram>().unwrap();
-        unsafe { (*device).device.cmd_bind_pipeline(self.command_buffer.get(image), PipelineBindPoint::GRAPHICS, vk_program.pipeline); }
+        unsafe { (*device).device.cmd_bind_pipeline(self.command_buffer.get(&*self.image_id.read().unwrap()), PipelineBindPoint::GRAPHICS, vk_program.pipeline); }
     }
 
-    fn bind_shader_instance(&self, image: &GfxImageID, instance: &Arc<dyn ShaderInstance>) {
+    fn bind_shader_instance(&self, instance: &Arc<dyn ShaderInstance>) {
         let device = &gfx_cast_vulkan!(self.gfx).device;
         let vk_shader_instance = instance.as_ref().as_any().downcast_ref::<VkShaderInstance>().unwrap();
-        vk_shader_instance.refresh_descriptors(image);
-        unsafe { (*device).device.cmd_bind_descriptor_sets(
-            self.command_buffer.get(image),
-            PipelineBindPoint::GRAPHICS,
-            *vk_shader_instance.pipeline_layout,
-            0,
-            &[vk_shader_instance.descriptor_sets.read().unwrap().get(image)],
-            &[]
-        ); }
+        vk_shader_instance.refresh_descriptors(&*self.image_id.read().unwrap());
+        unsafe {
+            (*device).device.cmd_bind_descriptor_sets(
+                self.command_buffer.get(&*self.image_id.read().unwrap()),
+                PipelineBindPoint::GRAPHICS,
+                *vk_shader_instance.pipeline_layout,
+                0,
+                &[vk_shader_instance.descriptor_sets.read().unwrap().get(&*self.image_id.read().unwrap())],
+                &[],
+            );
+        }
     }
 
-    fn draw_mesh(&self, _image: &GfxImageID, _mesh: &Arc<dyn GfxBuffer>, _instance_count: u32, _first_instance: u32) {
+    fn draw_mesh(&self, _mesh: &Arc<dyn GfxBuffer>, _instance_count: u32, _first_instance: u32) {
         todo!()
     }
 
-    fn draw_mesh_advanced(&self, _image: &GfxImageID, _mesh: &Arc<dyn GfxBuffer>, _first_index: u32, _vertex_offset: u32, _index_count: u32, _instance_count: u32, _first_instance: u32) {
+    fn draw_mesh_advanced(&self, _mesh: &Arc<dyn GfxBuffer>, _first_index: u32, _vertex_offset: u32, _index_count: u32, _instance_count: u32, _first_instance: u32) {
         todo!()
     }
 
-    fn draw_mesh_indirect(&self, _image: &GfxImageID, _mesh: &Arc<dyn GfxBuffer>) {
+    fn draw_mesh_indirect(&self, _mesh: &Arc<dyn GfxBuffer>) {
         todo!()
     }
 
-    fn draw_procedural(&self, image: &GfxImageID, vertex_count: u32, first_vertex: u32, instance_count: u32, first_instance: u32) {
+    fn draw_procedural(&self, vertex_count: u32, first_vertex: u32, instance_count: u32, first_instance: u32) {
         let device = &gfx_cast_vulkan!(self.gfx).device;
-        unsafe { (*device).device.cmd_draw(self.command_buffer.get(image), vertex_count, instance_count, first_vertex, first_instance) }
+        unsafe { (*device).device.cmd_draw(self.command_buffer.get(&*self.image_id.read().unwrap()), vertex_count, instance_count, first_vertex, first_instance) }
     }
 
     fn set_scissor(&self) {

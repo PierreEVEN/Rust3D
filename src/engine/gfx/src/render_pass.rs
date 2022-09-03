@@ -27,17 +27,19 @@ pub trait RenderPass: GfxCast {
     fn get_pass_id(&self) -> PassID;
 }
 
-pub type RenderCallback = fn(&Arc<dyn GfxCommandBuffer>);
-
 pub trait RenderPassInstance: GfxCast {
     fn resize(&self, new_res: Vec2u32);
     fn draw(&self);
-    fn on_render(&self, f: RenderCallback);
+    fn on_render(&self, callback: Box<dyn GraphRenderCallback>);
 }
 
 pub struct FrameGraph {
     surface: Arc<dyn GfxSurface>,
     present_pass: Arc<dyn RenderPassInstance>,
+}
+
+pub trait GraphRenderCallback {
+    fn draw(&self, command_buffer: &Arc<dyn GfxCommandBuffer>);
 }
 
 impl FrameGraph {

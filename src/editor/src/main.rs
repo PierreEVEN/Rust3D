@@ -1,15 +1,17 @@
 use std::fs;
 use std::path::Path;
+use std::sync::Arc;
 
 use backend_vulkan::GfxVulkan;
 use backend_vulkan_win32::vk_surface_win32::VkSurfaceWin32;
 use core::asset::*;
 use core::asset_manager::*;
 use core::base_assets::material_asset::*;
+use gfx::command_buffer::GfxCommandBuffer;
 use gfx::image_sampler::SamplerCreateInfos;
-use gfx::render_pass::FrameGraph;
+use gfx::render_pass::{FrameGraph, GraphRenderCallback};
 use gfx::shader::PassID;
-use gfx::shader_instance::{BindPoint, ShaderInstanceCreateInfos};
+use gfx::shader_instance::{BindPoint, ShaderInstance, ShaderInstanceCreateInfos};
 use maths::rect2d::Rect2D;
 use maths::vec4::Vec4F32;
 use plateform::Platform;
@@ -82,18 +84,27 @@ fn main() {
     shader_instance.bind_texture(&BindPoint::new("ui_result"), &image);
     shader_instance.bind_sampler(&BindPoint::new("ui_sampler"), &sampler);
 
-    main_framegraph.unwrap().main_pass().on_render(|command_buffer| {
-        match demo_material.get_program(&command_buffer.get_pass_id()) {
-            None => {
-                panic!("failed to find compatible permutation [{}]", command_buffer.get_pass_id());
-            }
-            Some(program) => {
-                command_buffer.bind_program(&main_window_surface.get_current_ref(), &program);
-                command_buffer.bind_shader_instance(&main_window_surface.get_current_ref(), &shader_instance);
-                command_buffer.draw_procedural(&main_window_surface.get_current_ref(), 10, 0, 1, 0);
-            }
-        };
-    });
+    struct TestGraph {
+        demo_material: Arc<MaterialAsset>,
+        shader_instance: Arc<dyn ShaderInstance>,
+    }
+
+    impl GraphRenderCallback for TestGraph {
+        fn draw(&self, command_buffer: &Arc<dyn GfxCommandBuffer>) {
+            match self.demo_material.get_program(&command_buffer.get_pass_id()) {
+                None => {
+                    panic!("failed to find compatible permutation [{}]", command_buffer.get_pass_id());
+                }
+                Some(program) => {
+                    command_buffer.bind_program(&program);
+                    command_buffer.bind_shader_instance(&main_window_surface.get_current_ref(), &self.shader_instance);
+                    command_buffer.draw_procedural(10, 0, 1, 0);
+                }
+            };
+        }
+    }
+
+    main_framegraph.unwrap().main_pass().on_render(Box::new(TestGraph { demo_material, shader_instance }));
 
     // Game loop
     'game_loop: loop {

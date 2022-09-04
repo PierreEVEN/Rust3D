@@ -1,7 +1,7 @@
 ﻿use std::sync::{Arc, RwLock};
 
 use ash::vk;
-use ash::vk::{AccessFlags, BufferImageCopy, CommandBuffer, ComponentMapping, ComponentSwizzle, DependencyFlags, DescriptorImageInfo, Extent3D, Image, ImageAspectFlags, ImageCreateInfo, ImageLayout, ImageMemoryBarrier, ImageSubresourceLayers, ImageSubresourceRange, ImageTiling, ImageUsageFlags, ImageView, ImageViewCreateInfo, ImageViewType, Offset3D, PipelineStageFlags, QUEUE_FAMILY_IGNORED, QueueFlags, SampleCountFlags, SharingMode};
+use ash::vk::{AccessFlags, BufferImageCopy, CommandBuffer, ComponentMapping, ComponentSwizzle, DependencyFlags, DescriptorImageInfo, Extent3D, Handle, Image, ImageAspectFlags, ImageCreateInfo, ImageLayout, ImageMemoryBarrier, ImageSubresourceLayers, ImageSubresourceRange, ImageTiling, ImageUsageFlags, ImageView, ImageViewCreateInfo, ImageViewType, Offset3D, PipelineStageFlags, QUEUE_FAMILY_IGNORED, QueueFlags, SampleCountFlags, SharingMode};
 use gpu_allocator::vulkan::{Allocation, AllocationCreateDesc};
 
 use gfx::buffer::{BufferAccess, BufferCreateInfo, BufferType, BufferUsage};
@@ -92,6 +92,10 @@ impl GfxImage for VkImage {
 
     fn get_data_size(&self) -> u32 {
         self.image_params.pixel_format.type_size() * self.image_params.image_type.pixel_count()
+    }
+
+    fn __static_view_handle(&self) -> u64 {
+        self.view.get_static().0.as_raw()
     }
 }
 

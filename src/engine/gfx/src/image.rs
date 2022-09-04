@@ -17,7 +17,6 @@ pub enum ImageType {
 #[repr(u8)]
 #[derive(Copy, Clone)]
 pub enum ImageUsage {
-    Any,
     CopySource,
     CopyDestination,
     Sampling,
@@ -63,6 +62,7 @@ pub trait GfxImage: GfxCast {
     fn get_data(&self) -> Vec<u8>;
     fn set_data(&self, data: Vec<u8>);
     fn get_data_size(&self) -> u32;
+    fn __static_view_handle(&self) -> u64;
 }
 
 impl dyn GfxImage {

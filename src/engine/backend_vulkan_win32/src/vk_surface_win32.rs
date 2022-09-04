@@ -15,7 +15,7 @@ use backend_vulkan::vk_render_pass_instance::{RbSemaphore, VkRenderPassInstance}
 use backend_vulkan::vk_types::GfxPixelFormat;
 use gfx::gfx_resource::{GfxImageBuilder, GfxResource};
 use gfx::GfxRef;
-use gfx::image::{GfxImage, GfxImageUsageFlags, ImageParams, ImageType, ImageUsage};
+use gfx::image::{GfxImage, GfxImageUsageFlags, ImageParams, ImageType};
 use gfx::render_pass::{RenderPassInstance};
 use gfx::surface::{GfxImageID, GfxSurface, SurfaceAcquireResult};
 use gfx::types::PixelFormat;
@@ -118,7 +118,7 @@ impl GfxSurface for VkSurfaceWin32 {
             image_type: ImageType::Texture2d(surface_capabilities.current_extent.width, surface_capabilities.current_extent.height),
             read_only: false,
             mip_levels: Some(1),
-            usage: GfxImageUsageFlags::from_flag(ImageUsage::Any),
+            usage: GfxImageUsageFlags::empty(),
         }));
 
         *self.extent.write().unwrap() = surface_capabilities.current_extent;

@@ -6,8 +6,8 @@ use std::time::Instant;
 use backend_vulkan::GfxVulkan;
 use backend_vulkan_win32::vk_surface_win32::VkSurfaceWin32;
 use core::asset::*;
-use core::asset_manager::*;
 use core::base_assets::material_asset::*;
+use core::engine::*;
 use gfx::buffer::BufferMemory;
 use gfx::command_buffer::GfxCommandBuffer;
 use gfx::image_sampler::SamplerCreateInfos;
@@ -15,9 +15,9 @@ use gfx::render_pass::{FrameGraph, GraphRenderCallback, RenderPassAttachment, Re
 use gfx::shader::{PassID, ShaderStage};
 use gfx::shader_instance::{BindPoint, ShaderInstance, ShaderInstanceCreateInfos};
 use gfx::types::{ClearValues, PixelFormat};
+use imgui::ImGUiContext;
 use maths::rect2d::Rect2D;
 use maths::vec4::Vec4F32;
-use plateform::Platform;
 use plateform::window::{PlatformEvent, WindowCreateInfos, WindowFlagBits, WindowFlags};
 use plateform_win32::PlatformWin32;
 use third_party_io::image::read_image_from_file;
@@ -27,31 +27,27 @@ mod gfx_demo;
 fn main() {
     // We use a win32 backend
     #[cfg(any(target_os = "windows"))]
-        let platform = PlatformWin32::new();
+        let engine = Engine::new(PlatformWin32::new(), GfxVulkan::new());
 
     // Create main window
-    let main_window = platform.create_window(WindowCreateInfos {
+    let main_window = engine.platform.create_window(WindowCreateInfos {
         name: "Engine - 0.1.0".to_string(),
         geometry: Rect2D::rect(300, 400, 800, 600),
         window_flags: WindowFlags::from_flag(WindowFlagBits::Resizable),
         background_alpha: 255,
-    }).unwrap();
+    }).expect("failed to create main window");
     main_window.show();
-
-    // Create graphics
-    let gfx_backend = GfxVulkan::new();
-    gfx_backend.set_physical_device(gfx_backend.find_best_suitable_physical_device().expect("there is no suitable GPU available"));
-
+    
     // Bind graphic surface onto current window
-    let main_window_surface = VkSurfaceWin32::new(&gfx_backend, main_window.clone(), 3);
+    let main_window_surface = VkSurfaceWin32::new(&engine.gfx, main_window.clone(), 3);
     // Create framegraph
-    let main_framegraph = FrameGraph::from_surface(&gfx_backend, &main_window_surface, Vec4F32::new(1.0, 0.0, 0.0, 1.0));
+    let main_framegraph = FrameGraph::from_surface(&engine.gfx, &main_window_surface, Vec4F32::new(1.0, 0.0, 0.0, 1.0));
 
-    // Create asset manager
-    let asset_manager = AssetManager::new(&gfx_backend);
-
+    // Create ImGui context
+    let _imgui_context = ImGUiContext::new(&engine.gfx);
+    
     // Create material
-    let demo_material = MaterialAsset::new(&asset_manager);
+    let demo_material = MaterialAsset::new(&engine.asset_manager);
     demo_material.meta_data().set_save_path(Path::new("data/demo_shader"));
     demo_material.meta_data().set_name("demo shader".to_string());
     demo_material.set_shader_code(Path::new("data/shaders/resolve.shb"), match fs::read_to_string("data/shaders/resolve.shb") {
@@ -60,21 +56,21 @@ fn main() {
     });
 
     // Create images
-    let image_catinou = match read_image_from_file(&gfx_backend, Path::new("data/textures/cat_stretching.png")) {
+    let image_catinou = match read_image_from_file(&engine.gfx, Path::new("data/textures/cat_stretching.png")) {
         Ok(image2) => { image2 }
         Err(error) => { panic!("failed to create image : {}", error.to_string()) }
     };
 
     // Create sampler
-    let sampler = gfx_backend.create_image_sampler(SamplerCreateInfos {});
+    let sampler = engine.gfx.create_image_sampler(SamplerCreateInfos {});
 
     // Create material instance
-    let shader_instance = gfx_backend.create_shader_instance(ShaderInstanceCreateInfos {
+    let shader_instance = engine.gfx.create_shader_instance(ShaderInstanceCreateInfos {
         bindings: demo_material.get_program(&PassID::new("surface_pass")).unwrap().get_bindings()
     }, &*demo_material.get_program(&PassID::new("surface_pass")).unwrap());
     shader_instance.bind_sampler(&BindPoint::new("ui_sampler"), &sampler);
 
-    let shader_2_instance = gfx_backend.create_shader_instance(ShaderInstanceCreateInfos {
+    let shader_2_instance = engine.gfx.create_shader_instance(ShaderInstanceCreateInfos {
         bindings: demo_material.get_program(&PassID::new("surface_pass")).unwrap().get_bindings()
     }, &*demo_material.get_program(&PassID::new("surface_pass")).unwrap());
     shader_2_instance.bind_texture(&BindPoint::new("ui_result"), &image_catinou);
@@ -111,7 +107,7 @@ fn main() {
 
     main_framegraph.main_pass().on_render(Box::new(TestGraph { start: Instant::now(), demo_material: demo_material.clone(), shader_instance: shader_instance.clone(), time_pc_data: RwLock::new(TestPc { time: 0.5 }) }));
 
-    let deferred_combine_pass = gfx_backend.create_render_pass(RenderPassCreateInfos {
+    let deferred_combine_pass = engine.gfx.create_render_pass(RenderPassCreateInfos {
         name: "deferred_combine".to_string(),
         color_attachments: vec![RenderPassAttachment {
             name: "color".to_string(),
@@ -131,7 +127,7 @@ fn main() {
     // Game loop
     'game_loop: loop {
         // handle events
-        while let Some(message) = platform.poll_event() {
+        while let Some(message) = engine.platform.poll_event() {
             match message {
                 PlatformEvent::WindowClosed(_) => {
                     break 'game_loop;

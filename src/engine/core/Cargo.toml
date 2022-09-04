@@ -6,3 +6,4 @@ edition = "2021"
 [dependencies]
 shader_compiler = { path = "../shader_compiler" }
 gfx = { path = "../gfx" }
+plateform = { path = "../plateform" }

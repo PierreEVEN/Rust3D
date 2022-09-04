@@ -4,9 +4,9 @@ use std::ptr::null;
 use std::sync::Arc;
 
 use ash::vk::{BlendFactor, BlendOp, Bool32, ColorComponentFlags, CompareOp, CullModeFlags, DynamicState, GraphicsPipelineCreateInfo, Pipeline, PipelineCache, PipelineColorBlendAttachmentState, PipelineColorBlendStateCreateInfo, PipelineDepthStencilStateCreateInfo, PipelineDynamicStateCreateInfo, PipelineInputAssemblyStateCreateInfo, PipelineLayout, PipelineLayoutCreateInfo, PipelineMultisampleStateCreateInfo, PipelineRasterizationStateCreateInfo, PipelineShaderStageCreateInfo, PipelineVertexInputStateCreateInfo, PipelineViewportStateCreateInfo, PrimitiveTopology, PushConstantRange, SampleCountFlags, ShaderModule, ShaderModuleCreateFlags, ShaderModuleCreateInfo, ShaderStageFlags, StructureType, VertexInputAttributeDescription, VertexInputBindingDescription, VertexInputRate};
+
 use gfx::GfxRef;
 use gfx::render_pass::RenderPass;
-
 use gfx::shader::{AlphaMode, Culling, DescriptorBinding, FrontFace, PolygonMode, ShaderProgram, ShaderProgramInfos, Topology};
 
 use crate::{GfxVulkan, vk_check, VkRenderPass};
@@ -85,7 +85,7 @@ impl VkShaderProgram {
         bindings.append(&mut create_infos.fragment_stage.descriptor_bindings.clone());
 
         let device = &gfx.cast::<GfxVulkan>().device;
-        
+
         let vertex_module = VkShaderModule::new(gfx, &create_infos.vertex_stage.spirv);
         let fragment_module = VkShaderModule::new(gfx, &create_infos.fragment_stage.spirv);
 
@@ -93,22 +93,21 @@ impl VkShaderProgram {
 
         if create_infos.vertex_stage.push_constant_size > 0
         {
-            push_constants.push(PushConstantRange {
-                stage_flags: ShaderStageFlags::VERTEX,
-                offset: 0,
-                size: create_infos.vertex_stage.push_constant_size,
-                ..PushConstantRange::default()
-            });
+            push_constants.push(PushConstantRange::builder()
+                .stage_flags(ShaderStageFlags::VERTEX)
+                .offset(0)
+                .size(create_infos.vertex_stage.push_constant_size)
+                .build());
         }
         if create_infos.fragment_stage.push_constant_size > 0
         {
-            push_constants.push(PushConstantRange {
-                stage_flags: ShaderStageFlags::FRAGMENT,
-                offset: 0,
-                size: create_infos.fragment_stage.push_constant_size,
-            });
+            push_constants.push(PushConstantRange::builder()
+                .stage_flags(ShaderStageFlags::FRAGMENT)
+                .offset(0)
+                .size(create_infos.fragment_stage.push_constant_size)
+                .build());
         }
-
+        
         let pipeline_layout_infos = PipelineLayoutCreateInfo {
             set_layout_count: 1,
             p_set_layouts: &descriptor_set_layout.descriptor_set_layout,
@@ -151,7 +150,7 @@ impl VkShaderProgram {
             p_vertex_attribute_descriptions: vertex_attribute_description.as_ptr(),
             ..PipelineVertexInputStateCreateInfo::default()
         };
-        
+
         let input_assembly = PipelineInputAssemblyStateCreateInfo {
             topology: VkTopology::from(&create_infos.shader_properties.topology).0,
             primitive_restart_enable: false as Bool32,
@@ -285,7 +284,7 @@ impl VkShaderProgram {
             pipeline,
             pipeline_layout,
             descriptor_set_layout: descriptor_set_layout.clone(),
-            bindings
+            bindings,
         })
     }
 }
@@ -297,9 +296,8 @@ pub struct VkShaderModule {
 
 impl VkShaderModule {
     pub fn new(gfx: &GfxRef, spirv: &Vec<u32>) -> Arc<Self> {
-
         let device = &gfx.cast::<GfxVulkan>().device;
-        
+
         let ci_shader_module = ShaderModuleCreateInfo {
             s_type: StructureType::SHADER_MODULE_CREATE_INFO,
             code_size: spirv.len() * mem::size_of::<u32>(),

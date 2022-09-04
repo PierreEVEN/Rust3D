@@ -22,6 +22,7 @@ pub struct VkRenderPassInstance {
     owner: Arc<dyn RenderPass>,
     gfx: GfxRef,
     surface: Arc<dyn GfxSurface>,
+    images: Vec<Arc<dyn GfxImage>>,
     framebuffers: GfxResource<Framebuffer>,
     pub clear_value: Vec<ClearValues>,
     pub resolution: RwLock<Vec2u32>,
@@ -69,7 +70,7 @@ impl GfxImageBuilder<Framebuffer> for RbFramebuffer {
         let mut attachments = Vec::new();
 
         for image in &self.images {
-            attachments.push(image.as_ref().cast::<VkImage>().view.get(swapchain_ref).0);
+            attachments.push(image.cast::<VkImage>().view.get(swapchain_ref).0);
         }
 
         let create_infos = FramebufferCreateInfo {
@@ -119,7 +120,7 @@ impl VkRenderPassInstance {
         VkRenderPassInstance {
             render_finished_semaphore: GfxResource::new(gfx, RbSemaphore {}),
             pass_command_buffers: VkCommandBuffer::new(gfx),
-            framebuffers: GfxResource::new(gfx, RbFramebuffer { render_pass, res, images }),
+            framebuffers: GfxResource::new(gfx, RbFramebuffer { render_pass, res, images: images.clone() }),
             owner,
             clear_value: clear_values.clone(),
             gfx: gfx.clone(),
@@ -128,6 +129,7 @@ impl VkRenderPassInstance {
             wait_semaphores: RwLock::new(None),
             render_callback: RwLock::new(None),
             children: RwLock::default(),
+            images
         }
     }
 }
@@ -206,7 +208,7 @@ impl RenderPassInstance for VkRenderPassInstance {
             ..RenderPassBeginInfo::default()
         };
         unsafe { (*device).handle.cmd_begin_render_pass(command_buffer, &begin_infos, SubpassContents::INLINE) };
-
+        
         unsafe {
             (*device).handle.cmd_set_viewport(command_buffer, 0, &[Viewport {
                 x: 0.0,
@@ -271,5 +273,9 @@ impl RenderPassInstance for VkRenderPassInstance {
 
     fn attach(&self, child: Arc<dyn RenderPassInstance>) {
         self.children.write().unwrap().push(child);
+    }
+
+    fn get_images(&self) -> &Vec<Arc<dyn GfxImage>> {
+        &self.images
     }
 }

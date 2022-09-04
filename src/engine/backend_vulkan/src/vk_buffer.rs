@@ -64,9 +64,9 @@ impl GfxBuffer for VkBuffer {
         BufferMemory::from(match self.allocation.mapped_ptr() {
             None => { panic!("memory is not host visible") }
             Some(allocation) => {
-                allocation.as_ptr()
+                allocation.as_ptr() as *const u8
             }
-        })
+        }, self.allocation.size() as usize)
     }
 
     fn submit_data(&self, _: &BufferMemory) {}

@@ -22,6 +22,15 @@ vertex(surface_pass, deferred_combine)
     }
 ]
 
+fragment(surface_pass, deferred_combine)
+[
+	struct PushConsts 
+	{
+		float time;
+	};
+	[[vk::push_constant]] ConstantBuffer<PushConsts> pc;
+]
+
 fragment(surface_pass)
 [
     SamplerState ui_sampler;
@@ -30,10 +39,9 @@ fragment(surface_pass)
     float4 main(VsToFsStruct input) : SV_Target
     {
         float4 ui = ui_result.Sample(ui_sampler, input.Uv);
-        return float4(ui.r, ui.g, ui.b, 1);
+        return float4(ui.r * sin(pc.time * 4.8) / 2.0 + 0.5, ui.g * sin(pc.time * 3.5) / 2.0 + 0.5, ui.b * sin(pc.time * 5) / 2.0 + 0.5, 1.0);
     }
 ]
-
 
 fragment(deferred_combine)
 [
@@ -42,6 +50,6 @@ fragment(deferred_combine)
     
     float4 main(VsToFsStruct input) : SV_Target
     {
-        return ui_result.Sample(ui_sampler, input.Uv);
+        return ui_result.Sample(ui_sampler, input.Uv + float2(0, sin(pc.time * 0.4)));
     }
 ]

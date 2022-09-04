@@ -3,7 +3,7 @@
 use maths::vec2::Vec2u32;
 use maths::vec4::Vec4F32;
 
-use crate::{GfxCast, GfxCommandBuffer, GfxRef, GfxSurface, PassID};
+use crate::{GfxCast, GfxCommandBuffer, GfxImage, GfxRef, GfxSurface, PassID};
 use crate::surface::SurfaceAcquireResult;
 use crate::types::{ClearValues, PixelFormat};
 
@@ -32,6 +32,7 @@ pub trait RenderPassInstance: GfxCast {
     fn draw(&self);
     fn on_render(&self, callback: Box<dyn GraphRenderCallback>);
     fn attach(&self, child: Arc<dyn RenderPassInstance>);
+    fn get_images(&self) -> &Vec<Arc<dyn GfxImage>>;
 }
 
 

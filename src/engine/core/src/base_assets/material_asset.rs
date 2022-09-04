@@ -112,13 +112,13 @@ impl MaterialAsset {
                     vertex_stage: ShaderProgramStage {
                         spirv: vertex_sprv.binary,
                         descriptor_bindings: vertex_sprv.bindings,
-                        push_constant_size: 0,
+                        push_constant_size: vertex_sprv.push_constant_size,
                         stage_input: vec![],
                     },
                     fragment_stage: ShaderProgramStage {
                         spirv: fragment_sprv.binary,
                         descriptor_bindings: fragment_sprv.bindings,
-                        push_constant_size: 0,
+                        push_constant_size: fragment_sprv.push_constant_size,
                         stage_input: vec![],
                     },
                     shader_properties: parser.properties.clone()

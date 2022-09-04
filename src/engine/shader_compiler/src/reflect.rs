@@ -7,6 +7,7 @@ use gfx::shader_instance::BindPoint;
 
 pub struct SpirvReflector {
     pub bindings: Vec<DescriptorBinding>,
+    pub push_constant_size: u32,
 }
 
 impl SpirvReflector {
@@ -17,7 +18,6 @@ impl SpirvReflector {
         };
 
         let mut bindings = Vec::new();
-
         match info.get_descriptor_sets() {
             Ok(desc_sets) => {
                 for (_, data) in desc_sets {
@@ -45,16 +45,18 @@ impl SpirvReflector {
             }
             Err(_) => { panic!("failed to get reflection data") }
         }
-
+        
+        let mut push_constant_size: u32 = 0;
         match info.get_push_constant_range() {
             Ok(push_constants) => {
                 for push_constant in push_constants {
-                    println!("desc: {}", push_constant.size);
+                    push_constant_size = push_constant.size;
+                    break;
                 }
             }
             Err(_) => { panic!("failed to get reflection data") }
         }
 
-        SpirvReflector { bindings }
+        SpirvReflector { bindings, push_constant_size }
     }
 }

@@ -15,7 +15,8 @@ pub mod backends {
 
 pub struct CompilationResult {
     pub binary: Vec<u32>,
-    pub bindings: Vec<DescriptorBinding>
+    pub bindings: Vec<DescriptorBinding>,
+    pub push_constant_size: u32,
 }
 
 pub trait CompilerBackend {

@@ -1,5 +1,7 @@
 ﻿use std::sync::Arc;
 use crate::{GfxBuffer, GfxCast, PassID, ShaderInstance, ShaderProgram};
+use crate::buffer::BufferMemory;
+use crate::shader::ShaderStage;
 
 pub trait GfxCommandBuffer : GfxCast {
     fn bind_program(&self, program: &Arc<dyn ShaderProgram>);
@@ -9,7 +11,7 @@ pub trait GfxCommandBuffer : GfxCast {
     fn draw_mesh_indirect(&self, mesh: &Arc<dyn GfxBuffer>);
     fn draw_procedural(&self, vertex_count: u32, first_vertex: u32, instance_count: u32, first_instance: u32);
     fn set_scissor(&self);
-    fn push_constant(&self);
+    fn push_constant(&self, program: &Arc<dyn ShaderProgram>, data: BufferMemory, stage: ShaderStage);
     fn get_pass_id(&self) -> PassID;
 }
 

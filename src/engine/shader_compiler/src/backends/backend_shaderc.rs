@@ -120,6 +120,7 @@ impl CompilerBackend for BackendShaderC {
         Ok(CompilationResult {
             binary: binary_result,
             bindings: reflector.bindings,
+            push_constant_size: reflector.push_constant_size
         })
     }
 }

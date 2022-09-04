@@ -1,5 +1,4 @@
-﻿use std::ffi::c_void;
-use crate::GfxCast;
+﻿use crate::GfxCast;
 
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub enum BufferType
@@ -53,20 +52,37 @@ pub struct BufferCreateInfo {
 }
 
 pub struct BufferMemory {
-    data: *const c_void,
+    size: usize,
+    data: *const u8,
 }
 
 impl BufferMemory {
-    pub fn from(data: *const c_void) -> Self {
-        Self { data }
+    pub fn from(data: *const u8, size: usize) -> Self {
+        Self { data, size }
     }
+
+    pub fn from_struct<T: Sized>(structure: &T) -> Self {
+        Self {
+            data: structure as *const T as *const u8,
+            size: ::std::mem::size_of::<T>(),
+        }
+    }
+
     pub fn get_ptr(&self, offset: usize) -> *mut u8 {
         let data = self.data as *mut u8;
         unsafe { data.offset(offset as isize) }
     }
+
+    pub fn get_size(&self) -> usize {
+        self.size
+    }
+
+    pub fn as_slice(&self) -> &[u8] {
+        unsafe { ::std::slice::from_raw_parts(self.data, self.size) }
+    }
 }
 
-pub trait GfxBuffer : GfxCast {
+pub trait GfxBuffer: GfxCast {
     fn resize_buffer(&self);
     fn get_buffer_memory(&self) -> BufferMemory;
     fn submit_data(&self, memory: &BufferMemory);

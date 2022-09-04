@@ -1,16 +1,18 @@
-use std::{fs};
+use std::fs;
 use std::path::Path;
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
+use std::time::Instant;
 
 use backend_vulkan::GfxVulkan;
 use backend_vulkan_win32::vk_surface_win32::VkSurfaceWin32;
 use core::asset::*;
 use core::asset_manager::*;
 use core::base_assets::material_asset::*;
+use gfx::buffer::BufferMemory;
 use gfx::command_buffer::GfxCommandBuffer;
 use gfx::image_sampler::SamplerCreateInfos;
 use gfx::render_pass::{FrameGraph, GraphRenderCallback, RenderPassAttachment, RenderPassCreateInfos};
-use gfx::shader::PassID;
+use gfx::shader::{PassID, ShaderStage};
 use gfx::shader_instance::{BindPoint, ShaderInstance, ShaderInstanceCreateInfos};
 use gfx::types::{ClearValues, PixelFormat};
 use maths::rect2d::Rect2D;
@@ -44,7 +46,7 @@ fn main() {
     let main_window_surface = VkSurfaceWin32::new(&gfx_backend, main_window.clone(), 3);
     // Create framegraph
     let main_framegraph = FrameGraph::from_surface(&gfx_backend, &main_window_surface, Vec4F32::new(1.0, 0.0, 0.0, 1.0));
-    
+
     // Create asset manager
     let asset_manager = AssetManager::new(&gfx_backend);
 
@@ -58,13 +60,7 @@ fn main() {
     });
 
     // Create images
-    let image = match read_image_from_file(&gfx_backend, Path::new("data/textures/raw.jpg")) {
-        Ok(image) => { image }
-        Err(error) => { panic!("failed to create image : {}", error.to_string()) }
-    };
-
-    // Create images
-    let image2 = match read_image_from_file(&gfx_backend, Path::new("data/textures/cat_stretching.png")) {
+    let image_catinou = match read_image_from_file(&gfx_backend, Path::new("data/textures/cat_stretching.png")) {
         Ok(image2) => { image2 }
         Err(error) => { panic!("failed to create image : {}", error.to_string()) }
     };
@@ -76,22 +72,28 @@ fn main() {
     let shader_instance = gfx_backend.create_shader_instance(ShaderInstanceCreateInfos {
         bindings: demo_material.get_program(&PassID::new("surface_pass")).unwrap().get_bindings()
     }, &*demo_material.get_program(&PassID::new("surface_pass")).unwrap());
-    shader_instance.bind_texture(&BindPoint::new("ui_result"), &image);
     shader_instance.bind_sampler(&BindPoint::new("ui_sampler"), &sampler);
-    
+
     let shader_2_instance = gfx_backend.create_shader_instance(ShaderInstanceCreateInfos {
         bindings: demo_material.get_program(&PassID::new("surface_pass")).unwrap().get_bindings()
     }, &*demo_material.get_program(&PassID::new("surface_pass")).unwrap());
-    shader_2_instance.bind_texture(&BindPoint::new("ui_result"), &image2);
+    shader_2_instance.bind_texture(&BindPoint::new("ui_result"), &image_catinou);
     shader_2_instance.bind_sampler(&BindPoint::new("ui_sampler"), &sampler);
-    
+
     struct TestGraph {
+        start: Instant,
         demo_material: Arc<MaterialAsset>,
         shader_instance: Arc<dyn ShaderInstance>,
+        time_pc_data: RwLock<TestPc>,
+    }
+    #[repr(C, align(4))]
+    struct TestPc {
+        time: f32,
     }
 
     impl GraphRenderCallback for TestGraph {
         fn draw(&self, command_buffer: &Arc<dyn GfxCommandBuffer>) {
+            self.time_pc_data.write().unwrap().time = self.start.elapsed().as_millis() as f32 / 1000.0;
             match self.demo_material.get_program(&command_buffer.get_pass_id()) {
                 None => {
                     panic!("failed to find compatible permutation [{}]", command_buffer.get_pass_id());
@@ -99,13 +101,15 @@ fn main() {
                 Some(program) => {
                     command_buffer.bind_program(&program);
                     command_buffer.bind_shader_instance(&self.shader_instance);
+                    let pc_data = self.time_pc_data.read().unwrap();
+                    command_buffer.push_constant(&program, BufferMemory::from_struct(&*pc_data), ShaderStage::Fragment);
                     command_buffer.draw_procedural(4, 0, 1, 0);
                 }
             };
         }
     }
-    
-    main_framegraph.main_pass().on_render(Box::new(TestGraph { demo_material: demo_material.clone(), shader_instance }));
+
+    main_framegraph.main_pass().on_render(Box::new(TestGraph { start: Instant::now(), demo_material: demo_material.clone(), shader_instance: shader_instance.clone(), time_pc_data: RwLock::new(TestPc { time: 0.5 }) }));
 
     let deferred_combine_pass = gfx_backend.create_render_pass(RenderPassCreateInfos {
         name: "deferred_combine".to_string(),
@@ -119,10 +123,11 @@ fn main() {
     });
 
     let def_combine = deferred_combine_pass.instantiate(&main_window_surface, main_window_surface.get_extent());
+    def_combine.on_render(Box::new(TestGraph { start: Instant::now(), demo_material, shader_instance: shader_2_instance, time_pc_data: RwLock::new(TestPc { time: 0.5 }) }));
     main_framegraph.main_pass().attach(def_combine.clone());
 
-    def_combine.on_render(Box::new(TestGraph { demo_material, shader_instance: shader_2_instance }));
-    
+    shader_instance.bind_texture(&BindPoint::new("ui_result"), &def_combine.get_images()[0]);
+
     // Game loop
     'game_loop: loop {
         // handle events

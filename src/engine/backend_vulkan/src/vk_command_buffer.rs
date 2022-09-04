@@ -1,12 +1,12 @@
 ﻿use std::sync::{Arc, RwLock};
 
-use ash::vk::{CommandBuffer, CommandBufferAllocateInfo, CommandBufferBeginInfo, CommandBufferLevel, CommandBufferUsageFlags, CommandPool, CommandPoolCreateFlags, CommandPoolCreateInfo, PipelineBindPoint, QueueFlags, SubmitInfo};
+use ash::vk::{CommandBuffer, CommandBufferAllocateInfo, CommandBufferBeginInfo, CommandBufferLevel, CommandBufferUsageFlags, CommandPool, CommandPoolCreateFlags, CommandPoolCreateInfo, PipelineBindPoint, QueueFlags, ShaderStageFlags, SubmitInfo};
 
-use gfx::buffer::GfxBuffer;
+use gfx::buffer::{BufferMemory, GfxBuffer};
 use gfx::command_buffer::GfxCommandBuffer;
 use gfx::gfx_resource::{GfxImageBuilder, GfxResource};
 use gfx::GfxRef;
-use gfx::shader::{PassID, ShaderProgram};
+use gfx::shader::{PassID, ShaderProgram, ShaderStage};
 use gfx::shader_instance::ShaderInstance;
 use gfx::surface::GfxImageID;
 
@@ -55,7 +55,6 @@ pub fn submit_command_buffer(gfx: &GfxRef, command_buffer: CommandBuffer, queue_
 
 impl VkCommandPool {
     pub fn new(gfx: &GfxRef) -> VkCommandPool {
-
         let create_infos = CommandPoolCreateInfo {
             flags: CommandPoolCreateFlags::RESET_COMMAND_BUFFER,
             queue_family_index: match gfx.cast::<GfxVulkan>().device.queues.get(&QueueFlags::GRAPHICS) {
@@ -106,20 +105,24 @@ impl VkCommandBuffer {
 
 impl GfxCommandBuffer for VkCommandBuffer {
     fn bind_program(&self, program: &Arc<dyn ShaderProgram>) {
-        let vk_program = program.as_ref().cast::<VkShaderProgram>();
-        unsafe { self.gfx.cast::<GfxVulkan>().device.handle.cmd_bind_pipeline(self.command_buffer.get(&*self.image_id.read().unwrap()), PipelineBindPoint::GRAPHICS, vk_program.pipeline); }
+        unsafe {
+            self.gfx.cast::<GfxVulkan>().device.handle.cmd_bind_pipeline(
+                self.command_buffer.get(&*self.image_id.read().unwrap()),
+                PipelineBindPoint::GRAPHICS,
+                program.cast::<VkShaderProgram>().pipeline,
+            );
+        }
     }
 
     fn bind_shader_instance(&self, instance: &Arc<dyn ShaderInstance>) {
-        let vk_shader_instance = instance.as_ref().cast::<VkShaderInstance>();
-        vk_shader_instance.refresh_descriptors(&*self.image_id.read().unwrap());
+        instance.cast::<VkShaderInstance>().refresh_descriptors(&*self.image_id.read().unwrap());
         unsafe {
             self.gfx.cast::<GfxVulkan>().device.handle.cmd_bind_descriptor_sets(
                 self.command_buffer.get(&*self.image_id.read().unwrap()),
                 PipelineBindPoint::GRAPHICS,
-                *vk_shader_instance.pipeline_layout,
+                *instance.cast::<VkShaderInstance>().pipeline_layout,
                 0,
-                &[vk_shader_instance.descriptor_sets.read().unwrap().get(&*self.image_id.read().unwrap())],
+                &[instance.cast::<VkShaderInstance>().descriptor_sets.read().unwrap().get(&*self.image_id.read().unwrap())],
                 &[],
             );
         }
@@ -138,17 +141,20 @@ impl GfxCommandBuffer for VkCommandBuffer {
     }
 
     fn draw_procedural(&self, vertex_count: u32, first_vertex: u32, instance_count: u32, first_instance: u32) {
-        let device = &self.gfx.cast::<GfxVulkan>().device;
-        unsafe { (*device).handle.cmd_draw(self.command_buffer.get(&*self.image_id.read().unwrap()), vertex_count, instance_count, first_vertex, first_instance) }
+        unsafe { self.gfx.cast::<GfxVulkan>().device.handle.cmd_draw(self.command_buffer.get(&*self.image_id.read().unwrap()), vertex_count, instance_count, first_vertex, first_instance) }
     }
 
     fn set_scissor(&self) {
         todo!()
     }
 
-    fn push_constant(&self) {
-        todo!()
+    fn push_constant(&self, program: &Arc<dyn ShaderProgram>, data: BufferMemory, stage: ShaderStage) {
+        unsafe { self.gfx.cast::<GfxVulkan>().device.handle.cmd_push_constants(self.command_buffer.get(&*self.image_id.read().unwrap()), *program.cast::<VkShaderProgram>().pipeline_layout, match stage {
+            ShaderStage::Vertex => {ShaderStageFlags::VERTEX}
+            ShaderStage::Fragment => {ShaderStageFlags::FRAGMENT}
+        }, 0, data.as_slice()) }
     }
+
 
     fn get_pass_id(&self) -> PassID {
         self.pass_id.read().unwrap().clone()

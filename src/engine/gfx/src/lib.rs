@@ -39,6 +39,12 @@ pub trait GfxInterface: GfxCast {
     fn get_ref(&self) -> GfxRef;
 }
 
+impl dyn GfxInterface {
+    pub fn cast<U: GfxInterface + 'static>(&self) -> &U {
+        self.as_any().downcast_ref::<U>().unwrap()
+    }
+}
+
 #[derive(Copy, Clone)]
 pub enum PhysicalDeviceType {
     Undefined,

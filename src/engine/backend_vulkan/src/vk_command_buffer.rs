@@ -10,40 +10,35 @@ use gfx::shader::{PassID, ShaderProgram};
 use gfx::shader_instance::ShaderInstance;
 use gfx::surface::GfxImageID;
 
-use crate::{gfx_cast_vulkan, GfxVulkan, vk_check, VkShaderInstance, VkShaderProgram};
+use crate::{GfxVulkan, vk_check, VkShaderInstance, VkShaderProgram};
 
 pub struct VkCommandPool {
     pub command_pool: CommandPool,
 }
 
 pub fn create_command_buffer(gfx: &GfxRef) -> CommandBuffer {
-    let device = &gfx_cast_vulkan!(gfx).device;
-    let command_pool = &gfx_cast_vulkan!(gfx).command_pool;
     let create_infos = CommandBufferAllocateInfo {
-        command_pool: (*command_pool).command_pool,
+        command_pool: gfx.cast::<GfxVulkan>().command_pool.command_pool,
         command_buffer_count: 1,
         level: CommandBufferLevel::PRIMARY,
         ..CommandBufferAllocateInfo::default()
     };
-    vk_check!(unsafe { (*device).device.allocate_command_buffers(&create_infos) })[0]
+    vk_check!(unsafe { gfx.cast::<GfxVulkan>().device.handle.allocate_command_buffers(&create_infos) })[0]
 }
 
 pub fn begin_command_buffer(gfx: &GfxRef, command_buffer: CommandBuffer, one_time: bool) {
-    let device = &gfx_cast_vulkan!(gfx).device;
-    vk_check!(unsafe { (*device).device.begin_command_buffer(command_buffer, &CommandBufferBeginInfo { 
+    vk_check!(unsafe { gfx.cast::<GfxVulkan>().device.handle.begin_command_buffer(command_buffer, &CommandBufferBeginInfo { 
         flags: if one_time { CommandBufferUsageFlags::ONE_TIME_SUBMIT } else { CommandBufferUsageFlags::empty() },
         ..CommandBufferBeginInfo::default() 
     })})
 }
 
 pub fn end_command_buffer(gfx: &GfxRef, command_buffer: CommandBuffer) {
-    let device = &gfx_cast_vulkan!(gfx).device;
-    vk_check!(unsafe { (*device).device.end_command_buffer(command_buffer)})
+    vk_check!(unsafe { gfx.cast::<GfxVulkan>().device.handle.end_command_buffer(command_buffer)})
 }
 
 pub fn submit_command_buffer(gfx: &GfxRef, command_buffer: CommandBuffer, queue_flags: QueueFlags) {
-    let device = &gfx_cast_vulkan!(gfx).device;
-    match (*device).get_queue(queue_flags) {
+    match gfx.cast::<GfxVulkan>().device.get_queue(queue_flags) {
         Ok(queue) => {
             queue.submit(SubmitInfo {
                 command_buffer_count: 1,
@@ -60,19 +55,17 @@ pub fn submit_command_buffer(gfx: &GfxRef, command_buffer: CommandBuffer, queue_
 
 impl VkCommandPool {
     pub fn new(gfx: &GfxRef) -> VkCommandPool {
-        let device = &gfx_cast_vulkan!(gfx).device;
 
         let create_infos = CommandPoolCreateInfo {
             flags: CommandPoolCreateFlags::RESET_COMMAND_BUFFER,
-            queue_family_index: match (*device).queues.get(&QueueFlags::GRAPHICS) {
+            queue_family_index: match gfx.cast::<GfxVulkan>().device.queues.get(&QueueFlags::GRAPHICS) {
                 None => { panic!("failed to find queue"); }
                 Some(queue) => { queue[0].index }
             },
             ..CommandPoolCreateInfo::default()
         };
 
-        let device = &gfx_cast_vulkan!(gfx).device;
-        let command_pool = vk_check!(unsafe {(*device).device.create_command_pool(&create_infos, None)});
+        let command_pool = vk_check!(unsafe {gfx.cast::<GfxVulkan>().device.handle.create_command_pool(&create_infos, None)});
 
         VkCommandPool {
             command_pool
@@ -113,17 +106,15 @@ impl VkCommandBuffer {
 
 impl GfxCommandBuffer for VkCommandBuffer {
     fn bind_program(&self, program: &Arc<dyn ShaderProgram>) {
-        let device = &gfx_cast_vulkan!(self.gfx).device;
-        let vk_program = program.as_ref().as_any().downcast_ref::<VkShaderProgram>().unwrap();
-        unsafe { (*device).device.cmd_bind_pipeline(self.command_buffer.get(&*self.image_id.read().unwrap()), PipelineBindPoint::GRAPHICS, vk_program.pipeline); }
+        let vk_program = program.as_ref().cast::<VkShaderProgram>();
+        unsafe { self.gfx.cast::<GfxVulkan>().device.handle.cmd_bind_pipeline(self.command_buffer.get(&*self.image_id.read().unwrap()), PipelineBindPoint::GRAPHICS, vk_program.pipeline); }
     }
 
     fn bind_shader_instance(&self, instance: &Arc<dyn ShaderInstance>) {
-        let device = &gfx_cast_vulkan!(self.gfx).device;
-        let vk_shader_instance = instance.as_ref().as_any().downcast_ref::<VkShaderInstance>().unwrap();
+        let vk_shader_instance = instance.as_ref().cast::<VkShaderInstance>();
         vk_shader_instance.refresh_descriptors(&*self.image_id.read().unwrap());
         unsafe {
-            (*device).device.cmd_bind_descriptor_sets(
+            self.gfx.cast::<GfxVulkan>().device.handle.cmd_bind_descriptor_sets(
                 self.command_buffer.get(&*self.image_id.read().unwrap()),
                 PipelineBindPoint::GRAPHICS,
                 *vk_shader_instance.pipeline_layout,
@@ -147,8 +138,8 @@ impl GfxCommandBuffer for VkCommandBuffer {
     }
 
     fn draw_procedural(&self, vertex_count: u32, first_vertex: u32, instance_count: u32, first_instance: u32) {
-        let device = &gfx_cast_vulkan!(self.gfx).device;
-        unsafe { (*device).device.cmd_draw(self.command_buffer.get(&*self.image_id.read().unwrap()), vertex_count, instance_count, first_vertex, first_instance) }
+        let device = &self.gfx.cast::<GfxVulkan>().device;
+        unsafe { (*device).handle.cmd_draw(self.command_buffer.get(&*self.image_id.read().unwrap()), vertex_count, instance_count, first_vertex, first_instance) }
     }
 
     fn set_scissor(&self) {

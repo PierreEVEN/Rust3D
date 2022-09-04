@@ -1,9 +1,9 @@
 ﻿use std::collections::HashMap;
 use std::ops::Deref;
-use std::sync::{RwLock};
+use std::sync::RwLock;
 
 use crate::GfxRef;
-use crate::surface::{GfxImageID};
+use crate::surface::GfxImageID;
 
 pub trait GfxImageBuilder<T: Clone> {
     fn build(&self, gfx: &GfxRef, swapchain_ref: &GfxImageID) -> T;
@@ -46,20 +46,25 @@ impl<T: Clone> GfxResource<T> {
             gfx: Some(gfx.clone()),
         }
     }
-    pub fn new_static(gfx: &GfxRef, builder: Box<dyn GfxImageBuilder<T>>) -> Self {
+    pub fn new_static<U: GfxImageBuilder<T> + 'static>(gfx: &GfxRef, builder: U) -> Self {
         let static_ref = GfxImageID::new(0, 0);
         Self {
             static_resource: true,
             resources: RwLock::new(HashMap::from([(static_ref.clone(), builder.build(gfx, &static_ref))])),
-            builder: RwLock::new(builder),
+            builder: RwLock::new(Box::new(builder)),
             gfx: Some(gfx.clone()),
         }
     }
 
+    pub fn get_static(&self) -> T {
+        if !self.static_resource {
+            panic!("The current resource is not static. You should call get(...) instead.");
+        }
+        self.resources.read().unwrap().deref().get(&GfxImageID::null()).unwrap().clone()
+    }
     pub fn get(&self, reference: &GfxImageID) -> T {
         if self.static_resource {
-            let image_id = GfxImageID::new(0, 0);
-            return self.resources.read().unwrap().deref().get(&image_id).unwrap().clone();
+            panic!("The current resource is static. You should call get_static(...) instead.");
         }
 
         {
@@ -70,8 +75,8 @@ impl<T: Clone> GfxResource<T> {
         }
 
         self.resources.write().unwrap().insert(reference.clone(), self.builder.read().unwrap().as_ref().build(match &self.gfx {
-            None => {panic!("gfx is not valid")}
-            Some(gfx) => {gfx}
+            None => { panic!("gfx is not valid") }
+            Some(gfx) => { gfx }
         }, reference));
         self.resources.read().unwrap().get(reference).unwrap().clone()
     }
@@ -86,5 +91,9 @@ impl<T: Clone> GfxResource<T> {
             let static_ref = GfxImageID::null();
             resource_map.insert(static_ref.clone(), builder_ref.build(gfx, &static_ref));
         }
+    }
+
+    pub fn is_static(&self) -> bool {
+        self.static_resource
     }
 }

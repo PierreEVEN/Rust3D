@@ -71,3 +71,9 @@ pub trait GfxBuffer : GfxCast {
     fn get_buffer_memory(&self) -> BufferMemory;
     fn submit_data(&self, memory: &BufferMemory);
 }
+
+impl dyn GfxBuffer {
+    pub fn cast<U: GfxBuffer + 'static>(&self) -> &U {
+        self.as_any().downcast_ref::<U>().unwrap()
+    }
+}

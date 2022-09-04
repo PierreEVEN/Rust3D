@@ -6,7 +6,7 @@ use gfx::GfxRef;
 
 use gfx::shader::{DescriptorBinding, DescriptorType};
 
-use crate::{gfx_cast_vulkan, GfxVulkan, vk_check};
+use crate::{GfxVulkan, vk_check};
 
 pub struct VkDescriptorType(ash::vk::DescriptorType);
 
@@ -67,8 +67,8 @@ impl VkDescriptorSetLayout {
             ..DescriptorSetLayoutCreateInfo::default()
         };
 
-        let device = &gfx_cast_vulkan!(gfx).device;
-        let descriptor_set_layout = vk_check!(unsafe {device.device.create_descriptor_set_layout(&ci_descriptor_set_layout, None)});
+        let device = &gfx.cast::<GfxVulkan>().device;
+        let descriptor_set_layout = vk_check!(unsafe {device.handle.create_descriptor_set_layout(&ci_descriptor_set_layout, None)});
 
         Arc::new(Self {
             descriptor_set_layout,

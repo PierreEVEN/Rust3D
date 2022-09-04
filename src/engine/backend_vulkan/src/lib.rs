@@ -66,13 +66,6 @@ macro_rules! to_c_char {
 }
 
 #[macro_export]
-macro_rules! gfx_cast_vulkan {
-    ($gfx:expr) => {        
-        ($gfx.as_ref()).as_any().downcast_ref::<GfxVulkan>().expect("failed to cast to gfx vulkan")
-    };
-}
-
-#[macro_export]
 macro_rules! vk_check {
     ($expression:expr) => {
         match $expression {
@@ -135,7 +128,7 @@ impl GfxInterface for GfxVulkan {
     }
 
     fn create_shader_instance(&self, create_infos: ShaderInstanceCreateInfos, parent: &dyn ShaderProgram) -> Arc<dyn ShaderInstance> {
-        let parent = parent.as_any().downcast_ref::<VkShaderProgram>().unwrap();
+        let parent = parent.cast::<VkShaderProgram>();
         VkShaderInstance::new(&self.get_ref(), create_infos, parent.pipeline_layout.clone(), parent.descriptor_set_layout.clone())
     }
 

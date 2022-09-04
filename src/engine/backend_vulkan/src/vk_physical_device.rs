@@ -12,7 +12,7 @@ pub struct DeviceQueueProperties {
 
 #[derive(Default, Clone)]
 pub struct VkPhysicalDevice {
-    pub device: vk::PhysicalDevice,
+    pub handle: vk::PhysicalDevice,
     pub queues: Vec<DeviceQueueProperties>,
 }
 
@@ -67,7 +67,7 @@ impl VkPhysicalDevice {
 
         (device_properties,
          Self {
-             device,
+             handle: device,
              queues,
          }
         )
@@ -88,7 +88,7 @@ impl VkPhysicalDevice {
         
         let mut result = Vec::new();
         unsafe {
-            if let Some(extensions) = gfx.instance.instance.enumerate_device_extension_properties((*physical_device).device).ok() {
+            if let Some(extensions) = gfx.instance.handle.enumerate_device_extension_properties((*physical_device).handle).ok() {
                 for extension in extensions {
                     result.push(extension);
                 }

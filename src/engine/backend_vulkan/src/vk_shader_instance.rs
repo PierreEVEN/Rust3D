@@ -14,7 +14,7 @@ use gfx::shader::{DescriptorBinding, DescriptorType};
 use gfx::shader_instance::{BindPoint, ShaderInstance, ShaderInstanceCreateInfos};
 use gfx::surface::GfxImageID;
 
-use crate::{gfx_cast_vulkan, GfxVulkan, VkImage, VkImageSampler};
+use crate::{GfxVulkan, VkImage, VkImageSampler};
 use crate::vk_descriptor_set::VkDescriptorSetLayout;
 
 pub struct VkShaderInstance {
@@ -56,7 +56,7 @@ struct RbDescriptorSet {
 
 impl GfxImageBuilder<DescriptorSet> for RbDescriptorSet {
     fn build(&self, gfx: &GfxRef, _swapchain_ref: &GfxImageID) -> DescriptorSet {
-        gfx_cast_vulkan!(gfx).descriptor_pool.allocate(&self.layout)
+        gfx.cast::<GfxVulkan>().descriptor_pool.allocate(&self.layout)
     }
 }
 
@@ -82,8 +82,6 @@ impl VkShaderInstance {
         if self.descriptors_dirty.get(image_id).compare_exchange(true, false, Ordering::Acquire, Ordering::Acquire).is_ok() {
             let mut desc_images = Vec::new();
 
-            let device = &gfx_cast_vulkan!(self._gfx).device;
-
             let mut write_desc_set = Vec::new();
 
             for binding in &self.binding {
@@ -91,7 +89,7 @@ impl VkShaderInstance {
                     DescriptorType::Sampler => {
                         let sampler = match self.samplers.read().unwrap().get(&binding.bind_point) {
                             None => { panic!("sampler {} is not specified", binding.bind_point.name) }
-                            Some(sampler) => { sampler.as_ref().as_any().downcast_ref::<VkImageSampler>().unwrap().sampler_info }
+                            Some(sampler) => { sampler.cast::<VkImageSampler>().sampler_info }
                         };
                         desc_images.push(sampler);
                         (vk::DescriptorType::SAMPLER, desc_images.last(), None, None)
@@ -103,10 +101,11 @@ impl VkShaderInstance {
                         let image = match &self.textures.read().unwrap().get(&binding.bind_point) {
                             None => { panic!("image {} is not specified", binding.bind_point.name) }
                             Some(image) => {
-                                let (_, desc_info) = image.as_ref().as_any().downcast_ref::<VkImage>().unwrap().view.get(image_id);
-                                desc_info
+                                let image = image.cast::<VkImage>();
+                                if image.image_params.read_only { image.view.get_static().1 } else { image.view.get(image_id).1 }
                             }
                         };
+                        
                         desc_images.push(image);
                         (vk::DescriptorType::SAMPLED_IMAGE, desc_images.last(), None, None)
                     }
@@ -145,7 +144,7 @@ impl VkShaderInstance {
                 });
             };
 
-            unsafe { (*device).device.update_descriptor_sets(write_desc_set.as_slice(), &[]); }
+            unsafe { self._gfx.cast::<GfxVulkan>().device.handle.update_descriptor_sets(write_desc_set.as_slice(), &[]); }
         }
     }
 }

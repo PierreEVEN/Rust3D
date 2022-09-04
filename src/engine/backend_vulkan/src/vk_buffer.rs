@@ -9,7 +9,7 @@ use gpu_allocator::vulkan::{Allocation, AllocationCreateDesc, Allocator};
 use gfx::buffer::{BufferAccess, BufferCreateInfo, BufferMemory, BufferType, BufferUsage, GfxBuffer};
 use gfx::GfxRef;
 
-use crate::{gfx_cast_vulkan, GfxVulkan};
+use crate::{GfxVulkan};
 
 pub struct VkBufferAccess(MemoryLocation);
 
@@ -51,7 +51,7 @@ impl From<BufferUsage> for VkBufferUsage {
 
 pub struct VkBuffer {
     pub allocation: Allocation,
-    pub buffer: Buffer,
+    pub handle: Buffer,
     allocator: Arc<RefCell<Allocator>>,
 }
 
@@ -63,8 +63,10 @@ impl GfxBuffer for VkBuffer {
     fn get_buffer_memory(&self) -> BufferMemory {
         BufferMemory::from(match self.allocation.mapped_ptr() {
             None => { panic!("memory is not host visible") }
-            Some(allocation) => { allocation }
-        }.as_ptr())
+            Some(allocation) => {
+                allocation.as_ptr()
+            }
+        })
     }
 
     fn submit_data(&self, _: &BufferMemory) {}
@@ -73,8 +75,6 @@ impl GfxBuffer for VkBuffer {
 impl VkBuffer {
     pub fn new(gfx: &GfxRef, create_infos: &BufferCreateInfo) -> Self {
         let mut usage = VkBufferUsage::from(create_infos.usage).0;
-
-        let device = &gfx_cast_vulkan!(gfx).device;
 
         if create_infos.buffer_type != BufferType::Immutable
         {
@@ -85,10 +85,10 @@ impl VkBuffer {
             .size(create_infos.size as DeviceSize)
             .usage(usage);
 
-        let buffer = unsafe { (*device).device.create_buffer(&ci_buffer, None) }.unwrap();
-        let requirements = unsafe { (*device).device.get_buffer_memory_requirements(buffer) };
+        let buffer = unsafe { gfx.cast::<GfxVulkan>().device.handle.create_buffer(&ci_buffer, None) }.unwrap();
+        let requirements = unsafe { gfx.cast::<GfxVulkan>().device.handle.get_buffer_memory_requirements(buffer) };
         
-        let allocator = (*device).allocator.clone();
+        let allocator = gfx.cast::<GfxVulkan>().device.allocator.clone();
 
         let allocation = (&*allocator).borrow_mut().allocate(&AllocationCreateDesc {
             name: "buffer allocation",
@@ -96,11 +96,11 @@ impl VkBuffer {
             location: *VkBufferAccess::from(create_infos.access),
             linear: false,
         });
-
+        
         Self {
             allocation: match allocation {
                 Ok(alloc) => {
-                    unsafe { (*device).device.bind_buffer_memory(buffer, alloc.memory(), alloc.offset()).unwrap() };
+                    unsafe { gfx.cast::<GfxVulkan>().device.handle.bind_buffer_memory(buffer, alloc.memory(), alloc.offset()).unwrap() };
                     alloc
                 }
                 Err(alloc_error) => {
@@ -114,7 +114,7 @@ impl VkBuffer {
                     }
                 }
             },
-            buffer,
+            handle: buffer,
             allocator,
         }
     }

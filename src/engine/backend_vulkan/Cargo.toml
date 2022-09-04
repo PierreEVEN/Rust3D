@@ -6,6 +6,6 @@ edition = "2021"
 [dependencies]
 gfx = {path = "../gfx"}
 maths = {path = "../maths"}
-maths_operators = {path = "../maths_operators"}
+macros = {path = "../macros"}
 ash = "0.37.0"
 gpu-allocator =  { version="0.18.0", default-features = false, features=["vulkan"]}

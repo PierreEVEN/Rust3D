@@ -4,4 +4,4 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-maths_operators = { path = "../maths_operators" }
+macros = {path = "../macros"}

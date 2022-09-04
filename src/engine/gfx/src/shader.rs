@@ -246,5 +246,10 @@ pub struct ShaderProgramInfos {
 
 pub trait ShaderProgram : GfxCast {
     fn get_bindings(&self) -> Vec<DescriptorBinding>;
-    
+}
+
+impl dyn ShaderProgram {
+    pub fn cast<U: ShaderProgram + 'static>(&self) -> &U {
+        self.as_any().downcast_ref::<U>().unwrap()
+    }
 }

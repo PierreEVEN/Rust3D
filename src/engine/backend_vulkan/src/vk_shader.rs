@@ -9,7 +9,7 @@ use gfx::render_pass::RenderPass;
 
 use gfx::shader::{AlphaMode, Culling, DescriptorBinding, FrontFace, PolygonMode, ShaderProgram, ShaderProgramInfos, Topology};
 
-use crate::{gfx_cast_vulkan, GfxVulkan, vk_check, VkRenderPass};
+use crate::{GfxVulkan, vk_check, VkRenderPass};
 use crate::vk_descriptor_set::VkDescriptorSetLayout;
 use crate::vk_types::VkPixelFormat;
 
@@ -84,7 +84,7 @@ impl VkShaderProgram {
         let mut bindings = create_infos.vertex_stage.descriptor_bindings.clone();
         bindings.append(&mut create_infos.fragment_stage.descriptor_bindings.clone());
 
-        let device = &gfx_cast_vulkan!(gfx).device;
+        let device = &gfx.cast::<GfxVulkan>().device;
         
         let vertex_module = VkShaderModule::new(gfx, &create_infos.vertex_stage.spirv);
         let fragment_module = VkShaderModule::new(gfx, &create_infos.fragment_stage.spirv);
@@ -116,7 +116,7 @@ impl VkShaderProgram {
             p_push_constant_ranges: push_constants.as_ptr(),
             ..PipelineLayoutCreateInfo::default()
         };
-        let pipeline_layout = Arc::new(vk_check!(unsafe { (*device).device.create_pipeline_layout(&pipeline_layout_infos, None) }));
+        let pipeline_layout = Arc::new(vk_check!(unsafe { (*device).handle.create_pipeline_layout(&pipeline_layout_infos, None) }));
 
         let mut vertex_attribute_description = Vec::<VertexInputAttributeDescription>::new();
 
@@ -252,7 +252,7 @@ impl VkShaderProgram {
             ..PipelineDynamicStateCreateInfo::default()
         };
 
-        let render_pass = render_pass.as_ref().as_any().downcast_ref::<VkRenderPass>().unwrap();
+        let render_pass = render_pass.cast::<VkRenderPass>();
 
         let ci_pipeline = GraphicsPipelineCreateInfo {
             stage_count: shader_stages.len() as u32,
@@ -273,7 +273,7 @@ impl VkShaderProgram {
             ..GraphicsPipelineCreateInfo::default()
         };
 
-        let pipeline = match unsafe { (*device).device.create_graphics_pipelines(PipelineCache::default(), &[ci_pipeline], None) } {
+        let pipeline = match unsafe { (*device).handle.create_graphics_pipelines(PipelineCache::default(), &[ci_pipeline], None) } {
             Ok(pipeline) => { pipeline[0] }
             Err(_) => { panic!("failed to create graphic pipelines") }
         };
@@ -298,7 +298,7 @@ pub struct VkShaderModule {
 impl VkShaderModule {
     pub fn new(gfx: &GfxRef, spirv: &Vec<u32>) -> Arc<Self> {
 
-        let device = &gfx_cast_vulkan!(gfx).device;
+        let device = &gfx.cast::<GfxVulkan>().device;
         
         let ci_shader_module = ShaderModuleCreateInfo {
             s_type: StructureType::SHADER_MODULE_CREATE_INFO,
@@ -308,7 +308,7 @@ impl VkShaderModule {
             p_next: null(),
         };
 
-        let shader_module = vk_check!(unsafe { (*device).device.create_shader_module(&ci_shader_module, None) });
+        let shader_module = vk_check!(unsafe { (*device).handle.create_shader_module(&ci_shader_module, None) });
 
         Arc::new(Self {
             _gfx: gfx.clone(),

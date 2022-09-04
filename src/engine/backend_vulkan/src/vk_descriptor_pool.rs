@@ -7,7 +7,7 @@ use ash::vk::{DescriptorPool, DescriptorPoolCreateFlags, DescriptorPoolCreateInf
 
 use gfx::GfxRef;
 
-use crate::{gfx_cast_vulkan, GfxVulkan, vk_check};
+use crate::{GfxVulkan, vk_check};
 
 pub struct VkDescriptorPool {
     gfx: GfxRef,
@@ -57,8 +57,8 @@ impl VkDescriptorPool {
         ];
 
         vk_check!(unsafe {
-                    gfx_cast_vulkan!(self.gfx).device.device.create_descriptor_pool(&DescriptorPoolCreateInfo {
-                        flags: DescriptorPoolCreateFlags::FREE_DESCRIPTOR_SET | DescriptorPoolCreateFlags::UPDATE_AFTER_BIND,
+                    self.gfx.cast::<GfxVulkan>().device.handle.create_descriptor_pool(&DescriptorPoolCreateInfo {
+                        flags: DescriptorPoolCreateFlags::FREE_DESCRIPTOR_SET,
                         max_sets: self.max_descriptor_per_pool,
                         pool_size_count: pool_sizes.len() as u32,
                         p_pool_sizes: pool_sizes.as_ptr(),
@@ -74,8 +74,8 @@ impl VkDescriptorPool {
             p_set_layouts: layout as *const DescriptorSetLayout,
             ..DescriptorSetAllocateInfo::default()
         };
-        let device = &gfx_cast_vulkan!(self.gfx).device;
+        let device = &self.gfx.cast::<GfxVulkan>().device;
 
-        vk_check!(unsafe { (*device).device.allocate_descriptor_sets(&descriptor_info) })[0]
+        vk_check!(unsafe { (*device).handle.allocate_descriptor_sets(&descriptor_info) })[0]
     }
 }

@@ -1,4 +1,4 @@
-use std::fs;
+use std::{fs};
 use std::path::Path;
 use std::sync::Arc;
 
@@ -65,7 +65,7 @@ fn main() {
 
     // Create images
     let image2 = match read_image_from_file(&gfx_backend, Path::new("data/textures/cat_stretching.png")) {
-        Ok(image) => { image }
+        Ok(image2) => { image2 }
         Err(error) => { panic!("failed to create image : {}", error.to_string()) }
     };
 
@@ -78,7 +78,7 @@ fn main() {
     }, &*demo_material.get_program(&PassID::new("surface_pass")).unwrap());
     shader_instance.bind_texture(&BindPoint::new("ui_result"), &image);
     shader_instance.bind_sampler(&BindPoint::new("ui_sampler"), &sampler);
-
+    
     let shader_2_instance = gfx_backend.create_shader_instance(ShaderInstanceCreateInfos {
         bindings: demo_material.get_program(&PassID::new("surface_pass")).unwrap().get_bindings()
     }, &*demo_material.get_program(&PassID::new("surface_pass")).unwrap());
@@ -104,9 +104,8 @@ fn main() {
             };
         }
     }
-
+    
     main_framegraph.main_pass().on_render(Box::new(TestGraph { demo_material: demo_material.clone(), shader_instance }));
-
 
     let deferred_combine_pass = gfx_backend.create_render_pass(RenderPassCreateInfos {
         name: "deferred_combine".to_string(),
@@ -120,10 +119,10 @@ fn main() {
     });
 
     let def_combine = deferred_combine_pass.instantiate(&main_window_surface, main_window_surface.get_extent());
-    main_framegraph.main_pass().append(def_combine.clone());
+    main_framegraph.main_pass().attach(def_combine.clone());
 
     def_combine.on_render(Box::new(TestGraph { demo_material, shader_instance: shader_2_instance }));
-
+    
     // Game loop
     'game_loop: loop {
         // handle events

@@ -34,7 +34,7 @@ pub fn read_image_from_file(gfx: &GfxRef, file: &Path) -> Result<Arc<dyn GfxImag
                 let image = gfx.create_image(ImageCreateInfos {
                     params: ImageParams {
                         pixel_format: PixelFormat::R8G8B8A8_UNORM,
-                        image_format: ImageType::Texture2d(width as u32, height as u32),
+                        image_type: ImageType::Texture2d(width as u32, height as u32),
                         read_only: true,
                         mip_levels: Some((width as f32).max( height as f32).max( 1.0).log2().floor() as u16 + 1),
                         usage: GfxImageUsageFlags::from_flag(ImageUsage::Sampling)

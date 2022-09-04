@@ -31,9 +31,21 @@ pub trait RenderPassInstance: GfxCast {
     fn resize(&self, new_res: Vec2u32);
     fn draw(&self);
     fn on_render(&self, callback: Box<dyn GraphRenderCallback>);
-    fn append(&self, child: Arc<dyn RenderPassInstance>);
+    fn attach(&self, child: Arc<dyn RenderPassInstance>);
 }
 
+
+impl dyn RenderPassInstance {
+    pub fn cast<U: RenderPassInstance + 'static>(&self) -> &U {
+        self.as_any().downcast_ref::<U>().unwrap()
+    }
+}
+
+impl dyn RenderPass {
+    pub fn cast<U: RenderPass + 'static>(&self) -> &U {
+        self.as_any().downcast_ref::<U>().unwrap()
+    }
+}
 
 pub struct FrameGraph {
     surface: Arc<dyn GfxSurface>,

@@ -39,8 +39,8 @@ dependencies = [
  "ash",
  "gfx",
  "gpu-allocator",
+ "macros",
  "maths",
- "maths_operators",
 ]
 
 [[package]]
@@ -51,8 +51,8 @@ dependencies = [
  "backend_vulkan",
  "gfx",
  "gpu-allocator",
+ "macros",
  "maths",
- "maths_operators",
  "plateform",
  "plateform_win32",
  "raw-window-handle",
@@ -140,8 +140,8 @@ dependencies = [
  "backend_vulkan_win32",
  "core",
  "gfx",
+ "macros",
  "maths",
- "maths_operators",
  "plateform",
  "plateform_win32",
  "shader_compiler",
@@ -230,6 +230,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "macros"
+version = "0.1.0"
+dependencies = [
+ "quote",
+ "syn",
+ "unquote",
+]
+
+[[package]]
 name = "main"
 version = "0.1.0"
 dependencies = [
@@ -240,16 +249,7 @@ dependencies = [
 name = "maths"
 version = "0.1.0"
 dependencies = [
- "maths_operators",
-]
-
-[[package]]
-name = "maths_operators"
-version = "0.1.0"
-dependencies = [
- "quote",
- "syn",
- "unquote",
+ "macros",
 ]
 
 [[package]]
@@ -290,8 +290,8 @@ name = "plateform"
 version = "0.1.0"
 dependencies = [
  "enumflags2",
+ "macros",
  "maths",
- "maths_operators",
  "raw-window-handle",
 ]
 

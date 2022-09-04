@@ -1,6 +1,6 @@
 ﻿
 use std::ops;
-use maths_operators::*;
+use macros::*;
 
 
 #[derive(Debug, Copy, Clone, OpsAdd, OpsSub, DefaultConstruct)]

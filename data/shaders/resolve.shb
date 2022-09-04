@@ -25,16 +25,10 @@ vertex(surface_pass, deferred_combine)
 fragment(surface_pass)
 [
     SamplerState ui_sampler;
-    // Texture2D combine_albedo;
     Texture2D ui_result;
     
     float4 main(VsToFsStruct input) : SV_Target
     {
-        /*
-        float4 combine = combine_albedo.Sample(ui_sampler, input.Uv);
-        return lerp(float4(ui.rgb, 1), combine, ui.a);
-        */
-        
         float4 ui = ui_result.Sample(ui_sampler, input.Uv);
         return float4(ui.r, ui.g, ui.b, 1);
     }

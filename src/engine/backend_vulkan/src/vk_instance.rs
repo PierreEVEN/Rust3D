@@ -20,7 +20,7 @@ pub struct InstanceCreateInfos {
 }
 
 pub struct VkInstance {
-    pub instance: Instance,
+    pub handle: Instance,
     _debug_util_loader: DebugUtils,
     _debug_messenger: DebugUtilsMessengerEXT,
     enable_validation_layers: bool,
@@ -117,7 +117,7 @@ impl VkInstance {
         }
 
         Ok(Self {
-            instance,
+            handle: instance,
             _debug_util_loader: debug_util_loader,
             _debug_messenger: debug_messenger,
             enable_validation_layers,

@@ -1,8 +1,8 @@
 ﻿use std::hash::{Hash, Hasher};
-use std::sync::{Arc};
+use std::sync::Arc;
 use std::sync::atomic::{AtomicU16, Ordering};
-use maths::vec2::Vec2u32;
 
+use maths::vec2::Vec2u32;
 use plateform::window::Window;
 
 use crate::{GfxCast, GfxRef};
@@ -26,13 +26,13 @@ impl GfxImageID {
             reference: AtomicU16::new(image_index as u16 + ((render_pass_index as u16) << 8)),
         }
     }
-    
+
     pub fn null() -> Self {
         Self {
             reference: AtomicU16::new(0),
         }
     }
-    
+
     pub fn update(&self, image_index: u8, render_pass_index: u8) {
         self.reference.store(image_index as u16 + ((render_pass_index as u16) << 8), Ordering::Release);
     }
@@ -78,4 +78,10 @@ pub trait GfxSurface: GfxCast {
 
     fn acquire(&self, render_pass: &Arc<dyn RenderPassInstance>) -> Result<(), SurfaceAcquireResult>;
     fn submit(&self, render_pass: &Arc<dyn RenderPassInstance>) -> Result<(), SurfaceAcquireResult>;
+}
+
+impl dyn GfxSurface {
+    pub fn cast<U: GfxSurface + 'static>(&self) -> &U {
+        self.as_any().downcast_ref::<U>().unwrap()
+    }
 }

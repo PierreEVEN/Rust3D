@@ -1,5 +1,6 @@
 ﻿use std::hash::{Hash, Hasher};
-use std::sync::Arc;
+use std::sync::{Arc};
+use std::sync::atomic::{AtomicU16, Ordering};
 use maths::vec2::Vec2u32;
 
 use plateform::window::Window;
@@ -9,29 +10,45 @@ use crate::image::GfxImage;
 use crate::render_pass::RenderPassInstance;
 use crate::types::PixelFormat;
 
-#[derive(Clone)]
 pub struct GfxImageID {
-    _gfx: GfxRef,
-    pub image_index: u8,
-    render_pass_index: u8,
+    reference: AtomicU16,
+}
+
+impl Clone for GfxImageID {
+    fn clone(&self) -> Self {
+        GfxImageID { reference: AtomicU16::new(self.reference.load(Ordering::Acquire)) }
+    }
 }
 
 impl GfxImageID {
-    pub fn new(gfx: &GfxRef, image_index: u8, render_pass_index: u8) -> Self {
+    pub fn new(image_index: u8, render_pass_index: u8) -> Self {
         Self {
-            _gfx: gfx.clone(),
-            image_index,
-            render_pass_index,
+            reference: AtomicU16::new(image_index as u16 + ((render_pass_index as u16) << 8)),
         }
     }
-    pub fn gfx(&self) -> &GfxRef {
-        &self._gfx
+    
+    pub fn null() -> Self {
+        Self {
+            reference: AtomicU16::new(0),
+        }
+    }
+    
+    pub fn update(&self, image_index: u8, render_pass_index: u8) {
+        self.reference.store(image_index as u16 + ((render_pass_index as u16) << 8), Ordering::Release);
+    }
+
+    pub fn image_id(&self) -> u8 {
+        self.reference.load(Ordering::Acquire) as u8
+    }
+
+    pub fn render_pass_index(&self) -> u8 {
+        (self.reference.load(Ordering::Acquire) >> 8) as u8
     }
 }
 
 impl PartialEq for GfxImageID {
     fn eq(&self, other: &Self) -> bool {
-        self.image_index == other.image_index && self.render_pass_index == other.render_pass_index
+        self.reference.load(Ordering::Acquire) == other.reference.load(Ordering::Acquire)
     }
 }
 
@@ -39,13 +56,13 @@ impl Eq for GfxImageID {}
 
 impl Hash for GfxImageID {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        state.write_u16((self.image_index as u16) << 8 | self.render_pass_index as u16)
+        state.write_u16(self.reference.load(Ordering::Acquire))
     }
 }
 
 pub enum SurfaceAcquireResult {
     Resized,
-    Failed(String)
+    Failed(String),
 }
 
 pub trait GfxSurface: GfxCast {
@@ -53,7 +70,7 @@ pub trait GfxSurface: GfxCast {
     fn get_owning_window(&self) -> &Arc<dyn Window>;
     fn get_surface_pixel_format(&self) -> PixelFormat;
     fn get_image_count(&self) -> u8;
-    fn get_current_ref(&self) -> GfxImageID;
+    fn get_current_ref(&self) -> &GfxImageID;
     fn get_surface_texture(&self) -> Arc<dyn GfxImage>;
     fn get_extent(&self) -> Vec2u32;
 

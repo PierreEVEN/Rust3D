@@ -91,7 +91,7 @@ impl GfxImage for VkImage {
         let command_buffer = create_command_buffer(&self.gfx);
         begin_command_buffer(&self.gfx, command_buffer, true);
 
-        self.set_image_layout(&GfxImageID::new(&self.gfx, 0, 0), command_buffer, ImageLayout::TRANSFER_DST_OPTIMAL);
+        self.set_image_layout(&GfxImageID::null(), command_buffer, ImageLayout::TRANSFER_DST_OPTIMAL);
 
         let (dim_x, dim_y, dim_z) = self.image_params.image_format.dimensions();
         let region = BufferImageCopy {
@@ -112,11 +112,11 @@ impl GfxImage for VkImage {
         let device = &gfx_cast_vulkan!(self.gfx).device;
 
 
-        let (image, _) = self.image.get(&GfxImageID::new(&self.gfx, 0, 0));
+        let (image, _) = self.image.get(&GfxImageID::null());
 
         unsafe { (*device).device.cmd_copy_buffer_to_image(command_buffer, transfer_buffer.as_ref().as_any().downcast_ref::<VkBuffer>().unwrap().buffer, image, ImageLayout::TRANSFER_DST_OPTIMAL, &[region]); }
 
-        self.set_image_layout(&GfxImageID::new(&self.gfx, 0, 0), command_buffer, ImageLayout::SHADER_READ_ONLY_OPTIMAL);
+        self.set_image_layout(&GfxImageID::null(), command_buffer, ImageLayout::SHADER_READ_ONLY_OPTIMAL);
 
         end_command_buffer(&self.gfx, command_buffer);
         submit_command_buffer(&self.gfx, command_buffer, QueueFlags::TRANSFER);
@@ -259,8 +259,8 @@ impl VkImage {
 
             (images.clone(), GfxResource::new_static(gfx, Box::new(RbImageView { create_infos: params, images })))
         } else {
-            let images = Arc::new(GfxResource::new(Box::new(RbImage { create_infos: params })));
-            (images.clone(), GfxResource::new(Box::new(RbImageView { create_infos: params, images })))
+            let images = Arc::new(GfxResource::new(gfx, RbImage { create_infos: params }));
+            (images.clone(), GfxResource::new(gfx, RbImageView { create_infos: params, images }))
         };
 
         let image = Arc::new(Self {
@@ -286,10 +286,10 @@ impl VkImage {
         Arc::new(VkImage {
             gfx: gfx.clone(),
             image: images.clone(),
-            view: GfxResource::new(Box::new(RbImageView {
+            view: GfxResource::new(gfx, RbImageView {
                 images,
                 create_infos: image_params,
-            })),
+            }),
             image_params,
             image_layout: RwLock::new(ImageLayout::UNDEFINED),
         })

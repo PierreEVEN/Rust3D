@@ -98,10 +98,10 @@ impl GfxImageBuilder<CommandBuffer> for RbCommandBuffer {
 impl VkCommandBuffer {
     pub fn new(gfx: &GfxRef) -> Arc<VkCommandBuffer> {
         Arc::new(VkCommandBuffer {
-            command_buffer: GfxResource::new(Box::new(RbCommandBuffer {})),
+            command_buffer: GfxResource::new(gfx, RbCommandBuffer {}),
             gfx: gfx.clone(),
             pass_id: RwLock::new(PassID::new("undefined")),
-            image_id: RwLock::new(GfxImageID::new(gfx, 0, 0)),
+            image_id: RwLock::new(GfxImageID::null()),
         })
     }
 

@@ -6,10 +6,10 @@ use ash::vk::{ClearColorValue, ClearDepthStencilValue, ClearValue, CommandBuffer
 use gfx::command_buffer::GfxCommandBuffer;
 use gfx::gfx_resource::{GfxImageBuilder, GfxResource};
 use gfx::GfxRef;
-use gfx::image::GfxImage;
+use gfx::image::{GfxImage, ImageCreateInfos, ImageParams, ImageType, ImageUsage};
 use gfx::render_pass::{GraphRenderCallback, RenderPass, RenderPassInstance};
 use gfx::surface::{GfxImageID, GfxSurface};
-use gfx::types::ClearValues;
+use gfx::types::{ClearValues};
 use maths::vec2::Vec2u32;
 
 use crate::{gfx_cast_vulkan, GfxVulkan, vk_check, VkRenderPass};
@@ -19,15 +19,15 @@ use crate::vk_image::VkImage;
 pub struct VkRenderPassInstance {
     pub render_finished_semaphore: GfxResource<Semaphore>,
     pub pass_command_buffers: Arc<VkCommandBuffer>,
-    //GfxResource<CommandBuffer>,
     owner: Arc<dyn RenderPass>,
     gfx: GfxRef,
     surface: Arc<dyn GfxSurface>,
-    _framebuffers: GfxResource<Framebuffer>,
+    framebuffers: GfxResource<Framebuffer>,
     pub clear_value: Vec<ClearValues>,
     pub resolution: RwLock<Vec2u32>,
     pub wait_semaphores: RwLock<Option<Semaphore>>,
     pub render_callback: RwLock<Option<Box<dyn GraphRenderCallback>>>,
+    pub children: RwLock<Vec<Arc<dyn RenderPassInstance>>>,
 }
 
 pub struct RbSemaphore {}
@@ -102,14 +102,25 @@ impl VkRenderPassInstance {
         if owner.get_config().is_present_pass {
             images.push(surface.get_surface_texture())
         } else {
-            for _att_color in &owner.get_config().color_attachments {}
+            for _att_color in &owner.get_config().color_attachments {
+                images.push(gfx.create_image(ImageCreateInfos {
+                    params: ImageParams {
+                        pixel_format: _att_color.image_format,
+                        image_format: ImageType::Texture2d(res.x, res.y),
+                        read_only: false,
+                        mip_levels: None,
+                        usage: ImageUsage::GpuWriteDestination | ImageUsage::Sampling,
+                    },
+                    pixels: None,
+                }));
+            }
             for _att_depth in &owner.get_config().depth_attachment {}
         }
 
         VkRenderPassInstance {
-            render_finished_semaphore: GfxResource::new(Box::new(RbSemaphore {})),
-            pass_command_buffers: VkCommandBuffer::new(gfx), //GfxResource::new(Box::new(RbCommandBuffer {})),
-            _framebuffers: GfxResource::new(Box::new(RbFramebuffer { render_pass, res, images })),
+            render_finished_semaphore: GfxResource::new(gfx, RbSemaphore {}),
+            pass_command_buffers: VkCommandBuffer::new(gfx),
+            framebuffers: GfxResource::new(gfx, RbFramebuffer { render_pass, res, images }),
             owner,
             clear_value: clear_values.clone(),
             gfx: gfx.clone(),
@@ -117,27 +128,43 @@ impl VkRenderPassInstance {
             resolution: RwLock::new(res),
             wait_semaphores: RwLock::new(None),
             render_callback: RwLock::new(None),
+            children: RwLock::default(),
         }
     }
 }
 
 impl RenderPassInstance for VkRenderPassInstance {
-    fn resize(&self, _new_res: Vec2u32) {
+    fn resize(&self, new_res: Vec2u32) {
         let render_pass = self.owner.as_ref().as_any().downcast_ref::<VkRenderPass>().unwrap().render_pass;
 
         let mut images = Vec::new();
         if self.owner.get_config().is_present_pass {
             images.push(self.surface.get_surface_texture())
         } else {
-            for _att_color in &self.owner.get_config().color_attachments {}
+            for att_color in &self.owner.get_config().color_attachments {
+                images.push(self.gfx.create_image(ImageCreateInfos {
+                    params: ImageParams {
+                        pixel_format: att_color.image_format,
+                        image_format: ImageType::Texture2d(new_res.x, new_res.y),
+                        read_only: false,
+                        mip_levels: None,
+                        usage: ImageUsage::GpuWriteDestination | ImageUsage::Sampling,
+                    },
+                    pixels: None,
+                }))
+            }
             for _att_depth in &self.owner.get_config().depth_attachment {}
         }
-        self._framebuffers.invalidate(&self.gfx, Box::new(RbFramebuffer { render_pass, res: _new_res, images }));
+        self.framebuffers.invalidate(&self.gfx, Box::new(RbFramebuffer { render_pass, res: new_res, images }));
         let mut res = self.resolution.write().unwrap();
-        *res = _new_res;
+        *res = new_res;
     }
 
     fn draw(&self) {
+        for child in &*self.children.read().unwrap() {
+            child.draw();
+        }
+
         let device = &gfx_cast_vulkan!(self.gfx).device;
 
         // Begin buffer
@@ -170,8 +197,8 @@ impl RenderPassInstance for VkRenderPassInstance {
         let res = self.resolution.read().unwrap();
         let begin_infos = RenderPassBeginInfo {
             render_pass: self.owner.as_ref().as_any().downcast_ref::<VkRenderPass>().expect("invalid render pass").render_pass,
-            framebuffer: self._framebuffers.get(&self.surface.get_current_ref()),
-            render_area: vk::Rect2D {
+            framebuffer: self.framebuffers.get(&self.surface.get_current_ref()),
+            render_area: Rect2D {
                 offset: Offset2D { x: 0, y: 0 },
                 extent: Extent2D { width: res.x, height: res.y },
             },
@@ -180,7 +207,6 @@ impl RenderPassInstance for VkRenderPassInstance {
             ..RenderPassBeginInfo::default()
         };
         unsafe { (*device).device.cmd_begin_render_pass(command_buffer, &begin_infos, SubpassContents::INLINE) };
-
 
         unsafe {
             (*device).device.cmd_set_viewport(command_buffer, 0, &[Viewport {
@@ -200,14 +226,13 @@ impl RenderPassInstance for VkRenderPassInstance {
             }])
         };
 
-        self.pass_command_buffers.init_for(self.owner.get_pass_id());
+        self.pass_command_buffers.init_for(self.owner.get_pass_id(), self.surface.get_current_ref().clone());
 
         // Draw content
         match &*self.render_callback.read().unwrap() {
             None => {}
             Some(callback) => { callback.draw(&(self.pass_command_buffers.clone() as Arc<dyn GfxCommandBuffer>)) }
         }
-
 
         let command_buffer = self.pass_command_buffers.command_buffer.get(&self.surface.get_current_ref());
         let device = &gfx_cast_vulkan!(self.gfx).device;
@@ -221,11 +246,17 @@ impl RenderPassInstance for VkRenderPassInstance {
         if self.owner.as_ref().as_any().downcast_ref::<VkRenderPass>().unwrap().get_config().is_present_pass {
             wait_semaphores.push(self.wait_semaphores.read().unwrap().unwrap());
         }
+        for child in &*self.children.read().unwrap() {
+            let child = child.as_ref().as_any().downcast_ref::<VkRenderPassInstance>().unwrap();
+            wait_semaphores.push(child.render_finished_semaphore.get(&self.surface.get_current_ref()));
+        }
+
+        let wait_stages = vec![PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT; wait_semaphores.len()];
 
         let submit_infos = SubmitInfo {
             wait_semaphore_count: wait_semaphores.len() as u32,
             p_wait_semaphores: wait_semaphores.as_ptr(),
-            p_wait_dst_stage_mask: &PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT,
+            p_wait_dst_stage_mask: wait_stages.as_ptr(),
             command_buffer_count: 1,
             p_command_buffers: &command_buffer,
             signal_semaphore_count: 1,
@@ -238,5 +269,9 @@ impl RenderPassInstance for VkRenderPassInstance {
 
     fn on_render(&self, callback: Box<dyn GraphRenderCallback>) {
         *self.render_callback.write().unwrap() = Some(callback);
+    }
+
+    fn append(&self, child: Arc<dyn RenderPassInstance>) {
+        self.children.write().unwrap().push(child);
     }
 }

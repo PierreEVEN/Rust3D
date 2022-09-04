@@ -1,6 +1,5 @@
 ﻿use std::ptr::null;
 use std::sync::{Arc, RwLock};
-use std::sync::atomic::{AtomicU8, Ordering};
 
 use ash::extensions::khr;
 use ash::extensions::khr::{Surface, Swapchain};
@@ -16,7 +15,7 @@ use backend_vulkan::vk_render_pass_instance::{RbSemaphore, VkRenderPassInstance}
 use backend_vulkan::vk_types::GfxPixelFormat;
 use gfx::gfx_resource::{GfxImageBuilder, GfxResource};
 use gfx::GfxRef;
-use gfx::image::{GfxImage, ImageParams, ImageType, ImageUsage};
+use gfx::image::{GfxImage, GfxImageUsageFlags, ImageParams, ImageType, ImageUsage};
 use gfx::render_pass::{RenderPassInstance};
 use gfx::surface::{GfxImageID, GfxSurface, SurfaceAcquireResult};
 use gfx::types::PixelFormat;
@@ -31,7 +30,7 @@ pub struct VkSurfaceWin32 {
     _surface_loader: Surface,
     _swapchain_loader: Swapchain,
     image_count: u8,
-    current_image: AtomicU8,
+    current_image: GfxImageID,
     window: Arc<dyn Window>,
     gfx: GfxRef,
     surface_image: RwLock<Option<Arc<dyn GfxImage>>>,
@@ -39,14 +38,13 @@ pub struct VkSurfaceWin32 {
     extent: RwLock<Extent2D>,
 }
 
-
 struct RbSurfaceImage {
     images: Vec<Image>,
 }
 
 impl GfxImageBuilder<(Image, Arc<Allocation>)> for RbSurfaceImage {
     fn build(&self, _gfx: &GfxRef, _swapchain_ref: &GfxImageID) -> (Image, Arc<Allocation>) {
-        (self.images[_swapchain_ref.image_index as usize], Arc::new(Allocation::default()))
+        (self.images[_swapchain_ref.image_id() as usize], Arc::new(Allocation::default()))
     }
 }
 
@@ -62,7 +60,7 @@ impl GfxSurface for VkSurfaceWin32 {
                 return;
             }
         };
-        
+
         if surface_capabilities.current_extent.width <= 0 || surface_capabilities.current_extent.height <= 0 {
             return;
         }
@@ -115,16 +113,16 @@ impl GfxSurface for VkSurfaceWin32 {
         let images = vk_check!(unsafe { self._swapchain_loader.get_swapchain_images(swapchain) });
 
         let mut image = self.surface_image.write().unwrap();
-        *image = Some(VkImage::from_existing_images(&self.gfx, GfxResource::new(Box::new(RbSurfaceImage {
+        *image = Some(VkImage::from_existing_images(&self.gfx, GfxResource::new(&self.gfx, RbSurfaceImage {
             images,
-        })), ImageParams {
+        }), ImageParams {
             pixel_format: *GfxPixelFormat::from(self.surface_format.format),
             image_format: ImageType::Texture2d(surface_capabilities.current_extent.width, surface_capabilities.current_extent.height),
             read_only: true,
             mip_levels: Some(1),
-            usage: ImageUsage::Any,
+            usage: GfxImageUsageFlags::from_flag(ImageUsage::Any),
         }));
-        
+
         *self.extent.write().unwrap() = surface_capabilities.current_extent;
     }
 
@@ -140,8 +138,8 @@ impl GfxSurface for VkSurfaceWin32 {
         self.image_count
     }
 
-    fn get_current_ref(&self) -> GfxImageID {
-        GfxImageID::new(&self.gfx, self.current_image.load(Ordering::Acquire), 0)
+    fn get_current_ref(&self) -> &GfxImageID {
+        &self.current_image
     }
 
     fn get_surface_texture(&self) -> Arc<dyn GfxImage> {
@@ -180,7 +178,7 @@ impl GfxSurface for VkSurfaceWin32 {
                 });
             }
         };
-        self.current_image.store(image_index as u8, Ordering::Release);
+        self.current_image.update(image_index as u8, 0);
 
         let render_pass = (**render_pass).as_any().downcast_ref::<VkRenderPassInstance>().unwrap();
         let mut wait_sem = render_pass.wait_semaphores.write().unwrap();
@@ -190,7 +188,7 @@ impl GfxSurface for VkSurfaceWin32 {
     }
 
     fn submit(&self, render_pass: &Arc<dyn RenderPassInstance>) -> Result<(), SurfaceAcquireResult> {
-        let current_image = self.get_current_ref().image_index as u32;
+        let current_image = self.get_current_ref().image_id() as u32;
         let render_pass = (**render_pass).as_any().downcast_ref::<VkRenderPassInstance>().unwrap();
 
         let _present_info = PresentInfoKHR {
@@ -301,11 +299,11 @@ impl VkSurfaceWin32 {
             surface_format,
             _swapchain_loader: swapchain_loader,
             image_count: image_count as u8,
-            current_image: AtomicU8::new(0),
+            current_image: GfxImageID::null(),
             window: window.clone(),
             gfx: gfx_copy,
             present_queue,
-            image_acquire_semaphore: GfxResource::new(Box::new(RbSemaphore {})),
+            image_acquire_semaphore: GfxResource::new(gfx, RbSemaphore {}),
             surface_image: RwLock::default(),
             extent: RwLock::new(Extent2D { width: 0, height: 0 }),
         });

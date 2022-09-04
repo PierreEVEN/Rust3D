@@ -21,6 +21,7 @@ pub struct GfxResource<T> {
     resources: RwLock<HashMap<GfxImageID, T>>,
     builder: RwLock<Box<dyn GfxImageBuilder<T>>>,
     static_resource: bool,
+    gfx: Option<GfxRef>,
 }
 
 impl<T: Clone> Default for GfxResource<T> {
@@ -29,30 +30,35 @@ impl<T: Clone> Default for GfxResource<T> {
             resources: RwLock::default(),
             builder: RwLock::new(Box::new(DefaultSwapchainResourceBuilder {})),
             static_resource: true,
+            gfx: None,
         }
     }
 }
 
 impl<T: Clone> GfxResource<T> {
-    pub fn  new(builder: Box<dyn GfxImageBuilder<T>>) -> Self {
+    pub fn new<U: GfxImageBuilder<T> + 'static>(gfx: &GfxRef, builder: U) -> Self {
+        let builder = Box::new(builder) as Box<dyn GfxImageBuilder<T>>;
+
         Self {
             static_resource: false,
             builder: RwLock::new(builder),
             resources: RwLock::default(),
+            gfx: Some(gfx.clone()),
         }
     }
     pub fn new_static(gfx: &GfxRef, builder: Box<dyn GfxImageBuilder<T>>) -> Self {
-        let static_ref = GfxImageID::new(gfx, 0, 0);
+        let static_ref = GfxImageID::new(0, 0);
         Self {
             static_resource: true,
             resources: RwLock::new(HashMap::from([(static_ref.clone(), builder.build(gfx, &static_ref))])),
             builder: RwLock::new(builder),
+            gfx: Some(gfx.clone()),
         }
     }
 
     pub fn get(&self, reference: &GfxImageID) -> T {
         if self.static_resource {
-            let image_id = GfxImageID::new(reference.gfx(), 0, 0);
+            let image_id = GfxImageID::new(0, 0);
             return self.resources.read().unwrap().deref().get(&image_id).unwrap().clone();
         }
 
@@ -63,18 +69,21 @@ impl<T: Clone> GfxResource<T> {
             }
         }
 
-        self.resources.write().unwrap().insert(reference.clone(), self.builder.read().unwrap().as_ref().build(&reference.gfx(), reference));
+        self.resources.write().unwrap().insert(reference.clone(), self.builder.read().unwrap().as_ref().build(match &self.gfx {
+            None => {panic!("gfx is not valid")}
+            Some(gfx) => {gfx}
+        }, reference));
         self.resources.read().unwrap().get(reference).unwrap().clone()
     }
-    
-    pub fn invalidate(&self, gfx: &GfxRef, builder: Box<dyn GfxImageBuilder<T>> ) {
+
+    pub fn invalidate(&self, gfx: &GfxRef, builder: Box<dyn GfxImageBuilder<T>>) {
         let mut resource_map = self.resources.write().unwrap();
         (*resource_map).clear();
         let mut builder_ref = self.builder.write().unwrap();
         *builder_ref = builder;
-        
+
         if self.static_resource {
-            let static_ref = GfxImageID::new(gfx, 0, 0);
+            let static_ref = GfxImageID::null();
             resource_map.insert(static_ref.clone(), builder_ref.build(gfx, &static_ref));
         }
     }

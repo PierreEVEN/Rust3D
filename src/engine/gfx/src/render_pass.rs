@@ -31,7 +31,9 @@ pub trait RenderPassInstance: GfxCast {
     fn resize(&self, new_res: Vec2u32);
     fn draw(&self);
     fn on_render(&self, callback: Box<dyn GraphRenderCallback>);
+    fn append(&self, child: Arc<dyn RenderPassInstance>);
 }
+
 
 pub struct FrameGraph {
     surface: Arc<dyn GfxSurface>,
@@ -43,7 +45,7 @@ pub trait GraphRenderCallback {
 }
 
 impl FrameGraph {
-    pub fn from_surface(_gfx: &GfxRef, surface: &Arc<dyn GfxSurface>, clear_value: Vec4F32) -> Self {
+    pub fn from_surface(_gfx: &GfxRef, surface: &Arc<dyn GfxSurface>, clear_value: Vec4F32) -> Arc<Self> {
         let render_pass_ci = RenderPassCreateInfos {
             name: "surface_pass".to_string(),
             color_attachments: vec![RenderPassAttachment {
@@ -59,10 +61,10 @@ impl FrameGraph {
 
         let draw_pass = _gfx.create_render_pass(render_pass_ci).instantiate(surface, Vec2u32::new(res.width() as u32, res.height() as u32));
 
-        Self {
+        Arc::new(Self {
             surface: surface.clone(),
             present_pass: draw_pass,
-        }
+        })
     }
     
     pub fn main_pass(&self) -> &Arc<dyn RenderPassInstance> {
@@ -72,7 +74,6 @@ impl FrameGraph {
     pub fn begin(&self) -> Result<(), String> {
         return match self.surface.acquire(&self.present_pass) {
             Ok(_) => {
-                // @TODO : draw children passes
                 Ok(self.present_pass.draw())
             }
             Err(error) => {

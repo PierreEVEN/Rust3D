@@ -32,7 +32,7 @@ pub struct ImageParams {
     pub image_format: ImageType,
     pub read_only: bool,
     pub mip_levels: Option<u16>,
-    pub usage: ImageUsage,
+    pub usage: GfxImageUsageFlags,
 }
 
 #[derive(Clone)]

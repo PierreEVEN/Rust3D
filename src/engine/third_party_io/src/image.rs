@@ -7,7 +7,7 @@ use std::sync::Arc;
 use stb_image_rust::{stbi_image_free, stbi_load_from_memory};
 use gfx::GfxRef;
 
-use gfx::image::{GfxImage, ImageCreateInfos, ImageParams, ImageType, ImageUsage};
+use gfx::image::{GfxImage, GfxImageUsageFlags, ImageCreateInfos, ImageParams, ImageType, ImageUsage};
 use gfx::types::PixelFormat;
 
 #[derive(Copy, Clone)]
@@ -37,7 +37,7 @@ pub fn read_image_from_file(gfx: &GfxRef, file: &Path) -> Result<Arc<dyn GfxImag
                         image_format: ImageType::Texture2d(width as u32, height as u32),
                         read_only: true,
                         mip_levels: Some((width as f32).max( height as f32).max( 1.0).log2().floor() as u16 + 1),
-                        usage: ImageUsage::Sampling
+                        usage: GfxImageUsageFlags::from_flag(ImageUsage::Sampling)
                     },
                     pixels: Some(slice::from_raw_parts(raw_data as *const u8, width as usize * height as usize * components as usize).to_vec())
                 });

@@ -52,7 +52,7 @@ impl CompilerBackend for BackendShaderC {
         compile_options.set_auto_map_locations(true);
         compile_options.set_auto_bind_uniforms(true);
         compile_options.set_target_env(TargetEnv::Vulkan, EnvVersion::Vulkan1_2 as u32);
-        compile_options.set_target_spirv(SpirvVersion::V1_5);
+        compile_options.set_target_spirv(SpirvVersion::V1_3);
         compile_options.set_source_language(match source_language {
             ShaderLanguage::HLSL => { SourceLanguage::HLSL }
             ShaderLanguage::GLSL => { SourceLanguage::GLSL }

@@ -35,7 +35,7 @@ pub trait GfxInterface: GfxCast {
     fn create_image_sampler(&self, create_infos: SamplerCreateInfos) -> Arc<dyn ImageSampler>;
     fn create_shader_instance(&self, create_infos: ShaderInstanceCreateInfos, parent: &dyn ShaderProgram) -> Arc<dyn ShaderInstance>;
     fn find_render_pass(&self, pass_id: &PassID) -> Option<Arc<dyn RenderPass>>;
-    fn create_command_buffer(&self) -> Arc<dyn GfxCommandBuffer>;
+    fn create_command_buffer(&self, surface: &Arc<dyn GfxSurface>) -> Arc<dyn GfxCommandBuffer>;
     fn get_ref(&self) -> GfxRef;
 }
 

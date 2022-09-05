@@ -124,6 +124,10 @@ fn main() {
 
     shader_instance.bind_texture(&BindPoint::new("ui_result"), &def_combine.get_images()[0]);
 
+    let imgui_pass = _imgui_context.instantiate_for_surface(&main_window_surface);
+    main_framegraph.main_pass().attach(imgui_pass.clone());
+    
+    
     // Game loop
     'game_loop: loop {
         // handle events

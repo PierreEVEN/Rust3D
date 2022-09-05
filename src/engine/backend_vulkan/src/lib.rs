@@ -15,6 +15,7 @@ use gfx::image_sampler::{ImageSampler, SamplerCreateInfos};
 use gfx::render_pass::{RenderPass, RenderPassCreateInfos};
 use gfx::shader::{PassID, ShaderProgram, ShaderProgramInfos};
 use gfx::shader_instance::{ShaderInstance, ShaderInstanceCreateInfos};
+use gfx::surface::GfxSurface;
 
 use crate::vk_buffer::VkBuffer;
 use crate::vk_command_buffer::{VkCommandBuffer, VkCommandPool};
@@ -139,8 +140,8 @@ impl GfxInterface for GfxVulkan {
         }
     }
 
-    fn create_command_buffer(&self) -> Arc<dyn GfxCommandBuffer> {
-        VkCommandBuffer::new(&self.get_ref())
+    fn create_command_buffer(&self, surface: &Arc<dyn GfxSurface>) -> Arc<dyn GfxCommandBuffer> {
+        VkCommandBuffer::new(&self.get_ref(), surface)
     }
 
     fn get_ref(&self) -> GfxRef {

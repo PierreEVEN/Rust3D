@@ -8,7 +8,7 @@ use gfx::gfx_resource::{GfxImageBuilder, GfxResource};
 use gfx::GfxRef;
 use gfx::shader::{PassID, ShaderProgram, ShaderStage};
 use gfx::shader_instance::ShaderInstance;
-use gfx::surface::GfxImageID;
+use gfx::surface::{GfxImageID, GfxSurface};
 
 use crate::{GfxVulkan, vk_check, VkShaderInstance, VkShaderProgram};
 
@@ -77,6 +77,7 @@ pub struct VkCommandBuffer {
     gfx: GfxRef,
     pass_id: RwLock<PassID>,
     image_id: RwLock<GfxImageID>,
+    surface: Arc<dyn GfxSurface>,
 }
 
 pub struct RbCommandBuffer {}
@@ -88,12 +89,13 @@ impl GfxImageBuilder<CommandBuffer> for RbCommandBuffer {
 }
 
 impl VkCommandBuffer {
-    pub fn new(gfx: &GfxRef) -> Arc<VkCommandBuffer> {
+    pub fn new(gfx: &GfxRef, surface: &Arc<dyn GfxSurface>) -> Arc<VkCommandBuffer> {
         Arc::new(VkCommandBuffer {
             command_buffer: GfxResource::new(gfx, RbCommandBuffer {}),
             gfx: gfx.clone(),
             pass_id: RwLock::new(PassID::new("undefined")),
             image_id: RwLock::new(GfxImageID::null()),
+            surface: surface.clone(),
         })
     }
 
@@ -149,14 +151,20 @@ impl GfxCommandBuffer for VkCommandBuffer {
     }
 
     fn push_constant(&self, program: &Arc<dyn ShaderProgram>, data: BufferMemory, stage: ShaderStage) {
-        unsafe { self.gfx.cast::<GfxVulkan>().device.handle.cmd_push_constants(self.command_buffer.get(&*self.image_id.read().unwrap()), *program.cast::<VkShaderProgram>().pipeline_layout, match stage {
-            ShaderStage::Vertex => {ShaderStageFlags::VERTEX}
-            ShaderStage::Fragment => {ShaderStageFlags::FRAGMENT}
-        }, 0, data.as_slice()) }
+        unsafe {
+            self.gfx.cast::<GfxVulkan>().device.handle.cmd_push_constants(self.command_buffer.get(&*self.image_id.read().unwrap()), *program.cast::<VkShaderProgram>().pipeline_layout, match stage {
+                ShaderStage::Vertex => { ShaderStageFlags::VERTEX }
+                ShaderStage::Fragment => { ShaderStageFlags::FRAGMENT }
+            }, 0, data.as_slice())
+        }
     }
 
 
     fn get_pass_id(&self) -> PassID {
         self.pass_id.read().unwrap().clone()
+    }
+
+    fn get_surface(&self) -> Arc<dyn GfxSurface> {
+        self.surface.clone()
     }
 }

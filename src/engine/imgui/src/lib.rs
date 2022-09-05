@@ -4,32 +4,35 @@ use std::path::Path;
 use std::ptr::null_mut;
 use std::sync::Arc;
 
+use memoffset::offset_of;
+
 use gfx::buffer::BufferMemory;
 use gfx::command_buffer::GfxCommandBuffer;
 use gfx::GfxRef;
 use gfx::image::{GfxImage, GfxImageUsageFlags, ImageCreateInfos, ImageParams, ImageUsage};
 use gfx::image::ImageType::Texture2d;
 use gfx::image_sampler::{ImageSampler, SamplerCreateInfos};
-use gfx::render_pass::{RenderPass, RenderPassAttachment, RenderPassCreateInfos};
+use gfx::render_pass::{GraphRenderCallback, RenderPass, RenderPassAttachment, RenderPassCreateInfos, RenderPassInstance};
 use gfx::shader::{PassID, ShaderLanguage, ShaderProgram, ShaderProgramInfos, ShaderProgramStage, ShaderPropertyType, ShaderStage, ShaderStageInput};
 use gfx::shader_instance::{BindPoint, ShaderInstance, ShaderInstanceCreateInfos};
-use gfx::surface::GfxImageID;
+use gfx::surface::GfxSurface;
 use gfx::types::{ClearValues, PixelFormat};
-use imgui_bindings::{igCreateContext, igEndFrame, igGetDrawData, igGetIO, igGetMainViewport, igGetStyle, igNewFrame, igRender, igStyleColorsDark, ImDrawVert, ImFontAtlas_GetTexDataAsRGBA32, ImGuiBackendFlags__ImGuiBackendFlags_HasMouseCursors, ImGuiBackendFlags__ImGuiBackendFlags_HasSetMousePos, ImGuiBackendFlags__ImGuiBackendFlags_PlatformHasViewports, ImGuiConfigFlags__ImGuiConfigFlags_DockingEnable, ImGuiConfigFlags__ImGuiConfigFlags_NavEnableGamepad, ImGuiConfigFlags__ImGuiConfigFlags_NavEnableKeyboard, ImGuiConfigFlags__ImGuiConfigFlags_ViewportsEnable, ImGuiContext, ImTextureID};
+use imgui_bindings::{igCreateContext, igEndFrame, igGetDrawData, igGetIO, igGetMainViewport, igGetStyle, igNewFrame, igRender, igStyleColorsDark, ImDrawVert, ImFontAtlas_GetTexDataAsRGBA32, ImGuiBackendFlags__ImGuiBackendFlags_HasMouseCursors, ImGuiBackendFlags__ImGuiBackendFlags_HasSetMousePos, ImGuiBackendFlags__ImGuiBackendFlags_PlatformHasViewports, ImGuiConfigFlags__ImGuiConfigFlags_DockingEnable, ImGuiConfigFlags__ImGuiConfigFlags_NavEnableGamepad, ImGuiConfigFlags__ImGuiConfigFlags_NavEnableKeyboard, ImGuiConfigFlags__ImGuiConfigFlags_ViewportsEnable, ImGuiContext, ImTextureID, ImVec2};
 use maths::vec2::Vec2F32;
 use maths::vec4::Vec4F32;
 use shader_compiler::backends::backend_shaderc::{BackendShaderC, ShaderCIncluder};
 use shader_compiler::CompilerBackend;
-use shader_compiler::parser::{Parser, ShaderChunk};
-use shader_compiler::types::{InterstageData, ShaderErrorResult};
+use shader_compiler::parser::Parser;
+use shader_compiler::types::InterstageData;
 
 pub struct ImGUiContext {
     pub font_texture: Arc<dyn GfxImage>,
     pub shader_program: Arc<dyn ShaderProgram>,
     pub shader_instance: Arc<dyn ShaderInstance>,
     pub image_sampler: Arc<dyn ImageSampler>,
+    pub render_pass: Arc<dyn RenderPass>,
     pub context: *mut ImGuiContext,
-    gfx: GfxRef,
+    _gfx: GfxRef,
 }
 
 
@@ -114,7 +117,7 @@ impl ImGUiContext {
                 clear_value: ClearValues::DepthStencil(Vec2F32::new(1.0, 0.0)),
                 image_format: PixelFormat::D24_UNORM_S8_UINT,
             }),
-            is_present_pass: false
+            is_present_pass: false,
         });
         let vertex_data = match imgui_parser_result.program_data.get_data(&imgui_pass_id, &ShaderStage::Vertex) {
             Ok(data) => { data }
@@ -126,7 +129,7 @@ impl ImGUiContext {
         };
 
         let shader_backend = BackendShaderC::new();
-        
+
         let vertex_sprv = match shader_backend.compile_to_spirv(vertex_data, Path::new(shader_path.as_str()), ShaderLanguage::HLSL, ShaderStage::Vertex, InterstageData {
             stage_outputs: Default::default(),
             binding_index: 0,
@@ -146,23 +149,31 @@ impl ImGUiContext {
                 panic!("Failed to compile fragment shader : \n{}", error.to_string());
             }
         };
-       
+
         let shader_program = gfx.create_shader_program(&imgui_render_pass, &ShaderProgramInfos {
             vertex_stage: ShaderProgramStage {
                 spirv: vertex_sprv.binary,
                 descriptor_bindings: vertex_sprv.bindings,
                 push_constant_size: vertex_sprv.push_constant_size,
-                stage_input: vec![],
+                stage_input: vec![ShaderStageInput {
+                    location: 0,
+                    offset: offset_of!(ImDrawVert, pos) as u32,
+                    property_type: ShaderPropertyType { format: PixelFormat::R32G32_SFLOAT },
+                }, ShaderStageInput {
+                    location: 1,
+                    offset: offset_of!(ImDrawVert, uv) as u32,
+                    property_type: ShaderPropertyType { format: PixelFormat::R32G32_SFLOAT },
+                }, ShaderStageInput {
+                    location: 2,
+                    offset: offset_of!(ImDrawVert, col) as u32,
+                    property_type: ShaderPropertyType { format: PixelFormat::R8G8B8A8_UNORM },
+                }],
             },
             fragment_stage: ShaderProgramStage {
                 spirv: fragment_sprv.binary,
                 descriptor_bindings: fragment_sprv.bindings,
                 push_constant_size: fragment_sprv.push_constant_size,
-                stage_input: vec![ShaderStageInput {
-                    location: 0,
-                    offset: *offset::offset_of!(ImDrawVert::pos),
-                    property_type: ShaderPropertyType { format: PixelFormat::R32G32_SFLOAT }
-                }],
+                stage_input: vec![],
             },
             shader_properties: Default::default(),
         });
@@ -176,47 +187,110 @@ impl ImGUiContext {
         Arc::new(Self {
             font_texture,
             context: imgui_context,
-            gfx: gfx.clone(),
+            _gfx: gfx.clone(),
             shader_program,
             shader_instance,
             image_sampler,
+            render_pass: imgui_render_pass,
         })
     }
 
-    pub fn start(&self) {
-        unsafe { igNewFrame(); }
-    }
+    pub fn instantiate_for_surface(&self, surface: &Arc<dyn GfxSurface>) -> Arc<dyn RenderPassInstance> {
+        let render_pass_instance = self.render_pass.instantiate(surface, surface.get_extent());
 
-    pub fn submit(&self, command_buffer: &Arc<dyn GfxCommandBuffer>) {
-        unsafe { igEndFrame(); }
-        unsafe { igRender(); }
-        let draw_data = unsafe { &*igGetDrawData() };
-        let width = draw_data.DisplaySize.x * draw_data.FramebufferScale.x;
-        let height = draw_data.DisplaySize.x * draw_data.FramebufferScale.x;
-        if width == 0.0 || height == 0.0 || draw_data.TotalVtxCount == 0 {
-            return;
+        struct ImGuiRenderPassData {
+            shader_program: Arc<dyn ShaderProgram>,
         }
+        impl GraphRenderCallback for ImGuiRenderPassData {
+            fn draw(&self, command_buffer: &Arc<dyn GfxCommandBuffer>) {
+                let io = unsafe { &mut *igGetIO() };
+                io.DisplaySize = ImVec2 { x: command_buffer.get_surface().get_extent().x as f32, y: command_buffer.get_surface().get_extent().y as f32 };
+                io.DisplayFramebufferScale = ImVec2 { x: 1.0, y: 1.0 };
+                io.DeltaTime = 1.0 / 60.0; //@TODO application::get().delta_time();
 
-        let scale_x = 2.0 / draw_data.DisplaySize.x;
-        let scale_y = -2.0 / draw_data.DisplaySize.y;
 
-        #[repr(C, align(4))]
-        pub struct ImGuiPushConstants {
-            scale_x: f32,
-            scale_y: f32,
-            translate_x: f32,
-            translate_y: f32,
+                unsafe { igNewFrame(); }
+                unsafe { igEndFrame(); }
+                unsafe { igRender(); }
+                let draw_data = unsafe { &*igGetDrawData() };
+                let width = draw_data.DisplaySize.x * draw_data.FramebufferScale.x;
+                let height = draw_data.DisplaySize.x * draw_data.FramebufferScale.x;
+                if width <= 0.0 || height <= 0.0 || draw_data.TotalVtxCount == 0 {
+                    return;
+                }
+
+                let scale_x = 2.0 / draw_data.DisplaySize.x;
+                let scale_y = -2.0 / draw_data.DisplaySize.y;
+
+                #[repr(C, align(4))]
+                pub struct ImGuiPushConstants {
+                    scale_x: f32,
+                    scale_y: f32,
+                    translate_x: f32,
+                    translate_y: f32,
+                }
+
+                command_buffer.push_constant(
+                    &self.shader_program,
+                    BufferMemory::from_struct(&ImGuiPushConstants {
+                        scale_x,
+                        scale_y,
+                        translate_x: -1.0 - draw_data.DisplayPos.x * scale_x,
+                        translate_y: -1.0 - draw_data.DisplayPos.y * scale_y,
+                    }),
+                    ShaderStage::Vertex,
+                )
+
+
+                for n in 0..draw_data.CmdListsCount
+                {
+                    let cmd_list = unsafe { &**draw_data.CmdLists.offset(n as isize) };
+                    for cmd_i in 0..cmd_list.CmdBuffer.Size
+                    {
+                        let pcmd = unsafe{*cmd_list.CmdBuffer[cmd_i as isize]};
+                        if pcmd.UserCallback != null_mut() {
+                            pcmd.UserCallback(cmd_list, pcmd);
+                        }
+                        else
+                        {
+                            // Project scissor/clipping rectangles into framebuffer space
+                            ImVec4
+                            clip_rect;
+                            clip_rect.x = (pcmd -> ClipRect.x - clip_off.x) *clip_scale.x;
+                            clip_rect.y = (pcmd -> ClipRect.y - clip_off.y) *clip_scale.y;
+                            clip_rect.z = (pcmd -> ClipRect.z - clip_off.x) *clip_scale.x;
+                            clip_rect.w = (pcmd -> ClipRect.w - clip_off.y) *clip_scale.y;
+
+                            if (clip_rect.x < fb_width && clip_rect.y < fb_height && clip_rect.z >= 0.0f && clip_rect.w >= 0.0f)
+                            {
+                                // Negative offsets are illegal for vkCmdSetScissor
+                                if (clip_rect.x < 0.0f)
+                                clip_rect.x = 0.0f;
+                                if (clip_rect.y < 0.0f)
+                                clip_rect.y = 0.0f;
+
+                                // Apply scissor/clipping rectangle
+                                command_buffer -> set_scissor(gfx::Scissor {
+                                .offset_x = static_cast<int32_t>(clip_rect.x),
+                                .offset_y = static_cast<int32_t>(clip_rect.y),
+                                .width    = static_cast<uint32_t>(clip_rect.z - clip_rect.x),
+                                .height   = static_cast<uint32_t>(clip_rect.w - clip_rect.y),
+                            });
+
+                                // Bind descriptor set with font or user texture
+                                if (pcmd -> TextureId && false)
+                                imgui_material_instance -> bind_texture("test", nullptr); // TODO handle textures
+
+                                command_buffer -> draw_mesh(mesh, imgui_material_instance.get(), pcmd->IdxOffset + global_idx_offset, pcmd->VtxOffset + global_vtx_offset, pcmd->ElemCount);
+                            }
+                        }
+                    }
+                    global_idx_offset += cmd_list -> IdxBuffer.Size;
+                    global_vtx_offset += cmd_list -> VtxBuffer.Size;
+                }
+            }
         }
-
-        command_buffer.push_constant(
-            &self.shader_program,
-            BufferMemory::from_struct(&ImGuiPushConstants {
-                scale_x,
-                scale_y,
-                translate_x: -1.0 - draw_data.DisplayPos.x * scale_x,
-                translate_y: -1.0 - draw_data.DisplayPos.y * scale_y,
-            }),
-            ShaderStage::Vertex,
-        )
+        render_pass_instance.on_render(Box::new(ImGuiRenderPassData { shader_program: self.shader_program.clone() }));
+        render_pass_instance
     }
 }

@@ -33,6 +33,7 @@ pub trait RenderPassInstance: GfxCast {
     fn on_render(&self, callback: Box<dyn GraphRenderCallback>);
     fn attach(&self, child: Arc<dyn RenderPassInstance>);
     fn get_images(&self) -> &Vec<Arc<dyn GfxImage>>;
+    fn get_surface(&self) -> Arc<dyn GfxSurface>;
 }
 
 

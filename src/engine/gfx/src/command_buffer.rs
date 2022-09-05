@@ -1,5 +1,5 @@
 ﻿use std::sync::Arc;
-use crate::{GfxBuffer, GfxCast, PassID, ShaderInstance, ShaderProgram};
+use crate::{GfxBuffer, GfxCast, GfxSurface, PassID, ShaderInstance, ShaderProgram};
 use crate::buffer::BufferMemory;
 use crate::shader::ShaderStage;
 
@@ -13,6 +13,7 @@ pub trait GfxCommandBuffer : GfxCast {
     fn set_scissor(&self);
     fn push_constant(&self, program: &Arc<dyn ShaderProgram>, data: BufferMemory, stage: ShaderStage);
     fn get_pass_id(&self) -> PassID;
+    fn get_surface(&self) -> Arc<dyn GfxSurface>;
 }
 
 impl dyn GfxCommandBuffer {

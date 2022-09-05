@@ -91,11 +91,6 @@ impl VkRenderPassInstance {
     pub fn new(gfx: &GfxRef, surface: &Arc<dyn GfxSurface>, owner: Arc<dyn RenderPass>, res: Vec2u32) -> VkRenderPassInstance {
         let clear_values = (&owner).get_clear_values().clone();
 
-        let mut command_buffers = Vec::new();
-        for _ in 0..surface.get_image_count() {
-            command_buffers.push(VkCommandBuffer::new(gfx));
-        }
-
         let render_pass = owner.cast::<VkRenderPass>().render_pass;
 
         let mut images = Vec::new();
@@ -114,12 +109,25 @@ impl VkRenderPassInstance {
                     pixels: None,
                 }));
             }
-            for _att_depth in &owner.get_config().depth_attachment {}
+            match &owner.get_config().depth_attachment {
+                None => {}
+                Some(depth_attachment) => { 
+                    images.push(gfx.create_image(ImageCreateInfos {
+                    params: ImageParams {
+                        pixel_format: depth_attachment.image_format,
+                        image_type: ImageType::Texture2d(res.x, res.y),
+                        read_only: false,
+                        mip_levels: None,
+                        usage: ImageUsage::GpuWriteDestination | ImageUsage::Sampling,
+                    },
+                    pixels: None,
+                }));}
+            }
         }
 
         VkRenderPassInstance {
             render_finished_semaphore: GfxResource::new(gfx, RbSemaphore {}),
-            pass_command_buffers: VkCommandBuffer::new(gfx),
+            pass_command_buffers: VkCommandBuffer::new(gfx, &surface),
             framebuffers: GfxResource::new(gfx, RbFramebuffer { render_pass, res, images: images.clone() }),
             owner,
             clear_value: clear_values.clone(),
@@ -277,5 +285,9 @@ impl RenderPassInstance for VkRenderPassInstance {
 
     fn get_images(&self) -> &Vec<Arc<dyn GfxImage>> {
         &self.images
+    }
+
+    fn get_surface(&self) -> Arc<dyn GfxSurface> {
+        self.surface.clone()
     }
 }

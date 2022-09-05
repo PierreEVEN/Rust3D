@@ -345,6 +345,9 @@ version = "0.1.0"
 dependencies = [
  "gfx",
  "imgui-bindings",
+ "macros",
+ "maths",
+ "shader_compiler",
 ]
 
 [[package]]

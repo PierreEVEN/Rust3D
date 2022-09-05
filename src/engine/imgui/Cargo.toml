@@ -8,3 +8,6 @@ edition = "2021"
 [dependencies]
 imgui-bindings = { path = "../imgui-bindings" }
 gfx = { path = "../gfx" }
+shader_compiler = { path = "../shader_compiler" }
+macros = { path = "../macros" }
+maths = { path = "../maths" }

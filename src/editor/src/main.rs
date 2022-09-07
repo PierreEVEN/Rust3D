@@ -44,7 +44,7 @@ fn main() {
     let main_framegraph = FrameGraph::from_surface(&engine.gfx, &main_window_surface, Vec4F32::new(1.0, 0.0, 0.0, 1.0));
 
     // Create ImGui context
-    let _imgui_context = ImGUiContext::new(&engine.gfx);
+    let imgui_context = ImGUiContext::new(&engine.gfx);
     
     // Create material
     let demo_material = MaterialAsset::new(&engine.asset_manager);
@@ -124,7 +124,7 @@ fn main() {
 
     shader_instance.bind_texture(&BindPoint::new("ui_result"), &def_combine.get_images()[0]);
 
-    let imgui_pass = _imgui_context.instantiate_for_surface(&main_window_surface);
+    let imgui_pass = imgui_context.instantiate_for_surface(&main_window_surface);
     main_framegraph.main_pass().attach(imgui_pass.clone());
     
     

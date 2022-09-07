@@ -24,7 +24,7 @@ pub struct MeshCreateInfos {
 pub trait Mesh: GfxCast {
     fn index_buffer(&self) -> &Arc<dyn GfxBuffer>;
     fn vertex_buffer(&self) -> &Arc<dyn GfxBuffer>;
-    fn set_data(&self, index_count: u32, vertex_count: u32, vertex_data: &[u8], index_data: &[u8]);
+    fn set_data(&self, from_vertex: u32, vertex_data: &[u8], from_index: u32, index_data: &[u8]);
 }
 
 impl dyn Mesh {

@@ -2,10 +2,11 @@
 
 use ash::vk::{CommandBuffer, CommandBufferAllocateInfo, CommandBufferBeginInfo, CommandBufferLevel, CommandBufferUsageFlags, CommandPool, CommandPoolCreateFlags, CommandPoolCreateInfo, Extent2D, Offset2D, PipelineBindPoint, QueueFlags, Rect2D, ShaderStageFlags, SubmitInfo};
 
-use gfx::buffer::{BufferMemory, GfxBuffer};
+use gfx::buffer::{BufferMemory};
 use gfx::command_buffer::GfxCommandBuffer;
 use gfx::gfx_resource::{GfxImageBuilder, GfxResource};
 use gfx::GfxRef;
+use gfx::mesh::Mesh;
 use gfx::shader::{PassID, ShaderProgram, ShaderStage};
 use gfx::shader_instance::ShaderInstance;
 use gfx::surface::{GfxImageID, GfxSurface};
@@ -131,15 +132,15 @@ impl GfxCommandBuffer for VkCommandBuffer {
         }
     }
 
-    fn draw_mesh(&self, _mesh: &Arc<dyn GfxBuffer>, _instance_count: u32, _first_instance: u32) {
+    fn draw_mesh(&self, _mesh: &Arc<dyn Mesh>, _instance_count: u32, _first_instance: u32) {
         todo!()
     }
 
-    fn draw_mesh_advanced(&self, _mesh: &Arc<dyn GfxBuffer>, _first_index: u32, _vertex_offset: u32, _index_count: u32, _instance_count: u32, _first_instance: u32) {
+    fn draw_mesh_advanced(&self, _mesh: &Arc<dyn Mesh>, _first_index: u32, _vertex_offset: u32, _index_count: u32, _instance_count: u32, _first_instance: u32) {
         todo!()
     }
 
-    fn draw_mesh_indirect(&self, _mesh: &Arc<dyn GfxBuffer>) {
+    fn draw_mesh_indirect(&self, _mesh: &Arc<dyn Mesh>) {
         todo!()
     }
 

@@ -81,9 +81,9 @@ impl BufferMemory {
 }
 
 pub trait GfxBuffer: GfxCast {
-    fn resize_buffer(&self);
+    fn set_data(&self, start_offset: u32, data: &[u8]);
+    fn resize_buffer(&self, new_size: u32);
     fn get_buffer_memory(&self) -> BufferMemory;
-    fn submit_data(&self, memory: &BufferMemory);
     fn buffer_size(&self) -> u32;
 }
 

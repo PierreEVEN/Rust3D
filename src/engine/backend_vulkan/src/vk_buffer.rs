@@ -1,15 +1,20 @@
-﻿use std::cell::RefCell;
+﻿use core::panicking::AssertKind::Ne;
+use std::any::Any;
+use std::cell::RefCell;
 use std::ops::Deref;
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
+use std::sync::atomic::{AtomicI64, AtomicU32, Ordering};
 
 use ash::vk::{Buffer, BufferUsageFlags, DeviceSize};
 use gpu_allocator::{AllocationError, MemoryLocation};
 use gpu_allocator::vulkan::{Allocation, AllocationCreateDesc, Allocator};
 
 use gfx::buffer::{BufferAccess, BufferCreateInfo, BufferMemory, BufferType, BufferUsage, GfxBuffer};
+use gfx::gfx_resource::{GfxImageBuilder, GfxResource};
 use gfx::GfxRef;
+use gfx::surface::GfxImageID;
 
-use crate::{GfxVulkan};
+use crate::{GfxVulkan, vk_check};
 
 pub struct VkBufferAccess(MemoryLocation);
 
@@ -49,18 +54,75 @@ impl From<BufferUsage> for VkBufferUsage {
     }
 }
 
+pub struct RbBuffer {}
+
+impl GfxImageBuilder<Arc<RwLock<Allocation>>> for RbBuffer {
+    fn build(&self, gfx: &GfxRef, swapchain_ref: &GfxImageID) -> Arc<RwLock<Allocation>> {
+        todo!()
+    }
+}
+
 pub struct VkBuffer {
-    pub allocation: Allocation,
+    pub allocation: GfxResource<Arc<RwLock<Allocation>>>,
     pub handle: Buffer,
-    allocator: Arc<RefCell<Allocator>>,
+    buffer_size: AtomicU32,
+    buffer_type: BufferType,
+    gfx: GfxRef,
 }
 
 impl GfxBuffer for VkBuffer {
-    fn resize_buffer(&self) {
-        todo!()
+    fn set_data(&self, start_offset: u32, data: &[u8]) {
+        if self.buffer_type == BufferType::Immutable {
+            panic!("Modifying data on immutable buffers is not allowed");
+        }
+        self.resize_buffer(start_offset + data.len() as u32);
+        
+        match self.buffer_type {
+            BufferType::Immutable => {}
+            BufferType::Static => {
+                match self.allocation.get_static().write().unwrap().mapped_ptr() {
+                    None => { panic!("memory is not host visible") }
+                    Some(allocation) => unsafe {
+                        data.as_ptr().copy_to((allocation.as_ptr() as *mut u8).offset(start_offset as isize), data.len());
+                    }
+                }
+            }
+            BufferType::Dynamic => {
+                
+            }
+            BufferType::Immediate => {
+                
+            }
+        }
+    }
+
+    fn resize_buffer(&self, new_size: u32) {
+        if self.buffer_size.load(Ordering::Acquire) == new_size { return; }
+        self.buffer_size.store(new_size, Ordering::Release);
+
+        match self.buffer_type {
+            BufferType::Immutable => {
+                panic!("an immutable buffer is not resizable");
+            }
+            BufferType::Static => {
+                vk_check!(unsafe { self.gfx.cast::<GfxVulkan>().device.handle.device_wait_idle() });
+                self.allocation.invalidate(&self.gfx, RbBuffer {});
+            }
+            BufferType::Dynamic => {
+                todo!();
+            }
+            BufferType::Immediate => {
+                self.allocation.invalidate(&self.gfx, RbBuffer {});
+            }
+        }
     }
 
     fn get_buffer_memory(&self) -> BufferMemory {
+        match self.buffer_type {
+            BufferType::Immutable | BufferType::Static => {}
+            BufferType::Dynamic | BufferType::Immediate => {}
+        }
+
         BufferMemory::from(match self.allocation.mapped_ptr() {
             None => { panic!("memory is not host visible") }
             Some(allocation) => {
@@ -69,8 +131,6 @@ impl GfxBuffer for VkBuffer {
         }, self.allocation.size() as usize)
     }
 
-    fn submit_data(&self, _: &BufferMemory) {}
-
     fn buffer_size(&self) -> u32 {
         self.allocation.size() as u32
     }
@@ -78,6 +138,7 @@ impl GfxBuffer for VkBuffer {
 
 impl VkBuffer {
     pub fn new(gfx: &GfxRef, create_infos: &BufferCreateInfo) -> Self {
+        let buffer_size = if create_infos.size <= 0 { 1 } else { create_infos.size };
         let mut usage = VkBufferUsage::from(create_infos.usage).0;
 
         if create_infos.buffer_type != BufferType::Immutable
@@ -86,12 +147,12 @@ impl VkBuffer {
         }
 
         let ci_buffer = ash::vk::BufferCreateInfo::builder()
-            .size(create_infos.size as DeviceSize)
+            .size(buffer_size as DeviceSize)
             .usage(usage);
 
         let buffer = unsafe { gfx.cast::<GfxVulkan>().device.handle.create_buffer(&ci_buffer, None) }.unwrap();
         let requirements = unsafe { gfx.cast::<GfxVulkan>().device.handle.get_buffer_memory_requirements(buffer) };
-        
+
         let allocator = gfx.cast::<GfxVulkan>().device.allocator.clone();
 
         let allocation = (&*allocator).borrow_mut().allocate(&AllocationCreateDesc {
@@ -100,7 +161,7 @@ impl VkBuffer {
             location: *VkBufferAccess::from(create_infos.access),
             linear: false,
         });
-        
+
         Self {
             allocation: match allocation {
                 Ok(alloc) => {

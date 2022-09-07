@@ -19,16 +19,20 @@ impl Mesh for VkMesh {
         &self.vertex_buffer
     }
 
-    fn set_data(&self, index_count: u32, vertex_count: u32, vertex_data: &[u8], index_data: &[u8]) {
-        
-        if self.index_buffer.buffer_size() != index_count * self.index_buffer_type as u32 {
-            self.index_buffer.resize_buffer()
+    fn set_data(&self, from_vertex: u32, vertex_data: &[u8], from_index: u32, index_data: &[u8]) {
+        if (from_index + index_data.len() as u32) * self.index_buffer_type as u32 > self.index_buffer.buffer_size() {
+            self.index_buffer.resize_buffer((from_index + index_data.len() as u32) * self.index_buffer_type as u32)
         }
 
-        if self.vertex_buffer.buffer_size() != index_count * self.vertex_struct_size as u32 {
-            self.vertex_buffer.resize_buffer()
+        if (from_vertex + vertex_data.len() as u32) * self.vertex_struct_size as u32 > self.vertex_buffer.buffer_size()  {
+            self.vertex_buffer.resize_buffer((from_vertex + vertex_data.len() as u32) * self.vertex_struct_size as u32)
         }
         
+        let index_memory = self.index_buffer.get_buffer_memory();
+        unsafe { index_data.as_ptr().copy_to(index_memory.get_ptr(self.index_buffer_type as usize * from_index as usize), index_data.len() as usize * self.index_buffer_type as usize) }
+        
+        let vertex_memory = self.vertex_buffer.get_buffer_memory();
+        unsafe { vertex_data.as_ptr().copy_to(vertex_memory.get_ptr(self.vertex_struct_size as usize * from_vertex as usize), vertex_data.len() as usize * self.vertex_struct_size as usize) }
     }
 }
 

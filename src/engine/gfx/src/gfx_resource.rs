@@ -81,11 +81,11 @@ impl<T: Clone> GfxResource<T> {
         self.resources.read().unwrap().get(reference).unwrap().clone()
     }
 
-    pub fn invalidate(&self, gfx: &GfxRef, builder: Box<dyn GfxImageBuilder<T>>) {
+    pub fn invalidate<U: GfxImageBuilder<T> + 'static>(&self, gfx: &GfxRef, builder: U) {
         let mut resource_map = self.resources.write().unwrap();
         (*resource_map).clear();
         let mut builder_ref = self.builder.write().unwrap();
-        *builder_ref = builder;
+        *builder_ref = Box::new(builder);
 
         if self.static_resource {
             let static_ref = GfxImageID::null();

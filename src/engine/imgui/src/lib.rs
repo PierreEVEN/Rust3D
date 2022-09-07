@@ -1,4 +1,5 @@
-use std::fs;
+use std::{fs, slice};
+use std::mem::size_of;
 use std::os::raw::c_char;
 use std::path::Path;
 use std::ptr::null_mut;
@@ -6,18 +7,19 @@ use std::sync::Arc;
 
 use memoffset::offset_of;
 
-use gfx::buffer::BufferMemory;
+use gfx::buffer::{BufferMemory, BufferType};
 use gfx::command_buffer::GfxCommandBuffer;
 use gfx::GfxRef;
 use gfx::image::{GfxImage, GfxImageUsageFlags, ImageCreateInfos, ImageParams, ImageUsage};
 use gfx::image::ImageType::Texture2d;
 use gfx::image_sampler::{ImageSampler, SamplerCreateInfos};
+use gfx::mesh::{IndexBufferType, Mesh, MeshCreateInfos};
 use gfx::render_pass::{GraphRenderCallback, RenderPass, RenderPassAttachment, RenderPassCreateInfos, RenderPassInstance};
 use gfx::shader::{PassID, ShaderLanguage, ShaderProgram, ShaderProgramInfos, ShaderProgramStage, ShaderPropertyType, ShaderStage, ShaderStageInput};
 use gfx::shader_instance::{BindPoint, ShaderInstance, ShaderInstanceCreateInfos};
 use gfx::surface::GfxSurface;
 use gfx::types::{ClearValues, PixelFormat, Scissors};
-use imgui_bindings::{igCreateContext, igEndFrame, igGetDrawData, igGetIO, igGetMainViewport, igGetStyle, igNewFrame, igRender, igStyleColorsDark, ImDrawVert, ImFontAtlas_GetTexDataAsRGBA32, ImGuiBackendFlags__ImGuiBackendFlags_HasMouseCursors, ImGuiBackendFlags__ImGuiBackendFlags_HasSetMousePos, ImGuiBackendFlags__ImGuiBackendFlags_PlatformHasViewports, ImGuiConfigFlags__ImGuiConfigFlags_DockingEnable, ImGuiConfigFlags__ImGuiConfigFlags_NavEnableGamepad, ImGuiConfigFlags__ImGuiConfigFlags_NavEnableKeyboard, ImGuiConfigFlags__ImGuiConfigFlags_ViewportsEnable, ImGuiContext, ImTextureID, ImVec2, ImVec4};
+use imgui_bindings::{igCreateContext, igEndFrame, igGetDrawData, igGetIO, igGetMainViewport, igGetStyle, igNewFrame, igRender, igShowDemoWindow, igStyleColorsDark, ImDrawIdx, ImDrawVert, ImFontAtlas_GetTexDataAsRGBA32, ImGuiBackendFlags__ImGuiBackendFlags_HasMouseCursors, ImGuiBackendFlags__ImGuiBackendFlags_HasSetMousePos, ImGuiBackendFlags__ImGuiBackendFlags_PlatformHasViewports, ImGuiConfigFlags__ImGuiConfigFlags_DockingEnable, ImGuiConfigFlags__ImGuiConfigFlags_NavEnableGamepad, ImGuiConfigFlags__ImGuiConfigFlags_NavEnableKeyboard, ImGuiConfigFlags__ImGuiConfigFlags_ViewportsEnable, ImGuiContext, ImTextureID, ImVec2, ImVec4};
 use maths::vec2::Vec2F32;
 use maths::vec4::Vec4F32;
 use shader_compiler::backends::backend_shaderc::{BackendShaderC, ShaderCIncluder};
@@ -32,6 +34,7 @@ pub struct ImGUiContext {
     pub image_sampler: Arc<dyn ImageSampler>,
     pub render_pass: Arc<dyn RenderPass>,
     pub context: *mut ImGuiContext,
+    pub mesh: Arc<dyn Mesh>,
     _gfx: GfxRef,
 }
 
@@ -184,6 +187,16 @@ impl ImGUiContext {
         shader_instance.bind_texture(&BindPoint::new("sTexture"), &font_texture);
         shader_instance.bind_sampler(&BindPoint::new("sSampler"), &image_sampler);
 
+        let mesh = gfx.create_mesh(&MeshCreateInfos {
+            vertex_structure_size: size_of::<ImDrawVert>() as u32,
+            vertex_count: 0,
+            index_count: 0,
+            buffer_type: BufferType::Immediate,
+            index_buffer_type: IndexBufferType::Uint16,
+            vertex_data: None,
+            index_data: None,
+        });
+
         Arc::new(Self {
             font_texture,
             context: imgui_context,
@@ -192,6 +205,7 @@ impl ImGUiContext {
             shader_instance,
             image_sampler,
             render_pass: imgui_render_pass,
+            mesh,
         })
     }
 
@@ -200,6 +214,7 @@ impl ImGUiContext {
 
         struct ImGuiRenderPassData {
             shader_program: Arc<dyn ShaderProgram>,
+            mesh: Arc<dyn Mesh>,
         }
         impl GraphRenderCallback for ImGuiRenderPassData {
             fn draw(&self, command_buffer: &Arc<dyn GfxCommandBuffer>) {
@@ -210,6 +225,10 @@ impl ImGUiContext {
 
 
                 unsafe { igNewFrame(); }
+
+
+                unsafe { igShowDemoWindow(null_mut()); }
+                
                 unsafe { igEndFrame(); }
                 unsafe { igRender(); }
                 let draw_data = unsafe { &*igGetDrawData() };
@@ -218,7 +237,31 @@ impl ImGUiContext {
                 if width <= 0.0 || height <= 0.0 || draw_data.TotalVtxCount == 0 {
                     return;
                 }
+                /*
+                 * BUILD VERTEX BUFFERS
+                 */
+                unsafe {
+                    let mut vertex_start = 0;
+                    let mut index_start = 0;
+                    for n in 0..draw_data.CmdListsCount
+                    {
+                        let cmd_list = &**draw_data.CmdLists.offset(n as isize);
 
+                        self.mesh.set_data(
+                            vertex_start,
+                            slice::from_raw_parts(cmd_list.VtxBuffer.Data as *const u8, cmd_list.VtxBuffer.Size as usize * size_of::<ImDrawVert>() as usize),
+                            index_start,
+                            slice::from_raw_parts(cmd_list.IdxBuffer.Data as *const u8, cmd_list.IdxBuffer.Size as usize * size_of::<ImDrawIdx>() as usize),
+                        );
+
+                        vertex_start += cmd_list.VtxBuffer.Size as u32;
+                        index_start += cmd_list.IdxBuffer.Size as u32;
+                    }
+                }
+
+                /*
+                 * PREPARE MATERIALS
+                 */
                 let scale_x = 2.0 / draw_data.DisplaySize.x;
                 let scale_y = -2.0 / draw_data.DisplaySize.y;
 
@@ -242,7 +285,7 @@ impl ImGUiContext {
                 );
 
                 // Will project scissor/clipping rectangles into framebuffer space
-                let clip_off   = draw_data.DisplayPos;       // (0,0) unless using multi-viewports
+                let clip_off = draw_data.DisplayPos;       // (0,0) unless using multi-viewports
                 let clip_scale = draw_data.FramebufferScale; // (1,1) unless using retina display which are often (2,2)
 
                 // Render command lists
@@ -295,17 +338,24 @@ impl ImGUiContext {
                                 }
                                  */
 
-                                    // command_buffer.draw_mesh(mesh, imgui_material_instance.get(), pcmd.IdxOffset + global_idx_offset, pcmd.VtxOffset + global_vtx_offset, pcmd.ElemCount);
+                                    command_buffer.bind_program(&self.shader_program);
+                                    command_buffer.draw_mesh_advanced(&self.mesh,
+                                                                      pcmd.IdxOffset + global_idx_offset,
+                                                                      pcmd.VtxOffset + global_vtx_offset,
+                                                                      pcmd.ElemCount,
+                                                                      1,
+                                                                      0,
+                                    );
                                 }
                             }
                         }
                     }
-                    global_idx_offset += cmd_list.IdxBuffer.Size;
-                    global_vtx_offset += cmd_list.VtxBuffer.Size;
+                    global_idx_offset += cmd_list.IdxBuffer.Size as u32;
+                    global_vtx_offset += cmd_list.VtxBuffer.Size as u32;
                 }
             }
         }
-        render_pass_instance.on_render(Box::new(ImGuiRenderPassData { shader_program: self.shader_program.clone() }));
+        render_pass_instance.on_render(Box::new(ImGuiRenderPassData { shader_program: self.shader_program.clone(), mesh: self.mesh.clone() }));
         render_pass_instance
     }
 }

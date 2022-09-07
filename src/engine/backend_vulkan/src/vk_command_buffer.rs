@@ -1,6 +1,6 @@
 ﻿use std::sync::{Arc, RwLock};
 
-use ash::vk::{CommandBuffer, CommandBufferAllocateInfo, CommandBufferBeginInfo, CommandBufferLevel, CommandBufferUsageFlags, CommandPool, CommandPoolCreateFlags, CommandPoolCreateInfo, PipelineBindPoint, QueueFlags, ShaderStageFlags, SubmitInfo};
+use ash::vk::{CommandBuffer, CommandBufferAllocateInfo, CommandBufferBeginInfo, CommandBufferLevel, CommandBufferUsageFlags, CommandPool, CommandPoolCreateFlags, CommandPoolCreateInfo, Extent2D, Offset2D, PipelineBindPoint, QueueFlags, Rect2D, ShaderStageFlags, SubmitInfo};
 
 use gfx::buffer::{BufferMemory, GfxBuffer};
 use gfx::command_buffer::GfxCommandBuffer;
@@ -9,6 +9,7 @@ use gfx::GfxRef;
 use gfx::shader::{PassID, ShaderProgram, ShaderStage};
 use gfx::shader_instance::ShaderInstance;
 use gfx::surface::{GfxImageID, GfxSurface};
+use gfx::types::Scissors;
 
 use crate::{GfxVulkan, vk_check, VkShaderInstance, VkShaderProgram};
 
@@ -146,7 +147,13 @@ impl GfxCommandBuffer for VkCommandBuffer {
         unsafe { self.gfx.cast::<GfxVulkan>().device.handle.cmd_draw(self.command_buffer.get(&*self.image_id.read().unwrap()), vertex_count, instance_count, first_vertex, first_instance) }
     }
 
-    fn set_scissor(&self) {
+    fn set_scissor(&self, scissors: Scissors) {
+        unsafe {
+            self.gfx.cast::<GfxVulkan>().device.handle.cmd_set_scissor(self.command_buffer.get(&*self.image_id.read().unwrap()), 0, &[Rect2D {
+                extent: Extent2D { width: scissors.width, height: scissors.height },
+                offset: Offset2D { x: scissors.min_x, y: scissors.min_y },
+            }])
+        }
         todo!()
     }
 

@@ -15,8 +15,6 @@ pub fn _demo_objects(gfx: &GfxRef, surface: &Arc<dyn GfxSurface>) {
         usage: BufferUsage::IndexData,
         access: BufferAccess::Default,
         size: 2048,
-        alignment: 16,
-        memory_type_bits: 1,
     });
 
 

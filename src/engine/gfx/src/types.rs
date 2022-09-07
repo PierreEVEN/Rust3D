@@ -439,3 +439,11 @@ impl<T: 'static> GfxCast for T {
         self
     }
 }
+
+#[derive(Clone, Copy)]
+pub struct Scissors {
+    pub min_x: i32,
+    pub min_y: i32,
+    pub width: u32,
+    pub height: u32,
+}

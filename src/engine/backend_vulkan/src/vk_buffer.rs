@@ -70,6 +70,10 @@ impl GfxBuffer for VkBuffer {
     }
 
     fn submit_data(&self, _: &BufferMemory) {}
+
+    fn buffer_size(&self) -> u32 {
+        self.allocation.size() as u32
+    }
 }
 
 impl VkBuffer {

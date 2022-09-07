@@ -16,8 +16,8 @@ use gfx::render_pass::{GraphRenderCallback, RenderPass, RenderPassAttachment, Re
 use gfx::shader::{PassID, ShaderLanguage, ShaderProgram, ShaderProgramInfos, ShaderProgramStage, ShaderPropertyType, ShaderStage, ShaderStageInput};
 use gfx::shader_instance::{BindPoint, ShaderInstance, ShaderInstanceCreateInfos};
 use gfx::surface::GfxSurface;
-use gfx::types::{ClearValues, PixelFormat};
-use imgui_bindings::{igCreateContext, igEndFrame, igGetDrawData, igGetIO, igGetMainViewport, igGetStyle, igNewFrame, igRender, igStyleColorsDark, ImDrawVert, ImFontAtlas_GetTexDataAsRGBA32, ImGuiBackendFlags__ImGuiBackendFlags_HasMouseCursors, ImGuiBackendFlags__ImGuiBackendFlags_HasSetMousePos, ImGuiBackendFlags__ImGuiBackendFlags_PlatformHasViewports, ImGuiConfigFlags__ImGuiConfigFlags_DockingEnable, ImGuiConfigFlags__ImGuiConfigFlags_NavEnableGamepad, ImGuiConfigFlags__ImGuiConfigFlags_NavEnableKeyboard, ImGuiConfigFlags__ImGuiConfigFlags_ViewportsEnable, ImGuiContext, ImTextureID, ImVec2};
+use gfx::types::{ClearValues, PixelFormat, Scissors};
+use imgui_bindings::{igCreateContext, igEndFrame, igGetDrawData, igGetIO, igGetMainViewport, igGetStyle, igNewFrame, igRender, igStyleColorsDark, ImDrawVert, ImFontAtlas_GetTexDataAsRGBA32, ImGuiBackendFlags__ImGuiBackendFlags_HasMouseCursors, ImGuiBackendFlags__ImGuiBackendFlags_HasSetMousePos, ImGuiBackendFlags__ImGuiBackendFlags_PlatformHasViewports, ImGuiConfigFlags__ImGuiConfigFlags_DockingEnable, ImGuiConfigFlags__ImGuiConfigFlags_NavEnableGamepad, ImGuiConfigFlags__ImGuiConfigFlags_NavEnableKeyboard, ImGuiConfigFlags__ImGuiConfigFlags_ViewportsEnable, ImGuiContext, ImTextureID, ImVec2, ImVec4};
 use maths::vec2::Vec2F32;
 use maths::vec4::Vec4F32;
 use shader_compiler::backends::backend_shaderc::{BackendShaderC, ShaderCIncluder};
@@ -239,54 +239,69 @@ impl ImGUiContext {
                         translate_y: -1.0 - draw_data.DisplayPos.y * scale_y,
                     }),
                     ShaderStage::Vertex,
-                )
+                );
 
+                // Will project scissor/clipping rectangles into framebuffer space
+                let clip_off   = draw_data.DisplayPos;       // (0,0) unless using multi-viewports
+                let clip_scale = draw_data.FramebufferScale; // (1,1) unless using retina display which are often (2,2)
+
+                // Render command lists
+                // (Because we merged all buffers into a single one, we maintain our own offset into them)
+                let mut global_idx_offset = 0;
+                let mut global_vtx_offset = 0;
 
                 for n in 0..draw_data.CmdListsCount
                 {
                     let cmd_list = unsafe { &**draw_data.CmdLists.offset(n as isize) };
                     for cmd_i in 0..cmd_list.CmdBuffer.Size
                     {
-                        let pcmd = unsafe{*cmd_list.CmdBuffer[cmd_i as isize]};
-                        if pcmd.UserCallback != null_mut() {
-                            pcmd.UserCallback(cmd_list, pcmd);
-                        }
-                        else
-                        {
-                            // Project scissor/clipping rectangles into framebuffer space
-                            ImVec4
-                            clip_rect;
-                            clip_rect.x = (pcmd -> ClipRect.x - clip_off.x) *clip_scale.x;
-                            clip_rect.y = (pcmd -> ClipRect.y - clip_off.y) *clip_scale.y;
-                            clip_rect.z = (pcmd -> ClipRect.z - clip_off.x) *clip_scale.x;
-                            clip_rect.w = (pcmd -> ClipRect.w - clip_off.y) *clip_scale.y;
+                        let pcmd = unsafe { &*cmd_list.CmdBuffer.Data.offset(cmd_i as isize) };
+                        match pcmd.UserCallback {
+                            Some(callback) => {
+                                unsafe { callback(cmd_list, pcmd); }
+                            }
+                            None => {
+                                // Project scissor/clipping rectangles into framebuffer space
 
-                            if (clip_rect.x < fb_width && clip_rect.y < fb_height && clip_rect.z >= 0.0f && clip_rect.w >= 0.0f)
-                            {
-                                // Negative offsets are illegal for vkCmdSetScissor
-                                if (clip_rect.x < 0.0f)
-                                clip_rect.x = 0.0f;
-                                if (clip_rect.y < 0.0f)
-                                clip_rect.y = 0.0f;
+                                let mut clip_rect = ImVec4 {
+                                    x: (pcmd.ClipRect.x - clip_off.x) * clip_scale.x,
+                                    y: (pcmd.ClipRect.y - clip_off.y) * clip_scale.y,
+                                    z: (pcmd.ClipRect.z - clip_off.x) * clip_scale.x,
+                                    w: (pcmd.ClipRect.w - clip_off.y) * clip_scale.y,
+                                };
 
-                                // Apply scissor/clipping rectangle
-                                command_buffer -> set_scissor(gfx::Scissor {
-                                .offset_x = static_cast<int32_t>(clip_rect.x),
-                                .offset_y = static_cast<int32_t>(clip_rect.y),
-                                .width    = static_cast<uint32_t>(clip_rect.z - clip_rect.x),
-                                .height   = static_cast<uint32_t>(clip_rect.w - clip_rect.y),
-                            });
+                                if clip_rect.x < command_buffer.get_surface().get_extent().x as f32 && clip_rect.y < command_buffer.get_surface().get_extent().y as f32 && clip_rect.z >= 0.0 && clip_rect.w >= 0.0
+                                {
+                                    // Negative offsets are illegal for vkCmdSetScissor
+                                    if clip_rect.x < 0.0 {
+                                        clip_rect.x = 0.0;
+                                    }
+                                    if clip_rect.y < 0.0 {
+                                        clip_rect.y = 0.0;
+                                    }
 
-                                // Bind descriptor set with font or user texture
-                                if (pcmd -> TextureId && false)
-                                imgui_material_instance -> bind_texture("test", nullptr); // TODO handle textures
+                                    // Apply scissor/clipping rectangle
+                                    command_buffer.set_scissor(Scissors {
+                                        min_x: clip_rect.x as i32,
+                                        min_y: clip_rect.y as i32,
+                                        width: (clip_rect.z - clip_rect.x) as u32,
+                                        height: (clip_rect.w - clip_rect.y) as u32,
+                                    });
 
-                                command_buffer -> draw_mesh(mesh, imgui_material_instance.get(), pcmd->IdxOffset + global_idx_offset, pcmd->VtxOffset + global_vtx_offset, pcmd->ElemCount);
+                                    // Bind descriptor set with font or user texture
+                                    /*
+                                if pcmd.TextureId {
+                                    imgui_material_instance.bind_texture("test", nullptr); // TODO handle textures
+                                }
+                                 */
+
+                                    // command_buffer.draw_mesh(mesh, imgui_material_instance.get(), pcmd.IdxOffset + global_idx_offset, pcmd.VtxOffset + global_vtx_offset, pcmd.ElemCount);
+                                }
                             }
                         }
                     }
-                    global_idx_offset += cmd_list -> IdxBuffer.Size;
-                    global_vtx_offset += cmd_list -> VtxBuffer.Size;
+                    global_idx_offset += cmd_list.IdxBuffer.Size;
+                    global_vtx_offset += cmd_list.VtxBuffer.Size;
                 }
             }
         }

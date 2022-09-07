@@ -47,8 +47,6 @@ pub struct BufferCreateInfo {
     pub usage: BufferUsage,
     pub access: BufferAccess,
     pub size: u32,
-    pub alignment: u32,
-    pub memory_type_bits: u32,
 }
 
 pub struct BufferMemory {
@@ -86,6 +84,7 @@ pub trait GfxBuffer: GfxCast {
     fn resize_buffer(&self);
     fn get_buffer_memory(&self) -> BufferMemory;
     fn submit_data(&self, memory: &BufferMemory);
+    fn buffer_size(&self) -> u32;
 }
 
 impl dyn GfxBuffer {

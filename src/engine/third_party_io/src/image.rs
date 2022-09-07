@@ -16,7 +16,7 @@ pub enum ImageFormat {
     JPG,
     PNG,
     PSD,
-    TGA
+    TGA,
 }
 
 pub fn read_image_from_file(gfx: &GfxRef, file: &Path) -> Result<Arc<dyn GfxImage>, Error> {
@@ -24,7 +24,7 @@ pub fn read_image_from_file(gfx: &GfxRef, file: &Path) -> Result<Arc<dyn GfxImag
     let mut height: i32 = 0;
     let mut components: i32 = 0;
     let required_components: i32 = 4;
-    
+
     unsafe {
         match fs::read(file) {
             Ok(data) => {
@@ -36,12 +36,12 @@ pub fn read_image_from_file(gfx: &GfxRef, file: &Path) -> Result<Arc<dyn GfxImag
                         pixel_format: PixelFormat::R8G8B8A8_UNORM,
                         image_type: ImageType::Texture2d(width as u32, height as u32),
                         read_only: true,
-                        mip_levels: Some((width as f32).max( height as f32).max( 1.0).log2().floor() as u16 + 1),
-                        usage: GfxImageUsageFlags::from_flag(ImageUsage::Sampling)
+                        mip_levels: Some((width as f32).max(height as f32).max(1.0).log2().floor() as u16 + 1),
+                        usage: GfxImageUsageFlags::from_flag(ImageUsage::Sampling),
                     },
-                    pixels: Some(slice::from_raw_parts(raw_data as *const u8, width as usize * height as usize * components as usize).to_vec())
+                    pixels: Some(slice::from_raw_parts(raw_data as *const u8, width as usize * height as usize * components as usize).to_vec()),
                 });
-                
+
                 stbi_image_free(raw_data);
 
                 Ok(image)

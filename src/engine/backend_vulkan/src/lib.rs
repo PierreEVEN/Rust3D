@@ -12,6 +12,7 @@ use gfx::buffer::{BufferCreateInfo, GfxBuffer};
 use gfx::command_buffer::GfxCommandBuffer;
 use gfx::image::{GfxImage, ImageCreateInfos};
 use gfx::image_sampler::{ImageSampler, SamplerCreateInfos};
+use gfx::mesh::{Mesh, MeshCreateInfos};
 use gfx::render_pass::{RenderPass, RenderPassCreateInfos};
 use gfx::shader::{PassID, ShaderProgram, ShaderProgramInfos};
 use gfx::shader_instance::{ShaderInstance, ShaderInstanceCreateInfos};
@@ -24,6 +25,7 @@ use crate::vk_device::VkDevice;
 use crate::vk_image::VkImage;
 use crate::vk_image_sampler::VkImageSampler;
 use crate::vk_instance::{InstanceCreateInfos, VkInstance};
+use crate::vk_mesh::VkMesh;
 use crate::vk_physical_device::VkPhysicalDevice;
 use crate::vk_render_pass::VkRenderPass;
 use crate::vk_shader::VkShaderProgram;
@@ -45,6 +47,7 @@ pub mod vk_framebuffer;
 pub mod vk_image_sampler;
 pub mod vk_shader_instance;
 pub mod vk_descriptor_pool;
+pub mod vk_mesh;
 
 pub static mut G_VULKAN: Option<Entry> = None;
 
@@ -142,6 +145,10 @@ impl GfxInterface for GfxVulkan {
 
     fn create_command_buffer(&self, surface: &Arc<dyn GfxSurface>) -> Arc<dyn GfxCommandBuffer> {
         VkCommandBuffer::new(&self.get_ref(), surface)
+    }
+
+    fn create_mesh(&self, create_infos: &MeshCreateInfos) -> Arc<dyn Mesh> {
+        VkMesh::new(&self.get_ref(), create_infos)
     }
 
     fn get_ref(&self) -> GfxRef {

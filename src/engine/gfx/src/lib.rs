@@ -5,6 +5,7 @@ use crate::buffer::{BufferCreateInfo, GfxBuffer};
 use crate::command_buffer::GfxCommandBuffer;
 use crate::image::{GfxImage, ImageCreateInfos};
 use crate::image_sampler::{ImageSampler, SamplerCreateInfos};
+use crate::mesh::{Mesh, MeshCreateInfos};
 use crate::render_pass::{RenderPass, RenderPassCreateInfos};
 use crate::shader::{PassID, ShaderProgram, ShaderProgramInfos};
 use crate::shader_instance::{ShaderInstance, ShaderInstanceCreateInfos};
@@ -21,6 +22,7 @@ pub mod gfx_resource;
 pub mod command_buffer;
 pub mod image_sampler;
 pub mod shader_instance;
+pub mod mesh;
 
 pub type GfxRef = Arc<dyn GfxInterface>;
 
@@ -36,6 +38,7 @@ pub trait GfxInterface: GfxCast {
     fn create_shader_instance(&self, create_infos: ShaderInstanceCreateInfos, parent: &dyn ShaderProgram) -> Arc<dyn ShaderInstance>;
     fn find_render_pass(&self, pass_id: &PassID) -> Option<Arc<dyn RenderPass>>;
     fn create_command_buffer(&self, surface: &Arc<dyn GfxSurface>) -> Arc<dyn GfxCommandBuffer>;
+    fn create_mesh(&self, create_infos: &MeshCreateInfos) -> Arc<dyn Mesh>;
     fn get_ref(&self) -> GfxRef;
 }
 

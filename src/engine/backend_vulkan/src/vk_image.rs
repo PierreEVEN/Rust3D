@@ -50,8 +50,6 @@ impl GfxImage for VkImage {
                 usage: BufferUsage::TransferMemory,
                 access: BufferAccess::CpuToGpu,
                 size: data.len() as u32,
-                alignment: 0,
-                memory_type_bits: 0,
             });
 
             unsafe {

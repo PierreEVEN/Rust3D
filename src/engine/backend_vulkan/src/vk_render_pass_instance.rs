@@ -164,7 +164,7 @@ impl RenderPassInstance for VkRenderPassInstance {
             }
             for _att_depth in &self.owner.get_config().depth_attachment {}
         }
-        self.framebuffers.invalidate(&self.gfx, Box::new(RbFramebuffer { render_pass, res: new_res, images }));
+        self.framebuffers.invalidate(&self.gfx, RbFramebuffer { render_pass, res: new_res, images });
         let mut res = self.resolution.write().unwrap();
         *res = new_res;
     }

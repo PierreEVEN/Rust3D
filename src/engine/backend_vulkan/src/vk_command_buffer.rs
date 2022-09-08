@@ -1,18 +1,18 @@
 ﻿use std::sync::{Arc, RwLock};
 
-use ash::vk::{CommandBuffer, CommandBufferAllocateInfo, CommandBufferBeginInfo, CommandBufferLevel, CommandBufferUsageFlags, CommandPool, CommandPoolCreateFlags, CommandPoolCreateInfo, Extent2D, Offset2D, PipelineBindPoint, QueueFlags, Rect2D, ShaderStageFlags, SubmitInfo};
+use ash::vk::{CommandBuffer, CommandBufferAllocateInfo, CommandBufferBeginInfo, CommandBufferLevel, CommandBufferUsageFlags, CommandPool, CommandPoolCreateFlags, CommandPoolCreateInfo, DeviceSize, Extent2D, IndexType, Offset2D, PipelineBindPoint, QueueFlags, Rect2D, ShaderStageFlags, SubmitInfo};
 
-use gfx::buffer::{BufferMemory};
+use gfx::buffer::{BufferMemory, GfxBuffer};
 use gfx::command_buffer::GfxCommandBuffer;
 use gfx::gfx_resource::{GfxImageBuilder, GfxResource};
 use gfx::GfxRef;
-use gfx::mesh::Mesh;
+use gfx::mesh::{IndexBufferType, Mesh};
 use gfx::shader::{PassID, ShaderProgram, ShaderStage};
 use gfx::shader_instance::ShaderInstance;
 use gfx::surface::{GfxImageID, GfxSurface};
 use gfx::types::Scissors;
 
-use crate::{GfxVulkan, vk_check, VkShaderInstance, VkShaderProgram};
+use crate::{GfxVulkan, vk_check, VkBuffer, VkMesh, VkShaderInstance, VkShaderProgram};
 
 pub struct VkCommandPool {
     pub command_pool: CommandPool,
@@ -136,8 +136,26 @@ impl GfxCommandBuffer for VkCommandBuffer {
         todo!()
     }
 
-    fn draw_mesh_advanced(&self, _mesh: &Arc<dyn Mesh>, _first_index: u32, _vertex_offset: u32, _index_count: u32, _instance_count: u32, _first_instance: u32) {
-        todo!()
+    fn draw_mesh_advanced(&self, mesh: &Arc<dyn Mesh>, first_index: u32, vertex_offset: i32, index_count: u32, instance_count: u32, first_instance: u32) {
+        let index_buffer = mesh.index_buffer().cast::<VkBuffer>();
+        let vertex_buffer = mesh.vertex_buffer().cast::<VkBuffer>();
+        unsafe {
+            self.gfx.cast::<GfxVulkan>().device.handle.cmd_bind_index_buffer(
+                self.command_buffer.get(&*self.image_id.read().unwrap()),
+                index_buffer.get_handle(&*self.image_id.read().unwrap()),
+                0 as DeviceSize,
+                match mesh.index_type() {
+                    IndexBufferType::Uint16 => { IndexType::UINT16 }
+                    IndexBufferType::Uint32 => { IndexType::UINT32 }
+                });
+            
+            self.gfx.cast::<GfxVulkan>().device.handle.cmd_bind_vertex_buffers(
+                self.command_buffer.get(&*self.image_id.read().unwrap()),
+                0,
+                &[vertex_buffer.get_handle(&*self.image_id.read().unwrap())],
+                &[0])
+        }
+        unsafe { self.gfx.cast::<GfxVulkan>().device.handle.cmd_draw_indexed(self.command_buffer.get(&*self.image_id.read().unwrap()), index_count, instance_count, first_index, vertex_offset, first_instance) }
     }
 
     fn draw_mesh_indirect(&self, _mesh: &Arc<dyn Mesh>) {
@@ -155,7 +173,6 @@ impl GfxCommandBuffer for VkCommandBuffer {
                 offset: Offset2D { x: scissors.min_x, y: scissors.min_y },
             }])
         }
-        todo!()
     }
 
     fn push_constant(&self, program: &Arc<dyn ShaderProgram>, data: BufferMemory, stage: ShaderStage) {
@@ -166,7 +183,6 @@ impl GfxCommandBuffer for VkCommandBuffer {
             }, 0, data.as_slice())
         }
     }
-
 
     fn get_pass_id(&self) -> PassID {
         self.pass_id.read().unwrap().clone()

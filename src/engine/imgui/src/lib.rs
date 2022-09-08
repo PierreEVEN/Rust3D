@@ -228,7 +228,7 @@ impl ImGUiContext {
 
 
                 unsafe { igShowDemoWindow(null_mut()); }
-                
+
                 unsafe { igEndFrame(); }
                 unsafe { igRender(); }
                 let draw_data = unsafe { &*igGetDrawData() };
@@ -247,11 +247,11 @@ impl ImGUiContext {
                     {
                         let cmd_list = &**draw_data.CmdLists.offset(n as isize);
 
-                        self.mesh.set_data(
-                            vertex_start,
-                            slice::from_raw_parts(cmd_list.VtxBuffer.Data as *const u8, cmd_list.VtxBuffer.Size as usize * size_of::<ImDrawVert>() as usize),
-                            index_start,
-                            slice::from_raw_parts(cmd_list.IdxBuffer.Data as *const u8, cmd_list.IdxBuffer.Size as usize * size_of::<ImDrawIdx>() as usize),
+                        self.mesh.set_data(command_buffer.get_surface().get_current_ref(),
+                                           vertex_start,
+                                           slice::from_raw_parts(cmd_list.VtxBuffer.Data as *const u8, cmd_list.VtxBuffer.Size as usize * size_of::<ImDrawVert>() as usize),
+                                           index_start,
+                                           slice::from_raw_parts(cmd_list.IdxBuffer.Data as *const u8, cmd_list.IdxBuffer.Size as usize * size_of::<ImDrawIdx>() as usize),
                         );
 
                         vertex_start += cmd_list.VtxBuffer.Size as u32;
@@ -341,7 +341,7 @@ impl ImGUiContext {
                                     command_buffer.bind_program(&self.shader_program);
                                     command_buffer.draw_mesh_advanced(&self.mesh,
                                                                       pcmd.IdxOffset + global_idx_offset,
-                                                                      pcmd.VtxOffset + global_vtx_offset,
+                                                                      (pcmd.VtxOffset + global_vtx_offset) as i32,
                                                                       pcmd.ElemCount,
                                                                       1,
                                                                       0,

@@ -1,4 +1,5 @@
 ﻿use crate::GfxCast;
+use crate::surface::GfxImageID;
 
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub enum BufferType
@@ -42,6 +43,7 @@ pub enum BufferAccess
     GpuToCpu,
 }
 
+#[derive(Copy, Clone)]
 pub struct BufferCreateInfo {
     pub buffer_type: BufferType,
     pub usage: BufferUsage,
@@ -81,10 +83,10 @@ impl BufferMemory {
 }
 
 pub trait GfxBuffer: GfxCast {
-    fn set_data(&self, start_offset: u32, data: &[u8]);
+    fn set_data(&self, frame: &GfxImageID, start_offset: u32, data: &[u8]);
     fn resize_buffer(&self, new_size: u32);
-    fn get_buffer_memory(&self) -> BufferMemory;
     fn buffer_size(&self) -> u32;
+    fn create_infos(&self) -> &BufferCreateInfo;
 }
 
 impl dyn GfxBuffer {

@@ -75,7 +75,7 @@ impl VkShaderInstance {
     }
 
     fn mark_descriptors_dirty(&self) {
-        self.descriptors_dirty.invalidate(&self._gfx, Box::new(RbDescriptorState {}));
+        self.descriptors_dirty.invalidate(&self._gfx, RbDescriptorState {});
     }
 
     pub fn refresh_descriptors(&self, image_id: &GfxImageID) {

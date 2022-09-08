@@ -1,7 +1,7 @@
 ﻿use std::cell::RefCell;
 use std::collections::HashMap;
 use std::os::raw::{c_char, c_void};
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
 use ash::{Device, vk};
 use ash::extensions::khr::Swapchain;
@@ -62,7 +62,7 @@ impl VkQueue {
 pub struct VkDevice {
     pub handle: ash::Device,
     pub queues: HashMap<QueueFlags, Vec<Arc<VkQueue>>>,
-    pub allocator: Arc<RefCell<Allocator>>,
+    pub allocator: Arc<RwLock<Allocator>>,
 }
 
 
@@ -180,7 +180,7 @@ impl VkDevice {
         Self {
             handle: device,
             queues : queue_map,
-            allocator : Arc::new(RefCell::new(allocator)),
+            allocator : Arc::new(RwLock::new(allocator)),
         }
     }
 

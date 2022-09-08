@@ -1,7 +1,8 @@
-﻿use core::panicking::AssertKind::Ne;
-use std::any::Any;
+﻿use std::any::Any;
 use std::cell::RefCell;
+use std::ffi::c_void;
 use std::ops::Deref;
+use std::ptr::NonNull;
 use std::sync::{Arc, RwLock};
 use std::sync::atomic::{AtomicI64, AtomicU32, Ordering};
 
@@ -54,33 +55,90 @@ impl From<BufferUsage> for VkBufferUsage {
     }
 }
 
-pub struct RbBuffer {}
+pub struct RbBuffer {
+    create_infos: BufferCreateInfo,
+}
 
-impl GfxImageBuilder<Arc<RwLock<Allocation>>> for RbBuffer {
-    fn build(&self, gfx: &GfxRef, swapchain_ref: &GfxImageID) -> Arc<RwLock<Allocation>> {
-        todo!()
+impl GfxImageBuilder<BufferContainer> for RbBuffer {
+    fn build(&self, gfx: &GfxRef, swapchain_ref: &GfxImageID) -> BufferContainer {
+        let buffer_size = if self.create_infos.size <= 0 { 1 } else { self.create_infos.size };
+        let mut usage = VkBufferUsage::from(self.create_infos.usage).0;
+
+        if self.create_infos.buffer_type != BufferType::Immutable
+        {
+            usage |= BufferUsageFlags::TRANSFER_DST | BufferUsageFlags::TRANSFER_SRC;
+        }
+
+        let ci_buffer = ash::vk::BufferCreateInfo::builder()
+            .size(buffer_size as DeviceSize)
+            .usage(usage)
+            .build();
+
+        let buffer = vk_check!(unsafe { gfx.cast::<GfxVulkan>().device.handle.create_buffer(&ci_buffer, None) });
+        let requirements = unsafe { gfx.cast::<GfxVulkan>().device.handle.get_buffer_memory_requirements(buffer) };
+
+        let allocation = match gfx.cast::<GfxVulkan>().device.allocator.write().unwrap().allocate(&AllocationCreateDesc {
+            name: "buffer allocation",
+            requirements,
+            location: *VkBufferAccess::from(self.create_infos.access),
+            linear: false,
+        }) {
+            Ok(allocation) => { allocation }
+            Err(alloc_error) => {
+                match alloc_error {
+                    AllocationError::OutOfMemory => { panic!("failed to create buffer : out of memory") }
+                    AllocationError::FailedToMap(_string) => { panic!("failed to create buffer : failed to map : {_string}") }
+                    AllocationError::NoCompatibleMemoryTypeFound => { panic!("failed to create buffer : no compatible memory type found") }
+                    AllocationError::InvalidAllocationCreateDesc => { panic!("failed to create buffer : invalid buffer create infos") }
+                    AllocationError::InvalidAllocatorCreateDesc(_string) => { panic!("failed to create buffer : invalid allocator create infos : {_string}") }
+                    AllocationError::Internal(_string) => { panic!("failed to create buffer : {_string}") }
+                }
+            }
+        };
+
+        unsafe { gfx.cast::<GfxVulkan>().device.handle.bind_buffer_memory(buffer, allocation.memory(), allocation.offset()).unwrap() };
+
+        BufferContainer {
+            buffer,
+            allocation: Arc::new(RwLock::new(allocation)),
+            gfx: gfx.clone(),
+        }
+    }
+}
+
+#[derive(Clone)]
+struct BufferContainer {
+    buffer: Buffer,
+    allocation: Arc<RwLock<Allocation>>,
+    gfx: GfxRef,
+}
+
+impl Drop for BufferContainer {
+    fn drop(&mut self) {
+        self.gfx.cast::<GfxVulkan>().device.allocator.write().unwrap().free(std::mem::replace(&mut self.allocation.write().unwrap(), Allocation::default())).expect("failed to free buffer");
     }
 }
 
 pub struct VkBuffer {
-    pub allocation: GfxResource<Arc<RwLock<Allocation>>>,
-    pub handle: Buffer,
+    container: GfxResource<BufferContainer>,
     buffer_size: AtomicU32,
-    buffer_type: BufferType,
     gfx: GfxRef,
+    create_infos: BufferCreateInfo,
 }
 
 impl GfxBuffer for VkBuffer {
-    fn set_data(&self, start_offset: u32, data: &[u8]) {
-        if self.buffer_type == BufferType::Immutable {
+    fn set_data(&self, frame: &GfxImageID, start_offset: u32, data: &[u8]) {
+        if self.create_infos.buffer_type == BufferType::Immutable {
             panic!("Modifying data on immutable buffers is not allowed");
         }
         self.resize_buffer(start_offset + data.len() as u32);
-        
-        match self.buffer_type {
-            BufferType::Immutable => {}
+
+        match self.create_infos.buffer_type {
+            BufferType::Immutable => {
+                panic!("Modifying data on immutable buffers is not allowed");
+            }
             BufferType::Static => {
-                match self.allocation.get_static().write().unwrap().mapped_ptr() {
+                match self.container.get_static().allocation.read().unwrap().mapped_ptr() {
                     None => { panic!("memory is not host visible") }
                     Some(allocation) => unsafe {
                         data.as_ptr().copy_to((allocation.as_ptr() as *mut u8).offset(start_offset as isize), data.len());
@@ -88,10 +146,15 @@ impl GfxBuffer for VkBuffer {
                 }
             }
             BufferType::Dynamic => {
-                
+                todo!()
             }
             BufferType::Immediate => {
-                
+                match self.container.get(frame).allocation.read().unwrap().mapped_ptr() {
+                    None => { panic!("memory is not host visible") }
+                    Some(allocation_ptr) => unsafe {
+                        data.as_ptr().copy_to((allocation_ptr.as_ptr() as *mut u8).offset(start_offset as isize), data.len());
+                    }
+                }
             }
         }
     }
@@ -100,93 +163,53 @@ impl GfxBuffer for VkBuffer {
         if self.buffer_size.load(Ordering::Acquire) == new_size { return; }
         self.buffer_size.store(new_size, Ordering::Release);
 
-        match self.buffer_type {
+        match self.create_infos.buffer_type {
             BufferType::Immutable => {
                 panic!("an immutable buffer is not resizable");
             }
             BufferType::Static => {
                 vk_check!(unsafe { self.gfx.cast::<GfxVulkan>().device.handle.device_wait_idle() });
-                self.allocation.invalidate(&self.gfx, RbBuffer {});
+                self.container.invalidate(&self.gfx, RbBuffer { create_infos: self.create_infos });
             }
             BufferType::Dynamic => {
                 todo!();
             }
             BufferType::Immediate => {
-                self.allocation.invalidate(&self.gfx, RbBuffer {});
+                self.container.invalidate(&self.gfx, RbBuffer { create_infos: self.create_infos });
             }
         }
-    }
-
-    fn get_buffer_memory(&self) -> BufferMemory {
-        match self.buffer_type {
-            BufferType::Immutable | BufferType::Static => {}
-            BufferType::Dynamic | BufferType::Immediate => {}
-        }
-
-        BufferMemory::from(match self.allocation.mapped_ptr() {
-            None => { panic!("memory is not host visible") }
-            Some(allocation) => {
-                allocation.as_ptr() as *const u8
-            }
-        }, self.allocation.size() as usize)
     }
 
     fn buffer_size(&self) -> u32 {
-        self.allocation.size() as u32
+        self.buffer_size.load(Ordering::Acquire)
+    }
+
+    fn create_infos(&self) -> &BufferCreateInfo {
+        &self.create_infos
     }
 }
 
 impl VkBuffer {
     pub fn new(gfx: &GfxRef, create_infos: &BufferCreateInfo) -> Self {
-        let buffer_size = if create_infos.size <= 0 { 1 } else { create_infos.size };
-        let mut usage = VkBufferUsage::from(create_infos.usage).0;
-
-        if create_infos.buffer_type != BufferType::Immutable
-        {
-            usage |= BufferUsageFlags::TRANSFER_DST | BufferUsageFlags::TRANSFER_SRC;
-        }
-
-        let ci_buffer = ash::vk::BufferCreateInfo::builder()
-            .size(buffer_size as DeviceSize)
-            .usage(usage);
-
-        let buffer = unsafe { gfx.cast::<GfxVulkan>().device.handle.create_buffer(&ci_buffer, None) }.unwrap();
-        let requirements = unsafe { gfx.cast::<GfxVulkan>().device.handle.get_buffer_memory_requirements(buffer) };
-
-        let allocator = gfx.cast::<GfxVulkan>().device.allocator.clone();
-
-        let allocation = (&*allocator).borrow_mut().allocate(&AllocationCreateDesc {
-            name: "buffer allocation",
-            requirements,
-            location: *VkBufferAccess::from(create_infos.access),
-            linear: false,
-        });
+        let allocation = match create_infos.buffer_type {
+            BufferType::Immutable | BufferType::Static => {
+                GfxResource::new_static(gfx, RbBuffer { create_infos: *create_infos })
+            }
+            _ => { GfxResource::new(gfx, RbBuffer { create_infos: *create_infos }) }
+        };
 
         Self {
-            allocation: match allocation {
-                Ok(alloc) => {
-                    unsafe { gfx.cast::<GfxVulkan>().device.handle.bind_buffer_memory(buffer, alloc.memory(), alloc.offset()).unwrap() };
-                    alloc
-                }
-                Err(alloc_error) => {
-                    match alloc_error {
-                        AllocationError::OutOfMemory => { panic!("failed to create buffer : out of memory") }
-                        AllocationError::FailedToMap(_string) => { panic!("failed to create buffer : failed to map : {_string}") }
-                        AllocationError::NoCompatibleMemoryTypeFound => { panic!("failed to create buffer : no compatible memory type found") }
-                        AllocationError::InvalidAllocationCreateDesc => { panic!("failed to create buffer : invalid buffer create infos") }
-                        AllocationError::InvalidAllocatorCreateDesc(_string) => { panic!("failed to create buffer : invalid allocator create infos : {_string}") }
-                        AllocationError::Internal(_string) => { panic!("failed to create buffer : {_string}") }
-                    }
-                }
-            },
-            handle: buffer,
-            allocator,
+            container: allocation,
+            buffer_size: AtomicU32::new(create_infos.size),
+            gfx: gfx.clone(),
+            create_infos: *create_infos,
         }
     }
-}
 
-impl Drop for VkBuffer {
-    fn drop(&mut self) {
-        (&*self.allocator).borrow_mut().free(std::mem::replace(&mut self.allocation, Allocation::default())).expect("failed to free buffer");
+    pub fn get_handle(&self, image: &GfxImageID) -> Buffer {
+        match self.create_infos.buffer_type {
+            BufferType::Immutable | BufferType::Static => { self.container.get_static().buffer }
+            BufferType::Dynamic | BufferType::Immediate => { self.container.get(image).buffer }
+        }
     }
 }

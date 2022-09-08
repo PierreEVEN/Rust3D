@@ -1,4 +1,5 @@
-﻿use std::sync::{Arc, RwLock};
+﻿use std::slice;
+use std::sync::{Arc, RwLock};
 
 use ash::vk;
 use ash::vk::{AccessFlags, BufferImageCopy, CommandBuffer, ComponentMapping, ComponentSwizzle, DependencyFlags, DescriptorImageInfo, Extent3D, Handle, Image, ImageAspectFlags, ImageCreateInfo, ImageLayout, ImageMemoryBarrier, ImageSubresourceLayers, ImageSubresourceRange, ImageTiling, ImageUsageFlags, ImageView, ImageViewCreateInfo, ImageViewType, Offset3D, PipelineStageFlags, QUEUE_FAMILY_IGNORED, QueueFlags, SampleCountFlags, SharingMode};
@@ -35,11 +36,11 @@ impl GfxImage for VkImage {
         self.image_params.pixel_format
     }
 
-    fn get_data(&self) -> Vec<u8> {
+    fn get_data(&self) ->  &[u8] {
         todo!()
     }
 
-    fn set_data(&self, data: Vec<u8>) {
+    fn set_data(&self, data: &[u8]) {
         if data.len() != self.get_data_size() as usize {
             panic!("invalid image memory length : {} (expected {})", data.len(), self.get_data_size());
         }
@@ -53,8 +54,8 @@ impl GfxImage for VkImage {
             });
 
             unsafe {
-                // Copy image data to transfer buffer            
-                data.as_ptr().copy_to(transfer_buffer.get_buffer_memory().get_ptr(0), data.len());
+                // Copy image data to transfer buffer      
+                transfer_buffer.set_data(&GfxImageID::null(), 0, data);
 
                 // Transfer commands
                 let command_buffer = create_command_buffer(&self.gfx);
@@ -63,7 +64,7 @@ impl GfxImage for VkImage {
                 // GPU copy command
                 self.gfx.cast::<GfxVulkan>().device.handle.cmd_copy_buffer_to_image(
                     command_buffer,
-                    transfer_buffer.cast::<VkBuffer>().handle,
+                    transfer_buffer.cast::<VkBuffer>().get_handle(&GfxImageID::null()),
                     self.image.get_static().0,
                     ImageLayout::TRANSFER_DST_OPTIMAL,
                     &[BufferImageCopy {
@@ -146,7 +147,7 @@ impl GfxImageBuilder<CombinedImageData> for RbImage {
         )});
 
         // Allocate image memory
-        let allocation = gfx.cast::<GfxVulkan>().device.allocator.borrow_mut().allocate(&AllocationCreateDesc {
+        let allocation = gfx.cast::<GfxVulkan>().device.allocator.write().unwrap().allocate(&AllocationCreateDesc {
             name: "buffer allocation",
             requirements: unsafe { gfx.cast::<GfxVulkan>().device.handle.get_image_memory_requirements(image) },
             location: *VkBufferAccess::from(BufferAccess::GpuOnly),
@@ -267,7 +268,7 @@ impl VkImage {
         match create_infos.pixels {
             None => {}
             Some(pixels) => {
-                image.set_data(pixels)
+                image.set_data(pixels.as_slice())
             }
         }
         image

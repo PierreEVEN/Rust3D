@@ -1,5 +1,4 @@
-﻿use std::cell::RefCell;
-use std::collections::HashMap;
+﻿use std::collections::HashMap;
 use std::os::raw::{c_char, c_void};
 use std::sync::{Arc, RwLock};
 

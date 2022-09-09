@@ -9,7 +9,7 @@ use gfx::GfxRef;
 use gfx::image::{GfxImage, ImageCreateInfos, ImageParams, ImageType, ImageUsage};
 use gfx::render_pass::{GraphRenderCallback, RenderPass, RenderPassInstance};
 use gfx::surface::{GfxImageID, GfxSurface};
-use gfx::types::{ClearValues};
+use gfx::types::ClearValues;
 use maths::vec2::Vec2u32;
 
 use crate::{GfxVulkan, vk_check, VkRenderPass};
@@ -111,17 +111,18 @@ impl VkRenderPassInstance {
             }
             match &owner.get_config().depth_attachment {
                 None => {}
-                Some(depth_attachment) => { 
+                Some(depth_attachment) => {
                     images.push(gfx.create_image(ImageCreateInfos {
-                    params: ImageParams {
-                        pixel_format: depth_attachment.image_format,
-                        image_type: ImageType::Texture2d(res.x, res.y),
-                        read_only: false,
-                        mip_levels: None,
-                        usage: ImageUsage::GpuWriteDestination | ImageUsage::Sampling,
-                    },
-                    pixels: None,
-                }));}
+                        params: ImageParams {
+                            pixel_format: depth_attachment.image_format,
+                            image_type: ImageType::Texture2d(res.x, res.y),
+                            read_only: false,
+                            mip_levels: None,
+                            usage: ImageUsage::GpuWriteDestination | ImageUsage::Sampling,
+                        },
+                        pixels: None,
+                    }));
+                }
             }
         }
 
@@ -137,34 +138,23 @@ impl VkRenderPassInstance {
             wait_semaphores: RwLock::new(None),
             render_callback: RwLock::new(None),
             children: RwLock::default(),
-            images
+            images,
         }
     }
 }
 
 impl RenderPassInstance for VkRenderPassInstance {
     fn resize(&self, new_res: Vec2u32) {
-        let render_pass = self.owner.cast::<VkRenderPass>().render_pass;
 
-        let mut images = Vec::new();
         if self.owner.get_config().is_present_pass {
-            images.push(self.surface.get_surface_texture())
+            self.images[0].cast::<VkImage>().resize_from_existing_images(ImageType::Texture2d(new_res.x, new_res.y), self.surface.get_surface_texture());
         } else {
-            for att_color in &self.owner.get_config().color_attachments {
-                images.push(self.gfx.create_image(ImageCreateInfos {
-                    params: ImageParams {
-                        pixel_format: att_color.image_format,
-                        image_type: ImageType::Texture2d(new_res.x, new_res.y),
-                        read_only: false,
-                        mip_levels: None,
-                        usage: ImageUsage::GpuWriteDestination | ImageUsage::Sampling,
-                    },
-                    pixels: None,
-                }))
+            for image in &self.images {
+                image.resize(ImageType::Texture2d(new_res.x, new_res.y));
             }
-            for _att_depth in &self.owner.get_config().depth_attachment {}
         }
-        self.framebuffers.invalidate(&self.gfx, RbFramebuffer { render_pass, res: new_res, images });
+
+        self.framebuffers.invalidate(&self.gfx, RbFramebuffer { render_pass: self.owner.cast::<VkRenderPass>().render_pass, res: new_res, images: self.images.clone() });
         let mut res = self.resolution.write().unwrap();
         *res = new_res;
     }
@@ -216,7 +206,7 @@ impl RenderPassInstance for VkRenderPassInstance {
             ..RenderPassBeginInfo::default()
         };
         unsafe { (*device).handle.cmd_begin_render_pass(command_buffer, &begin_infos, SubpassContents::INLINE) };
-        
+
         unsafe {
             (*device).handle.cmd_set_viewport(command_buffer, 0, &[Viewport {
                 x: 0.0,

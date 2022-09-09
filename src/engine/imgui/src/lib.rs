@@ -178,12 +178,12 @@ impl ImGUiContext {
                 push_constant_size: fragment_sprv.push_constant_size,
                 stage_input: vec![],
             },
-            shader_properties: Default::default(),
+            shader_properties: imgui_parser_result.properties,
         });
 
         let image_sampler = gfx.create_image_sampler(SamplerCreateInfos {});
 
-        let shader_instance = gfx.create_shader_instance(ShaderInstanceCreateInfos { bindings: vec![] }, &*shader_program);
+        let shader_instance = gfx.create_shader_instance(ShaderInstanceCreateInfos { bindings: shader_program.get_bindings() }, &*shader_program);
         shader_instance.bind_texture(&BindPoint::new("sTexture"), &font_texture);
         shader_instance.bind_sampler(&BindPoint::new("sSampler"), &image_sampler);
 
@@ -214,6 +214,8 @@ impl ImGUiContext {
 
         struct ImGuiRenderPassData {
             shader_program: Arc<dyn ShaderProgram>,
+            shader_instance: Arc<dyn ShaderInstance>,
+            font_texture: Arc<dyn GfxImage>,
             mesh: Arc<dyn Mesh>,
         }
         impl GraphRenderCallback for ImGuiRenderPassData {
@@ -222,13 +224,9 @@ impl ImGUiContext {
                 io.DisplaySize = ImVec2 { x: command_buffer.get_surface().get_extent().x as f32, y: command_buffer.get_surface().get_extent().y as f32 };
                 io.DisplayFramebufferScale = ImVec2 { x: 1.0, y: 1.0 };
                 io.DeltaTime = 1.0 / 60.0; //@TODO application::get().delta_time();
-
-
+                
                 unsafe { igNewFrame(); }
-
-
                 unsafe { igShowDemoWindow(null_mut()); }
-
                 unsafe { igEndFrame(); }
                 unsafe { igRender(); }
                 let draw_data = unsafe { &*igGetDrawData() };
@@ -279,13 +277,15 @@ impl ImGUiContext {
                         scale_x,
                         scale_y,
                         translate_x: -1.0 - draw_data.DisplayPos.x * scale_x,
-                        translate_y: -1.0 - draw_data.DisplayPos.y * scale_y,
+                        translate_y: 1.0 - draw_data.DisplayPos.y * scale_y,
                     }),
                     ShaderStage::Vertex,
                 );
 
+                self.shader_instance.bind_texture(&BindPoint::new("sTexture"), &self.font_texture);
+
                 // Will project scissor/clipping rectangles into framebuffer space
-                let clip_off = draw_data.DisplayPos;       // (0,0) unless using multi-viewports
+                let clip_off = draw_data.DisplayPos;         // (0,0) unless using multi-viewports
                 let clip_scale = draw_data.FramebufferScale; // (1,1) unless using retina display which are often (2,2)
 
                 // Render command lists
@@ -305,7 +305,6 @@ impl ImGUiContext {
                             }
                             None => {
                                 // Project scissor/clipping rectangles into framebuffer space
-
                                 let mut clip_rect = ImVec4 {
                                     x: (pcmd.ClipRect.x - clip_off.x) * clip_scale.x,
                                     y: (pcmd.ClipRect.y - clip_off.y) * clip_scale.y,
@@ -333,12 +332,14 @@ impl ImGUiContext {
 
                                     // Bind descriptor set with font or user texture
                                     /*
-                                if pcmd.TextureId {
-                                    imgui_material_instance.bind_texture("test", nullptr); // TODO handle textures
-                                }
-                                 */
+                                    if pcmd.TextureId {
+                                        imgui_material_instance.bind_texture("test", nullptr); // TODO handle textures
+                                    }
+                                    */
 
                                     command_buffer.bind_program(&self.shader_program);
+                                    command_buffer.bind_shader_instance(&self.shader_instance);
+                                    
                                     command_buffer.draw_mesh_advanced(&self.mesh,
                                                                       pcmd.IdxOffset + global_idx_offset,
                                                                       (pcmd.VtxOffset + global_vtx_offset) as i32,
@@ -355,7 +356,7 @@ impl ImGUiContext {
                 }
             }
         }
-        render_pass_instance.on_render(Box::new(ImGuiRenderPassData { shader_program: self.shader_program.clone(), mesh: self.mesh.clone() }));
+        render_pass_instance.on_render(Box::new(ImGuiRenderPassData { shader_program: self.shader_program.clone(), mesh: self.mesh.clone(), shader_instance: self.shader_instance.clone(), font_texture: self.font_texture.clone() }));
         render_pass_instance
     }
 }

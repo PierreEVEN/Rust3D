@@ -414,7 +414,7 @@ impl Parser {
 
             self.file_iterator += 1;
         }
-
+        
         self.properties = ShaderProperties {
             shader_version: self.get_property("shader_version").to_string(),
             shader_language: match self.get_property("shader_language") {

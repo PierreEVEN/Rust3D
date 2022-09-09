@@ -1,16 +1,12 @@
-﻿use std::any::Any;
-use std::cell::RefCell;
-use std::ffi::c_void;
-use std::ops::Deref;
-use std::ptr::NonNull;
+﻿use std::ops::Deref;
 use std::sync::{Arc, RwLock};
-use std::sync::atomic::{AtomicI64, AtomicU32, Ordering};
+use std::sync::atomic::{AtomicU32, Ordering};
 
-use ash::vk::{Buffer, BufferUsageFlags, DeviceSize};
+use ash::vk::{Buffer, BufferUsageFlags, DeviceSize, Handle};
 use gpu_allocator::{AllocationError, MemoryLocation};
-use gpu_allocator::vulkan::{Allocation, AllocationCreateDesc, Allocator};
+use gpu_allocator::vulkan::{Allocation, AllocationCreateDesc};
 
-use gfx::buffer::{BufferAccess, BufferCreateInfo, BufferMemory, BufferType, BufferUsage, GfxBuffer};
+use gfx::buffer::{BufferAccess, BufferCreateInfo, BufferType, BufferUsage, GfxBuffer};
 use gfx::gfx_resource::{GfxImageBuilder, GfxResource};
 use gfx::GfxRef;
 use gfx::surface::GfxImageID;
@@ -57,11 +53,12 @@ impl From<BufferUsage> for VkBufferUsage {
 
 pub struct RbBuffer {
     create_infos: BufferCreateInfo,
+    size_override: u32,
 }
 
-impl GfxImageBuilder<BufferContainer> for RbBuffer {
-    fn build(&self, gfx: &GfxRef, swapchain_ref: &GfxImageID) -> BufferContainer {
-        let buffer_size = if self.create_infos.size <= 0 { 1 } else { self.create_infos.size };
+impl GfxImageBuilder<Arc<BufferContainer>> for RbBuffer {
+    fn build(&self, gfx: &GfxRef, _: &GfxImageID) -> Arc<BufferContainer> {
+        let buffer_size = if self.size_override <= 0 { 1 } else { self.size_override };
         let mut usage = VkBufferUsage::from(self.create_infos.usage).0;
 
         if self.create_infos.buffer_type != BufferType::Immutable
@@ -98,18 +95,23 @@ impl GfxImageBuilder<BufferContainer> for RbBuffer {
 
         unsafe { gfx.cast::<GfxVulkan>().device.handle.bind_buffer_memory(buffer, allocation.memory(), allocation.offset()).unwrap() };
 
-        BufferContainer {
-            buffer,
-            allocation: Arc::new(RwLock::new(allocation)),
-            gfx: gfx.clone(),
+        match allocation.mapped_ptr()
+        {
+            None => { panic!("memory is not host visible") }
+            Some(_) => {}
         }
+
+        Arc::new(BufferContainer {
+            buffer,
+            allocation: RwLock::new(allocation),
+            gfx: gfx.clone(),
+        })
     }
 }
 
-#[derive(Clone)]
 struct BufferContainer {
     buffer: Buffer,
-    allocation: Arc<RwLock<Allocation>>,
+    allocation: RwLock<Allocation>,
     gfx: GfxRef,
 }
 
@@ -120,7 +122,7 @@ impl Drop for BufferContainer {
 }
 
 pub struct VkBuffer {
-    container: GfxResource<BufferContainer>,
+    container: GfxResource<Arc<BufferContainer>>,
     buffer_size: AtomicU32,
     gfx: GfxRef,
     create_infos: BufferCreateInfo,
@@ -133,27 +135,34 @@ impl GfxBuffer for VkBuffer {
         }
         self.resize_buffer(start_offset + data.len() as u32);
 
-        match self.create_infos.buffer_type {
-            BufferType::Immutable => {
-                panic!("Modifying data on immutable buffers is not allowed");
-            }
-            BufferType::Static => {
-                match self.container.get_static().allocation.read().unwrap().mapped_ptr() {
-                    None => { panic!("memory is not host visible") }
-                    Some(allocation) => unsafe {
-                        data.as_ptr().copy_to((allocation.as_ptr() as *mut u8).offset(start_offset as isize), data.len());
+        unsafe {
+            match self.create_infos.buffer_type {
+                BufferType::Immutable => {
+                    panic!("Modifying data on immutable buffers is not allowed");
+                }
+                BufferType::Static => {
+                    match self.container.get_static().allocation.read().unwrap().mapped_ptr() {
+                        None => { panic!("memory is not host visible") }
+                        Some(allocation) => {
+                            data.as_ptr().copy_to((allocation.as_ptr() as *mut u8).offset(start_offset as isize), data.len());
+                        }
                     }
                 }
-            }
-            BufferType::Dynamic => {
-                todo!()
-            }
-            BufferType::Immediate => {
-                match self.container.get(frame).allocation.read().unwrap().mapped_ptr() {
-                    None => { panic!("memory is not host visible") }
-                    Some(allocation_ptr) => unsafe {
-                        data.as_ptr().copy_to((allocation_ptr.as_ptr() as *mut u8).offset(start_offset as isize), data.len());
-                    }
+                BufferType::Dynamic => {
+                    todo!()
+                }
+                BufferType::Immediate => {
+                    match self.container.get(frame).allocation.read() {
+                        Ok(allocation) => {
+                            match allocation.mapped_ptr() {
+                                None => { panic!("memory [{}] is not host visible for frame {}", allocation.memory().as_raw(), frame.image_id()); }
+                                Some(allocation_ptr) => {
+                                    data.as_ptr().copy_to((allocation_ptr.as_ptr() as *mut u8).offset(start_offset as isize), data.len());
+                                }
+                            }
+                        }
+                        Err(_) => { panic!("failed to read allocation") }
+                    };
                 }
             }
         }
@@ -169,13 +178,13 @@ impl GfxBuffer for VkBuffer {
             }
             BufferType::Static => {
                 vk_check!(unsafe { self.gfx.cast::<GfxVulkan>().device.handle.device_wait_idle() });
-                self.container.invalidate(&self.gfx, RbBuffer { create_infos: self.create_infos });
+                self.container.invalidate(&self.gfx, RbBuffer { create_infos: self.create_infos, size_override: new_size });
             }
             BufferType::Dynamic => {
                 todo!();
             }
             BufferType::Immediate => {
-                self.container.invalidate(&self.gfx, RbBuffer { create_infos: self.create_infos });
+                self.container.invalidate(&self.gfx, RbBuffer { create_infos: self.create_infos, size_override: new_size });
             }
         }
     }
@@ -193,9 +202,9 @@ impl VkBuffer {
     pub fn new(gfx: &GfxRef, create_infos: &BufferCreateInfo) -> Self {
         let allocation = match create_infos.buffer_type {
             BufferType::Immutable | BufferType::Static => {
-                GfxResource::new_static(gfx, RbBuffer { create_infos: *create_infos })
+                GfxResource::new_static(gfx, RbBuffer { create_infos: *create_infos, size_override: create_infos.size })
             }
-            _ => { GfxResource::new(gfx, RbBuffer { create_infos: *create_infos }) }
+            _ => { GfxResource::new(gfx, RbBuffer { create_infos: *create_infos, size_override: create_infos.size }) }
         };
 
         Self {
@@ -209,7 +218,9 @@ impl VkBuffer {
     pub fn get_handle(&self, image: &GfxImageID) -> Buffer {
         match self.create_infos.buffer_type {
             BufferType::Immutable | BufferType::Static => { self.container.get_static().buffer }
-            BufferType::Dynamic | BufferType::Immediate => { self.container.get(image).buffer }
+            BufferType::Dynamic | BufferType::Immediate => {
+                self.container.get(image).buffer
+            }
         }
     }
 }

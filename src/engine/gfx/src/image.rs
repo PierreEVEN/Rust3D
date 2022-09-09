@@ -13,6 +13,49 @@ pub enum ImageType {
     TextureCube(u32, u32),
 }
 
+impl PartialEq for ImageType {
+    fn eq(&self, other: &Self) -> bool {
+        match self {
+            ImageType::Texture1d(x1) => {
+                match other {
+                    ImageType::Texture1d(x2) => { x1 == x2 }
+                    _ => { false }
+                }
+            }
+            ImageType::Texture2d(x1, y1) => {
+                match other {
+                    ImageType::Texture2d(x2, y2) => { x1 == x2 && y1 == y2 }
+                    _ => { false }
+                }
+            }
+            ImageType::Texture3d(x1, y1, z1) => {
+                match other {
+                    ImageType::Texture3d(x2, y2, z2) => { x1 == x2 && y1 == y2 && z1 == z2 }
+                    _ => { false }
+                }
+            }
+            ImageType::Texture1dArray(x1) => {
+                match other {
+                    ImageType::Texture1dArray(x2) => { x1 == x2 }
+                    _ => { false }
+                }
+            }
+            ImageType::Texture2dArray(x1, y1) => {
+                match other {
+                    ImageType::Texture2dArray(x2, y2) => { x1 == x2 && y1 == y2 }
+                    _ => { false }
+                }
+            }
+            ImageType::TextureCube(x1, y1) => {
+                match other {
+                    ImageType::TextureCube(x2, y2) => { x1 == x2 && y1 == y2 }
+                    _ => { false }
+                }
+            }
+        }
+    }
+}
+
 #[bitflags]
 #[repr(u8)]
 #[derive(Copy, Clone)]
@@ -59,9 +102,10 @@ pub struct ImageCreateInfos {
 pub trait GfxImage: GfxCast {
     fn get_type(&self) -> ImageType;
     fn get_format(&self) -> PixelFormat;
-    fn get_data(&self) ->  &[u8];
-    fn set_data(&self, data:  &[u8]);
+    fn get_data(&self) -> &[u8];
+    fn set_data(&self, data: &[u8]);
     fn get_data_size(&self) -> u32;
+    fn resize(&self, new_type: ImageType);
     fn __static_view_handle(&self) -> u64;
 }
 

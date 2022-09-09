@@ -2,7 +2,7 @@
 
 use ash::vk::{CommandBuffer, CommandBufferAllocateInfo, CommandBufferBeginInfo, CommandBufferLevel, CommandBufferUsageFlags, CommandPool, CommandPoolCreateFlags, CommandPoolCreateInfo, DeviceSize, Extent2D, IndexType, Offset2D, PipelineBindPoint, QueueFlags, Rect2D, ShaderStageFlags, SubmitInfo};
 
-use gfx::buffer::{BufferMemory, GfxBuffer};
+use gfx::buffer::{BufferMemory};
 use gfx::command_buffer::GfxCommandBuffer;
 use gfx::gfx_resource::{GfxImageBuilder, GfxResource};
 use gfx::GfxRef;
@@ -12,7 +12,7 @@ use gfx::shader_instance::ShaderInstance;
 use gfx::surface::{GfxImageID, GfxSurface};
 use gfx::types::Scissors;
 
-use crate::{GfxVulkan, vk_check, VkBuffer, VkMesh, VkShaderInstance, VkShaderProgram};
+use crate::{GfxVulkan, vk_check, VkBuffer, VkShaderInstance, VkShaderProgram};
 
 pub struct VkCommandPool {
     pub command_pool: CommandPool,

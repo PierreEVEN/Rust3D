@@ -176,8 +176,7 @@ impl VkShaderProgram {
             line_width: create_infos.shader_properties.line_width,
             ..PipelineRasterizationStateCreateInfo::default()
         };
-
-
+        
         let multisampling = PipelineMultisampleStateCreateInfo {
             rasterization_samples: SampleCountFlags::TYPE_1,
             sample_shading_enable: false as Bool32,

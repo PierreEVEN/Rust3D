@@ -1,7 +1,7 @@
 #pragma shader_language HLSL
-#pragma front_face 		CLOCKWISE
-#pragma cull 			NONE
-#pragma alpha_mode		TRANSLUCENT
+#pragma FRONT_FACE 		CLOCKWISE
+#pragma CULL 			NONE
+#pragma ALPHA_MODE		TRANSLUCENT
 
 global(imgui_render_pass)
 [
@@ -49,6 +49,3 @@ fragment(imgui_render_pass)
 		return input.Color * sTexture.Sample(sSampler, input.UV);
 	}
 ]
-
-
-

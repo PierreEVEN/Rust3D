@@ -17,6 +17,7 @@ use gfx::shader_instance::{BindPoint, ShaderInstance, ShaderInstanceCreateInfos}
 use gfx::types::{ClearValues, PixelFormat};
 use imgui::ImGUiContext;
 use maths::rect2d::Rect2D;
+use maths::vec2::Vec2u32;
 use maths::vec4::Vec4F32;
 use plateform::window::{PlatformEvent, WindowCreateInfos, WindowFlagBits, WindowFlags};
 use plateform_win32::PlatformWin32;
@@ -122,12 +123,12 @@ fn main() {
     def_combine.on_render(Box::new(TestGraph { start: Instant::now(), demo_material, shader_instance: shader_2_instance, time_pc_data: RwLock::new(TestPc { time: 0.5 }) }));
     main_framegraph.main_pass().attach(def_combine.clone());
 
-    shader_instance.bind_texture(&BindPoint::new("ui_result"), &def_combine.get_images()[0]);
-
     let imgui_pass = imgui_context.instantiate_for_surface(&main_window_surface);
     main_framegraph.main_pass().attach(imgui_pass.clone());
-    
-    
+
+    shader_instance.bind_texture(&BindPoint::new("ui_result"), &imgui_pass.get_images()[0]);
+
+
     // Game loop
     'game_loop: loop {
         // handle events
@@ -136,7 +137,9 @@ fn main() {
                 PlatformEvent::WindowClosed(_) => {
                     break 'game_loop;
                 }
-                PlatformEvent::WindowResized(_window, _width, _height) => {}
+                PlatformEvent::WindowResized(_window, _width, _height) => {
+                    imgui_pass.resize(Vec2u32::new(_width, _height));
+                }
             }
         }
 

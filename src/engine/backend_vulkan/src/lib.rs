@@ -133,6 +133,7 @@ impl GfxInterface for GfxVulkan {
 
     fn create_shader_instance(&self, create_infos: ShaderInstanceCreateInfos, parent: &dyn ShaderProgram) -> Arc<dyn ShaderInstance> {
         let parent = parent.cast::<VkShaderProgram>();
+        //@TODO auto-link bindings
         VkShaderInstance::new(&self.get_ref(), create_infos, parent.pipeline_layout.clone(), parent.descriptor_set_layout.clone())
     }
 

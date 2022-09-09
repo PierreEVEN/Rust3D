@@ -1,5 +1,4 @@
-﻿use std::slice;
-use std::sync::{Arc, RwLock};
+﻿use std::sync::{Arc, RwLock};
 
 use ash::vk;
 use ash::vk::{AccessFlags, BufferImageCopy, CommandBuffer, ComponentMapping, ComponentSwizzle, DependencyFlags, DescriptorImageInfo, Extent3D, Handle, Image, ImageAspectFlags, ImageCreateInfo, ImageLayout, ImageMemoryBarrier, ImageSubresourceLayers, ImageSubresourceRange, ImageTiling, ImageUsageFlags, ImageView, ImageViewCreateInfo, ImageViewType, Offset3D, PipelineStageFlags, QUEUE_FAMILY_IGNORED, QueueFlags, SampleCountFlags, SharingMode};
@@ -21,15 +20,17 @@ type CombinedImageData = (Image, Arc<Allocation>);
 
 pub struct VkImage {
     gfx: GfxRef,
-    pub image: Arc<GfxResource<CombinedImageData>>,
+    pub image: RwLock<Arc<GfxResource<CombinedImageData>>>,
     pub view: GfxResource<(ImageView, DescriptorImageInfo)>,
     pub image_params: ImageParams,
     pub image_layout: RwLock<ImageLayout>,
+    image_type: RwLock<ImageType>,
+    is_from_existing_images: bool
 }
 
 impl GfxImage for VkImage {
     fn get_type(&self) -> ImageType {
-        self.image_params.image_type
+        *self.image_type.read().unwrap()
     }
 
     fn get_format(&self) -> PixelFormat {
@@ -65,7 +66,7 @@ impl GfxImage for VkImage {
                 self.gfx.cast::<GfxVulkan>().device.handle.cmd_copy_buffer_to_image(
                     command_buffer,
                     transfer_buffer.cast::<VkBuffer>().get_handle(&GfxImageID::null()),
-                    self.image.get_static().0,
+                    self.image.read().unwrap().get_static().0,
                     ImageLayout::TRANSFER_DST_OPTIMAL,
                     &[BufferImageCopy {
                         buffer_offset: 0,
@@ -93,6 +94,23 @@ impl GfxImage for VkImage {
         self.image_params.pixel_format.type_size() * self.image_params.image_type.pixel_count()
     }
 
+    fn resize(&self, new_type: ImageType)  {
+
+        if self.is_from_existing_images {
+            panic!("image created from existing images cannot be resized");
+        }
+        
+        if new_type == self.get_type() {
+            return;
+        }
+        
+
+        println!("RESIZE USAGE 2 :  {}", self.image_params.usage.bits() as u32);
+        self.image.read().unwrap().invalidate(&self.gfx, RbImage { create_infos: self.image_params, type_override: new_type });
+        self.view.invalidate(&self.gfx, RbImageView { create_infos: self.image_params, images: self.image.read().unwrap().clone(), type_override: new_type });
+        *self.image_type.write().unwrap() = new_type;
+    }
+
     fn __static_view_handle(&self) -> u64 {
         self.view.get_static().0.as_raw()
     }
@@ -116,12 +134,13 @@ impl VkImageUsage {
 
 pub struct RbImage {
     create_infos: ImageParams,
+    type_override: ImageType,
 }
 
 impl GfxImageBuilder<CombinedImageData> for RbImage {
     fn build(&self, gfx: &GfxRef, _swapchain_ref: &GfxImageID) -> CombinedImageData {
         // Convert image details
-        let (image_type, width, height, depth) = match self.create_infos.image_type {
+        let (image_type, width, height, depth) = match self.type_override {
             ImageType::Texture1d(x) => { (vk::ImageType::TYPE_1D, x, 1, 1) }
             ImageType::Texture2d(x, y) => { (vk::ImageType::TYPE_2D, x, y, 1) }
             ImageType::Texture3d(x, y, z) => { (vk::ImageType::TYPE_3D, x, y, z) }
@@ -140,6 +159,9 @@ impl GfxImageBuilder<CombinedImageData> for RbImage {
             .usage(VkImageUsage::from(self.create_infos.usage | ImageUsage::CopyDestination, self.create_infos.pixel_format.is_depth_format()).0)
             .sharing_mode(SharingMode::EXCLUSIVE)
             .build();
+        
+        println!("IMAGE USAGE :  {}", self.create_infos.usage.bits() as u32);
+        
         // Create image
         let image = vk_check!(unsafe {gfx.cast::<GfxVulkan>().device.handle.create_image(
             &create_infos,
@@ -168,11 +190,12 @@ impl GfxImageBuilder<CombinedImageData> for RbImage {
 pub struct RbImageView {
     images: Arc<GfxResource<(Image, Arc<Allocation>)>>,
     create_infos: ImageParams,
+    type_override: ImageType
 }
 
 impl GfxImageBuilder<(ImageView, DescriptorImageInfo)> for RbImageView {
     fn build(&self, gfx: &GfxRef, swapchain_ref: &GfxImageID) -> (ImageView, DescriptorImageInfo) {
-        let view_type = match self.create_infos.image_type {
+        let view_type = match self.type_override {
             ImageType::Texture1d(_) => { ImageViewType::TYPE_1D }
             ImageType::Texture2d(_, _) => { ImageViewType::TYPE_2D }
             ImageType::Texture3d(_, _, _) => { ImageViewType::TYPE_3D }
@@ -243,26 +266,28 @@ impl VkImage {
 
         let image_views = if params.read_only {
             // Static image
-            let images = Arc::new(GfxResource::new_static(gfx, RbImage { create_infos: params }));
+            let images = Arc::new(GfxResource::new_static(gfx, RbImage { create_infos: params, type_override: create_infos.params.image_type }));
             (
                 images.clone(),
-                GfxResource::new_static(gfx, RbImageView { create_infos: params, images })
+                GfxResource::new_static(gfx, RbImageView { create_infos: params, images , type_override: create_infos.params.image_type})
             )
         } else {
             // Dynamic image
-            let images = Arc::new(GfxResource::new(gfx, RbImage { create_infos: params }));
+            let images = Arc::new(GfxResource::new(gfx, RbImage { create_infos: params, type_override: create_infos.params.image_type  }));
             (
                 images.clone(),
-                GfxResource::new(gfx, RbImageView { create_infos: params, images })
+                GfxResource::new(gfx, RbImageView { create_infos: params, images, type_override: create_infos.params.image_type })
             )
         };
 
         let image = Arc::new(Self {
             gfx: gfx.clone(),
             view: image_views.1,
-            image: image_views.0,
+            image: RwLock::new(image_views.0),
             image_params: params,
             image_layout: RwLock::new(ImageLayout::UNDEFINED),
+            image_type: RwLock::new(params.image_type),
+            is_from_existing_images: false
         });
 
         match create_infos.pixels {
@@ -278,17 +303,21 @@ impl VkImage {
         if existing_images.is_static() != image_params.read_only {
             panic!("trying to create framebuffer from existing images, but images was created as read only")
         }
-
+        
+        let image_usage = image_params;
         let images = Arc::new(existing_images);
-        Arc::new(VkImage {
+        Arc::new(Self {
             gfx: gfx.clone(),
-            image: images.clone(),
+            image: RwLock::new(images.clone()),
             view: GfxResource::new(gfx, RbImageView {
                 images,
-                create_infos: image_params,
+                create_infos: image_usage,
+                type_override: image_usage.image_type
             }),
-            image_params,
+            image_params: image_usage,
             image_layout: RwLock::new(ImageLayout::UNDEFINED),
+            image_type: RwLock::new(image_usage.image_type),
+            is_from_existing_images: true
         })
     }
 
@@ -300,7 +329,7 @@ impl VkImage {
                 .new_layout(new_layout)
                 .src_queue_family_index(QUEUE_FAMILY_IGNORED)
                 .dst_queue_family_index(QUEUE_FAMILY_IGNORED)
-                .image(self.image.get_static().0)
+                .image(self.image.read().unwrap().get_static().0)
                 .subresource_range(ImageSubresourceRange::builder()
                     .aspect_mask(if self.image_params.pixel_format.is_depth_format() { ImageAspectFlags::DEPTH } else { ImageAspectFlags::COLOR })
                     .base_mip_level(0)
@@ -348,5 +377,12 @@ impl VkImage {
         } else {
             panic!("changing image layout on dynamic images is not supported yet");
         }
+    }
+
+    pub fn resize_from_existing_images(&self, new_type: ImageType, existing_images: GfxResource<CombinedImageData>)  {
+        println!("RESIZE USAGE 2 :  {}", self.image_params.usage.bits() as u32);
+        *self.image.write().unwrap() = Arc::new(existing_images);
+        self.view.invalidate(&self.gfx, RbImageView { create_infos: self.image_params, images: self.image.read().unwrap().clone(), type_override: new_type });
+        *self.image_type.write().unwrap() = new_type;
     }
 }

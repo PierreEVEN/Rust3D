@@ -8,8 +8,9 @@ use ash::vk::{BlendFactor, BlendOp, Bool32, ColorComponentFlags, CompareOp, Cull
 use gfx::GfxRef;
 use gfx::render_pass::RenderPass;
 use gfx::shader::{AlphaMode, Culling, DescriptorBinding, FrontFace, PolygonMode, ShaderProgram, ShaderProgramInfos, Topology};
+use gfx::shader_instance::{ShaderInstance, ShaderInstanceCreateInfos};
 
-use crate::{GfxVulkan, vk_check, VkRenderPass};
+use crate::{GfxVulkan, vk_check, VkRenderPass, VkShaderInstance};
 use crate::vk_descriptor_set::VkDescriptorSetLayout;
 use crate::vk_types::VkPixelFormat;
 
@@ -74,6 +75,10 @@ pub struct VkShaderProgram {
 impl ShaderProgram for VkShaderProgram {
     fn get_bindings(&self) -> Vec<DescriptorBinding> {
         self.bindings.clone()
+    }
+
+    fn instantiate(&self) -> Arc<dyn ShaderInstance> {
+        VkShaderInstance::new(&self._gfx, ShaderInstanceCreateInfos { bindings: self.bindings.clone() }, self.pipeline_layout.clone(), self.descriptor_set_layout.clone())
     }
 }
 

@@ -1,4 +1,5 @@
 pub mod window;
+pub mod input_system;
 
 use std::sync::{Arc};
 use maths::rect2d::Rect2D;

@@ -27,7 +27,7 @@ pub struct VkRenderPassInstance {
     pub clear_value: Vec<ClearValues>,
     pub resolution: RwLock<Vec2u32>,
     pub wait_semaphores: RwLock<Option<Semaphore>>,
-    pub render_callback: RwLock<Option<Box<dyn GraphRenderCallback>>>,
+    pub render_callback: RwLock<Option<GraphRenderCallback>>,
     pub children: RwLock<Vec<Arc<dyn RenderPassInstance>>>,
 }
 
@@ -228,10 +228,18 @@ impl RenderPassInstance for VkRenderPassInstance {
         self.pass_command_buffers.init_for(self.owner.get_pass_id(), self.surface.get_current_ref().clone());
 
         // Draw content
-        match &*self.render_callback.read().unwrap() {
-            None => {}
-            Some(callback) => { callback.draw(&(self.pass_command_buffers.clone() as Arc<dyn GfxCommandBuffer>)) }
+        match self.render_callback.write() {
+            Ok(mut render_callback) => {
+                match render_callback.as_mut() {
+                    None => {}
+                    Some(callback) => {
+                        callback(&(self.pass_command_buffers.clone() as Arc<dyn GfxCommandBuffer>)) 
+                    }
+                }}
+            Err(_) => {panic!("failed to access render callback")}
         }
+        
+        
 
         let command_buffer = self.pass_command_buffers.command_buffer.get(&self.surface.get_current_ref());
         let device = &self.gfx.cast::<GfxVulkan>().device;
@@ -265,7 +273,7 @@ impl RenderPassInstance for VkRenderPassInstance {
         (*device).get_queue(QueueFlags::GRAPHICS).unwrap().submit(submit_infos);
     }
 
-    fn on_render(&self, callback: Box<dyn GraphRenderCallback>) {
+    fn on_render(&self, callback: GraphRenderCallback) {
         *self.render_callback.write().unwrap() = Some(callback);
     }
 

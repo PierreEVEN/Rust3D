@@ -4,7 +4,8 @@ use std::collections::hash_map::DefaultHasher;
 use std::fmt;
 use std::fmt::{Debug, Display, Formatter};
 use std::hash::{Hash, Hasher};
-use crate::GfxCast;
+use std::sync::Arc;
+use crate::{GfxCast, ShaderInstance};
 use crate::shader_instance::BindPoint;
 
 use crate::types::PixelFormat;
@@ -246,6 +247,7 @@ pub struct ShaderProgramInfos {
 
 pub trait ShaderProgram : GfxCast {
     fn get_bindings(&self) -> Vec<DescriptorBinding>;
+    fn instantiate(&self) -> Arc<dyn ShaderInstance>;
 }
 
 impl dyn ShaderProgram {

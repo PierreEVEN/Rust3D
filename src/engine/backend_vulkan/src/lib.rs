@@ -15,7 +15,6 @@ use gfx::image_sampler::{ImageSampler, SamplerCreateInfos};
 use gfx::mesh::{Mesh, MeshCreateInfos};
 use gfx::render_pass::{RenderPass, RenderPassCreateInfos};
 use gfx::shader::{PassID, ShaderProgram, ShaderProgramInfos};
-use gfx::shader_instance::{ShaderInstance, ShaderInstanceCreateInfos};
 use gfx::surface::GfxSurface;
 
 use crate::vk_buffer::VkBuffer;
@@ -126,12 +125,6 @@ impl GfxInterface for GfxVulkan {
 
     fn create_image_sampler(&self, create_infos: SamplerCreateInfos) -> Arc<dyn ImageSampler> {
         VkImageSampler::new(&self.get_ref(), create_infos)
-    }
-
-    fn create_shader_instance(&self, create_infos: ShaderInstanceCreateInfos, parent: &dyn ShaderProgram) -> Arc<dyn ShaderInstance> {
-        let parent = parent.cast::<VkShaderProgram>();
-        //@TODO auto-link bindings
-        VkShaderInstance::new(&self.get_ref(), create_infos, parent.pipeline_layout.clone(), parent.descriptor_set_layout.clone())
     }
 
     fn find_render_pass(&self, pass_id: &PassID) -> Option<Arc<dyn RenderPass>> {

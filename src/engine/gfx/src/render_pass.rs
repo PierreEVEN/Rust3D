@@ -32,7 +32,7 @@ pub trait RenderPass: GfxCast {
 pub trait RenderPassInstance: GfxCast {
     fn resize(&self, new_res: Vec2u32);
     fn draw(&self);
-    fn on_render(&self, callback: Box<dyn GraphRenderCallback>);
+    fn on_render(&self, callback: GraphRenderCallback);
     fn attach(&self, child: Arc<dyn RenderPassInstance>);
     fn get_images(&self) -> &Vec<Arc<dyn GfxImage>>;
     fn get_surface(&self) -> Arc<dyn GfxSurface>;
@@ -56,9 +56,7 @@ pub struct FrameGraph {
     present_pass: Arc<dyn RenderPassInstance>,
 }
 
-pub trait GraphRenderCallback {
-    fn draw(&self, command_buffer: &Arc<dyn GfxCommandBuffer>);
-}
+pub type GraphRenderCallback = Box<dyn FnMut(&Arc<dyn GfxCommandBuffer>)>;
 
 impl FrameGraph {
     pub fn from_surface(_gfx: &GfxRef, surface: &Arc<dyn GfxSurface>, clear_value: Vec4F32) -> Arc<Self> {

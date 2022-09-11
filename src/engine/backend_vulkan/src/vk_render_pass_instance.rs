@@ -147,7 +147,7 @@ impl RenderPassInstance for VkRenderPassInstance {
     fn resize(&self, new_res: Vec2u32) {
 
         if self.owner.get_config().is_present_pass {
-            self.images[0].cast::<VkImage>().resize_from_existing_images(ImageType::Texture2d(new_res.x, new_res.y), self.surface.get_surface_texture());
+            self.images[0].cast::<VkImage>().resize_from_existing_images(ImageType::Texture2d(new_res.x, new_res.y), self.surface.get_surface_texture().cast::<VkImage>().image.read().unwrap().clone());
         } else {
             for image in &self.images {
                 image.resize(ImageType::Texture2d(new_res.x, new_res.y));

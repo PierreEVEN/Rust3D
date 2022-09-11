@@ -3,6 +3,7 @@
 use gfx::buffer::*;
 use gfx::GfxRef;
 use gfx::render_pass::{RenderPassAttachment, RenderPassCreateInfos};
+use gfx::shader::PassID;
 use gfx::surface::GfxSurface;
 use gfx::types::*;
 use maths::vec2::{Vec2F32, Vec2u32};
@@ -22,7 +23,7 @@ pub fn _demo_objects(gfx: &GfxRef, surface: &Arc<dyn GfxSurface>) {
     let res = Vec2u32::new(800, 600);
 
     let g_buffer_pass = gfx.create_render_pass(RenderPassCreateInfos {
-        name: "GBuffers".to_string(),
+        pass_id: PassID::new("GBuffers"),
         color_attachments: vec![
             RenderPassAttachment {
                 name: "albedo".to_string(),
@@ -54,7 +55,7 @@ pub fn _demo_objects(gfx: &GfxRef, surface: &Arc<dyn GfxSurface>) {
     });
 
     let deferred_combine_pass = gfx.create_render_pass(RenderPassCreateInfos {
-        name: "deferred_combine".to_string(),
+        pass_id: PassID::new("deferred_combine"),
         color_attachments: vec![RenderPassAttachment {
             name: "color".to_string(),
             clear_value: ClearValues::Color(Vec4F32::new(0.0, 0.0, 0.0, 1.0)),

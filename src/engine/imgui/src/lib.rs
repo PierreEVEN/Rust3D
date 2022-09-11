@@ -109,7 +109,7 @@ impl ImGUiContext {
 
         let imgui_pass_id = PassID::new("imgui_render_pass");
         let imgui_render_pass = gfx.create_render_pass(RenderPassCreateInfos {
-            name: "imgui_render_pass".to_string(),
+            pass_id: PassID::new("imgui_render_pass"),
             color_attachments: vec![RenderPassAttachment {
                 name: "color".to_string(),
                 clear_value: ClearValues::Color(Vec4F32::new(0.0, 0.0, 0.0, 1.0)),

@@ -7,14 +7,16 @@ use crate::{GfxCast, GfxCommandBuffer, GfxImage, GfxRef, GfxSurface, PassID};
 use crate::surface::SurfaceAcquireResult;
 use crate::types::{ClearValues, PixelFormat};
 
+#[derive(Clone)]
 pub struct RenderPassAttachment {
     pub name: String,
     pub clear_value: ClearValues,
     pub image_format: PixelFormat,
 }
 
+#[derive(Clone)]
 pub struct RenderPassCreateInfos {
-    pub name: String,
+    pub pass_id: PassID,
     pub color_attachments: Vec<RenderPassAttachment>,
     pub depth_attachment: Option<RenderPassAttachment>,
     pub is_present_pass: bool,
@@ -61,7 +63,7 @@ pub trait GraphRenderCallback {
 impl FrameGraph {
     pub fn from_surface(_gfx: &GfxRef, surface: &Arc<dyn GfxSurface>, clear_value: Vec4F32) -> Arc<Self> {
         let render_pass_ci = RenderPassCreateInfos {
-            name: "surface_pass".to_string(),
+            pass_id: PassID::new("surface_pass"),
             color_attachments: vec![RenderPassAttachment {
                 name: "color".to_string(),
                 clear_value: ClearValues::Color(clear_value),

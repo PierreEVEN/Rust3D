@@ -117,10 +117,7 @@ impl GfxInterface for GfxVulkan {
     }
 
     fn create_render_pass(&self, create_infos: RenderPassCreateInfos) -> Arc<dyn RenderPass> {
-        let pass_id = PassID::new(create_infos.name.as_str());
-        let pass = VkRenderPass::new(&self.get_ref(), create_infos);
-        self.render_passes.write().unwrap().insert(pass_id, pass.clone());
-        pass
+        VkRenderPass::new(&self.get_ref(), create_infos)
     }
 
     fn create_image(&self, create_infos: ImageCreateInfos) -> Arc<dyn GfxImage> {

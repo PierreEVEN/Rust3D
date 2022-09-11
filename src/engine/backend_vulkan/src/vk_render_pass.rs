@@ -174,8 +174,8 @@ impl VkRenderPass {
             gfx: gfx.clone(),
             self_ref: RwLock::new(Weak::new()),
             default_clear_values: clear_values,
-            pass_id: PassID::new(create_infos.name.as_str()),
-            config: create_infos,
+            pass_id: create_infos.pass_id.clone(),
+            config: create_infos.clone(),
         });
 
         {
@@ -183,6 +183,8 @@ impl VkRenderPass {
             *self_ref = Arc::downgrade(&vk_render_pass);
         }
 
+        gfx.cast::<GfxVulkan>().render_passes.write().unwrap().insert(create_infos.pass_id, vk_render_pass.clone());
+        
         vk_render_pass
     }
 }

@@ -33,23 +33,25 @@ fragment(surface_pass, deferred_combine)
 
 fragment(surface_pass)
 [
-    SamplerState ui_sampler;
+    SamplerState global_sampler;
     Texture2D ui_result;
+    Texture2D scene_result;
     
     float4 main(VsToFsStruct input) : SV_Target
     {
-        float4 ui = ui_result.Sample(ui_sampler, input.Uv);
-        return ui + float4(0, 0, 0, pc.time);
+        float4 ui = ui_result.Sample(global_sampler, input.Uv);
+        float4 scene = scene_result.Sample(global_sampler, input.Uv);
+        return lerp(ui, scene, ui.a) + float4(0, 0, 0, pc.time);
     }
 ]
 
 fragment(deferred_combine)
 [
-    SamplerState ui_sampler;
-    Texture2D ui_result;
+    SamplerState global_sampler;
+    Texture2D bg_texture;
     
     float4 main(VsToFsStruct input) : SV_Target
     {
-        return ui_result.Sample(ui_sampler, input.Uv) + float4(0, 0, 0, pc.time);
+        return bg_texture.Sample(global_sampler, input.Uv) + float4(0, 0, 0, pc.time);
     }
 ]

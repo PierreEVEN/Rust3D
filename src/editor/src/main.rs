@@ -38,7 +38,7 @@ fn main() {
         background_alpha: 255,
     }).expect("failed to create main window");
     main_window.show();
-    
+
     // Bind graphic surface onto current window
     let main_window_surface = VkSurfaceWin32::new(&engine.gfx, main_window.clone(), 3);
     // Create framegraph
@@ -46,7 +46,25 @@ fn main() {
 
     // Create ImGui context
     let imgui_context = ImGUiContext::new(&engine.gfx);
-    
+
+    let deferred_combine_pass = engine.gfx.create_render_pass(RenderPassCreateInfos {
+        pass_id: PassID::new("deferred_combine"),
+        color_attachments: vec![RenderPassAttachment {
+            name: "color".to_string(),
+            clear_value: ClearValues::Color(Vec4F32::new(0.0, 0.0, 0.0, 1.0)),
+            image_format: PixelFormat::R8G8B8A8_UNORM,
+        }],
+        depth_attachment: None,
+        is_present_pass: false,
+    });
+
+    let def_combine = deferred_combine_pass.instantiate(&main_window_surface, main_window_surface.get_extent());
+    main_framegraph.main_pass().attach(def_combine.clone());
+
+    let imgui_pass = imgui_context.instantiate_for_surface(&main_window_surface);
+    main_framegraph.main_pass().attach(imgui_pass.clone());
+
+
     // Create material
     let demo_material = MaterialAsset::new(&engine.asset_manager);
     demo_material.meta_data().set_save_path(Path::new("data/demo_shader"));
@@ -66,16 +84,20 @@ fn main() {
     let sampler = engine.gfx.create_image_sampler(SamplerCreateInfos {});
 
     // Create material instance
-    let shader_instance = engine.gfx.create_shader_instance(ShaderInstanceCreateInfos {
+    let surface_shader_instance = engine.gfx.create_shader_instance(ShaderInstanceCreateInfos {
         bindings: demo_material.get_program(&PassID::new("surface_pass")).unwrap().get_bindings()
     }, &*demo_material.get_program(&PassID::new("surface_pass")).unwrap());
-    shader_instance.bind_sampler(&BindPoint::new("ui_sampler"), &sampler);
+    surface_shader_instance.bind_sampler(&BindPoint::new("global_sampler"), &sampler);
 
     let shader_2_instance = engine.gfx.create_shader_instance(ShaderInstanceCreateInfos {
-        bindings: demo_material.get_program(&PassID::new("surface_pass")).unwrap().get_bindings()
-    }, &*demo_material.get_program(&PassID::new("surface_pass")).unwrap());
-    shader_2_instance.bind_texture(&BindPoint::new("ui_result"), &image_catinou);
-    shader_2_instance.bind_sampler(&BindPoint::new("ui_sampler"), &sampler);
+        bindings: demo_material.get_program(&PassID::new("deferred_combine")).unwrap().get_bindings()
+    }, &*demo_material.get_program(&PassID::new("deferred_combine")).unwrap());
+    shader_2_instance.bind_texture(&BindPoint::new("bg_texture"), &image_catinou);
+    shader_2_instance.bind_sampler(&BindPoint::new("global_sampler"), &sampler);
+
+
+    surface_shader_instance.bind_texture(&BindPoint::new("ui_result"), &imgui_pass.get_images()[0]);
+    surface_shader_instance.bind_texture(&BindPoint::new("scene_result"), &def_combine.get_images()[0]);
 
     struct TestGraph {
         start: Instant,
@@ -106,28 +128,8 @@ fn main() {
         }
     }
 
-    main_framegraph.main_pass().on_render(Box::new(TestGraph { start: Instant::now(), demo_material: demo_material.clone(), shader_instance: shader_instance.clone(), time_pc_data: RwLock::new(TestPc { time: 0.5 }) }));
-
-    let deferred_combine_pass = engine.gfx.create_render_pass(RenderPassCreateInfos {
-        name: "deferred_combine".to_string(),
-        color_attachments: vec![RenderPassAttachment {
-            name: "color".to_string(),
-            clear_value: ClearValues::Color(Vec4F32::new(0.0, 0.0, 0.0, 1.0)),
-            image_format: PixelFormat::R8G8B8A8_UNORM,
-        }],
-        depth_attachment: None,
-        is_present_pass: false,
-    });
-
-    let def_combine = deferred_combine_pass.instantiate(&main_window_surface, main_window_surface.get_extent());
+    main_framegraph.main_pass().on_render(Box::new(TestGraph { start: Instant::now(), demo_material: demo_material.clone(), shader_instance: surface_shader_instance.clone(), time_pc_data: RwLock::new(TestPc { time: 0.5 }) }));
     def_combine.on_render(Box::new(TestGraph { start: Instant::now(), demo_material, shader_instance: shader_2_instance, time_pc_data: RwLock::new(TestPc { time: 0.5 }) }));
-    main_framegraph.main_pass().attach(def_combine.clone());
-
-    let imgui_pass = imgui_context.instantiate_for_surface(&main_window_surface);
-    main_framegraph.main_pass().attach(imgui_pass.clone());
-
-    shader_instance.bind_texture(&BindPoint::new("ui_result"), &imgui_pass.get_images()[0]);
-
 
     // Game loop
     'game_loop: loop {
@@ -139,6 +141,8 @@ fn main() {
                 }
                 PlatformEvent::WindowResized(_window, _width, _height) => {
                     imgui_pass.resize(Vec2u32::new(_width, _height));
+                    surface_shader_instance.bind_texture(&BindPoint::new("ui_result"), &imgui_pass.get_images()[0]);
+                    surface_shader_instance.bind_texture(&BindPoint::new("scene_result"), &def_combine.get_images()[0]);
                 }
             }
         }

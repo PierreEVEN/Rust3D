@@ -111,7 +111,7 @@ impl VkShaderInstance {
                     }
                     _ => { todo!() }
                     /*
-                    DescriptorType::StorageImage => { todo!() (vk::DescriptorType::STORAGE_IMAGE, null(), null(), null()) }
+                    DescriptorType::StorageImage => { (vk::DescriptorType::STORAGE_IMAGE, null(), null(), null()); todo!()  }
                     DescriptorType::UniformTexelBuffer => { (vk::DescriptorType::UNIFORM_TEXEL_BUFFER, null(), null(), null()); todo!() }
                     DescriptorType::StorageTexelBuffer => { (vk::DescriptorType::STORAGE_TEXEL_BUFFER, null(), null(), null()); todo!() }
                     DescriptorType::UniformBuffer => { (vk::DescriptorType::UNIFORM_BUFFER, null(), null(), null()); todo!() }

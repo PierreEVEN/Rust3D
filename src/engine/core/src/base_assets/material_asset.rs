@@ -66,7 +66,7 @@ impl MaterialAsset {
                 return Some(permutation.shader.clone());
             }
         }
-
+        
         match &*self.parsed_shader.read().unwrap() {
             None => {}
             Some(parser) => {
@@ -125,10 +125,10 @@ impl MaterialAsset {
                 };
 
                 let render_pass = match self.meta_data.asset_manager.graphics().find_render_pass(pass) {
-                    None => { panic!("failed to find render pass [{pass}]") }
+                    None => { panic!("trying to create shader program for render pass [{pass}], but this render pass is not available or registered") }
                     Some(pass) => { pass }
                 };
-
+                
                 let program = self.meta_data.asset_manager.graphics().create_shader_program(&render_pass, &ci_shader);
                 self.permutations.write().unwrap().insert(pass.clone(), ShaderPermutation {
                     shader: program.clone()

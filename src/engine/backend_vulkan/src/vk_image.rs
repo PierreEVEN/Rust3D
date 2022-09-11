@@ -105,7 +105,6 @@ impl GfxImage for VkImage {
         }
         
 
-        println!("RESIZE USAGE 2 :  {}", self.image_params.usage.bits() as u32);
         self.image.read().unwrap().invalidate(&self.gfx, RbImage { create_infos: self.image_params, type_override: new_type });
         self.view.invalidate(&self.gfx, RbImageView { create_infos: self.image_params, images: self.image.read().unwrap().clone(), type_override: new_type });
         *self.image_type.write().unwrap() = new_type;
@@ -159,8 +158,6 @@ impl GfxImageBuilder<CombinedImageData> for RbImage {
             .usage(VkImageUsage::from(self.create_infos.usage | ImageUsage::CopyDestination, self.create_infos.pixel_format.is_depth_format()).0)
             .sharing_mode(SharingMode::EXCLUSIVE)
             .build();
-        
-        println!("IMAGE USAGE :  {}", self.create_infos.usage.bits() as u32);
         
         // Create image
         let image = vk_check!(unsafe {gfx.cast::<GfxVulkan>().device.handle.create_image(
@@ -379,9 +376,8 @@ impl VkImage {
         }
     }
 
-    pub fn resize_from_existing_images(&self, new_type: ImageType, existing_images: GfxResource<CombinedImageData>)  {
-        println!("RESIZE USAGE 2 :  {}", self.image_params.usage.bits() as u32);
-        *self.image.write().unwrap() = Arc::new(existing_images);
+    pub fn resize_from_existing_images(&self, new_type: ImageType, existing_images: Arc<GfxResource<CombinedImageData>>)  {
+        *self.image.write().unwrap() = existing_images;
         self.view.invalidate(&self.gfx, RbImageView { create_infos: self.image_params, images: self.image.read().unwrap().clone(), type_override: new_type });
         *self.image_type.write().unwrap() = new_type;
     }

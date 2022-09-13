@@ -54,6 +54,10 @@ pub struct InputManager {
     mouse_position: RwLock<Vec2F32>,
 }
 
+pub trait IoInterface {
+    fn get_mouse_position(&self) -> Vec2i32;
+}
+
 impl InputManager {
     pub fn new() -> Self {
         Self { action_mapping: Default::default(), axis_mapping: Default::default(), input_states: Default::default(), mouse_position: RwLock::new(Vec2F32 { x: 0.0, y: 0.0 }) }
@@ -176,7 +180,7 @@ pub enum MouseButton {
     Button2,
 }
 
-#[derive(Copy, Clone, Hash, Eq, PartialEq)]
+#[derive(Copy, Clone, Hash, Eq, PartialEq, EnumToStr)]
 pub enum MouseAxis {
     X,
     Y,
@@ -184,7 +188,8 @@ pub enum MouseAxis {
     ScrollY,
 }
 
-#[derive(Copy, Clone, Hash, Eq, PartialEq)]
+
+#[derive(Copy, Clone, Hash, Eq, PartialEq, EnumToStr)]
 pub enum KeyboardKey {
     Any(usize),
     Backspace,

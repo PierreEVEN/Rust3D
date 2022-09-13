@@ -130,7 +130,7 @@ fn main() {
             };
         }));
     }
-
+    
     // Game loop
     'game_loop: loop {
         // handle events

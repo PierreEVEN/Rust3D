@@ -17,6 +17,7 @@ use imgui::ImGUiContext;
 use maths::rect2d::Rect2D;
 use maths::vec2::Vec2u32;
 use maths::vec4::Vec4F32;
+use plateform::input_system::{ActionType, InputAction, InputMapping, KeyboardKey};
 use plateform::window::{PlatformEvent, WindowCreateInfos, WindowFlagBits, WindowFlags};
 use plateform_win32::PlatformWin32;
 use third_party_io::image::read_image_from_file;
@@ -32,7 +33,13 @@ fn main() {
     // We use a win32 backend with a vulkan renderer
     #[cfg(any(target_os = "windows"))]
         let engine = Engine::new(PlatformWin32::new(), GfxVulkan::new());
-
+    // Create default inputs
+    let input_manager = engine.platform.input_manager();
+    input_manager.new_action("MoveForward", InputAction::new().map(InputMapping::Keyboard(KeyboardKey::KeyZ)));
+    input_manager.new_action("MoveRight", InputAction::new().map(InputMapping::Keyboard(KeyboardKey::KeyD)));
+    input_manager.new_action("MoveLeft", InputAction::new().map(InputMapping::Keyboard(KeyboardKey::KeyQ)));
+    input_manager.new_action("MoveBackward", InputAction::new().map(InputMapping::Keyboard(KeyboardKey::KeyS)));
+    
     // Create main window, render surface and framegraph
     let main_window = engine.platform.create_window(WindowCreateInfos {
         name: "Engine - 0.1.0".to_string(),
@@ -42,10 +49,10 @@ fn main() {
     }).expect("failed to create main window");
     main_window.show();
     let main_window_surface = VkSurfaceWin32::new(&engine.gfx, main_window.clone(), 3);
-    
+
     // Create ImGui context
     let imgui_context = ImGUiContext::new(&engine.gfx);
-    
+
     // Create render pass and pass instances
     let g_buffer_pass = engine.gfx.create_render_pass(RenderPassCreateInfos {
         pass_id: PassID::new("deferred_combine"),
@@ -64,7 +71,7 @@ fn main() {
     let main_framegraph = FrameGraph::from_surface(&engine.gfx, &main_window_surface, Vec4F32::new(1.0, 0.0, 0.0, 1.0));
     main_framegraph.main_pass().attach(def_combine.clone());
     main_framegraph.main_pass().attach(imgui_pass.clone());
-    
+
     // Create material
     let demo_material = MaterialAsset::new(&engine.asset_manager);
     demo_material.meta_data().set_save_path(Path::new("data/demo_shader"));
@@ -82,7 +89,7 @@ fn main() {
     surface_combine_shader.bind_texture(&BindPoint::new("ui_result"), &imgui_pass.get_images()[0]);
     surface_combine_shader.bind_texture(&BindPoint::new("scene_result"), &def_combine.get_images()[0]);
     surface_combine_shader.bind_sampler(&BindPoint::new("global_sampler"), &generic_image_sampler);
-    
+
     let background_shader = demo_material.get_program(&PassID::new("deferred_combine")).unwrap().instantiate();
     background_shader.bind_texture(&BindPoint::new("bg_texture"), &background_image);
     background_shader.bind_sampler(&BindPoint::new("global_sampler"), &generic_image_sampler);
@@ -105,7 +112,7 @@ fn main() {
             };
         }));
     }
-    
+
     {
         let start = Instant::now();
         let mut time_pc_data = TestPc { time: 0.0 };

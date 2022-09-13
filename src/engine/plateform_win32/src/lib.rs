@@ -1,5 +1,6 @@
 pub mod window;
 pub mod utils;
+mod win32_inputs;
 
 use std::collections::{HashMap, VecDeque};
 use std::hash::{Hash, Hasher};
@@ -18,6 +19,8 @@ use plateform::window::{Window, WindowCreateInfos, PlatformEvent};
 use crate::utils::{check_win32_error, utf8_to_utf16};
 use crate::window::WindowWin32;
 use windows::Win32::UI::WindowsAndMessaging::*;
+use plateform::input_system::InputManager;
+use crate::win32_inputs::win32_input;
 
 const WIN_CLASS_NAME: &str = "r3d_window";
 
@@ -26,7 +29,7 @@ struct HashableHWND(HWND);
 
 impl Hash for HashableHWND {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        state.write_isize(self.0 .0);
+        state.write_isize(self.0.0);
     }
 }
 
@@ -40,6 +43,7 @@ pub struct PlatformWin32 {
     windows: RwLock<HashMap<HashableHWND, Arc<WindowWin32>>>,
     messages: RwLock<VecDeque<PlatformEvent>>,
     monitors: Vec<Monitor>,
+    input_manager: InputManager,
 }
 
 impl PlatformWin32 {
@@ -58,13 +62,14 @@ impl PlatformWin32 {
             win_class.lpfnWndProc = Some(wnd_proc);
             assert_ne!(RegisterClassExW(&win_class), 0);
         }
-        
+
         let platform = Arc::new(PlatformWin32 {
             windows: Default::default(),
             messages: RwLock::new(VecDeque::new()),
             monitors: Default::default(),
+            input_manager: InputManager::new(),
         });
-        
+
         // Set platform pointer into WNDCLASS
         unsafe {
             {
@@ -95,18 +100,19 @@ impl PlatformWin32 {
                 }
             }
         }
-        
+
         // Collect monitors
         platform.collect_monitors();
-        
+
         return platform;
     }
 
 
-    fn send_window_message(&self, hwnd: HWND, msg: u32, _wparam: WPARAM, lparam: LPARAM) {
+    fn send_window_message(&self, hwnd: HWND, msg: u32, wparam: WPARAM, lparam: LPARAM) {
         let window_map = self.windows.read();
         if let Some(window) = window_map.unwrap().get(&hwnd.into()) {
             let message_queue = self.messages.write();
+            win32_input(msg, wparam, lparam, &self.input_manager);
             match msg {
                 WM_CLOSE => {
                     message_queue.unwrap().push_back(PlatformEvent::WindowClosed(window.clone()));
@@ -133,7 +139,6 @@ impl Drop for PlatformWin32 {
 }
 
 unsafe extern "system" fn wnd_proc(hwnd: HWND, msg: u32, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
-
     let platform = {
         let ptr = GetClassLongPtrW(hwnd, GET_CLASS_LONG_INDEX(0));
         if ptr == 0 {
@@ -142,7 +147,7 @@ unsafe extern "system" fn wnd_proc(hwnd: HWND, msg: u32, wparam: WPARAM, lparam:
 
         (ptr as *const PlatformWin32).as_ref().unwrap_unchecked()
     };
-    
+
     platform.send_window_message(hwnd, msg, wparam, lparam);
     DefWindowProcW(hwnd, msg, wparam, lparam)
 }
@@ -150,7 +155,7 @@ unsafe extern "system" fn wnd_proc(hwnd: HWND, msg: u32, wparam: WPARAM, lparam:
 impl Platform for PlatformWin32 {
     fn create_window(&self, create_infos: WindowCreateInfos) -> Result<Arc<dyn Window>, ()> {
         let window = WindowWin32::new(create_infos.clone());
-        let hwnd = window.hwnd.into(); 
+        let hwnd = window.hwnd.into();
         self.windows.write().unwrap().insert(hwnd, window.clone());
         return Ok(window);
     }
@@ -182,9 +187,8 @@ impl Platform for PlatformWin32 {
     fn poll_event(&self) -> Option<PlatformEvent> {
         let mut event_queue = self.messages.write().unwrap();
         if let Some(event) = event_queue.pop_front() {
-            return Some(event)
-        }
-        else {
+            return Some(event);
+        } else {
             drop(event_queue);
 
             //@TODO : make this think cleaner
@@ -199,10 +203,13 @@ impl Platform for PlatformWin32 {
             None
         }
     }
+
+    fn input_manager(&self) -> &InputManager {
+        &self.input_manager
+    }
 }
 
 unsafe extern "system" fn enum_display_monitors_callback(monitor: HMONITOR, _: HDC, _: *mut RECT, userdata: LPARAM) -> BOOL {
-    
     let mut info = MONITORINFO {
         cbSize: size_of::<MONITORINFO>() as u32,
         rcMonitor: Default::default(),
@@ -218,7 +225,7 @@ unsafe extern "system" fn enum_display_monitors_callback(monitor: HMONITOR, _: H
         Ok(_) => (),
         Err(error) => panic!("failed to get DPI for monitor {}", error)
     }
-    
+
     let monitors = (userdata.0 as *mut Vec<Monitor>)
         .as_mut()
         .unwrap_unchecked();
@@ -237,7 +244,7 @@ unsafe extern "system" fn enum_display_monitors_callback(monitor: HMONITOR, _: H
             info.rcWork.bottom,
         ),
         dpi: dpi_x as f32,
-        primary: info.dwFlags & MONITORINFOF_PRIMARY != 0
+        primary: info.dwFlags & MONITORINFOF_PRIMARY != 0,
     });
 
     match check_win32_error() {

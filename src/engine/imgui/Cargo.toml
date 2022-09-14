@@ -12,3 +12,5 @@ shader_compiler = { path = "../shader_compiler" }
 macros = { path = "../macros" }
 maths = { path = "../maths" }
 memoffset = "0.6.5"
+core = { path = "../core" }
+plateform = { path = "../plateform" }

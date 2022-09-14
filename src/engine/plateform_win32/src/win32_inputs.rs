@@ -2,7 +2,29 @@
 use windows::Win32::UI::Input::KeyboardAndMouse::*;
 use windows::Win32::UI::WindowsAndMessaging::*;
 use windows::Win32::UI::WindowsAndMessaging::MAPVK_VSC_TO_VK_EX;
-use plateform::input_system::{InputManager, InputMapping, KeyboardKey};
+use plateform::input_system::{InputManager, InputMapping, KeyboardKey, MouseButton};
+use crate::utils::{hiword, loword};
+
+
+static mut LAST_MOUSE_STATE: u16 = 0;
+
+fn win32_mouse_button(mouse_state: usize) -> Option<(MouseButton, bool)> {
+    unsafe {
+        if mouse_state & (VK_LBUTTON.0 as usize) != 0 { return Some((MouseButton::Left, true)); }
+        if !(mouse_state & (VK_LBUTTON).0 as usize) != 0 { return Some((MouseButton::Left, false)); }
+        if mouse_state & (VK_RBUTTON.0 as usize) != 0 { return Some((MouseButton::Right, true)); }
+        if !(mouse_state & (VK_RBUTTON).0 as usize) != 0 { return Some((MouseButton::Right, false)); }
+        if mouse_state & (VK_MBUTTON.0 as usize) != 0 { return Some((MouseButton::Middle, true)); }
+        if !(mouse_state & (VK_MBUTTON).0 as usize) != 0 { return Some((MouseButton::Middle, false)); }
+        if mouse_state & (VK_XBUTTON1.0 as usize) != 0 { return Some((MouseButton::Button1, true)); }
+        if !(mouse_state & (VK_XBUTTON1).0 as usize) != 0 { return Some((MouseButton::Button1, false)); }
+        if mouse_state & (VK_XBUTTON2.0 as usize) != 0 { return Some((MouseButton::Button2, true)); }
+        if !(mouse_state & (VK_XBUTTON2).0 as usize) != 0 { return Some((MouseButton::Button2, false)); }
+        LAST_MOUSE_STATE = mouse_state as u16;
+    }
+
+    None
+}
 
 fn win32_keyboard(wp: WPARAM, scan_code: u32) -> Option<KeyboardKey> {
     match wp.0 {
@@ -156,7 +178,7 @@ pub fn win32_input(msg: u32, wparam: WPARAM, lparam: LPARAM, input_manager: &Inp
             match win32_keyboard(wparam, scancode) {
                 None => {}
                 Some(keyboard_key) => {
-                    input_manager.press_input(InputMapping::Keyboard(keyboard_key));
+                    input_manager._press_input(InputMapping::Keyboard(keyboard_key));
                 }
             }
         }
@@ -164,7 +186,22 @@ pub fn win32_input(msg: u32, wparam: WPARAM, lparam: LPARAM, input_manager: &Inp
             match win32_keyboard(wparam, scancode) {
                 None => {}
                 Some(keyboard_key) => {
-                    input_manager.release_input(InputMapping::Keyboard(keyboard_key));
+                    input_manager._release_input(InputMapping::Keyboard(keyboard_key));
+                }
+            }
+        }
+        WM_MOUSEMOVE => {
+            input_manager._set_mouse_pos(loword(lparam.0) as f32, hiword(lparam.0) as f32);
+        }
+        WM_LBUTTONDOWN | WM_RBUTTONDOWN | WM_MBUTTONDOWN | WM_XBUTTONUP | WM_LBUTTONUP | WM_RBUTTONUP | WM_MBUTTONUP | WM_XBUTTONUP => {
+            match win32_mouse_button(wparam.0) {
+                None => {}
+                Some((input, pressed)) => {
+                    if pressed {
+                        input_manager._press_input(InputMapping::MouseButton(input));
+                    } else {
+                        input_manager._release_input(InputMapping::MouseButton(input));
+                    }
                 }
             }
         }

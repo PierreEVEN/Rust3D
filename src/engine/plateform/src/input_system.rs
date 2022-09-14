@@ -1,5 +1,7 @@
 ﻿use std::collections::{HashMap};
-use std::sync::{RwLock};
+use std::sync::{LockResult, RwLock};
+use maths::rect2d::RectF32;
+use maths::vec2::Vec2F32;
 
 #[derive(Copy, Clone)]
 pub enum ActionType {
@@ -14,7 +16,6 @@ pub type AxisMappingCallback = Box<dyn FnMut(&InputAxis)>;
 pub struct InputAction {
     released_key_left: i8,
     key_mapping: HashMap<InputMapping, bool>,
-    // (input, is_pressed)
     callbacks: RwLock<Vec<ActionMappingCallback>>,
 }
 
@@ -36,7 +37,6 @@ impl InputAction {
 
 pub struct InputAxis {
     axis_mapping: HashMap<InputMapping, f32>,
-    // (input, value)
     callbacks: RwLock<Vec<AxisMappingCallback>>,
 }
 
@@ -50,11 +50,13 @@ impl InputAxis {
 pub struct InputManager {
     action_mapping: RwLock<HashMap<String, InputAction>>,
     axis_mapping: RwLock<HashMap<String, InputAxis>>,
+    input_states: RwLock<HashMap<InputMapping, f32>>,
+    mouse_position: RwLock<Vec2F32>,
 }
 
 impl InputManager {
     pub fn new() -> Self {
-        Self { action_mapping: Default::default(), axis_mapping: Default::default() }
+        Self { action_mapping: Default::default(), axis_mapping: Default::default(), input_states: Default::default(), mouse_position: RwLock::new(Vec2F32 { x: 0.0, y: 0.0 }) }
     }
 
     pub fn new_action(&self, name: &str, action: InputAction) {
@@ -77,7 +79,29 @@ impl InputManager {
         }
     }
 
-    pub fn press_input(&self, pressed_key: InputMapping) {
+    pub fn get_mouse_position(&self) -> Vec2F32 {
+        *self.mouse_position.read().unwrap()
+    }
+
+    pub fn get_input_state(&self, input: InputMapping) -> f32 {
+        match self.input_states.read().unwrap().get(&input) {
+            None => { 0.0 }
+            Some(input_value) => { *input_value }
+        }
+    }
+    pub fn is_input_pressed(&self, input: InputMapping) -> bool {
+        match self.input_states.read().unwrap().get(&input) {
+            None => { false }
+            Some(input_value) => { *input_value != 0.0 }
+        }
+    }
+
+    pub fn _press_input(&self, pressed_key: InputMapping) {
+        match self.input_states.write() {
+            Ok(mut input_states) => { if !input_states.contains_key(&pressed_key) { input_states.insert(pressed_key, 1.0); } }
+            Err(_) => {}
+        }
+
         for (_, action) in &mut *self.action_mapping.write().unwrap() {
             let mut just_pressed = false;
 
@@ -103,7 +127,12 @@ impl InputManager {
         }
     }
 
-    pub fn release_input(&self, pressed_key: InputMapping) {
+    pub fn _release_input(&self, pressed_key: InputMapping) {
+        match self.input_states.write() {
+            Ok(mut input_states) => { if input_states.contains_key(&pressed_key) { input_states.remove(&pressed_key); } }
+            Err(_) => {}
+        }
+
         for (_, action) in &mut *self.action_mapping.write().unwrap() {
             let mut just_released = false;
             match action.key_mapping.get_mut(&pressed_key) {
@@ -124,6 +153,10 @@ impl InputManager {
                 }
             }
         }
+    }
+
+    pub fn _set_mouse_pos(&self, x: f32, y: f32) {
+        *self.mouse_position.write().unwrap() = Vec2F32 { x, y }
     }
 }
 

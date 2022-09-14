@@ -17,7 +17,7 @@ use imgui::ImGUiContext;
 use maths::rect2d::Rect2D;
 use maths::vec2::Vec2u32;
 use maths::vec4::Vec4F32;
-use plateform::input_system::{ActionType, InputAction, InputMapping, KeyboardKey};
+use plateform::input_system::{InputAction, InputMapping, KeyboardKey};
 use plateform::window::{PlatformEvent, WindowCreateInfos, WindowFlagBits, WindowFlags};
 use plateform_win32::PlatformWin32;
 use third_party_io::image::read_image_from_file;

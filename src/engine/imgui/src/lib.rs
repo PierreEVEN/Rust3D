@@ -9,6 +9,7 @@ use memoffset::offset_of;
 
 use gfx::buffer::{BufferMemory, BufferType};
 use gfx::GfxRef;
+use core::engine::Engine;
 use gfx::image::{GfxImage, GfxImageUsageFlags, ImageCreateInfos, ImageParams, ImageUsage};
 use gfx::image::ImageType::Texture2d;
 use gfx::image_sampler::{ImageSampler, SamplerCreateInfos};
@@ -21,6 +22,7 @@ use gfx::types::{ClearValues, PixelFormat, Scissors};
 use imgui_bindings::{igCreateContext, igEndFrame, igGetDrawData, igGetIO, igGetMainViewport, igGetStyle, igNewFrame, igRender, igShowDemoWindow, igStyleColorsDark, ImDrawIdx, ImDrawVert, ImFontAtlas_GetTexDataAsRGBA32, ImGuiBackendFlags__ImGuiBackendFlags_HasMouseCursors, ImGuiBackendFlags__ImGuiBackendFlags_HasSetMousePos, ImGuiBackendFlags__ImGuiBackendFlags_PlatformHasViewports, ImGuiConfigFlags__ImGuiConfigFlags_DockingEnable, ImGuiConfigFlags__ImGuiConfigFlags_NavEnableGamepad, ImGuiConfigFlags__ImGuiConfigFlags_NavEnableKeyboard, ImGuiConfigFlags__ImGuiConfigFlags_ViewportsEnable, ImGuiContext, ImTextureID, ImVec2, ImVec4};
 use maths::vec2::Vec2F32;
 use maths::vec4::Vec4F32;
+use plateform::input_system::{InputMapping, MouseButton};
 use shader_compiler::backends::backend_shaderc::{BackendShaderC, ShaderCIncluder};
 use shader_compiler::CompilerBackend;
 use shader_compiler::parser::Parser;
@@ -53,6 +55,8 @@ impl ImGUiContext {
         io.BackendFlags |= ImGuiBackendFlags__ImGuiBackendFlags_HasMouseCursors;
         io.BackendFlags |= ImGuiBackendFlags__ImGuiBackendFlags_HasSetMousePos;
         io.BackendFlags |= ImGuiBackendFlags__ImGuiBackendFlags_PlatformHasViewports;
+        io.MouseHoveredViewport = 0;
+
 
         let style = unsafe { &mut *igGetStyle() };
         unsafe { igStyleColorsDark(igGetStyle()) };
@@ -153,7 +157,7 @@ impl ImGUiContext {
         };
 
         let image_sampler = gfx.create_image_sampler(SamplerCreateInfos {});
-        
+
         let shader_program = gfx.create_shader_program(&imgui_render_pass, &ShaderProgramInfos {
             vertex_stage: ShaderProgramStage {
                 spirv: vertex_sprv.binary,
@@ -215,12 +219,23 @@ impl ImGUiContext {
         let shader_program = self.shader_program.clone();
         let shader_instance = self.shader_instance.clone();
         let font_texture = self.font_texture.clone();
-        
+
         render_pass_instance.on_render(Box::new(move |command_buffer| {
             let io = unsafe { &mut *igGetIO() };
             io.DisplaySize = ImVec2 { x: command_buffer.get_surface().get_extent().x as f32, y: command_buffer.get_surface().get_extent().y as f32 };
             io.DisplayFramebufferScale = ImVec2 { x: 1.0, y: 1.0 };
             io.DeltaTime = 1.0 / 60.0; //@TODO application::get().delta_time();
+
+            // Update mouse
+            let engine = Engine::get();
+            let input_manager = engine.platform.input_manager();
+            io.MouseDown[0] = input_manager.is_input_pressed(InputMapping::MouseButton(MouseButton::Left));
+            io.MouseDown[1] = input_manager.is_input_pressed(InputMapping::MouseButton(MouseButton::Right));
+            io.MouseDown[2] = input_manager.is_input_pressed(InputMapping::MouseButton(MouseButton::Middle));
+            io.MouseDown[3] = input_manager.is_input_pressed(InputMapping::MouseButton(MouseButton::Button1));
+            io.MouseDown[4] = input_manager.is_input_pressed(InputMapping::MouseButton(MouseButton::Button2));
+            io.MouseHoveredViewport = 0;
+            io.MousePos = ImVec2 { x: input_manager.get_mouse_position().x, y: input_manager.get_mouse_position().y };
 
             unsafe { igNewFrame(); }
             unsafe { igShowDemoWindow(null_mut()); }
@@ -243,10 +258,16 @@ impl ImGUiContext {
                     let cmd_list = &**draw_data.CmdLists.offset(n as isize);
 
                     mesh.set_data(command_buffer.get_surface().get_current_ref(),
-                                       vertex_start,
-                                       slice::from_raw_parts(cmd_list.VtxBuffer.Data as *const u8, cmd_list.VtxBuffer.Size as usize * size_of::<ImDrawVert>() as usize),
-                                       index_start,
-                                       slice::from_raw_parts(cmd_list.IdxBuffer.Data as *const u8, cmd_list.IdxBuffer.Size as usize * size_of::<ImDrawIdx>() as usize),
+                                  vertex_start,
+                                  slice::from_raw_parts(
+                                      cmd_list.VtxBuffer.Data as *const u8,
+                                      cmd_list.VtxBuffer.Size as usize * size_of::<ImDrawVert>() as usize,
+                                  ),
+                                  index_start,
+                                  slice::from_raw_parts(
+                                      cmd_list.IdxBuffer.Data as *const u8,
+                                      cmd_list.IdxBuffer.Size as usize * size_of::<ImDrawIdx>() as usize,
+                                  ),
                     );
 
                     vertex_start += cmd_list.VtxBuffer.Size as u32;

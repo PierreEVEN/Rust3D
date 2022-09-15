@@ -1,7 +1,6 @@
 ﻿use std::collections::{HashMap};
-use std::sync::{LockResult, RwLock};
-use maths::rect2d::RectF32;
-use maths::vec2::Vec2F32;
+use std::sync::{ RwLock};
+use maths::vec2::{Vec2F32, Vec2i32};
 
 #[derive(Copy, Clone)]
 pub enum ActionType {
@@ -180,7 +179,7 @@ pub enum MouseButton {
     Button2,
 }
 
-#[derive(Copy, Clone, Hash, Eq, PartialEq, EnumToStr)]
+#[derive(Copy, Clone, Hash, Eq, PartialEq)]
 pub enum MouseAxis {
     X,
     Y,
@@ -189,7 +188,7 @@ pub enum MouseAxis {
 }
 
 
-#[derive(Copy, Clone, Hash, Eq, PartialEq, EnumToStr)]
+#[derive(Copy, Clone, Hash, Eq, PartialEq)]
 pub enum KeyboardKey {
     Any(usize),
     Backspace,

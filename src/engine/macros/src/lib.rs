@@ -1,10 +1,9 @@
 ﻿extern crate proc_macro;
 
-use proc_macro::{Ident, LexError, Span, TokenStream, TokenTree};
-use std::ops::Add;
+use proc_macro::{   TokenStream, TokenTree};
 use std::str::FromStr;
 
-use quote::{quote, quote_token};
+use quote::{quote};
 use syn::Data::{Enum, Struct};
 use syn::DeriveInput;
 use syn::parse_macro_input;

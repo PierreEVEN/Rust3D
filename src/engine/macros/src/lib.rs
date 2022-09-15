@@ -1,9 +1,9 @@
 ﻿extern crate proc_macro;
 
-use proc_macro::{   TokenStream, TokenTree};
+use proc_macro::TokenStream;
 use std::str::FromStr;
 
-use quote::{quote};
+use quote::quote;
 use syn::Data::{Enum, Struct};
 use syn::DeriveInput;
 use syn::parse_macro_input;
@@ -206,7 +206,7 @@ pub fn enum_to_str(input: TokenStream) -> TokenStream {
                     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {{
                         f.write_str(
                             match self {{");
-            
+
             for variant in data_enum.variants {
                 let attr_count = variant.fields.len();
                 string += format!("{}::{}", type_name, variant.ident).as_str();
@@ -217,7 +217,7 @@ pub fn enum_to_str(input: TokenStream) -> TokenStream {
                     }
                 }
 
-                string += format!(" => {{ \" {} \" }},\n", variant.ident).as_str();            
+                string += format!(" => {{ \" {} \" }},\n", variant.ident).as_str();
             }
             string += format!("}})}}}}").as_str();
 

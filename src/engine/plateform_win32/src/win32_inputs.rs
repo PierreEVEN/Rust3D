@@ -193,7 +193,7 @@ pub fn win32_input(msg: u32, wparam: WPARAM, lparam: LPARAM, input_manager: &Inp
         WM_MOUSEMOVE => {
             input_manager._set_mouse_pos(loword(lparam.0) as f32, hiword(lparam.0) as f32);
         }
-        WM_LBUTTONDOWN | WM_RBUTTONDOWN | WM_MBUTTONDOWN | WM_XBUTTONUP | WM_LBUTTONUP | WM_RBUTTONUP | WM_MBUTTONUP | WM_XBUTTONUP => {
+        WM_LBUTTONDOWN | WM_RBUTTONDOWN | WM_MBUTTONDOWN | WM_XBUTTONDOWN | WM_LBUTTONUP | WM_RBUTTONUP | WM_MBUTTONUP | WM_XBUTTONUP => {
             match win32_mouse_button(wparam.0) {
                 None => {}
                 Some((input, pressed)) => {

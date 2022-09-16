@@ -253,10 +253,13 @@ impl ImGUiContext {
             unsafe {
                 let mut vertex_start = 0;
                 let mut index_start = 0;
+
+                mesh.resize(command_buffer.get_surface().get_current_ref(), draw_data.TotalVtxCount as u32, draw_data.TotalIdxCount as u32);
+                
                 for n in 0..draw_data.CmdListsCount
                 {
                     let cmd_list = &**draw_data.CmdLists.offset(n as isize);
-
+                    
                     mesh.set_data(command_buffer.get_surface().get_current_ref(),
                                   vertex_start,
                                   slice::from_raw_parts(
@@ -313,13 +316,13 @@ impl ImGUiContext {
 
             for n in 0..draw_data.CmdListsCount
             {
-                let cmd_list = unsafe { &**draw_data.CmdLists.offset(n as isize) };
-                for cmd_i in 0..cmd_list.CmdBuffer.Size
+                let cmd = unsafe { &**draw_data.CmdLists.offset(n as isize) };
+                for cmd_i in 0..cmd.CmdBuffer.Size
                 {
-                    let pcmd = unsafe { &*cmd_list.CmdBuffer.Data.offset(cmd_i as isize) };
+                    let pcmd = unsafe { &*cmd.CmdBuffer.Data.offset(cmd_i as isize) };
                     match pcmd.UserCallback {
                         Some(callback) => {
-                            unsafe { callback(cmd_list, pcmd); }
+                            unsafe { callback(cmd, pcmd); }
                         }
                         None => {
                             // Project scissor/clipping rectangles into framebuffer space
@@ -358,8 +361,6 @@ impl ImGUiContext {
                                 command_buffer.bind_program(&shader_program);
                                 command_buffer.bind_shader_instance(&shader_instance);
 
-                                println!("{} / {}", pcmd.IdxOffset + global_idx_offset, (pcmd.VtxOffset + global_vtx_offset) as i32);
-
                                 command_buffer.draw_mesh_advanced(
                                     &mesh,
                                     pcmd.IdxOffset + global_idx_offset,
@@ -372,8 +373,8 @@ impl ImGUiContext {
                         }
                     }
                 }
-                global_idx_offset += cmd_list.IdxBuffer.Size as u32;
-                global_vtx_offset += cmd_list.VtxBuffer.Size as u32;
+                global_idx_offset += cmd.IdxBuffer.Size as u32;
+                global_vtx_offset += cmd.VtxBuffer.Size as u32;
             }
         }));
         render_pass_instance

@@ -133,7 +133,9 @@ impl GfxBuffer for VkBuffer {
         if self.create_infos.buffer_type == BufferType::Immutable {
             panic!("Modifying data on immutable buffers is not allowed");
         }
-        self.resize_buffer(start_offset + data.len() as u32);
+        if start_offset + data.len() as u32 > self.buffer_size.load(Ordering::Acquire) {
+            panic!("buffer is to small : size={}, expected={}", self.buffer_size.load(Ordering::Acquire), start_offset + data.len() as u32);
+        }
 
         unsafe {
             match self.create_infos.buffer_type {

@@ -108,15 +108,15 @@ impl VkRenderPass {
                     ..AttachmentDescription::default()
                 });
 
-                depth_attachment_reference = Some(AttachmentReference {
-                    attachment: attachment_index,
-                    layout: ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-                });
+                depth_attachment_reference = Some(AttachmentReference::builder()
+                    .attachment(attachment_index)
+                    .layout(ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
+                    .build());
 
                 clear_values.push(attachment.clear_value);
             }
         }
-
+        
         let subpass = SubpassDescription {
             pipeline_bind_point: PipelineBindPoint::GRAPHICS,
             input_attachment_count: 0,         // Input color_attachments can be used to sample from contents of a previous subpass
@@ -124,7 +124,7 @@ impl VkRenderPass {
             color_attachment_count: color_attachment_references.len() as u32,
             p_color_attachments: color_attachment_references.as_ptr(),
             p_resolve_attachments: null(),     // resolve mean the target attachment for msaa
-            p_depth_stencil_attachment: match depth_attachment_reference {
+            p_depth_stencil_attachment: match depth_attachment_reference { //@TODO : fix invalid ptr
                 Some(attachment) => { &attachment }
                 None => { null() }
             },                                  // resolve mean the target attachment for msaa
@@ -184,7 +184,7 @@ impl VkRenderPass {
         }
 
         gfx.cast::<GfxVulkan>().render_passes.write().unwrap().insert(create_infos.pass_id, vk_render_pass.clone());
-        
+
         vk_render_pass
     }
 }

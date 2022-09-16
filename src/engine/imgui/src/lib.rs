@@ -7,9 +7,9 @@ use std::sync::Arc;
 
 use memoffset::offset_of;
 
+use core::engine::Engine;
 use gfx::buffer::{BufferMemory, BufferType};
 use gfx::GfxRef;
-use core::engine::Engine;
 use gfx::image::{GfxImage, GfxImageUsageFlags, ImageCreateInfos, ImageParams, ImageUsage};
 use gfx::image::ImageType::Texture2d;
 use gfx::image_sampler::{ImageSampler, SamplerCreateInfos};
@@ -358,12 +358,15 @@ impl ImGUiContext {
                                 command_buffer.bind_program(&shader_program);
                                 command_buffer.bind_shader_instance(&shader_instance);
 
-                                command_buffer.draw_mesh_advanced(&mesh,
-                                                                  pcmd.IdxOffset + global_idx_offset,
-                                                                  (pcmd.VtxOffset + global_vtx_offset) as i32,
-                                                                  pcmd.ElemCount,
-                                                                  1,
-                                                                  0,
+                                println!("{} / {}", pcmd.IdxOffset + global_idx_offset, (pcmd.VtxOffset + global_vtx_offset) as i32);
+
+                                command_buffer.draw_mesh_advanced(
+                                    &mesh,
+                                    pcmd.IdxOffset + global_idx_offset,
+                                    (pcmd.VtxOffset + global_vtx_offset) as i32,
+                                    pcmd.ElemCount,
+                                    1,
+                                    0,
                                 );
                             }
                         }

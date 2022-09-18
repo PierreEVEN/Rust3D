@@ -1,3 +1,14 @@
 [workspace]
-members = ["src/engine/*", "src/editor/", "src/main/"]
-default-members = ["src/editor/"]
+members = [
+    "crates/engine/*",
+    "crates/editor/",
+    "crates/main/"
+]
+default-members = ["crates/editor/"]
+
+[profile.production]
+inherits = "release"
+opt-level = 3
+lto = "fat"
+incremental = false
+codegen-units = 1

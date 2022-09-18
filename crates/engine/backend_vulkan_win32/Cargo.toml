@@ -1,0 +1,16 @@
+[package]
+name = "backend_vulkan_win32"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+gfx = {path = "../gfx"}
+maths = {path = "../maths"}
+macros = { path = "../macros" }
+backend_vulkan = { path = "../backend_vulkan" }
+plateform = {path = "../plateform"}
+plateform_win32 = {path = "../plateform_win32"}
+windows = { version = "0.39.0", features = [ "Win32"] }
+ash = "0.37.0"
+gpu-allocator =  { version= "0.19.0", default-features = false, features=["vulkan"]}
+raw-window-handle = "0.5.0"

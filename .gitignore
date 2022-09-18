@@ -1,3 +1,4 @@
 /target
 .idea
+imgui.ini
 crates/engine/imgui-bindings/src/bindings.rs

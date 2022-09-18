@@ -12,9 +12,7 @@ third_party_io = { path = "../engine/third_party_io" }
 shader_compiler = { path = "../engine/shader_compiler" }
 maths = { path = "../engine/maths" }
 macros = { path = "../engine/macros" }
-gfx = { path = "../engine/gfx" }
-plateform = { path = "../engine/plateform" }
-plateform_win32 = { path = "../engine/plateform_win32" }
-backend_vulkan = { path = "../engine/backend_vulkan" }
-backend_vulkan_win32 = { path = "../engine/backend_vulkan_win32" }
+gfx = { path = "../engine/common/gfx" }
+plateform = { path = "../engine/common/plateform" }
 imgui = { path = "../engine/imgui" }
+backend_launcher = { path = "../engine/backends/backend_launcher" }

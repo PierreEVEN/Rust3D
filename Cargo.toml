@@ -1,8 +1,16 @@
 [workspace]
 members = [
-    "crates/engine/*",
-    "crates/editor/",
-    "crates/main/"
+    "crates/engine/core",
+    "crates/engine/imgui",
+    "crates/engine/imgui-bindings",
+    "crates/engine/macros",
+    "crates/engine/maths",
+    "crates/engine/shader_compiler",
+    "crates/engine/third_party_io",
+    "crates/engine/backends/*",
+    "crates/engine/common/*",
+    "crates/editor",
+    "crates/main"
 ]
 default-members = ["crates/editor/"]
 

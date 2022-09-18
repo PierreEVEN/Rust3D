@@ -2,16 +2,15 @@ use std::fs;
 use std::path::Path;
 use std::time::Instant;
 
-use backend_vulkan::GfxVulkan;
-use backend_vulkan_win32::vk_surface_win32::VkSurfaceWin32;
+use backend_launcher::backend;
 use core::asset::*;
 use core::base_assets::material_asset::*;
-use core::engine::*;
+use core::engine::Engine;
 use gfx::buffer::BufferMemory;
 use gfx::image_sampler::SamplerCreateInfos;
 use gfx::render_pass::{FrameGraph, RenderPassAttachment, RenderPassCreateInfos};
 use gfx::shader::{PassID, ShaderStage};
-use gfx::shader_instance::{BindPoint};
+use gfx::shader_instance::BindPoint;
 use gfx::types::{ClearValues, PixelFormat};
 use imgui::ImGUiContext;
 use maths::rect2d::Rect2D;
@@ -19,7 +18,6 @@ use maths::vec2::Vec2u32;
 use maths::vec4::Vec4F32;
 use plateform::input_system::{InputAction, InputMapping, KeyboardKey};
 use plateform::window::{PlatformEvent, WindowCreateInfos, WindowFlagBits, WindowFlags};
-use plateform_win32::PlatformWin32;
 use third_party_io::image::read_image_from_file;
 
 mod gfx_demo;
@@ -31,15 +29,15 @@ struct TestPc {
 
 fn main() {
     // We use a win32 backend with a vulkan renderer
-    #[cfg(any(target_os = "windows"))]
-        let engine = Engine::new(PlatformWin32::new(), GfxVulkan::new());
+    let engine = backend::create_engine_vulkan();
+
     // Create default inputs
     let input_manager = engine.platform.input_manager();
     input_manager.new_action("MoveForward", InputAction::new().map(InputMapping::Keyboard(KeyboardKey::KeyZ)));
     input_manager.new_action("MoveRight", InputAction::new().map(InputMapping::Keyboard(KeyboardKey::KeyD)));
     input_manager.new_action("MoveLeft", InputAction::new().map(InputMapping::Keyboard(KeyboardKey::KeyQ)));
     input_manager.new_action("MoveBackward", InputAction::new().map(InputMapping::Keyboard(KeyboardKey::KeyS)));
-    
+
     // Create main window, render surface and framegraph
     let main_window = engine.platform.create_window(WindowCreateInfos {
         name: "Engine - 0.1.0".to_string(),
@@ -48,7 +46,7 @@ fn main() {
         background_alpha: 255,
     }).expect("failed to create main window");
     main_window.show();
-    let main_window_surface = VkSurfaceWin32::new(&engine.gfx, main_window.clone(), 3);
+    let main_window_surface = backend::create_surface_vulkan(&engine.gfx, &main_window);
 
     // Create ImGui context
     let imgui_context = ImGUiContext::new(&engine.gfx);
@@ -130,23 +128,25 @@ fn main() {
             };
         }));
     }
-    
-    // Game loop
-    'game_loop: loop {
-        // handle events
-        while let Some(message) = engine.platform.poll_event() {
-            match message {
-                PlatformEvent::WindowClosed(_) => {
-                    break 'game_loop;
-                }
-                PlatformEvent::WindowResized(_window, _width, _height) => {
-                    imgui_pass.resize(Vec2u32::new(_width, _height));
-                    surface_combine_shader.bind_texture(&BindPoint::new("ui_result"), &imgui_pass.get_images()[0]);
-                    surface_combine_shader.bind_texture(&BindPoint::new("scene_result"), &def_combine.get_images()[0]);
-                }
-            }
-        }
 
+    main_window.bind_event(PlatformEvent::WindowClosed, Box::new(|_| {
+        Engine::get().shutdown();
+    }));
+
+    main_window.bind_event(PlatformEvent::WindowResized(0, 0), Box::new(move |event| {
+        match event {
+            PlatformEvent::WindowResized(width, height) => {
+                imgui_pass.resize(Vec2u32::new(*width, *height));
+                surface_combine_shader.bind_texture(&BindPoint::new("ui_result"), &imgui_pass.get_images()[0]);
+                surface_combine_shader.bind_texture(&BindPoint::new("scene_result"), &def_combine.get_images()[0]);
+            }
+            _ => {}
+        }
+    }));
+
+    // Game loop
+    while engine.run() {
+        engine.platform.poll_events();
         match main_framegraph.begin() {
             Ok(_) => { main_framegraph.submit(); }
             Err(_) => {}

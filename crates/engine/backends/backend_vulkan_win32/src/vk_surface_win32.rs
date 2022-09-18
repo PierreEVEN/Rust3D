@@ -213,7 +213,7 @@ impl GfxSurface for VkSurfaceWin32 {
 }
 
 impl VkSurfaceWin32 {
-    pub fn new(gfx: &GfxRef, window: Arc<dyn Window>, image_count: u32) -> Arc<dyn GfxSurface> {
+    pub fn new(gfx: &GfxRef, window: &Arc<dyn Window>, image_count: u32) -> Arc<dyn GfxSurface> {
         let gfx_copy = gfx.clone();
 
         let handle = match window.get_handle() {

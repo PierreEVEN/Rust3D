@@ -1,4 +1,5 @@
-﻿use std::ptr::null;
+﻿use std::collections::HashMap;
+use std::ptr::null;
 use std::sync::{Arc, RwLock};
 
 use raw_window_handle::{RawWindowHandle, Win32WindowHandle};
@@ -7,7 +8,7 @@ use windows::Win32::Foundation::{HINSTANCE, HWND, RECT};
 use windows::Win32::UI::WindowsAndMessaging::{AdjustWindowRectEx, CreateWindowExW, HMENU, LWA_ALPHA, SetLayeredWindowAttributes, SetWindowTextW, ShowWindow, SW_MAXIMIZE, SW_SHOW, WINDOW_STYLE, WS_CAPTION, WS_EX_LAYERED, WS_MAXIMIZEBOX, WS_MINIMIZEBOX, WS_OVERLAPPED, WS_POPUP, WS_SYSMENU, WS_THICKFRAME, WS_VISIBLE};
 
 use maths::rect2d::RectI32;
-use plateform::window::{Window, WindowCreateInfos, WindowFlagBits, WindowFlags};
+use plateform::window::{PlatformEvent, Window, WindowCreateInfos, WindowEventDelegate, WindowFlagBits, WindowFlags};
 
 use crate::{utf8_to_utf16, WIN_CLASS_NAME};
 use crate::utils::check_win32_error;
@@ -18,6 +19,7 @@ pub struct WindowWin32 {
     geometry: RwLock<RectI32>,
     background_alpha: RwLock<u8>,
     title: RwLock<String>,
+    event_map: RwLock<HashMap<PlatformEvent, Vec<WindowEventDelegate>>>,
 }
 
 impl WindowWin32 {
@@ -71,11 +73,23 @@ impl WindowWin32 {
                 background_alpha: RwLock::new(create_infos.background_alpha),
                 flags: create_infos.window_flags,
                 title: RwLock::new(create_infos.name.to_string()),
+                event_map: RwLock::default(),
             };
 
             window.set_background_alpha(create_infos.background_alpha);
 
             return Arc::new(window);
+        }
+    }
+
+    pub fn trigger_event(&self, event_type: &PlatformEvent) {
+        match self.event_map.write().unwrap().get_mut(&event_type) {
+            None => {}
+            Some(events) => {
+                for event in events {
+                    event(event_type);
+                }
+            }
         }
     }
 }
@@ -129,5 +143,16 @@ impl Window for WindowWin32 {
         let mut handle = Win32WindowHandle::empty();
         handle.hwnd = self.hwnd.0 as *mut std::ffi::c_void;
         RawWindowHandle::Win32(handle)
+    }
+
+    fn bind_event(&self, event_type: PlatformEvent, delegate: WindowEventDelegate) {
+        match self.event_map.write().unwrap().get_mut(&event_type) {
+            None => {}
+            Some(events) => {
+                events.push(delegate);
+                return;
+            }
+        }
+        self.event_map.write().unwrap().insert(event_type, vec![delegate]);
     }
 }

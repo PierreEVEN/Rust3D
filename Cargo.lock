@@ -53,6 +53,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d468802bab17cbc0cc575e9b053f41e72aa36bfa6b7f55e3529ffa43161b97fa"
 
 [[package]]
+name = "backend_launcher"
+version = "0.1.0"
+dependencies = [
+ "backend_vulkan",
+ "backend_vulkan_win32",
+ "core",
+ "gfx",
+ "plateform",
+ "plateform_win32",
+]
+
+[[package]]
 name = "backend_vulkan"
 version = "0.1.0"
 dependencies = [
@@ -224,15 +236,13 @@ checksum = "b365fabc795046672053e29c954733ec3b05e4be654ab130fe8f1f94d7051f35"
 name = "editor"
 version = "0.1.0"
 dependencies = [
- "backend_vulkan",
- "backend_vulkan_win32",
+ "backend_launcher",
  "core",
  "gfx",
  "imgui",
  "macros",
  "maths",
  "plateform",
- "plateform_win32",
  "shader_compiler",
  "third_party_io",
 ]

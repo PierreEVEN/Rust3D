@@ -4,7 +4,7 @@ pub mod input_system;
 use std::sync::{Arc};
 use maths::rect2d::Rect2D;
 use crate::input_system::{InputManager};
-use crate::window::{Window, WindowCreateInfos, PlatformEvent};
+use crate::window::{Window, WindowCreateInfos};
 
 #[derive(Copy, Clone)]
 pub struct Monitor {
@@ -34,6 +34,6 @@ pub trait Platform {
     fn monitor_count(&self) -> usize;
     fn get_monitor(&self, index: usize) -> Monitor;
     fn collect_monitors(&self);
-    fn poll_event(&self) -> Option<PlatformEvent>;
+    fn poll_events(&self);
     fn input_manager(&self) -> &InputManager;
 }

@@ -1,26 +1,29 @@
-pub mod window;
-pub mod utils;
-mod win32_inputs;
-
-use std::collections::{HashMap, VecDeque};
+use std::collections::{HashMap};
 use std::hash::{Hash, Hasher};
 use std::mem::size_of;
 use std::ptr::null;
 use std::sync::{Arc, RwLock};
+
 use windows::core::PCWSTR;
 use windows::Win32::Foundation::{BOOL, HINSTANCE, HWND, LPARAM, LRESULT, RECT, WPARAM};
 use windows::Win32::Graphics::Gdi::{BLACK_BRUSH, EnumDisplayMonitors, GetMonitorInfoW, GetStockObject, HBRUSH, HDC, HMONITOR, MONITORINFO};
 use windows::Win32::Media::{timeBeginPeriod, timeEndPeriod};
 use windows::Win32::UI::HiDpi::{GetDpiForMonitor, MDT_EFFECTIVE_DPI};
 use windows::Win32::UI::WindowsAndMessaging::{CreateWindowExW, CS_DBLCLKS, CS_HREDRAW, CS_VREDRAW, DefWindowProcW, DispatchMessageW, GET_CLASS_LONG_INDEX, GetClassLongPtrW, HMENU, IDC_ARROW, LoadCursorW, PeekMessageW, PM_REMOVE, RegisterClassExW, SetClassLongPtrW, TranslateMessage, UnregisterClassW, WINDOW_EX_STYLE, WINDOW_STYLE, WNDCLASSEXW};
-use maths::rect2d::{Rect2D};
-use plateform::{Monitor, Platform};
-use plateform::window::{Window, WindowCreateInfos, PlatformEvent};
-use crate::utils::{check_win32_error, utf8_to_utf16};
-use crate::window::WindowWin32;
 use windows::Win32::UI::WindowsAndMessaging::*;
+
+use maths::rect2d::Rect2D;
+use plateform::{Monitor, Platform};
 use plateform::input_system::InputManager;
+use plateform::window::{PlatformEvent, Window, WindowCreateInfos};
+
+use crate::utils::{check_win32_error, utf8_to_utf16};
 use crate::win32_inputs::win32_input;
+use crate::window::WindowWin32;
+
+pub mod window;
+pub mod utils;
+mod win32_inputs;
 
 const WIN_CLASS_NAME: &str = "r3d_window";
 
@@ -41,7 +44,6 @@ impl From<HWND> for HashableHWND {
 
 pub struct PlatformWin32 {
     windows: RwLock<HashMap<HashableHWND, Arc<WindowWin32>>>,
-    messages: RwLock<VecDeque<PlatformEvent>>,
     monitors: Vec<Monitor>,
     input_manager: InputManager,
 }
@@ -65,7 +67,6 @@ impl PlatformWin32 {
 
         let platform = Arc::new(PlatformWin32 {
             windows: Default::default(),
-            messages: RwLock::new(VecDeque::new()),
             monitors: Default::default(),
             input_manager: InputManager::new(),
         });
@@ -111,14 +112,14 @@ impl PlatformWin32 {
     fn send_window_message(&self, hwnd: HWND, msg: u32, wparam: WPARAM, lparam: LPARAM) {
         let window_map = self.windows.read();
         if let Some(window) = window_map.unwrap().get(&hwnd.into()) {
-            let message_queue = self.messages.write();
             win32_input(msg, wparam, lparam, &self.input_manager);
+
             match msg {
                 WM_CLOSE => {
-                    message_queue.unwrap().push_back(PlatformEvent::WindowClosed(window.clone()));
+                    window.trigger_event(&PlatformEvent::WindowClosed)
                 }
                 WM_SIZE => {
-                    message_queue.unwrap().push_back(PlatformEvent::WindowResized(window.clone(), win32_loword!(lparam.0), win32_hiword!(lparam.0)));
+                    window.trigger_event(&PlatformEvent::WindowResized(win32_loword!(lparam.0), win32_hiword!(lparam.0)));
                 }
                 _ => {}
             }
@@ -184,23 +185,13 @@ impl Platform for PlatformWin32 {
         }
     }
 
-    fn poll_event(&self) -> Option<PlatformEvent> {
-        let mut event_queue = self.messages.write().unwrap();
-        if let Some(event) = event_queue.pop_front() {
-            return Some(event);
-        } else {
-            drop(event_queue);
-
-            //@TODO : make this think cleaner
-            unsafe {
-                let mut msg = std::mem::zeroed();
-                if PeekMessageW(&mut msg, HWND::default(), 0, 0, PM_REMOVE) != false {
-                    TranslateMessage(&mut msg);
-                    DispatchMessageW(&mut msg);
-                }
+    fn poll_events(&self) {
+        unsafe {
+            let mut msg = std::mem::zeroed();
+            if PeekMessageW(&mut msg, HWND::default(), 0, 0, PM_REMOVE) != false {
+                TranslateMessage(&mut msg);
+                DispatchMessageW(&mut msg);
             }
-
-            None
         }
     }
 

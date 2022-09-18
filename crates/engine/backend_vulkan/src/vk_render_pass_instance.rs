@@ -1,7 +1,6 @@
 ﻿use std::sync::{Arc, RwLock};
 
 use ash::vk;
-use ash::vk::Handle;
 
 use gfx::command_buffer::GfxCommandBuffer;
 use gfx::gfx_resource::{GfxImageBuilder, GfxResource};
@@ -253,17 +252,12 @@ impl RenderPassInstance for VkRenderPassInstance {
 
         let wait_stages = vec![vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT; wait_semaphores.len()];
         
-        let rf_semaphore = vec![self.render_finished_semaphore.get(&self.surface.get_current_ref())];
-        let cmds = vec![command_buffer];
-        
-        let submit_infos = vk::SubmitInfo::builder()
+        self.gfx.cast::<GfxVulkan>().device.get_queue(vk::QueueFlags::GRAPHICS).unwrap().submit(vk::SubmitInfo::builder()
             .wait_semaphores(wait_semaphores.as_slice())
             .wait_dst_stage_mask(wait_stages.as_slice())
-            .command_buffers(cmds.as_slice())
-            .signal_semaphores(rf_semaphore.as_slice())
-            .build();
-
-        self.gfx.cast::<GfxVulkan>().device.get_queue(vk::QueueFlags::GRAPHICS).unwrap().submit(submit_infos);
+            .command_buffers(&[command_buffer])
+            .signal_semaphores(&[self.render_finished_semaphore.get(&self.surface.get_current_ref())])
+            .build());
     }
 
     fn on_render(&self, callback: GraphRenderCallback) {

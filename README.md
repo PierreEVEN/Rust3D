@@ -12,7 +12,8 @@ Hey !!! This is my first Rust program (and also another attempt to create a 3D g
 - bindless descriptors
 - Scene graph
 - Assets / scene serialisation
-- Linux / OSx support
+- Wayland / XFace / Cocoa backend
+- Metal backend for OSx
 - Audio integration
 - Physic engine
 - Improve shader compiler by using a better lexer

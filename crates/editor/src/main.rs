@@ -52,7 +52,7 @@ fn main() {
     let imgui_context = ImGUiContext::new(&engine.gfx);
 
     // Create render pass and pass instances
-    let g_buffer_pass = engine.gfx.create_render_pass(RenderPassCreateInfos {
+    let g_buffer_pass = engine.gfx.create_render_pass(format!("gbuffer"), RenderPassCreateInfos {
         pass_id: PassID::new("deferred_combine"),
         color_attachments: vec![RenderPassAttachment {
             name: "color".to_string(),
@@ -80,7 +80,7 @@ fn main() {
     let background_image = read_image_from_file(&engine.gfx, Path::new("data/textures/cat_stretching.png")).expect("failed to create image");
 
     // Create sampler
-    let generic_image_sampler = engine.gfx.create_image_sampler(SamplerCreateInfos {});
+    let generic_image_sampler = engine.gfx.create_image_sampler(format!("bg_image"),SamplerCreateInfos {});
 
     // Create material instance
     let surface_combine_shader = demo_material.get_program(&PassID::new("surface_pass")).unwrap().instantiate();

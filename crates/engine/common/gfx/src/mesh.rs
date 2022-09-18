@@ -27,14 +27,14 @@ pub struct MeshCreateInfos {
 }
 
 impl Mesh {
-    pub fn new(gfx: &GfxRef, create_infos: &MeshCreateInfos) -> Arc<Self> {
-        let index_buffer = gfx.create_buffer(&BufferCreateInfo {
+    pub fn new(gfx: &GfxRef, name: String, create_infos: &MeshCreateInfos) -> Arc<Self> {
+        let index_buffer = gfx.create_buffer(format!("mesh::{}::index", name), &BufferCreateInfo {
             buffer_type: create_infos.buffer_type,
             usage: BufferUsage::IndexData,
             access: BufferAccess::CpuToGpu,
             size: create_infos.index_count * create_infos.index_buffer_type as u32,
         });
-        let vertex_buffer = gfx.create_buffer(&BufferCreateInfo {
+        let vertex_buffer = gfx.create_buffer(format!("mesh::{}::vertex", name), &BufferCreateInfo {
             buffer_type: create_infos.buffer_type,
             usage: BufferUsage::VertexData,
             access: BufferAccess::CpuToGpu,

@@ -129,7 +129,7 @@ impl MaterialAsset {
                     Some(pass) => { pass }
                 };
                 
-                let program = self.meta_data.asset_manager.graphics().create_shader_program(&render_pass, &ci_shader);
+                let program = self.meta_data.asset_manager.graphics().create_shader_program(self.meta_data.get_name(), &render_pass, &ci_shader);
                 self.permutations.write().unwrap().insert(pass.clone(), ShaderPermutation {
                     shader: program.clone()
                 });

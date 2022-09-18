@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use std::ffi::CStr;
 use std::os::raw::c_char;
 
-use ash::{vk, extensions::ext};
+use ash::{extensions::ext, vk};
 
 use gfx::PhysicalDevice;
 
@@ -19,7 +19,7 @@ pub struct InstanceCreateInfos {
 
 pub struct VkInstance {
     pub handle: ash::Instance,
-    _debug_util_loader: ext::DebugUtils,
+    pub debug_util_loader: ext::DebugUtils,
     _debug_messenger: vk::DebugUtilsMessengerEXT,
     enable_validation_layers: bool,
     device_map: HashMap<PhysicalDevice, VkPhysicalDevice>,
@@ -116,7 +116,7 @@ impl VkInstance {
 
         Ok(Self {
             handle: instance,
-            _debug_util_loader: debug_util_loader,
+            debug_util_loader: debug_util_loader,
             _debug_messenger: debug_messenger,
             enable_validation_layers,
             device_map,

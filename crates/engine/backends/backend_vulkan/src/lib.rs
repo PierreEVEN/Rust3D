@@ -1,9 +1,13 @@
 extern crate core;
 
+use std::any::TypeId;
 use std::collections::HashMap;
 use std::default::Default;
+use std::ffi::CStr;
 use std::mem::MaybeUninit;
+use std::os::raw::c_char;
 use std::sync::{Arc, RwLock, Weak};
+use ash::vk;
 
 use gfx::{GfxInterface, GfxRef, PhysicalDevice};
 use gfx::buffer::{BufferCreateInfo, GfxBuffer};
@@ -100,23 +104,23 @@ impl GfxInterface for GfxVulkan {
         self.instance.find_best_suitable_gpu_vk()
     }
 
-    fn create_buffer(&self, create_infos: &BufferCreateInfo) -> Arc<dyn GfxBuffer> {
-        Arc::new(VkBuffer::new(&self.get_ref(), create_infos))
+    fn create_buffer(&self, name: String, create_infos: &BufferCreateInfo) -> Arc<dyn GfxBuffer> {
+        Arc::new(VkBuffer::new(&self.get_ref(), name, create_infos))
     }
 
-    fn create_shader_program(&self, render_pass: &Arc<dyn RenderPass>, create_infos: &ShaderProgramInfos) -> Arc<dyn ShaderProgram> {
+    fn create_shader_program(&self, _name: String, render_pass: &Arc<dyn RenderPass>, create_infos: &ShaderProgramInfos) -> Arc<dyn ShaderProgram> {
         VkShaderProgram::new(&self.get_ref(), render_pass, create_infos)
     }
 
-    fn create_render_pass(&self, create_infos: RenderPassCreateInfos) -> Arc<dyn RenderPass> {
-        VkRenderPass::new(&self.get_ref(), create_infos)
+    fn create_render_pass(&self, name: String, create_infos: RenderPassCreateInfos) -> Arc<dyn RenderPass> {
+        VkRenderPass::new(&self.get_ref(), name, create_infos)
     }
 
-    fn create_image(&self, create_infos: ImageCreateInfos) -> Arc<dyn GfxImage> {
-        VkImage::new(&self.get_ref(), create_infos)
+    fn create_image(&self, name: String, create_infos: ImageCreateInfos) -> Arc<dyn GfxImage> {
+        VkImage::new(&self.get_ref(), name, create_infos)
     }
 
-    fn create_image_sampler(&self, create_infos: SamplerCreateInfos) -> Arc<dyn ImageSampler> {
+    fn create_image_sampler(&self, _name: String, create_infos: SamplerCreateInfos) -> Arc<dyn ImageSampler> {
         VkImageSampler::new(&self.get_ref(), create_infos)
     }
 
@@ -127,7 +131,7 @@ impl GfxInterface for GfxVulkan {
         }
     }
 
-    fn create_command_buffer(&self, surface: &Arc<dyn GfxSurface>) -> Arc<dyn GfxCommandBuffer> {
+    fn create_command_buffer(&self, _name: String, surface: &Arc<dyn GfxSurface>) -> Arc<dyn GfxCommandBuffer> {
         VkCommandBuffer::new(&self.get_ref(), surface)
     }
 
@@ -163,6 +167,79 @@ impl GfxVulkan {
         });
         unsafe { (&gfx.gfx_ref as *const Weak<GfxVulkan> as *mut Weak<GfxVulkan>).write(Arc::downgrade(&gfx)) };
         gfx
+    }
+
+    pub fn set_vk_object_name<T: vk::Handle + 'static + Copy>(&self, object: T, name: &str) -> T {
+        let object_type =
+            if TypeId::of::<vk::Instance>() == TypeId::of::<T>() {
+                vk::ObjectType::INSTANCE
+            } else if TypeId::of::<vk::PhysicalDevice>() == TypeId::of::<T>() {
+                vk::ObjectType::PHYSICAL_DEVICE
+            } else if TypeId::of::<vk::Device>() == TypeId::of::<T>() {
+                vk::ObjectType::DEVICE
+            } else if TypeId::of::<vk::Queue>() == TypeId::of::<T>() {
+                vk::ObjectType::QUEUE
+            } else if TypeId::of::<vk::Semaphore>() == TypeId::of::<T>() {
+                vk::ObjectType::SEMAPHORE
+            } else if TypeId::of::<vk::CommandBuffer>() == TypeId::of::<T>() {
+                vk::ObjectType::COMMAND_BUFFER
+            } else if TypeId::of::<vk::Fence>() == TypeId::of::<T>() {
+                vk::ObjectType::FENCE
+            } else if TypeId::of::<vk::DeviceMemory>() == TypeId::of::<T>() {
+                vk::ObjectType::DEVICE_MEMORY
+            } else if TypeId::of::<vk::Buffer>() == TypeId::of::<T>() {
+                vk::ObjectType::BUFFER
+            } else if TypeId::of::<vk::Image>() == TypeId::of::<T>() {
+                vk::ObjectType::IMAGE
+            } else if TypeId::of::<vk::Event>() == TypeId::of::<T>() {
+                vk::ObjectType::EVENT
+            } else if TypeId::of::<vk::QueryPool>() == TypeId::of::<T>() {
+                vk::ObjectType::QUERY_POOL
+            } else if TypeId::of::<vk::BufferView>() == TypeId::of::<T>() {
+                vk::ObjectType::BUFFER_VIEW
+            } else if TypeId::of::<vk::ImageView>() == TypeId::of::<T>() {
+                vk::ObjectType::IMAGE_VIEW
+            } else if TypeId::of::<vk::ShaderModule>() == TypeId::of::<T>() {
+                vk::ObjectType::SHADER_MODULE
+            } else if TypeId::of::<vk::PipelineCache>() == TypeId::of::<T>() {
+                vk::ObjectType::PIPELINE_CACHE
+            } else if TypeId::of::<vk::PipelineLayout>() == TypeId::of::<T>() {
+                vk::ObjectType::PIPELINE_LAYOUT
+            } else if TypeId::of::<vk::RenderPass>() == TypeId::of::<T>() {
+                vk::ObjectType::RENDER_PASS
+            } else if TypeId::of::<vk::Pipeline>() == TypeId::of::<T>() {
+                vk::ObjectType::PIPELINE
+            } else if TypeId::of::<vk::DescriptorSetLayout>() == TypeId::of::<T>() {
+                vk::ObjectType::DESCRIPTOR_SET_LAYOUT
+            } else if TypeId::of::<vk::Sampler>() == TypeId::of::<T>() {
+                vk::ObjectType::SAMPLER
+            } else if TypeId::of::<vk::DescriptorPool>() == TypeId::of::<T>() {
+                vk::ObjectType::DESCRIPTOR_POOL
+            } else if TypeId::of::<vk::DescriptorSet>() == TypeId::of::<T>() {
+                vk::ObjectType::DESCRIPTOR_SET
+            } else if TypeId::of::<vk::Framebuffer>() == TypeId::of::<T>() {
+                vk::ObjectType::FRAMEBUFFER
+            } else if TypeId::of::<vk::CommandPool>() == TypeId::of::<T>() {
+                vk::ObjectType::COMMAND_POOL
+            } else if TypeId::of::<vk::SurfaceKHR>() == TypeId::of::<T>() {
+                vk::ObjectType::SURFACE_KHR
+            } else if TypeId::of::<vk::SwapchainKHR>() == TypeId::of::<T>() {
+                vk::ObjectType::SWAPCHAIN_KHR
+            } else {
+                panic!("unhandled object type id")
+            };
+
+        let string_name = format!("{}\0", name);
+
+        unsafe {
+            vk_check!(self.instance.debug_util_loader.debug_utils_set_object_name(self.device.handle.handle(), &vk::DebugUtilsObjectNameInfoEXT::builder()
+                .object_type(object_type)
+                .object_handle(object.as_raw())
+                .object_name(CStr::from_ptr(string_name.as_ptr() as *const c_char))
+                .build()))
+        }
+        
+        object
     }
 }
 

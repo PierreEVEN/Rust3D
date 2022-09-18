@@ -55,10 +55,11 @@ impl From<BufferUsage> for VkBufferUsage {
 pub struct RbBuffer {
     create_infos: BufferCreateInfo,
     size_override: u32,
+    name: String,
 }
 
 impl GfxImageBuilder<Arc<BufferContainer>> for RbBuffer {
-    fn build(&self, gfx: &GfxRef, _: &GfxImageID) -> Arc<BufferContainer> {
+    fn build(&self, gfx: &GfxRef, image_id: &GfxImageID) -> Arc<BufferContainer> {
         let buffer_size = if self.size_override <= 0 { 1 } else { self.size_override };
         let mut usage = VkBufferUsage::from(self.create_infos.usage).0;
 
@@ -72,7 +73,7 @@ impl GfxImageBuilder<Arc<BufferContainer>> for RbBuffer {
             .usage(usage)
             .build();
 
-        let buffer = vk_check!(unsafe { gfx.cast::<GfxVulkan>().device.handle.create_buffer(&ci_buffer, None) });
+        let buffer = gfx.cast::<GfxVulkan>().set_vk_object_name(vk_check!(unsafe { gfx.cast::<GfxVulkan>().device.handle.create_buffer(&ci_buffer, None) }), format!("buffer {}@{}", self.name, image_id).as_str());
         let requirements = unsafe { gfx.cast::<GfxVulkan>().device.handle.get_buffer_memory_requirements(buffer) };
 
         let allocation = match gfx.cast::<GfxVulkan>().device.allocator.write().unwrap().allocate(&vulkan::AllocationCreateDesc {
@@ -127,6 +128,7 @@ pub struct VkBuffer {
     buffer_size: AtomicU32,
     gfx: GfxRef,
     create_infos: BufferCreateInfo,
+    name: String,
 }
 
 impl GfxBuffer for VkBuffer {
@@ -181,13 +183,13 @@ impl GfxBuffer for VkBuffer {
             }
             BufferType::Static => {
                 vk_check!(unsafe { self.gfx.cast::<GfxVulkan>().device.handle.device_wait_idle() });
-                self.container.invalidate(&self.gfx, RbBuffer { create_infos: self.create_infos, size_override: new_size });
+                self.container.invalidate(&self.gfx, RbBuffer { create_infos: self.create_infos, size_override: new_size, name: self.name.clone() });
             }
             BufferType::Dynamic => {
                 todo!();
             }
             BufferType::Immediate => {
-                self.container.invalidate(&self.gfx, RbBuffer { create_infos: self.create_infos, size_override: new_size });
+                self.container.invalidate(&self.gfx, RbBuffer { create_infos: self.create_infos, size_override: new_size, name: self.name.clone() });
             }
         }
     }
@@ -202,12 +204,12 @@ impl GfxBuffer for VkBuffer {
 }
 
 impl VkBuffer {
-    pub fn new(gfx: &GfxRef, create_infos: &BufferCreateInfo) -> Self {
+    pub fn new(gfx: &GfxRef, name: String, create_infos: &BufferCreateInfo) -> Self {
         let allocation = match create_infos.buffer_type {
             BufferType::Immutable | BufferType::Static => {
-                GfxResource::new_static(gfx, RbBuffer { create_infos: *create_infos, size_override: create_infos.size })
+                GfxResource::new_static(gfx, RbBuffer { create_infos: *create_infos, size_override: create_infos.size, name: name.clone() })
             }
-            _ => { GfxResource::new(gfx, RbBuffer { create_infos: *create_infos, size_override: create_infos.size }) }
+            _ => { GfxResource::new(gfx, RbBuffer { create_infos: *create_infos, size_override: create_infos.size, name: name.clone() }) }
         };
 
         Self {
@@ -215,6 +217,7 @@ impl VkBuffer {
             buffer_size: AtomicU32::new(create_infos.size),
             gfx: gfx.clone(),
             create_infos: *create_infos,
+            name: name,
         }
     }
 

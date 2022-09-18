@@ -83,7 +83,7 @@ impl ImGUiContext {
         unsafe { ImFontAtlas_GetTexDataAsRGBA32(io.Fonts, &mut pixels, &mut width, &mut height, null_mut()) }
         let data_size = width * height * PixelFormat::R8G8B8A8_UNORM.type_size() as i32;
 
-        let font_texture = gfx.create_image(ImageCreateInfos {
+        let font_texture = gfx.create_image(format!("imgui_font"), ImageCreateInfos {
             params: ImageParams {
                 pixel_format: PixelFormat::R8G8B8A8_UNORM,
                 image_type: Texture2d(width as u32, height as u32),
@@ -111,7 +111,7 @@ impl ImGUiContext {
         };
 
         let imgui_pass_id = PassID::new("imgui_render_pass");
-        let imgui_render_pass = gfx.create_render_pass(RenderPassCreateInfos {
+        let imgui_render_pass = gfx.create_render_pass(format!("imgui_render_pass"), RenderPassCreateInfos {
             pass_id: PassID::new("imgui_render_pass"),
             color_attachments: vec![RenderPassAttachment {
                 name: "color".to_string(),
@@ -156,9 +156,9 @@ impl ImGUiContext {
             }
         };
 
-        let image_sampler = gfx.create_image_sampler(SamplerCreateInfos {});
+        let image_sampler = gfx.create_image_sampler(format!("imgui_default_sampler"), SamplerCreateInfos {});
 
-        let shader_program = gfx.create_shader_program(&imgui_render_pass, &ShaderProgramInfos {
+        let shader_program = gfx.create_shader_program(format!("imgui_shader"), &imgui_render_pass, &ShaderProgramInfos {
             vertex_stage: ShaderProgramStage {
                 spirv: vertex_sprv.binary,
                 descriptor_bindings: vertex_sprv.bindings,
@@ -190,7 +190,7 @@ impl ImGUiContext {
         shader_instance.bind_sampler(&BindPoint::new("sSampler"), &image_sampler);
 
 
-        let mesh = gfx.create_mesh(&MeshCreateInfos {
+        let mesh = gfx.create_mesh(format!("imgui_dynamic_mesh"), &MeshCreateInfos {
             vertex_structure_size: size_of::<ImDrawVert>() as u32,
             vertex_count: 0,
             index_count: 0,
@@ -255,11 +255,11 @@ impl ImGUiContext {
                 let mut index_start = 0;
 
                 mesh.resize(command_buffer.get_surface().get_current_ref(), draw_data.TotalVtxCount as u32, draw_data.TotalIdxCount as u32);
-                
+
                 for n in 0..draw_data.CmdListsCount
                 {
                     let cmd_list = &**draw_data.CmdLists.offset(n as isize);
-                    
+
                     mesh.set_data(command_buffer.get_surface().get_current_ref(),
                                   vertex_start,
                                   slice::from_raw_parts(

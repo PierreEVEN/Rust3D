@@ -14,7 +14,7 @@ use backend_vulkan::vk_types::GfxPixelFormat;
 use gfx::gfx_resource::{GfxImageBuilder, GfxResource};
 use gfx::GfxRef;
 use gfx::image::{GfxImage, GfxImageUsageFlags, ImageParams, ImageType};
-use gfx::render_pass::{RenderPassInstance};
+use gfx::render_pass::RenderPassInstance;
 use gfx::surface::{GfxImageID, GfxSurface, SurfaceAcquireResult};
 use gfx::types::PixelFormat;
 use maths::vec2::Vec2u32;
@@ -106,7 +106,7 @@ impl GfxSurface for VkSurfaceWin32 {
         let images = vk_check!(unsafe { self._swapchain_loader.get_swapchain_images(swapchain) });
 
         let mut image = self.surface_image.write().unwrap();
-        *image = Some(VkImage::from_existing_images(&self.gfx, GfxResource::new(&self.gfx, RbSurfaceImage {
+        *image = Some(VkImage::from_existing_images(&self.gfx, format!("surface_image"), GfxResource::new(&self.gfx, RbSurfaceImage {
             images,
         }), ImageParams {
             pixel_format: *GfxPixelFormat::from(self.surface_format.format),
@@ -213,7 +213,7 @@ impl GfxSurface for VkSurfaceWin32 {
 }
 
 impl VkSurfaceWin32 {
-    pub fn new(gfx: &GfxRef, window: &Arc<dyn Window>, image_count: u32) -> Arc<dyn GfxSurface> {
+    pub fn new(gfx: &GfxRef, name: String, window: &Arc<dyn Window>, image_count: u32) -> Arc<dyn GfxSurface> {
         let gfx_copy = gfx.clone();
 
         let handle = match window.get_handle() {
@@ -287,7 +287,7 @@ impl VkSurfaceWin32 {
             window: window.clone(),
             gfx: gfx_copy,
             present_queue,
-            image_acquire_semaphore: GfxResource::new(gfx, RbSemaphore {}),
+            image_acquire_semaphore: GfxResource::new(gfx, RbSemaphore { name: name.clone() }),
             surface_image: RwLock::default(),
             extent: RwLock::new(vk::Extent2D { width: 0, height: 0 }),
         });

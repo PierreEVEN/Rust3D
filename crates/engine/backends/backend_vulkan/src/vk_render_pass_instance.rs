@@ -28,20 +28,24 @@ pub struct VkRenderPassInstance {
     pub wait_semaphores: RwLock<Option<vk::Semaphore>>,
     pub render_callback: RwLock<Option<GraphRenderCallback>>,
     pub children: RwLock<Vec<Arc<dyn RenderPassInstance>>>,
+    name: String,
 }
 
-pub struct RbSemaphore {}
+pub struct RbSemaphore {
+    pub name: String
+}
 
 impl GfxImageBuilder<vk::Semaphore> for RbSemaphore {
     fn build(&self, gfx: &GfxRef, _swapchain_ref: &GfxImageID) -> vk::Semaphore {
         let ci_semaphore = vk::SemaphoreCreateInfo::builder().build();
 
-        let device = &gfx.cast::<GfxVulkan>().device;
-        vk_check!(unsafe {(*device).handle.create_semaphore(&ci_semaphore, None)})
+        gfx.cast::<GfxVulkan>().set_vk_object_name(vk_check!(unsafe {gfx.cast::<GfxVulkan>().device.handle.create_semaphore(&ci_semaphore, None)}), self.name.as_str())
     }
 }
 
-pub struct RbCommandBuffer {}
+pub struct RbCommandBuffer {
+    pub name: String
+}
 
 impl GfxImageBuilder<vk::CommandBuffer> for RbCommandBuffer {
     fn build(&self, gfx: &GfxRef, _swapchain_ref: &GfxImageID) -> vk::CommandBuffer {
@@ -51,7 +55,9 @@ impl GfxImageBuilder<vk::CommandBuffer> for RbCommandBuffer {
             .build();
 
         let device = &gfx.cast::<GfxVulkan>().device;
-        vk_check!(unsafe {device.handle.allocate_command_buffers(&ci_command_buffer)})[0]
+        let cmd_buffer = vk_check!(unsafe {device.handle.allocate_command_buffers(&ci_command_buffer)})[0];
+        gfx.cast::<GfxVulkan>().set_vk_object_name(cmd_buffer, self.name.as_str());
+        cmd_buffer
     }
 }
 
@@ -59,6 +65,7 @@ struct RbFramebuffer {
     render_pass: vk::RenderPass,
     res: Vec2u32,
     images: Vec<Arc<dyn GfxImage>>,
+    name: String
 }
 
 impl GfxImageBuilder<vk::Framebuffer> for RbFramebuffer {
@@ -77,13 +84,12 @@ impl GfxImageBuilder<vk::Framebuffer> for RbFramebuffer {
             .layers(1)
             .build();
 
-        let device = &gfx.cast::<GfxVulkan>().device;
-        vk_check!(unsafe { (*device).handle.create_framebuffer(&create_infos, None) })
+        gfx.cast::<GfxVulkan>().set_vk_object_name(vk_check!(unsafe { gfx.cast::<GfxVulkan>().device.handle.create_framebuffer(&create_infos, None) }), self.name.as_str())
     }
 }
 
 impl VkRenderPassInstance {
-    pub fn new(gfx: &GfxRef, surface: &Arc<dyn GfxSurface>, owner: Arc<dyn RenderPass>, res: Vec2u32) -> VkRenderPassInstance {
+    pub fn new(gfx: &GfxRef, name: String, surface: &Arc<dyn GfxSurface>, owner: Arc<dyn RenderPass>, res: Vec2u32) -> VkRenderPassInstance {
         let clear_values = (&owner).get_clear_values().clone();
 
         let render_pass = owner.cast::<VkRenderPass>().render_pass;
@@ -92,10 +98,10 @@ impl VkRenderPassInstance {
         if owner.get_config().is_present_pass {
             images.push(surface.get_surface_texture())
         } else {
-            for _att_color in &owner.get_config().color_attachments {
-                images.push(gfx.create_image(ImageCreateInfos {
+            for att_color in &owner.get_config().color_attachments {
+                images.push(gfx.create_image(format!("render_pass[{}]::attachment[{}]", name, att_color.name), ImageCreateInfos {
                     params: ImageParams {
-                        pixel_format: _att_color.image_format,
+                        pixel_format: att_color.image_format,
                         image_type: ImageType::Texture2d(res.x, res.y),
                         read_only: false,
                         mip_levels: None,
@@ -107,7 +113,7 @@ impl VkRenderPassInstance {
             match &owner.get_config().depth_attachment {
                 None => {}
                 Some(depth_attachment) => {
-                    images.push(gfx.create_image(ImageCreateInfos {
+                    images.push(gfx.create_image(format!("render_pass[{}]::depth_attachment", name), ImageCreateInfos {
                         params: ImageParams {
                             pixel_format: depth_attachment.image_format,
                             image_type: ImageType::Texture2d(res.x, res.y),
@@ -122,9 +128,9 @@ impl VkRenderPassInstance {
         }
 
         VkRenderPassInstance {
-            render_finished_semaphore: GfxResource::new(gfx, RbSemaphore {}),
+            render_finished_semaphore: GfxResource::new(gfx, RbSemaphore {name: name.clone()}),
             pass_command_buffers: VkCommandBuffer::new(gfx, &surface),
-            framebuffers: GfxResource::new(gfx, RbFramebuffer { render_pass, res, images: images.clone() }),
+            framebuffers: GfxResource::new(gfx, RbFramebuffer { render_pass, res, images: images.clone(), name: name.clone() }),
             owner,
             clear_value: clear_values.clone(),
             gfx: gfx.clone(),
@@ -134,6 +140,7 @@ impl VkRenderPassInstance {
             render_callback: RwLock::new(None),
             children: RwLock::default(),
             images,
+            name
         }
     }
 }
@@ -149,7 +156,7 @@ impl RenderPassInstance for VkRenderPassInstance {
             }
         }
 
-        self.framebuffers.invalidate(&self.gfx, RbFramebuffer { render_pass: self.owner.cast::<VkRenderPass>().render_pass, res: new_res, images: self.images.clone() });
+        self.framebuffers.invalidate(&self.gfx, RbFramebuffer { render_pass: self.owner.cast::<VkRenderPass>().render_pass, res: new_res, images: self.images.clone(), name: self.name.clone() });
         let mut res = self.resolution.write().unwrap();
         *res = new_res;
     }

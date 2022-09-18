@@ -1,4 +1,5 @@
-﻿use std::hash::{Hash, Hasher};
+﻿use std::fmt::{Display, Formatter};
+use std::hash::{Hash, Hasher};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU16, Ordering};
 
@@ -57,6 +58,12 @@ impl Eq for GfxImageID {}
 impl Hash for GfxImageID {
     fn hash<H: Hasher>(&self, state: &mut H) {
         state.write_u16(self.reference.load(Ordering::Acquire))
+    }
+}
+
+impl Display for GfxImageID {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.write_str(format!("[{}:{}]", self.render_pass_index(), self.image_id()).as_str())
     }
 }
 

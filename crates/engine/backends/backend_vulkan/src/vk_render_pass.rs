@@ -19,11 +19,12 @@ pub struct VkRenderPass {
     default_clear_values: Vec<ClearValues>,
     config: RenderPassCreateInfos,
     pass_id: PassID,
+    name: String
 }
 
 impl RenderPass for VkRenderPass {
     fn instantiate(&self, surface: &Arc<dyn GfxSurface>, res: Vec2u32) -> Arc<dyn RenderPassInstance> {
-        Arc::new(VkRenderPassInstance::new(&self.gfx, surface, self.self_ref.read().unwrap().upgrade().unwrap(), res))
+        Arc::new(VkRenderPassInstance::new(&self.gfx, format!("{}_instance", self.name), surface, self.self_ref.read().unwrap().upgrade().unwrap(), res))
     }
 
     fn get_clear_values(&self) -> &Vec<ClearValues> {
@@ -40,7 +41,7 @@ impl RenderPass for VkRenderPass {
 }
 
 impl VkRenderPass {
-    pub fn new(gfx: &GfxRef, create_infos: RenderPassCreateInfos) -> Arc<Self> {
+    pub fn new(gfx: &GfxRef, name: String, create_infos: RenderPassCreateInfos) -> Arc<Self> {
         let mut attachment_descriptions = Vec::<vk::AttachmentDescription>::new();
         let mut color_attachment_references = Vec::<vk::AttachmentReference>::new();
         let mut _depth_attachment_reference = vk::AttachmentReference::default();
@@ -154,6 +155,7 @@ impl VkRenderPass {
             default_clear_values: clear_values,
             pass_id: create_infos.pass_id.clone(),
             config: create_infos.clone(),
+            name
         });
 
         {

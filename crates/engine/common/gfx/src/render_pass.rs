@@ -73,7 +73,7 @@ impl FrameGraph {
 
         let res = surface.get_owning_window().get_geometry();
 
-        let draw_pass = _gfx.create_render_pass(render_pass_ci).instantiate(surface, Vec2u32::new(res.width() as u32, res.height() as u32));
+        let draw_pass = _gfx.create_render_pass(format!("main_render_pass"), render_pass_ci).instantiate(surface, Vec2u32::new(res.width() as u32, res.height() as u32));
 
         Arc::new(Self {
             surface: surface.clone(),

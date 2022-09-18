@@ -25,13 +25,15 @@ pub fn read_image_from_file(gfx: &GfxRef, file: &Path) -> Result<Arc<dyn GfxImag
     let mut components: i32 = 0;
     let required_components: i32 = 4;
 
+    
+    
     unsafe {
         match fs::read(file) {
             Ok(data) => {
                 let raw_data = stbi_load_from_memory(data.as_ptr(), data.len() as i32, &mut width as *mut c_int, &mut height as *mut c_int, &mut components as *mut c_int, required_components);
 
                 components = 4;
-                let image = gfx.create_image(ImageCreateInfos {
+                let image = gfx.create_image(file.file_name().unwrap().to_str().unwrap().to_string(), ImageCreateInfos {
                     params: ImageParams {
                         pixel_format: PixelFormat::R8G8B8A8_UNORM,
                         image_type: ImageType::Texture2d(width as u32, height as u32),

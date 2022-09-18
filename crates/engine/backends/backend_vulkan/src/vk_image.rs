@@ -26,6 +26,7 @@ pub struct VkImage {
     pub image_layout: RwLock<vk::ImageLayout>,
     image_type: RwLock<ImageType>,
     is_from_existing_images: bool,
+    name: String,
 }
 
 impl GfxImage for VkImage {
@@ -47,7 +48,7 @@ impl GfxImage for VkImage {
         }
         if self.image_params.read_only {
             // Create data transfer buffer
-            let transfer_buffer = self.gfx.create_buffer(&BufferCreateInfo {
+            let transfer_buffer = self.gfx.create_buffer(format!("image[{}]::buffer", self.name), &BufferCreateInfo {
                 buffer_type: BufferType::Static,
                 usage: BufferUsage::TransferMemory,
                 access: BufferAccess::CpuToGpu,
@@ -78,40 +79,40 @@ impl GfxImage for VkImage {
                             .base_array_layer(0)
                             .layer_count(1)
                             .build())
-                        .image_offset(vk::Offset3D{ x: 0, y: 0, z: 0 })
+                        .image_offset(vk::Offset3D { x: 0, y: 0, z: 0 })
                         .image_extent(vk::Extent3D { width: self.get_type().dimensions().0, height: self.get_type().dimensions().1, depth: self.get_type().dimensions().2 })
                         .build()]);
-            self.set_image_layout(&GfxImageID::null(), command_buffer, vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL);
-            end_command_buffer(&self.gfx, command_buffer);
-            submit_command_buffer(&self.gfx, command_buffer, vk::QueueFlags::TRANSFER);
+                self.set_image_layout(&GfxImageID::null(), command_buffer, vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL);
+                end_command_buffer(&self.gfx, command_buffer);
+                submit_command_buffer(&self.gfx, command_buffer, vk::QueueFlags::TRANSFER);
+            }
+        } else {
+            panic!("Applying modification to non-static image is not allowed yet");
         }
-    } else {
-    panic ! ("Applying modification to non-static image is not allowed yet");
-    }
-}
-
-fn get_data_size(&self) -> u32 {
-    self.image_params.pixel_format.type_size() * self.image_params.image_type.pixel_count()
-}
-
-fn resize(&self, new_type: ImageType) {
-    if self.is_from_existing_images {
-        panic!("image created from existing images cannot be resized");
     }
 
-    if new_type == self.get_type() {
-        return;
+    fn get_data_size(&self) -> u32 {
+        self.image_params.pixel_format.type_size() * self.image_params.image_type.pixel_count()
     }
 
+    fn resize(&self, new_type: ImageType) {
+        if self.is_from_existing_images {
+            panic!("image created from existing images cannot be resized");
+        }
 
-    self.image.read().unwrap().invalidate(&self.gfx, RbImage { create_infos: self.image_params, type_override: new_type });
-    self.view.invalidate(&self.gfx, RbImageView { create_infos: self.image_params, images: self.image.read().unwrap().clone(), type_override: new_type });
-    *self.image_type.write().unwrap() = new_type;
-}
+        if new_type == self.get_type() {
+            return;
+        }
 
-fn __static_view_handle(&self) -> u64 {
-    self.view.get_static().0.as_raw()
-}
+
+        self.image.read().unwrap().invalidate(&self.gfx, RbImage { create_infos: self.image_params, type_override: new_type });
+        self.view.invalidate(&self.gfx, RbImageView { create_infos: self.image_params, images: self.image.read().unwrap().clone(), type_override: new_type });
+        *self.image_type.write().unwrap() = new_type;
+    }
+
+    fn __static_view_handle(&self) -> u64 {
+        self.view.get_static().0.as_raw()
+    }
 }
 
 pub struct VkImageUsage(vk::ImageUsageFlags);
@@ -257,7 +258,7 @@ impl GfxImageBuilder<(vk::ImageView, vk::DescriptorImageInfo)> for RbImageView {
 }
 
 impl VkImage {
-    pub fn new(gfx: &GfxRef, create_infos: ImageCreateInfos) -> Arc<dyn GfxImage> {
+    pub fn new(gfx: &GfxRef, name: String, create_infos: ImageCreateInfos) -> Arc<dyn GfxImage> {
         let params = create_infos.params;
 
         let image_views = if params.read_only {
@@ -284,6 +285,7 @@ impl VkImage {
             image_layout: RwLock::new(vk::ImageLayout::UNDEFINED),
             image_type: RwLock::new(params.image_type),
             is_from_existing_images: false,
+            name,
         });
 
         match create_infos.pixels {
@@ -295,7 +297,7 @@ impl VkImage {
         image
     }
 
-    pub fn from_existing_images(gfx: &GfxRef, existing_images: GfxResource<CombinedImageData>, image_params: ImageParams) -> Arc<dyn GfxImage> {
+    pub fn from_existing_images(gfx: &GfxRef, name: String, existing_images: GfxResource<CombinedImageData>, image_params: ImageParams) -> Arc<dyn GfxImage> {
         if existing_images.is_static() != image_params.read_only {
             panic!("trying to create framebuffer from existing images, but images was created as read only")
         }
@@ -314,6 +316,7 @@ impl VkImage {
             image_layout: RwLock::new(vk::ImageLayout::UNDEFINED),
             image_type: RwLock::new(image_usage.image_type),
             is_from_existing_images: true,
+            name,
         })
     }
 

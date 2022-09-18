@@ -55,13 +55,13 @@ impl VkDescriptorPool {
             vk::DescriptorPoolSize { ty: vk::DescriptorType::INPUT_ATTACHMENT, descriptor_count: self.max_descriptor_per_type },
         ];
 
-        vk_check!(unsafe {
+        self.gfx.cast::<GfxVulkan>().set_vk_object_name(vk_check!(unsafe {
                     self.gfx.cast::<GfxVulkan>().device.handle.create_descriptor_pool(&vk::DescriptorPoolCreateInfo::builder()
                 .flags(vk::DescriptorPoolCreateFlags::FREE_DESCRIPTOR_SET)
                 .max_sets(self.max_descriptor_per_pool)
                 .pool_sizes(pool_sizes.as_slice())
                 .build(), None)
-                })
+                }), "descriptor_pool")
     }
 
     pub fn allocate(&self, layout: vk::DescriptorSetLayout) -> vk::DescriptorSet {

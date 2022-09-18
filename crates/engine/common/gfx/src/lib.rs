@@ -30,13 +30,13 @@ pub trait GfxInterface: GfxCast {
     fn set_physical_device(&self, selected_device: PhysicalDevice);
     fn enumerate_physical_devices(&self) -> Vec<PhysicalDevice>;
     fn find_best_suitable_physical_device(&self) -> Result<PhysicalDevice, String>;
-    fn create_buffer(&self, create_infos: &BufferCreateInfo) -> Arc<dyn GfxBuffer>;
-    fn create_shader_program(&self, render_pass: &Arc<dyn RenderPass>, create_infos: &ShaderProgramInfos) -> Arc<dyn ShaderProgram>;
-    fn create_render_pass(&self, create_infos: RenderPassCreateInfos) -> Arc<dyn RenderPass>;
-    fn create_image(&self, create_infos: ImageCreateInfos) -> Arc<dyn GfxImage>;
-    fn create_image_sampler(&self, create_infos: SamplerCreateInfos) -> Arc<dyn ImageSampler>;
+    fn create_buffer(&self, name: String, create_infos: &BufferCreateInfo) -> Arc<dyn GfxBuffer>;
+    fn create_shader_program(&self, name: String, render_pass: &Arc<dyn RenderPass>, create_infos: &ShaderProgramInfos) -> Arc<dyn ShaderProgram>;
+    fn create_render_pass(&self, name: String, create_infos: RenderPassCreateInfos) -> Arc<dyn RenderPass>;
+    fn create_image(&self, name: String, create_infos: ImageCreateInfos) -> Arc<dyn GfxImage>;
+    fn create_image_sampler(&self, name: String, create_infos: SamplerCreateInfos) -> Arc<dyn ImageSampler>;
     fn find_render_pass(&self, pass_id: &PassID) -> Option<Arc<dyn RenderPass>>;
-    fn create_command_buffer(&self, surface: &Arc<dyn GfxSurface>) -> Arc<dyn GfxCommandBuffer>;
+    fn create_command_buffer(&self, name: String, surface: &Arc<dyn GfxSurface>) -> Arc<dyn GfxCommandBuffer>;
     fn get_ref(&self) -> GfxRef;
 }
 
@@ -45,8 +45,8 @@ impl dyn GfxInterface {
         self.as_any().downcast_ref::<U>().unwrap()
     }
 
-    pub fn create_mesh(&self, create_infos: &MeshCreateInfos) -> Arc<Mesh> {
-        Mesh::new(&self.get_ref(), create_infos)
+    pub fn create_mesh(&self, name: String, create_infos: &MeshCreateInfos) -> Arc<Mesh> {
+        Mesh::new(&self.get_ref(), name, create_infos)
     }
 }
 

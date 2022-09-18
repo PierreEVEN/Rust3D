@@ -1,6 +1,7 @@
 # Rust3D
 
-Hey !!! This is my first Rust program (and also another attempt to create a 3D game engine with vulkan... yes, again)
+Heeyyyyy !!! 🙌
+This is my first Rust program (and also another attempt to create a 3D game engine using vulkan... yes, again)
 
 ## Features
 

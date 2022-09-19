@@ -13,7 +13,7 @@ pub struct VkImageSampler {
 impl ImageSampler for VkImageSampler {}
 
 impl VkImageSampler {
-    pub fn new(gfx: &GfxRef, _create_infos: SamplerCreateInfos) -> Arc<Self> {
+    pub fn new(gfx: &GfxRef, name:String, _create_infos: SamplerCreateInfos) -> Arc<Self> {
         let sampler_create_infos = vk::SamplerCreateInfo::builder()
             .mag_filter(vk::Filter::LINEAR)
             .min_filter(vk::Filter::LINEAR)
@@ -33,12 +33,16 @@ impl VkImageSampler {
             .build();
         
         let sampler = vk_check!(unsafe { gfx.cast::<GfxVulkan>().device.handle.create_sampler(&sampler_create_infos, None) });
+
+        gfx.cast::<GfxVulkan>().set_vk_object_name(sampler, format!("<(image sampler)> {}", name).as_str());
         
         let sampler_info = vk::DescriptorImageInfo::builder()
             .sampler(sampler)
             .image_view(vk::ImageView::null())
             .image_layout(vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL)
             .build();
+        
+        
         
         Arc::new(Self {
             sampler,

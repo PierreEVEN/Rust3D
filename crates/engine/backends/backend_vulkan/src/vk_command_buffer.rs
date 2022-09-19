@@ -18,13 +18,17 @@ pub struct VkCommandPool {
     pub command_pool: vk::CommandPool,
 }
 
-pub fn create_command_buffer(gfx: &GfxRef) -> vk::CommandBuffer {
+pub fn create_command_buffer(gfx: &GfxRef, name: String) -> vk::CommandBuffer {
     let create_infos = vk::CommandBufferAllocateInfo::builder()
         .command_pool(gfx.cast::<GfxVulkan>().command_pool.command_pool)
         .command_buffer_count(1)
         .level(vk::CommandBufferLevel::PRIMARY)
         .build();
-    vk_check!(unsafe { gfx.cast::<GfxVulkan>().device.handle.allocate_command_buffers(&create_infos) })[0]
+    gfx.cast::<GfxVulkan>().set_vk_object_name(
+        vk_check!(unsafe { gfx.cast::<GfxVulkan>().device.handle.
+            allocate_command_buffers(&create_infos) })[0],
+        format!("<(command_buffer)> {}", name).as_str(),
+    )
 }
 
 pub fn begin_command_buffer(gfx: &GfxRef, command_buffer: vk::CommandBuffer, one_time: bool) {
@@ -54,7 +58,7 @@ pub fn submit_command_buffer(gfx: &GfxRef, command_buffer: vk::CommandBuffer, qu
 
 
 impl VkCommandPool {
-    pub fn new(gfx: &GfxRef) -> VkCommandPool {
+    pub fn new(gfx: &GfxRef, name: String) -> VkCommandPool {
         let create_infos = vk::CommandPoolCreateInfo::builder()
             .flags(vk::CommandPoolCreateFlags::RESET_COMMAND_BUFFER)
             .queue_family_index(match gfx.cast::<GfxVulkan>().device.queues.get(&vk::QueueFlags::GRAPHICS) {
@@ -64,6 +68,8 @@ impl VkCommandPool {
             .build();
 
         let command_pool = vk_check!(unsafe {gfx.cast::<GfxVulkan>().device.handle.create_command_pool(&create_infos, None)});
+
+        gfx.cast::<GfxVulkan>().set_vk_object_name(command_pool, format!("<(command_pool)> {}", name).as_str());
 
         VkCommandPool {
             command_pool
@@ -79,18 +85,20 @@ pub struct VkCommandBuffer {
     surface: Arc<dyn GfxSurface>,
 }
 
-pub struct RbCommandBuffer {}
+pub struct RbCommandBuffer {
+    name: String,
+}
 
 impl GfxImageBuilder<vk::CommandBuffer> for RbCommandBuffer {
     fn build(&self, gfx: &GfxRef, _: &GfxImageID) -> vk::CommandBuffer {
-        create_command_buffer(gfx)
+        create_command_buffer(gfx, self.name.clone())
     }
 }
 
 impl VkCommandBuffer {
-    pub fn new(gfx: &GfxRef, surface: &Arc<dyn GfxSurface>) -> Arc<VkCommandBuffer> {
+    pub fn new(gfx: &GfxRef, name: String, surface: &Arc<dyn GfxSurface>) -> Arc<VkCommandBuffer> {
         Arc::new(VkCommandBuffer {
-            command_buffer: GfxResource::new(gfx, RbCommandBuffer {}),
+            command_buffer: GfxResource::new(gfx, RbCommandBuffer { name }),
             gfx: gfx.clone(),
             pass_id: RwLock::new(PassID::new("undefined")),
             image_id: RwLock::new(GfxImageID::null()),

@@ -13,7 +13,7 @@ use gfx::shader_instance::{BindPoint, ShaderInstance, ShaderInstanceCreateInfos}
 use gfx::surface::GfxImageID;
 
 use crate::{GfxVulkan, VkImage, VkImageSampler};
-use crate::vk_descriptor_set::VkDescriptorSetLayout;
+use crate::vk_dst_set_layout::VkDescriptorSetLayout;
 
 pub enum ShaderInstanceBinding {
     Sampler(Arc<dyn ImageSampler>),
@@ -65,21 +65,22 @@ impl GfxImageBuilder<Arc<AtomicBool>> for RbDescriptorState {
 
 struct RbDescriptorSet {
     layout: vk::DescriptorSetLayout,
+    name: String
 }
 
 impl GfxImageBuilder<vk::DescriptorSet> for RbDescriptorSet {
     fn build(&self, gfx: &GfxRef, _swapchain_ref: &GfxImageID) -> vk::DescriptorSet {
-        gfx.cast::<GfxVulkan>().descriptor_pool.allocate(self.layout)
+        gfx.cast::<GfxVulkan>().descriptor_pool.allocate(self.name.clone(), self.layout)
     }
 }
 
 impl VkShaderInstance {
-    pub fn new(gfx: &GfxRef, create_infos: ShaderInstanceCreateInfos, pipeline_layout: Arc<vk::PipelineLayout>, desc_set_layout: Arc<VkDescriptorSetLayout>) -> Arc<Self> {
+    pub fn new(gfx: &GfxRef, name: String, create_infos: ShaderInstanceCreateInfos, pipeline_layout: Arc<vk::PipelineLayout>, desc_set_layout: Arc<VkDescriptorSetLayout>) -> Arc<Self> {
         Arc::new(VkShaderInstance {
             _gfx: gfx.clone(),
             _write_descriptor_sets: RwLock::default(),
             pipeline_layout,
-            descriptor_sets: RwLock::new(GfxResource::new(gfx, RbDescriptorSet { layout: desc_set_layout.descriptor_set_layout })),
+            descriptor_sets: RwLock::new(GfxResource::new(gfx, RbDescriptorSet { layout: desc_set_layout.descriptor_set_layout, name })),
             descriptors_dirty: GfxResource::new(gfx, RbDescriptorState {}),
             base_bindings: create_infos.bindings,
             bindings: RwLock::default(),

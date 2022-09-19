@@ -61,16 +61,19 @@ impl VkDescriptorPool {
                 .max_sets(self.max_descriptor_per_pool)
                 .pool_sizes(pool_sizes.as_slice())
                 .build(), None)
-                }), "descriptor_pool")
+                }), format!("<(descriptor_pool)> @thread::{}", thread::current().name().unwrap()).as_str())
     }
 
-    pub fn allocate(&self, layout: vk::DescriptorSetLayout) -> vk::DescriptorSet {
+    pub fn allocate(&self, name: String, layout: vk::DescriptorSetLayout) -> vk::DescriptorSet {
         let descriptor_info = vk::DescriptorSetAllocateInfo::builder()
             .descriptor_pool(self.fetch_available_pool())
             .set_layouts(&[layout])
             .build();
         let device = &self.gfx.cast::<GfxVulkan>().device;
 
-        vk_check!(unsafe { (*device).handle.allocate_descriptor_sets(&descriptor_info) })[0]
+        self.gfx.cast::<GfxVulkan>().set_vk_object_name(
+            vk_check!(unsafe { (*device).handle.allocate_descriptor_sets(&descriptor_info) })[0],
+format!("<(descriptor_set)> {}", name).as_str())
+        
     }
 }

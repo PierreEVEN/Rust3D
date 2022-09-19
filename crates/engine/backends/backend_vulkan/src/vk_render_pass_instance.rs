@@ -36,10 +36,12 @@ pub struct RbSemaphore {
 }
 
 impl GfxImageBuilder<vk::Semaphore> for RbSemaphore {
-    fn build(&self, gfx: &GfxRef, _swapchain_ref: &GfxImageID) -> vk::Semaphore {
+    fn build(&self, gfx: &GfxRef, swapchain_ref: &GfxImageID) -> vk::Semaphore {
         let ci_semaphore = vk::SemaphoreCreateInfo::builder().build();
 
-        gfx.cast::<GfxVulkan>().set_vk_object_name(vk_check!(unsafe {gfx.cast::<GfxVulkan>().device.handle.create_semaphore(&ci_semaphore, None)}), self.name.as_str())
+        gfx.cast::<GfxVulkan>().set_vk_object_name(
+            vk_check!(unsafe {gfx.cast::<GfxVulkan>().device.handle.create_semaphore(&ci_semaphore, None)}), 
+            format!("<(semaphore)> {}@{}", self.name, swapchain_ref).as_str())
     }
 }
 
@@ -48,7 +50,7 @@ pub struct RbCommandBuffer {
 }
 
 impl GfxImageBuilder<vk::CommandBuffer> for RbCommandBuffer {
-    fn build(&self, gfx: &GfxRef, _swapchain_ref: &GfxImageID) -> vk::CommandBuffer {
+    fn build(&self, gfx: &GfxRef, swapchain_ref: &GfxImageID) -> vk::CommandBuffer {
         let ci_command_buffer = vk::CommandBufferAllocateInfo::builder()
             .command_pool(gfx.cast::<GfxVulkan>().command_pool.command_pool)
             .command_buffer_count(1)
@@ -56,7 +58,10 @@ impl GfxImageBuilder<vk::CommandBuffer> for RbCommandBuffer {
 
         let device = &gfx.cast::<GfxVulkan>().device;
         let cmd_buffer = vk_check!(unsafe {device.handle.allocate_command_buffers(&ci_command_buffer)})[0];
-        gfx.cast::<GfxVulkan>().set_vk_object_name(cmd_buffer, self.name.as_str());
+        gfx.cast::<GfxVulkan>().set_vk_object_name(
+            cmd_buffer,
+            format!("<(command_buffer)> {}@{}", self.name, swapchain_ref).as_str()
+        );
         cmd_buffer
     }
 }
@@ -84,7 +89,9 @@ impl GfxImageBuilder<vk::Framebuffer> for RbFramebuffer {
             .layers(1)
             .build();
 
-        gfx.cast::<GfxVulkan>().set_vk_object_name(vk_check!(unsafe { gfx.cast::<GfxVulkan>().device.handle.create_framebuffer(&create_infos, None) }), self.name.as_str())
+        gfx.cast::<GfxVulkan>().set_vk_object_name(
+            vk_check!(unsafe { gfx.cast::<GfxVulkan>().device.handle.create_framebuffer(&create_infos, None) }), 
+            format!("<(framebuffer)> {}@{}", self.name, swapchain_ref).as_str())
     }
 }
 
@@ -129,7 +136,7 @@ impl VkRenderPassInstance {
 
         VkRenderPassInstance {
             render_finished_semaphore: GfxResource::new(gfx, RbSemaphore {name: name.clone()}),
-            pass_command_buffers: VkCommandBuffer::new(gfx, &surface),
+            pass_command_buffers: VkCommandBuffer::new(gfx, name.clone(), &surface),
             framebuffers: GfxResource::new(gfx, RbFramebuffer { render_pass, res, images: images.clone(), name: name.clone() }),
             owner,
             clear_value: clear_values.clone(),

@@ -34,7 +34,7 @@ pub struct VkDescriptorSetLayout {
 }
 
 impl VkDescriptorSetLayout {
-    pub fn new(gfx: &GfxRef, vertex_bindings: &Vec<DescriptorBinding>, fragment_bindings: &Vec<DescriptorBinding>) -> Arc<Self> {
+    pub fn new(gfx: &GfxRef, name: String, vertex_bindings: &Vec<DescriptorBinding>, fragment_bindings: &Vec<DescriptorBinding>) -> Arc<Self> {
         let mut bindings = Vec::<vk::DescriptorSetLayoutBinding>::new();
         for binding in vertex_bindings
         {
@@ -60,20 +60,12 @@ impl VkDescriptorSetLayout {
             .bindings(bindings.as_slice())
             .build();
 
-        let device = &gfx.cast::<GfxVulkan>().device;
-        let descriptor_set_layout = vk_check!(unsafe {device.handle.create_descriptor_set_layout(&ci_descriptor_set_layout, None)});
-
+        let descriptor_set_layout = vk_check!(unsafe {gfx.cast::<GfxVulkan>().device.handle.create_descriptor_set_layout(&ci_descriptor_set_layout, None)});
+        gfx.cast::<GfxVulkan>().set_vk_object_name(descriptor_set_layout, format!("<(descriptor_set_layout)> {}", name).as_str());
+        
         Arc::new(Self {
             descriptor_set_layout,
             gfx: gfx.clone(),
         })
-    }
-}
-
-pub struct VkDescriptorSet {}
-
-impl VkDescriptorSet {
-    pub fn new() -> Arc<Self> {
-        Arc::new(Self {})
     }
 }

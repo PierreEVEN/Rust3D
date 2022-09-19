@@ -37,13 +37,13 @@ pub mod vk_types;
 pub mod vk_render_pass;
 pub mod vk_buffer;
 pub mod vk_shader;
-pub mod vk_descriptor_set;
 pub mod vk_render_pass_instance;
 pub mod vk_command_buffer;
 pub mod vk_image;
 pub mod vk_image_sampler;
 pub mod vk_shader_instance;
 pub mod vk_descriptor_pool;
+pub mod vk_dst_set_layout;
 
 pub static mut G_VULKAN: Option<ash::Entry> = None;
 
@@ -91,8 +91,12 @@ impl GfxInterface for GfxVulkan {
         unsafe { (&self.physical_device as *const PhysicalDevice as *mut PhysicalDevice).write(selected_device.clone()) };
         unsafe { (&self.physical_device_vk as *const VkPhysicalDevice as *mut VkPhysicalDevice).write(self.instance.get_vk_device(&selected_device).expect("failed to get physical device information for vulkan").clone()) };
         unsafe { (&self.device as *const VkDevice as *mut VkDevice).write(VkDevice::new(&self.get_ref())) };
-        unsafe { (&self.command_pool as *const VkCommandPool as *mut VkCommandPool).write(VkCommandPool::new(&self.get_ref())) };
+        unsafe { (&self.command_pool as *const VkCommandPool as *mut VkCommandPool).write(VkCommandPool::new(&self.get_ref(), format!("global"))) };
         unsafe { (&self.descriptor_pool as *const VkDescriptorPool as *mut VkDescriptorPool).write(VkDescriptorPool::new(&self.get_ref(), 64, 64)) };
+
+        self.set_vk_object_name(self.device.handle.handle(), format!("<(device)> global").as_str());
+        self.set_vk_object_name(self.instance.handle.handle(), format!("<(instance)> global").as_str());
+        self.set_vk_object_name(self.physical_device_vk.handle, format!("<(physical_device)> {}", self.physical_device.device_name).as_str());
     }
 
 
@@ -108,8 +112,8 @@ impl GfxInterface for GfxVulkan {
         Arc::new(VkBuffer::new(&self.get_ref(), name, create_infos))
     }
 
-    fn create_shader_program(&self, _name: String, render_pass: &Arc<dyn RenderPass>, create_infos: &ShaderProgramInfos) -> Arc<dyn ShaderProgram> {
-        VkShaderProgram::new(&self.get_ref(), render_pass, create_infos)
+    fn create_shader_program(&self, name: String, render_pass: &Arc<dyn RenderPass>, create_infos: &ShaderProgramInfos) -> Arc<dyn ShaderProgram> {
+        VkShaderProgram::new(&self.get_ref(), name, render_pass, create_infos)
     }
 
     fn create_render_pass(&self, name: String, create_infos: RenderPassCreateInfos) -> Arc<dyn RenderPass> {
@@ -120,8 +124,8 @@ impl GfxInterface for GfxVulkan {
         VkImage::new(&self.get_ref(), name, create_infos)
     }
 
-    fn create_image_sampler(&self, _name: String, create_infos: SamplerCreateInfos) -> Arc<dyn ImageSampler> {
-        VkImageSampler::new(&self.get_ref(), create_infos)
+    fn create_image_sampler(&self, name: String, create_infos: SamplerCreateInfos) -> Arc<dyn ImageSampler> {
+        VkImageSampler::new(&self.get_ref(), name, create_infos)
     }
 
     fn find_render_pass(&self, pass_id: &PassID) -> Option<Arc<dyn RenderPass>> {
@@ -131,8 +135,8 @@ impl GfxInterface for GfxVulkan {
         }
     }
 
-    fn create_command_buffer(&self, _name: String, surface: &Arc<dyn GfxSurface>) -> Arc<dyn GfxCommandBuffer> {
-        VkCommandBuffer::new(&self.get_ref(), surface)
+    fn create_command_buffer(&self, name: String, surface: &Arc<dyn GfxSurface>) -> Arc<dyn GfxCommandBuffer> {
+        VkCommandBuffer::new(&self.get_ref(), name, surface)
     }
 
     fn get_ref(&self) -> GfxRef {

@@ -10,7 +10,7 @@ use gfx::shader::{AlphaMode, Culling, DescriptorBinding, FrontFace, PolygonMode,
 use gfx::shader_instance::{ShaderInstance, ShaderInstanceCreateInfos};
 
 use crate::{GfxVulkan, vk_check, VkRenderPass, VkShaderInstance};
-use crate::vk_descriptor_set::VkDescriptorSetLayout;
+use crate::vk_dst_set_layout::VkDescriptorSetLayout;
 use crate::vk_types::VkPixelFormat;
 
 pub struct VkTopology(vk::PrimitiveTopology);
@@ -62,13 +62,14 @@ impl From<&FrontFace> for VkFrontFace {
 }
 
 pub struct VkShaderProgram {
-    _gfx: GfxRef,
+    gfx: GfxRef,
     _vertex_module: Arc<VkShaderModule>,
     _fragment_module: Arc<VkShaderModule>,
     pub pipeline: vk::Pipeline,
     pub pipeline_layout: Arc<vk::PipelineLayout>,
     pub descriptor_set_layout: Arc<VkDescriptorSetLayout>,
     bindings: Vec<DescriptorBinding>,
+    name: String,
 }
 
 impl ShaderProgram for VkShaderProgram {
@@ -77,21 +78,19 @@ impl ShaderProgram for VkShaderProgram {
     }
 
     fn instantiate(&self) -> Arc<dyn ShaderInstance> {
-        VkShaderInstance::new(&self._gfx, ShaderInstanceCreateInfos { bindings: self.bindings.clone() }, self.pipeline_layout.clone(), self.descriptor_set_layout.clone())
+        VkShaderInstance::new(&self.gfx, format!("{}_instance", self.name), ShaderInstanceCreateInfos { bindings: self.bindings.clone() }, self.pipeline_layout.clone(), self.descriptor_set_layout.clone())
     }
 }
 
 impl VkShaderProgram {
-    pub fn new(gfx: &GfxRef, render_pass: &Arc<dyn RenderPass>, create_infos: &ShaderProgramInfos) -> Arc<Self> {
-        let descriptor_set_layout = VkDescriptorSetLayout::new(gfx, &create_infos.vertex_stage.descriptor_bindings, &create_infos.fragment_stage.descriptor_bindings);
+    pub fn new(gfx: &GfxRef, name: String, render_pass: &Arc<dyn RenderPass>, create_infos: &ShaderProgramInfos) -> Arc<Self> {
+        let descriptor_set_layout = VkDescriptorSetLayout::new(gfx, name.clone(), &create_infos.vertex_stage.descriptor_bindings, &create_infos.fragment_stage.descriptor_bindings);
 
         let mut bindings = create_infos.vertex_stage.descriptor_bindings.clone();
         bindings.append(&mut create_infos.fragment_stage.descriptor_bindings.clone());
 
-        let device = &gfx.cast::<GfxVulkan>().device;
-
-        let vertex_module = VkShaderModule::new(gfx, &create_infos.vertex_stage.spirv);
-        let fragment_module = VkShaderModule::new(gfx, &create_infos.fragment_stage.spirv);
+        let vertex_module = VkShaderModule::new(gfx, name.clone(), &create_infos.vertex_stage.spirv);
+        let fragment_module = VkShaderModule::new(gfx, name.clone(), &create_infos.fragment_stage.spirv);
 
         let mut push_constants = Vec::<vk::PushConstantRange>::new();
 
@@ -116,8 +115,11 @@ impl VkShaderProgram {
             .set_layouts(&[descriptor_set_layout.descriptor_set_layout])
             .push_constant_ranges(push_constants.as_slice())
             .build();
-        let pipeline_layout = Arc::new(vk_check!(unsafe { (*device).handle.create_pipeline_layout(&pipeline_layout_infos, None) }));
-
+        let pipeline_layout = Arc::new(
+            gfx.cast::<GfxVulkan>().set_vk_object_name(
+                vk_check!(unsafe { gfx.cast::<GfxVulkan>().device.handle.create_pipeline_layout(&pipeline_layout_infos, None) }),
+                format!("<(pipeline_layout)> {}", name).as_str()));
+        
         let mut vertex_attribute_description = Vec::<vk::VertexInputAttributeDescription>::new();
 
         let mut vertex_input_size = 0;
@@ -257,19 +259,21 @@ impl VkShaderProgram {
             .base_pipeline_index(-1)
             .build();
 
-        let pipeline = match unsafe { (*device).handle.create_graphics_pipelines(vk::PipelineCache::default(), &[ci_pipeline], None) } {
+        let pipeline = match unsafe { gfx.cast::<GfxVulkan>().device.handle.create_graphics_pipelines(vk::PipelineCache::default(), &[ci_pipeline], None) } {
             Ok(pipeline) => { pipeline[0] }
             Err(_) => { panic!("failed to create graphic pipelines") }
         };
+        gfx.cast::<GfxVulkan>().set_vk_object_name(pipeline, format!("<(graphic pipeline)> {}", name).as_str());
 
         Arc::new(Self {
-            _gfx: gfx.clone(),
+            gfx: gfx.clone(),
             _vertex_module: vertex_module,
             _fragment_module: fragment_module,
             pipeline,
             pipeline_layout,
             descriptor_set_layout: descriptor_set_layout.clone(),
             bindings,
+            name,
         })
     }
 }
@@ -280,15 +284,14 @@ pub struct VkShaderModule {
 }
 
 impl VkShaderModule {
-    pub fn new(gfx: &GfxRef, spirv: &Vec<u32>) -> Arc<Self> {
-        let device = &gfx.cast::<GfxVulkan>().device;
-
+    pub fn new(gfx: &GfxRef, name: String, spirv: &Vec<u32>) -> Arc<Self> {
         let ci_shader_module = vk::ShaderModuleCreateInfo::builder()
             .code(spirv.as_slice())
             .flags(vk::ShaderModuleCreateFlags::default())
             .build();
 
-        let shader_module = vk_check!(unsafe { (*device).handle.create_shader_module(&ci_shader_module, None) });
+        let shader_module = vk_check!(unsafe { gfx.cast::<GfxVulkan>().device.handle.create_shader_module(&ci_shader_module, None) });
+        gfx.cast::<GfxVulkan>().set_vk_object_name(shader_module, format!("<(shader_module)> {}", name).as_str());
 
         Arc::new(Self {
             _gfx: gfx.clone(),

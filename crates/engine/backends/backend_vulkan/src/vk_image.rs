@@ -60,7 +60,7 @@ impl GfxImage for VkImage {
                 transfer_buffer.set_data(&GfxImageID::null(), 0, data);
 
                 // Transfer commands
-                let command_buffer = create_command_buffer(&self.gfx);
+                let command_buffer = create_command_buffer(&self.gfx, format!("{}_transfer_", self.name));
                 begin_command_buffer(&self.gfx, command_buffer, true);
                 self.set_image_layout(&GfxImageID::null(), command_buffer, vk::ImageLayout::TRANSFER_DST_OPTIMAL);
                 // GPU copy command
@@ -105,8 +105,8 @@ impl GfxImage for VkImage {
         }
 
 
-        self.image.read().unwrap().invalidate(&self.gfx, RbImage { create_infos: self.image_params, type_override: new_type });
-        self.view.invalidate(&self.gfx, RbImageView { create_infos: self.image_params, images: self.image.read().unwrap().clone(), type_override: new_type });
+        self.image.read().unwrap().invalidate(&self.gfx, RbImage { create_infos: self.image_params, type_override: new_type, name: self.name.clone() });
+        self.view.invalidate(&self.gfx, RbImageView { create_infos: self.image_params, images: self.image.read().unwrap().clone(), type_override: new_type, name: self.name.clone() });
         *self.image_type.write().unwrap() = new_type;
     }
 
@@ -134,10 +134,11 @@ impl VkImageUsage {
 pub struct RbImage {
     create_infos: ImageParams,
     type_override: ImageType,
+    name: String,
 }
 
 impl GfxImageBuilder<CombinedImageData> for RbImage {
-    fn build(&self, gfx: &GfxRef, _swapchain_ref: &GfxImageID) -> CombinedImageData {
+    fn build(&self, gfx: &GfxRef, swapchain_ref: &GfxImageID) -> CombinedImageData {
         // Convert image details
         let (image_type, width, height, depth) = match self.type_override {
             ImageType::Texture1d(x) => { (vk::ImageType::TYPE_1D, x, 1, 1) }
@@ -165,6 +166,8 @@ impl GfxImageBuilder<CombinedImageData> for RbImage {
             None
         )});
 
+        gfx.cast::<GfxVulkan>().set_vk_object_name(image, format!("<(texture image)> {}@{}", self.name, swapchain_ref).as_str());
+
         // Allocate image memory
         let allocation = gfx.cast::<GfxVulkan>().device.allocator.write().unwrap().allocate(&vulkan::AllocationCreateDesc {
             name: "buffer allocation",
@@ -179,6 +182,8 @@ impl GfxImageBuilder<CombinedImageData> for RbImage {
 
         let allocation = allocation.unwrap();
 
+        unsafe { gfx.cast::<GfxVulkan>().set_vk_object_name(allocation.memory(), format!("<(texture memory)> {}@{}", self.name, swapchain_ref).as_str()); }
+
         vk_check!(unsafe { gfx.cast::<GfxVulkan>().device.handle.bind_image_memory(image, allocation.memory(), allocation.offset())});
         (image, Arc::new(allocation))
     }
@@ -188,6 +193,7 @@ pub struct RbImageView {
     images: Arc<GfxResource<(vk::Image, Arc<vulkan::Allocation>)>>,
     create_infos: ImageParams,
     type_override: ImageType,
+    name: String,
 }
 
 impl GfxImageBuilder<(vk::ImageView, vk::DescriptorImageInfo)> for RbImageView {
@@ -202,9 +208,8 @@ impl GfxImageBuilder<(vk::ImageView, vk::DescriptorImageInfo)> for RbImageView {
         };
 
         if self.create_infos.read_only {
-            let device = &gfx.cast::<GfxVulkan>().device;
             let view = vk_check!(unsafe { 
-                (*device).handle.create_image_view(&vk::ImageViewCreateInfo::builder()
+                gfx.cast::<GfxVulkan>().device.handle.create_image_view(&vk::ImageViewCreateInfo::builder()
                 .image(self.images.get_static().0)
                 .view_type(view_type)
                 .format(*VkPixelFormat::from(&self.create_infos.pixel_format))
@@ -222,6 +227,9 @@ impl GfxImageBuilder<(vk::ImageView, vk::DescriptorImageInfo)> for RbImageView {
                 .build(), 
                 None) 
             });
+            gfx.cast::<GfxVulkan>().set_vk_object_name(
+                view,
+                format!("<(image view)> {}@{}", self.name, swapchain_ref).as_str());
             (view, vk::DescriptorImageInfo {
                 sampler: Default::default(),
                 image_view: view,
@@ -248,6 +256,9 @@ impl GfxImageBuilder<(vk::ImageView, vk::DescriptorImageInfo)> for RbImageView {
                 .build(), 
                 None) 
             });
+            gfx.cast::<GfxVulkan>().set_vk_object_name(
+                view,
+                format!("<(image view)> {}@{}", self.name, swapchain_ref).as_str());
             (view, vk::DescriptorImageInfo {
                 sampler: Default::default(),
                 image_view: view,
@@ -263,17 +274,17 @@ impl VkImage {
 
         let image_views = if params.read_only {
             // Static image
-            let images = Arc::new(GfxResource::new_static(gfx, RbImage { create_infos: params, type_override: create_infos.params.image_type }));
+            let images = Arc::new(GfxResource::new_static(gfx, RbImage { create_infos: params, type_override: create_infos.params.image_type, name: name.clone() }));
             (
                 images.clone(),
-                GfxResource::new_static(gfx, RbImageView { create_infos: params, images, type_override: create_infos.params.image_type })
+                GfxResource::new_static(gfx, RbImageView { create_infos: params, images, type_override: create_infos.params.image_type, name: name.clone() })
             )
         } else {
             // Dynamic image
-            let images = Arc::new(GfxResource::new(gfx, RbImage { create_infos: params, type_override: create_infos.params.image_type }));
+            let images = Arc::new(GfxResource::new(gfx, RbImage { create_infos: params, type_override: create_infos.params.image_type, name: name.clone() }));
             (
                 images.clone(),
-                GfxResource::new(gfx, RbImageView { create_infos: params, images, type_override: create_infos.params.image_type })
+                GfxResource::new(gfx, RbImageView { create_infos: params, images, type_override: create_infos.params.image_type, name: name.clone() })
             )
         };
 
@@ -311,6 +322,7 @@ impl VkImage {
                 images,
                 create_infos: image_usage,
                 type_override: image_usage.image_type,
+                name: name.clone(),
             }),
             image_params: image_usage,
             image_layout: RwLock::new(vk::ImageLayout::UNDEFINED),
@@ -380,7 +392,7 @@ impl VkImage {
 
     pub fn resize_from_existing_images(&self, new_type: ImageType, existing_images: Arc<GfxResource<CombinedImageData>>) {
         *self.image.write().unwrap() = existing_images;
-        self.view.invalidate(&self.gfx, RbImageView { create_infos: self.image_params, images: self.image.read().unwrap().clone(), type_override: new_type });
+        self.view.invalidate(&self.gfx, RbImageView { create_infos: self.image_params, images: self.image.read().unwrap().clone(), type_override: new_type, name: self.name.clone() });
         *self.image_type.write().unwrap() = new_type;
     }
 }

@@ -73,7 +73,11 @@ impl GfxImageBuilder<Arc<BufferContainer>> for RbBuffer {
             .usage(usage)
             .build();
 
-        let buffer = gfx.cast::<GfxVulkan>().set_vk_object_name(vk_check!(unsafe { gfx.cast::<GfxVulkan>().device.handle.create_buffer(&ci_buffer, None) }), format!("buffer {}@{}", self.name, image_id).as_str());
+        let buffer = gfx.cast::<GfxVulkan>().set_vk_object_name(
+            vk_check!(unsafe { gfx.cast::<GfxVulkan>().device.handle.create_buffer(&ci_buffer, None) }),
+            format!("<(buffer handle)> {}@{}",
+                    self.name,
+                    image_id).as_str());
         let requirements = unsafe { gfx.cast::<GfxVulkan>().device.handle.get_buffer_memory_requirements(buffer) };
 
         let allocation = match gfx.cast::<GfxVulkan>().device.allocator.write().unwrap().allocate(&vulkan::AllocationCreateDesc {
@@ -95,7 +99,13 @@ impl GfxImageBuilder<Arc<BufferContainer>> for RbBuffer {
             }
         };
 
-        unsafe { gfx.cast::<GfxVulkan>().device.handle.bind_buffer_memory(buffer, allocation.memory(), allocation.offset()).unwrap() };
+
+        unsafe {
+            gfx.cast::<GfxVulkan>().device.handle.bind_buffer_memory(
+                buffer,
+                gfx.cast::<GfxVulkan>().set_vk_object_name(allocation.memory(), format!("<(buffer memory)> {}@{}", self.name, image_id).as_str()),
+                allocation.offset()).unwrap()
+        };
 
         match allocation.mapped_ptr()
         {

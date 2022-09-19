@@ -4,9 +4,9 @@ use crate::parser::ShaderChunk;
 use crate::types::{InterstageData, ShaderErrorResult};
 
 pub mod parser;
+pub mod types;
 mod file_iterator;
 mod includer;
-pub mod types;
 mod reflect;
 
 pub mod backends {

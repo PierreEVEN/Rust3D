@@ -9,3 +9,9 @@ pub mod base_assets {
     pub mod material_instance_asset;
     pub mod mesh_asset;
 }
+
+pub mod scene_graph {
+    pub mod scene;
+    pub mod component_base;
+    pub mod transform_component;
+}

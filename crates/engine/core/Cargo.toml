@@ -7,3 +7,6 @@ edition = "2021"
 shader_compiler = { path = "../shader_compiler" }
 gfx = { path = "../common/gfx" }
 plateform = { path = "../common/plateform" }
+
+legion = "0.4.0"
+gfx-maths = "0.2.8"

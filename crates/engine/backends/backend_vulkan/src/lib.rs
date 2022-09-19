@@ -7,6 +7,7 @@ use std::ffi::CStr;
 use std::mem::MaybeUninit;
 use std::os::raw::c_char;
 use std::sync::{Arc, RwLock, Weak};
+
 use ash::vk;
 
 use gfx::{GfxInterface, GfxRef, PhysicalDevice};
@@ -30,20 +31,20 @@ use crate::vk_render_pass::VkRenderPass;
 use crate::vk_shader::VkShaderProgram;
 use crate::vk_shader_instance::VkShaderInstance;
 
-pub mod vk_instance;
-pub mod vk_physical_device;
 pub mod vk_device;
 pub mod vk_types;
-pub mod vk_render_pass;
-pub mod vk_buffer;
-pub mod vk_shader;
 pub mod vk_render_pass_instance;
-pub mod vk_command_buffer;
 pub mod vk_image;
-pub mod vk_image_sampler;
-pub mod vk_shader_instance;
-pub mod vk_descriptor_pool;
-pub mod vk_dst_set_layout;
+mod vk_instance;
+mod vk_physical_device;
+mod vk_render_pass;
+mod vk_buffer;
+mod vk_shader;
+mod vk_command_buffer;
+mod vk_image_sampler;
+mod vk_shader_instance;
+mod vk_descriptor_pool;
+mod vk_dst_set_layout;
 
 pub static mut G_VULKAN: Option<ash::Entry> = None;
 
@@ -157,7 +158,7 @@ impl GfxVulkan {
         let device = MaybeUninit::zeroed();
         let command_pool = MaybeUninit::zeroed();
         let descriptor_pool = MaybeUninit::zeroed();
-        
+
         let gfx = Arc::new(Self {
             instance,
             physical_device: unsafe { physical_device.assume_init() },

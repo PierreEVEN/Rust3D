@@ -21,8 +21,8 @@ use crate::utils::{check_win32_error, utf8_to_utf16};
 use crate::win32_inputs::win32_input;
 use crate::window::WindowWin32;
 
-pub mod window;
-pub mod utils;
+mod window;
+mod utils;
 mod win32_inputs;
 
 const WIN_CLASS_NAME: &str = "r3d_window";

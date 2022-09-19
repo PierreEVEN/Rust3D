@@ -118,7 +118,7 @@ impl VkShaderProgram {
         let pipeline_layout = Arc::new(
             gfx.cast::<GfxVulkan>().set_vk_object_name(
                 vk_check!(unsafe { gfx.cast::<GfxVulkan>().device.handle.create_pipeline_layout(&pipeline_layout_infos, None) }),
-                format!("<(pipeline_layout)> {}", name).as_str()));
+                format!("pipeline layout\t\t: {}", name).as_str()));
         
         let mut vertex_attribute_description = Vec::<vk::VertexInputAttributeDescription>::new();
 
@@ -263,7 +263,7 @@ impl VkShaderProgram {
             Ok(pipeline) => { pipeline[0] }
             Err(_) => { panic!("failed to create graphic pipelines") }
         };
-        gfx.cast::<GfxVulkan>().set_vk_object_name(pipeline, format!("<(graphic pipeline)> {}", name).as_str());
+        gfx.cast::<GfxVulkan>().set_vk_object_name(pipeline, format!("graphic pipeline\t\t: {}", name).as_str());
 
         Arc::new(Self {
             gfx: gfx.clone(),
@@ -291,7 +291,7 @@ impl VkShaderModule {
             .build();
 
         let shader_module = vk_check!(unsafe { gfx.cast::<GfxVulkan>().device.handle.create_shader_module(&ci_shader_module, None) });
-        gfx.cast::<GfxVulkan>().set_vk_object_name(shader_module, format!("<(shader_module)> {}", name).as_str());
+        gfx.cast::<GfxVulkan>().set_vk_object_name(shader_module, format!("shader module\t\t: {}", name).as_str());
 
         Arc::new(Self {
             _gfx: gfx.clone(),

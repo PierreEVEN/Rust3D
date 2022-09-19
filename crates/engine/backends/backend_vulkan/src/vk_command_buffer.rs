@@ -27,7 +27,7 @@ pub fn create_command_buffer(gfx: &GfxRef, name: String) -> vk::CommandBuffer {
     gfx.cast::<GfxVulkan>().set_vk_object_name(
         vk_check!(unsafe { gfx.cast::<GfxVulkan>().device.handle.
             allocate_command_buffers(&create_infos) })[0],
-        format!("<(command_buffer)> {}", name).as_str(),
+        format!("command_buffer\t: {}", name).as_str(),
     )
 }
 
@@ -69,7 +69,7 @@ impl VkCommandPool {
 
         let command_pool = vk_check!(unsafe {gfx.cast::<GfxVulkan>().device.handle.create_command_pool(&create_infos, None)});
 
-        gfx.cast::<GfxVulkan>().set_vk_object_name(command_pool, format!("<(command_pool)> {}", name).as_str());
+        gfx.cast::<GfxVulkan>().set_vk_object_name(command_pool, format!("command pool\t\t: {}", name).as_str());
 
         VkCommandPool {
             command_pool

@@ -75,7 +75,7 @@ impl GfxImageBuilder<Arc<BufferContainer>> for RbBuffer {
 
         let buffer = gfx.cast::<GfxVulkan>().set_vk_object_name(
             vk_check!(unsafe { gfx.cast::<GfxVulkan>().device.handle.create_buffer(&ci_buffer, None) }),
-            format!("<(buffer handle)> {}@{}",
+            format!("buffer handle\t\t: {}@{}",
                     self.name,
                     image_id).as_str());
         let requirements = unsafe { gfx.cast::<GfxVulkan>().device.handle.get_buffer_memory_requirements(buffer) };
@@ -103,7 +103,7 @@ impl GfxImageBuilder<Arc<BufferContainer>> for RbBuffer {
         unsafe {
             gfx.cast::<GfxVulkan>().device.handle.bind_buffer_memory(
                 buffer,
-                gfx.cast::<GfxVulkan>().set_vk_object_name(allocation.memory(), format!("<(buffer memory)> {}@{}", self.name, image_id).as_str()),
+                gfx.cast::<GfxVulkan>().set_vk_object_name(allocation.memory(), format!("buffer memory\t\t: {}@{}", self.name, image_id).as_str()),
                 allocation.offset()).unwrap()
         };
 

@@ -148,7 +148,7 @@ impl VkRenderPass {
         let gfx_copy = gfx.clone();
         let render_pass = vk_check!(unsafe { gfx_copy.cast::<GfxVulkan>().device.handle.create_render_pass(&render_pass_infos, None) });
 
-        gfx.cast::<GfxVulkan>().set_vk_object_name(render_pass, format!("<(render_pass)> {}", name).as_str());
+        gfx.cast::<GfxVulkan>().set_vk_object_name(render_pass, format!("render pass\t\t: {}", name).as_str());
             
         let vk_render_pass = Arc::new(Self {
             render_pass,

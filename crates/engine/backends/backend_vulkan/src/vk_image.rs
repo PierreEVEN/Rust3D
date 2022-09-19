@@ -166,7 +166,7 @@ impl GfxImageBuilder<CombinedImageData> for RbImage {
             None
         )});
 
-        gfx.cast::<GfxVulkan>().set_vk_object_name(image, format!("<(texture image)> {}@{}", self.name, swapchain_ref).as_str());
+        gfx.cast::<GfxVulkan>().set_vk_object_name(image, format!("texture image\t\t: {}@{}", self.name, swapchain_ref).as_str());
 
         // Allocate image memory
         let allocation = gfx.cast::<GfxVulkan>().device.allocator.write().unwrap().allocate(&vulkan::AllocationCreateDesc {
@@ -182,7 +182,7 @@ impl GfxImageBuilder<CombinedImageData> for RbImage {
 
         let allocation = allocation.unwrap();
 
-        unsafe { gfx.cast::<GfxVulkan>().set_vk_object_name(allocation.memory(), format!("<(texture memory)> {}@{}", self.name, swapchain_ref).as_str()); }
+        unsafe { gfx.cast::<GfxVulkan>().set_vk_object_name(allocation.memory(), format!("texture memory\t\t: {}@{}", self.name, swapchain_ref).as_str()); }
 
         vk_check!(unsafe { gfx.cast::<GfxVulkan>().device.handle.bind_image_memory(image, allocation.memory(), allocation.offset())});
         (image, Arc::new(allocation))
@@ -229,7 +229,7 @@ impl GfxImageBuilder<(vk::ImageView, vk::DescriptorImageInfo)> for RbImageView {
             });
             gfx.cast::<GfxVulkan>().set_vk_object_name(
                 view,
-                format!("<(image view)> {}@{}", self.name, swapchain_ref).as_str());
+                format!("image view\t\t: {}@{}", self.name, swapchain_ref).as_str());
             (view, vk::DescriptorImageInfo {
                 sampler: Default::default(),
                 image_view: view,
@@ -258,7 +258,7 @@ impl GfxImageBuilder<(vk::ImageView, vk::DescriptorImageInfo)> for RbImageView {
             });
             gfx.cast::<GfxVulkan>().set_vk_object_name(
                 view,
-                format!("<(image view)> {}@{}", self.name, swapchain_ref).as_str());
+                format!("image view\t\t: {}@{}", self.name, swapchain_ref).as_str());
             (view, vk::DescriptorImageInfo {
                 sampler: Default::default(),
                 image_view: view,

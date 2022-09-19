@@ -99,14 +99,19 @@ impl GfxSurface for VkSurfaceWin32 {
             .build();
 
         let swapchain = vk_check!(unsafe { self._swapchain_loader.create_swapchain(&ci_swapchain, None) });
+        self.gfx.cast::<GfxVulkan>().set_vk_object_name(swapchain, format!("swapchain\t\t: {}", self.window.get_title()).as_str());
+        
 
         let mut swapchain_ref = self.swapchain.write().unwrap();
         *swapchain_ref = Some(swapchain);
 
         let images = vk_check!(unsafe { self._swapchain_loader.get_swapchain_images(swapchain) });
+        for i in 0..images.len() {
+            self.gfx.cast::<GfxVulkan>().set_vk_object_name(images[i], format!("swapchain image\t: surface('{}')@[0:{}]", self.window.get_title(), i).as_str());
+        }
 
         let mut image = self.surface_image.write().unwrap();
-        *image = Some(VkImage::from_existing_images(&self.gfx, format!("surface_image"), GfxResource::new(&self.gfx, RbSurfaceImage {
+        *image = Some(VkImage::from_existing_images(&self.gfx, format!("surface('{}')", self.window.get_title()), GfxResource::new(&self.gfx, RbSurfaceImage {
             images,
         }), ImageParams {
             pixel_format: *GfxPixelFormat::from(self.surface_format.format),

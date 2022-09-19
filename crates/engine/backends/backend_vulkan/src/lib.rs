@@ -94,9 +94,8 @@ impl GfxInterface for GfxVulkan {
         unsafe { (&self.command_pool as *const VkCommandPool as *mut VkCommandPool).write(VkCommandPool::new(&self.get_ref(), format!("global"))) };
         unsafe { (&self.descriptor_pool as *const VkDescriptorPool as *mut VkDescriptorPool).write(VkDescriptorPool::new(&self.get_ref(), 64, 64)) };
 
-        self.set_vk_object_name(self.device.handle.handle(), format!("<(device)> global").as_str());
-        self.set_vk_object_name(self.instance.handle.handle(), format!("<(instance)> global").as_str());
-        self.set_vk_object_name(self.physical_device_vk.handle, format!("<(physical_device)> {}", self.physical_device.device_name).as_str());
+        self.set_vk_object_name(self.device.handle.handle(), format!("device\t\t: global ").as_str());
+        self.set_vk_object_name(self.physical_device_vk.handle, format!("physical device\t\t: {}", self.physical_device.device_name).as_str());
     }
 
 
@@ -242,7 +241,7 @@ impl GfxVulkan {
                 .object_name(CStr::from_ptr(string_name.as_ptr() as *const c_char))
                 .build()))
         }
-        
+
         object
     }
 }

@@ -61,7 +61,7 @@ impl VkDescriptorPool {
                 .max_sets(self.max_descriptor_per_pool)
                 .pool_sizes(pool_sizes.as_slice())
                 .build(), None)
-                }), format!("<(descriptor_pool)> @thread::{}", thread::current().name().unwrap()).as_str())
+                }), format!("descriptor pool\t\t: thread@{}", thread::current().name().unwrap()).as_str())
     }
 
     pub fn allocate(&self, name: String, layout: vk::DescriptorSetLayout) -> vk::DescriptorSet {
@@ -73,7 +73,7 @@ impl VkDescriptorPool {
 
         self.gfx.cast::<GfxVulkan>().set_vk_object_name(
             vk_check!(unsafe { (*device).handle.allocate_descriptor_sets(&descriptor_info) })[0],
-format!("<(descriptor_set)> {}", name).as_str())
+format!("descriptor set\t\t: {}", name).as_str())
         
     }
 }

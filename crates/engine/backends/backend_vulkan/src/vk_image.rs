@@ -86,6 +86,10 @@ impl GfxImage for VkImage {
                 end_command_buffer(&self.gfx, command_buffer);
                 submit_command_buffer(&self.gfx, command_buffer, vk::QueueFlags::TRANSFER);
             }
+            match self.gfx.cast::<GfxVulkan>().device.get_queue(vk::QueueFlags::TRANSFER) {
+                Ok(queue) => { queue.wait(); }
+                Err(_) => {panic!("failed to find queue"); }
+            }
         } else {
             panic!("Applying modification to non-static image is not allowed yet");
         }
@@ -174,6 +178,7 @@ impl GfxImageBuilder<CombinedImageData> for RbImage {
             requirements: unsafe { gfx.cast::<GfxVulkan>().device.handle.get_image_memory_requirements(image) },
             location: *VkBufferAccess::from(BufferAccess::GpuOnly),
             linear: true,
+            allocation_scheme: vulkan::AllocationScheme::DedicatedImage(image)
         });
 
         if allocation.is_err() {

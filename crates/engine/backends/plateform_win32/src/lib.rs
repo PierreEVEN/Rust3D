@@ -1,11 +1,10 @@
 use std::collections::{HashMap};
 use std::hash::{Hash, Hasher};
 use std::mem::size_of;
-use std::ptr::null;
 use std::sync::{Arc, RwLock};
 
 use windows::core::PCWSTR;
-use windows::Win32::Foundation::{BOOL, HINSTANCE, HWND, LPARAM, LRESULT, RECT, WPARAM};
+use windows::Win32::Foundation::{BOOL, HWND, LPARAM, LRESULT, RECT, WPARAM, HINSTANCE};
 use windows::Win32::Graphics::Gdi::{BLACK_BRUSH, EnumDisplayMonitors, GetMonitorInfoW, GetStockObject, HBRUSH, HDC, HMONITOR, MONITORINFO};
 use windows::Win32::Media::{timeBeginPeriod, timeEndPeriod};
 use windows::Win32::UI::HiDpi::{GetDpiForMonitor, MDT_EFFECTIVE_DPI};
@@ -86,7 +85,7 @@ impl PlatformWin32 {
                     HWND::default(),
                     HMENU::default(),
                     HINSTANCE::default(),
-                    null(),
+                    None,
                 );
 
                 SetClassLongPtrW(
@@ -173,7 +172,7 @@ impl Platform for PlatformWin32 {
         unsafe {
             EnumDisplayMonitors(
                 HDC::default(),
-                null(),
+                None,
                 Some(enum_display_monitors_callback),
                 LPARAM((&self.monitors as *const _) as isize),
             );

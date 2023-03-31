@@ -1,10 +1,9 @@
 ﻿use std::collections::HashMap;
-use std::ptr::null;
 use std::sync::{Arc, RwLock};
 
 use raw_window_handle::{RawWindowHandle, Win32WindowHandle};
 use windows::core::PCWSTR;
-use windows::Win32::Foundation::{HINSTANCE, HWND, RECT};
+use windows::Win32::Foundation::{COLORREF, HINSTANCE, HWND, RECT};
 use windows::Win32::UI::WindowsAndMessaging::{AdjustWindowRectEx, CreateWindowExW, HMENU, LWA_ALPHA, SetLayeredWindowAttributes, SetWindowTextW, ShowWindow, SW_MAXIMIZE, SW_SHOW, WINDOW_STYLE, WS_CAPTION, WS_EX_LAYERED, WS_MAXIMIZEBOX, WS_MINIMIZEBOX, WS_OVERLAPPED, WS_POPUP, WS_SYSMENU, WS_THICKFRAME, WS_VISIBLE};
 
 use maths::rect2d::RectI32;
@@ -59,7 +58,7 @@ impl WindowWin32 {
                 HWND::default(),
                 HMENU::default(),
                 HINSTANCE::default(),
-                null(),
+                None,
             );
 
             match check_win32_error() {
@@ -130,7 +129,7 @@ impl Window for WindowWin32 {
 
     fn set_background_alpha(&self, alpha: u8) {
         unsafe {
-            SetLayeredWindowAttributes(self.hwnd, 0, alpha, LWA_ALPHA);
+            SetLayeredWindowAttributes(self.hwnd, COLORREF::default(), alpha, LWA_ALPHA);
         }
         (*self.background_alpha.write().unwrap()) = alpha;
     }

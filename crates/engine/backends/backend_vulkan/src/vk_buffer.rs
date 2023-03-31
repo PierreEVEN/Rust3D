@@ -85,6 +85,7 @@ impl GfxImageBuilder<Arc<BufferContainer>> for RbBuffer {
             requirements,
             location: *VkBufferAccess::from(self.create_infos.access),
             linear: false,
+            allocation_scheme: vulkan::AllocationScheme::DedicatedBuffer(buffer)
         }) {
             Ok(allocation) => { allocation }
             Err(alloc_error) => {

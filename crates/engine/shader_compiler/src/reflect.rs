@@ -49,9 +49,11 @@ impl SpirvReflector {
         let mut push_constant_size: u32 = 0;
         match info.get_push_constant_range() {
             Ok(push_constants) => {
-                for push_constant in push_constants {
-                    push_constant_size = push_constant.size;
-                    break;
+                match push_constants {
+                    Some(push_constant) => {
+                        push_constant_size = push_constant.size;
+                    }
+                    _ => {}
                 }
             }
             Err(_) => { panic!("failed to get reflection data") }

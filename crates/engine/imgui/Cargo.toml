@@ -11,6 +11,6 @@ gfx = { path = "../common/gfx" }
 shader_compiler = { path = "../shader_compiler" }
 macros = { path = "../macros" }
 maths = { path = "../maths" }
-memoffset = "0.6.5"
+memoffset = "0.8.0"
 core = { path = "../core" }
 plateform = { path = "../common/plateform" }

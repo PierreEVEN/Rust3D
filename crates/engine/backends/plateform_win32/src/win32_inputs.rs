@@ -1,7 +1,6 @@
 ﻿use windows::Win32::Foundation::{LPARAM, WPARAM};
 use windows::Win32::UI::Input::KeyboardAndMouse::*;
 use windows::Win32::UI::WindowsAndMessaging::*;
-use windows::Win32::UI::WindowsAndMessaging::MAPVK_VSC_TO_VK_EX;
 use plateform::input_system::{InputManager, InputMapping, KeyboardKey, MouseButton};
 use crate::utils::{hiword, loword};
 

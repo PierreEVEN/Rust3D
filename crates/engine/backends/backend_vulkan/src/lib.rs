@@ -236,7 +236,7 @@ impl GfxVulkan {
         let string_name = format!("{}\0", name);
 
         unsafe {
-            vk_check!(self.instance.debug_util_loader.debug_utils_set_object_name(self.device.handle.handle(), &vk::DebugUtilsObjectNameInfoEXT::builder()
+            vk_check!(self.instance.debug_util_loader.set_debug_utils_object_name(self.device.handle.handle(), &vk::DebugUtilsObjectNameInfoEXT::builder()
                 .object_type(object_type)
                 .object_handle(object.as_raw())
                 .object_name(CStr::from_ptr(string_name.as_ptr() as *const c_char))

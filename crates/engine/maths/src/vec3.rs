@@ -2,7 +2,7 @@
 use std::ops;
 use macros::*;
 
-#[derive(Debug, Copy, Clone, OpsAdd, OpsSub, OpsMul, OpsDiv, DefaultConstruct)]
+#[derive(Debug, Copy, Clone, PartialEq, OpsAdd, OpsSub, OpsMul, OpsDiv, DefaultConstruct)]
 pub struct Vec3<T: Default> {
     pub x: T,
     pub y: T,

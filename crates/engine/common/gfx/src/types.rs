@@ -1,5 +1,5 @@
 ﻿use std::any::Any;
-use maths::vec2::Vec2F32;
+use maths::vec2::Vec2f32;
 use maths::vec4::Vec4F32;
 
 #[allow(non_camel_case_types)]
@@ -427,7 +427,7 @@ impl PixelFormat {
 pub enum ClearValues {
     DontClear,
     Color(Vec4F32),
-    DepthStencil(Vec2F32),
+    DepthStencil(Vec2f32),
 }
 
 pub trait GfxCast: 'static {

@@ -9,8 +9,7 @@ members = [
     "crates/engine/third_party_io",
     "crates/engine/backends/*",
     "crates/engine/common/*",
-    "crates/editor",
-    "crates/main"
+    "crates/editor"
 ]
 default-members = ["crates/editor/"]
 

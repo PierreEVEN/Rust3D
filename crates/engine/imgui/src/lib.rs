@@ -20,7 +20,7 @@ use gfx::shader_instance::{BindPoint, ShaderInstance};
 use gfx::surface::GfxSurface;
 use gfx::types::{ClearValues, PixelFormat, Scissors};
 use imgui_bindings::{igCreateContext, igEndFrame, igGetDrawData, igGetIO, igGetMainViewport, igGetStyle, igNewFrame, igRender, igShowDemoWindow, igStyleColorsDark, ImDrawIdx, ImDrawVert, ImFontAtlas_GetTexDataAsRGBA32, ImGuiBackendFlags__ImGuiBackendFlags_HasMouseCursors, ImGuiBackendFlags__ImGuiBackendFlags_HasSetMousePos, ImGuiBackendFlags__ImGuiBackendFlags_PlatformHasViewports, ImGuiConfigFlags__ImGuiConfigFlags_DockingEnable, ImGuiConfigFlags__ImGuiConfigFlags_NavEnableGamepad, ImGuiConfigFlags__ImGuiConfigFlags_NavEnableKeyboard, ImGuiConfigFlags__ImGuiConfigFlags_ViewportsEnable, ImGuiContext, ImTextureID, ImVec2, ImVec4};
-use maths::vec2::Vec2F32;
+use maths::vec2::Vec2f32;
 use maths::vec4::Vec4F32;
 use plateform::input_system::{InputMapping, MouseButton};
 use shader_compiler::backends::backend_shaderc::{BackendShaderC, ShaderCIncluder};
@@ -120,7 +120,7 @@ impl ImGUiContext {
             }],
             depth_attachment: Some(RenderPassAttachment {
                 name: "depth".to_string(),
-                clear_value: ClearValues::DepthStencil(Vec2F32::new(1.0, 0.0)),
+                clear_value: ClearValues::DepthStencil(Vec2f32::new(1.0, 0.0)),
                 image_format: PixelFormat::D24_UNORM_S8_UINT,
             }),
             is_present_pass: false,

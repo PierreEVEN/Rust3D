@@ -1,6 +1,6 @@
 ﻿use std::collections::{HashMap};
 use std::sync::{ RwLock};
-use maths::vec2::{Vec2F32, Vec2i32};
+use maths::vec2::{Vec2f32, Vec2i32};
 
 #[derive(Copy, Clone)]
 pub enum ActionType {
@@ -50,7 +50,7 @@ pub struct InputManager {
     action_mapping: RwLock<HashMap<String, InputAction>>,
     axis_mapping: RwLock<HashMap<String, InputAxis>>,
     input_states: RwLock<HashMap<InputMapping, f32>>,
-    mouse_position: RwLock<Vec2F32>,
+    mouse_position: RwLock<Vec2f32>,
 }
 
 pub trait IoInterface {
@@ -59,7 +59,7 @@ pub trait IoInterface {
 
 impl InputManager {
     pub fn new() -> Self {
-        Self { action_mapping: Default::default(), axis_mapping: Default::default(), input_states: Default::default(), mouse_position: RwLock::new(Vec2F32 { x: 0.0, y: 0.0 }) }
+        Self { action_mapping: Default::default(), axis_mapping: Default::default(), input_states: Default::default(), mouse_position: RwLock::new(Vec2f32 { x: 0.0, y: 0.0 }) }
     }
 
     pub fn new_action(&self, name: &str, action: InputAction) {
@@ -82,7 +82,7 @@ impl InputManager {
         }
     }
 
-    pub fn get_mouse_position(&self) -> Vec2F32 {
+    pub fn get_mouse_position(&self) -> Vec2f32 {
         *self.mouse_position.read().unwrap()
     }
 
@@ -159,7 +159,7 @@ impl InputManager {
     }
 
     pub fn _set_mouse_pos(&self, x: f32, y: f32) {
-        *self.mouse_position.write().unwrap() = Vec2F32 { x, y }
+        *self.mouse_position.write().unwrap() = Vec2f32 { x, y }
     }
 }
 

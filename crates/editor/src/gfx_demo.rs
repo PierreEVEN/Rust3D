@@ -6,7 +6,7 @@ use gfx::render_pass::{RenderPassAttachment, RenderPassCreateInfos};
 use gfx::shader::PassID;
 use gfx::surface::GfxSurface;
 use gfx::types::*;
-use maths::vec2::{Vec2F32, Vec2u32};
+use maths::vec2::{Vec2f32, Vec2u32};
 use maths::vec4::Vec4F32;
 
 pub fn _demo_objects(gfx: &GfxRef, surface: &Arc<dyn GfxSurface>) {
@@ -48,7 +48,7 @@ pub fn _demo_objects(gfx: &GfxRef, surface: &Arc<dyn GfxSurface>) {
         depth_attachment: Some(
             RenderPassAttachment {
                 name: "depth".to_string(),
-                clear_value: ClearValues::DepthStencil(Vec2F32::new(1.0, 0.0)),
+                clear_value: ClearValues::DepthStencil(Vec2f32::new(1.0, 0.0)),
                 image_format: PixelFormat::D32_SFLOAT,
             }),
         is_present_pass: false,

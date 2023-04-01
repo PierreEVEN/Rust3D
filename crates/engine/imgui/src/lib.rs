@@ -2,7 +2,7 @@ use std::{fs, slice};
 use std::mem::size_of;
 use std::os::raw::c_char;
 use std::path::Path;
-use std::ptr::null_mut;
+use std::ptr::{null_mut};
 use std::sync::Arc;
 
 use memoffset::offset_of;
@@ -19,7 +19,8 @@ use gfx::shader::{PassID, ShaderLanguage, ShaderProgram, ShaderProgramInfos, Sha
 use gfx::shader_instance::{BindPoint, ShaderInstance};
 use gfx::surface::GfxSurface;
 use gfx::types::{ClearValues, PixelFormat, Scissors};
-use imgui_bindings::{igCreateContext, igEndFrame, igGetDrawData, igGetIO, igGetMainViewport, igGetStyle, igNewFrame, igRender, igShowDemoWindow, igStyleColorsDark, ImDrawIdx, ImDrawVert, ImFontAtlas_GetTexDataAsRGBA32, ImGuiBackendFlags__ImGuiBackendFlags_HasMouseCursors, ImGuiBackendFlags__ImGuiBackendFlags_HasSetMousePos, ImGuiBackendFlags__ImGuiBackendFlags_PlatformHasViewports, ImGuiConfigFlags__ImGuiConfigFlags_DockingEnable, ImGuiConfigFlags__ImGuiConfigFlags_NavEnableGamepad, ImGuiConfigFlags__ImGuiConfigFlags_NavEnableKeyboard, ImGuiConfigFlags__ImGuiConfigFlags_ViewportsEnable, ImGuiContext, ImTextureID, ImVec2, ImVec4};
+use imgui_bindings::*;
+
 use maths::vec2::Vec2f32;
 use maths::vec4::Vec4F32;
 use plateform::input_system::{InputMapping, MouseButton};
@@ -42,9 +43,10 @@ pub struct ImGUiContext {
 
 impl ImGUiContext {
     pub fn new(gfx: &GfxRef) -> Arc<Self> {
+        
         let imgui_context = unsafe { igCreateContext(null_mut()) };
-
-        let io = unsafe { &mut *igGetIO() };
+        
+        let io = unsafe { &mut *igGetIO() }; 
         io.ConfigFlags |= ImGuiConfigFlags__ImGuiConfigFlags_NavEnableKeyboard;
         io.ConfigFlags |= ImGuiConfigFlags__ImGuiConfigFlags_NavEnableGamepad;
         io.ConfigFlags |= ImGuiConfigFlags__ImGuiConfigFlags_DockingEnable;

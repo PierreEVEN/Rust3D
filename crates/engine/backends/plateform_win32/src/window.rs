@@ -3,7 +3,7 @@ use std::sync::{Arc, RwLock};
 
 use raw_window_handle::{RawWindowHandle, Win32WindowHandle};
 use windows::core::PCWSTR;
-use windows::Win32::Foundation::{COLORREF, HINSTANCE, HWND, RECT};
+use windows::Win32::Foundation::{COLORREF, HMODULE, HWND, RECT};
 use windows::Win32::UI::WindowsAndMessaging::{AdjustWindowRectEx, CreateWindowExW, HMENU, LWA_ALPHA, SetLayeredWindowAttributes, SetWindowTextW, ShowWindow, SW_MAXIMIZE, SW_SHOW, WINDOW_STYLE, WS_CAPTION, WS_EX_LAYERED, WS_MAXIMIZEBOX, WS_MINIMIZEBOX, WS_OVERLAPPED, WS_POPUP, WS_SYSMENU, WS_THICKFRAME, WS_VISIBLE};
 
 use maths::rect2d::RectI32;
@@ -57,7 +57,7 @@ impl WindowWin32 {
                 initial_rect.bottom - initial_rect.top,
                 HWND::default(),
                 HMENU::default(),
-                HINSTANCE::default(),
+                HMODULE::default(),
                 None,
             );
 

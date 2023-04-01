@@ -4,7 +4,7 @@ use std::mem::size_of;
 use std::sync::{Arc, RwLock};
 
 use windows::core::PCWSTR;
-use windows::Win32::Foundation::{BOOL, HWND, LPARAM, LRESULT, RECT, WPARAM, HINSTANCE};
+use windows::Win32::Foundation::{BOOL, HWND, LPARAM, LRESULT, RECT, WPARAM, HMODULE};
 use windows::Win32::Graphics::Gdi::{BLACK_BRUSH, EnumDisplayMonitors, GetMonitorInfoW, GetStockObject, HBRUSH, HDC, HMONITOR, MONITORINFO};
 use windows::Win32::Media::{timeBeginPeriod, timeEndPeriod};
 use windows::Win32::UI::HiDpi::{GetDpiForMonitor, MDT_EFFECTIVE_DPI};
@@ -58,7 +58,7 @@ impl PlatformWin32 {
             win_class.style = CS_HREDRAW | CS_VREDRAW | CS_DBLCLKS;
             win_class.lpszClassName = PCWSTR(utf8_to_utf16(WIN_CLASS_NAME).as_ptr());
             win_class.hbrBackground = HBRUSH(GetStockObject(BLACK_BRUSH).0);
-            win_class.hCursor = LoadCursorW(HINSTANCE::default(), IDC_ARROW).unwrap();
+            win_class.hCursor = LoadCursorW(HMODULE::default(), IDC_ARROW).unwrap();
             win_class.cbClsExtra = size_of::<usize>() as i32;
             win_class.lpfnWndProc = Some(wnd_proc);
             assert_ne!(RegisterClassExW(&win_class), 0);
@@ -84,7 +84,7 @@ impl PlatformWin32 {
                     1,
                     HWND::default(),
                     HMENU::default(),
-                    HINSTANCE::default(),
+                    HMODULE::default(),
                     None,
                 );
 
@@ -131,7 +131,7 @@ impl Drop for PlatformWin32 {
         unsafe {
             UnregisterClassW(
                 PCWSTR(utf8_to_utf16(WIN_CLASS_NAME).as_ptr()),
-                HINSTANCE::default(),
+                HMODULE::default(),
             );
             timeEndPeriod(1);
         }

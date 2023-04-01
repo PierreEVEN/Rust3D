@@ -16,3 +16,4 @@ gfx = { path = "../engine/common/gfx" }
 plateform = { path = "../engine/common/plateform" }
 imgui = { path = "../engine/imgui" }
 backend_launcher = { path = "../engine/backends/backend_launcher" }
+ecs = { path = "../engine/ecs" }

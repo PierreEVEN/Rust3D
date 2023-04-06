@@ -150,7 +150,7 @@ impl GfxVulkan {
 
         let instance = VkInstance::new(InstanceCreateInfos {
             enable_validation_layers: true,
-            required_extensions: vec![("VK_KHR_dynamic_rendering".to_string(), true)],
+            required_extensions: vec![],
             ..InstanceCreateInfos::default()
         }).expect("failed to create instance");
 

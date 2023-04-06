@@ -2,7 +2,7 @@ use std::{fs, slice};
 use std::mem::size_of;
 use std::os::raw::c_char;
 use std::path::Path;
-use std::ptr::{null_mut};
+use std::ptr::null_mut;
 use std::sync::Arc;
 
 use memoffset::offset_of;
@@ -19,8 +19,7 @@ use gfx::shader::{PassID, ShaderLanguage, ShaderProgram, ShaderProgramInfos, Sha
 use gfx::shader_instance::{BindPoint, ShaderInstance};
 use gfx::surface::GfxSurface;
 use gfx::types::{ClearValues, PixelFormat, Scissors};
-use imgui_bindings::*;
-
+use imgui_bindings::{igCreateContext, igEndFrame, igGetDrawData, igGetIO, igGetMainViewport, igGetStyle, igNewFrame, igRender, igShowDemoWindow, igStyleColorsDark, ImDrawIdx, ImDrawVert, ImFontAtlas_GetTexDataAsRGBA32, ImGuiBackendFlags__ImGuiBackendFlags_HasMouseCursors, ImGuiBackendFlags__ImGuiBackendFlags_HasSetMousePos, ImGuiBackendFlags__ImGuiBackendFlags_PlatformHasViewports, ImGuiConfigFlags__ImGuiConfigFlags_DockingEnable, ImGuiConfigFlags__ImGuiConfigFlags_NavEnableGamepad, ImGuiConfigFlags__ImGuiConfigFlags_NavEnableKeyboard, ImGuiConfigFlags__ImGuiConfigFlags_ViewportsEnable, ImGuiContext, ImTextureID, ImVec2, ImVec4};
 use maths::vec2::Vec2f32;
 use maths::vec4::Vec4F32;
 use plateform::input_system::{InputMapping, MouseButton};
@@ -43,10 +42,9 @@ pub struct ImGUiContext {
 
 impl ImGUiContext {
     pub fn new(gfx: &GfxRef) -> Arc<Self> {
-        
         let imgui_context = unsafe { igCreateContext(null_mut()) };
         
-        let io = unsafe { &mut *igGetIO() }; 
+        let io = unsafe { &mut *igGetIO() };
         io.ConfigFlags |= ImGuiConfigFlags__ImGuiConfigFlags_NavEnableKeyboard;
         io.ConfigFlags |= ImGuiConfigFlags__ImGuiConfigFlags_NavEnableGamepad;
         io.ConfigFlags |= ImGuiConfigFlags__ImGuiConfigFlags_DockingEnable;
@@ -58,8 +56,7 @@ impl ImGUiContext {
         io.BackendFlags |= ImGuiBackendFlags__ImGuiBackendFlags_HasSetMousePos;
         io.BackendFlags |= ImGuiBackendFlags__ImGuiBackendFlags_PlatformHasViewports;
         io.MouseHoveredViewport = 0;
-
-
+        
         let style = unsafe { &mut *igGetStyle() };
         unsafe { igStyleColorsDark(igGetStyle()) };
         style.WindowRounding = 0.0;
@@ -81,7 +78,8 @@ impl ImGUiContext {
 
         let mut pixels = null_mut();
         let mut width: i32 = 0;
-        let mut height: i32 = 0;
+        let mut height: i32 = 0;        
+        assert_ne!(io.Fonts as usize, 0, "ImGui font is not valid");
         unsafe { ImFontAtlas_GetTexDataAsRGBA32(io.Fonts, &mut pixels, &mut width, &mut height, null_mut()) }
         let data_size = width * height * PixelFormat::R8G8B8A8_UNORM.type_size() as i32;
 

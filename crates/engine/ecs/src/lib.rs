@@ -9,35 +9,35 @@ TESTS
  */
 
 #[cfg(test)]
-pub mod tests {
-    use crate::component::{Component, ComponentID};
+mod tests {
     use crate::ecs::Ecs;
 
-    pub struct CompA {
-        pub a: u32,
+    struct CompA {
+        pub _a: u32,
     }
 
-    pub struct CompB {
-        pub b: usize,
-        pub c: f64,
-    }
-
-    impl Component for CompA {
-        fn component_id() -> ComponentID {
-            0
-        }
-    }
-
-    impl Component for CompB {
-        fn component_id() -> ComponentID {
-            1
-        }
+    struct CompB {
+        pub _b: usize,
+        pub _c: f64,
     }
 
     #[test]
     fn usage_test() {
         let mut ecs = Ecs::default();
-        ecs.add(0, CompA { a: 0 });
-        ecs.remove::<CompA>(0);
+        
+        let e0 = ecs.create();
+        let e1 = ecs.create();
+        let e2 = ecs.create();
+        
+        ecs.add(e0, CompA { _a: 5489 });
+        ecs.add(e1, CompB { _b: 50, _c: 5.0 });
+        ecs.add(e2, CompA { _a: 15 });
+        ecs.add(e2, CompB { _b: 5454, _c: 5563.0 });
+
+        ecs.destroy(e1);
+        ecs.remove::<CompA>(e2);
+        
+        ecs.destroy(e0);
+        ecs.destroy(e2);
     }
 }

@@ -5,7 +5,6 @@ use crate::entity::EntityID;
 
 pub type ArchetypeID = u32;
 
-#[derive(Default)]
 pub struct ComponentData {
     id: ComponentID,
     data: Vec<u8>,
@@ -22,7 +21,7 @@ impl ComponentData {
         self.resize(self.entity_count + 1);
     }
 
-    pub fn drop_index(&mut self, entity_index: usize) {
+    pub fn drop_index(&mut self, entity_index: &usize) {
         unsafe {
             let dst = self.data.as_mut_ptr().offset((entity_index * self.type_size) as isize);
             let src = self.data.as_ptr().offset((entity_index * self.type_size) as isize);
@@ -30,7 +29,6 @@ impl ComponentData {
         }
 
         self.resize(self.entity_count - 1);
-        todo!("update swapped one index")
     }
 
     fn resize(&mut self, new_entity_count: usize) {
@@ -38,11 +36,11 @@ impl ComponentData {
         self.data.resize(self.entity_count * self.type_size, 0);
     }
 
-    pub fn get_component_data(&self, index: usize) -> &[u8] {
-        &self.data.as_slice()[index * self.type_size..(index + 1) * self.type_size]
+    pub fn get_component_data(&self, index: &usize) -> &[u8] {
+        &self.data.as_slice()[*index * self.type_size..(*index + 1) * self.type_size]
     }
 
-    pub fn update_component_data(&mut self, entity_index: usize, data: &[u8]) {
+    pub fn update_component_data(&mut self, entity_index: &usize, data: &[u8]) {
         unsafe {
             let dst = self.data.as_mut_ptr().offset((entity_index * self.type_size) as isize);
             let src = data.as_ptr();
@@ -67,7 +65,7 @@ impl Archetype {
         let mut data = vec![];
 
         for comp in components {
-            data.push(ComponentData::new(*comp, registry.get_layout(*comp).size()))
+            data.push(ComponentData::new(*comp, registry.get_layout(comp).size()))
         }
 
         Archetype {
@@ -85,28 +83,14 @@ impl Archetype {
         self.entities.len() - 1
     }
 
-    pub fn drop_entity(&mut self, entity_index: usize) {
+    pub fn drop_entity(&mut self, entity_index: &usize) {
         for comp in &mut self.data {
             comp.drop_index(entity_index);
         }
-        self.entities.swap_remove(entity_index);
+        self.entities.swap_remove(*entity_index);
     }
 
-    pub fn move_entity_to(&mut self, entity_index: usize, to: &mut Archetype) {
-        let new_index = to.push_entity(self.entities[entity_index]);
-
-        for comp_src in &self.data {
-            for comp_dst in &mut to.data {
-                if comp_src.id == comp_dst.id {
-                    comp_dst.update_component_data(new_index, comp_src.get_component_data(entity_index));
-                }
-            }
-        }
-
-        self.drop_entity(entity_index);
-    }
-    
-    pub fn update_component_data(&mut self, entity_index: usize, id: &ComponentID, data: Vec<u8>) {
+    pub fn update_component_data(&mut self, entity_index: &usize, id: &ComponentID, data: Vec<u8>) {
         for comp in &mut self.data {
             if comp.id == *id {
                 comp.update_component_data(entity_index, data.as_slice());
@@ -119,8 +103,24 @@ impl Archetype {
         &self.components
     }
 
-    pub fn entity_data(&self, _entity_index: usize) -> Vec<(ComponentID, Vec<u8>)> {
-        todo!()
+    pub fn entity_data(&self, entity_index: &usize) -> Vec<(ComponentID, Vec<u8>)> {
+        let mut data = Vec::with_capacity(self.components.len());
+        for comp in &self.data {
+            let start = entity_index * comp.type_size;
+            let end = (entity_index + 1) * comp.type_size;
+            
+            let sub_vec = &comp.data[start..end];
+            data.push((comp.id, sub_vec.into()))
+        }
+        data
+    }
+    
+    pub fn last_index(&self) -> usize {
+        self.data[0].entity_count - 1
+    }
+    
+    pub fn entity_at(&self, entity_index: &usize) -> &EntityID {
+        &self.entities[*entity_index]
     }
 }
 
@@ -152,6 +152,6 @@ impl ArchetypeRegistry {
     }
     
     pub fn get_archetype_mut(&mut self, id: &ArchetypeID) -> &mut Archetype {
-        &mut self.archetypes[*id as usize]
+        self.archetypes.get_mut(*id as usize).expect(format!("Requested archetype id '{id}' is not valid").as_str())
     }
 }

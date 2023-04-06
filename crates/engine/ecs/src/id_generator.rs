@@ -3,12 +3,12 @@ use std::ops::{Add, Sub};
 use num::One;
 
 #[derive(Default)]
-pub struct IdBase<C: Default + Copy> {
+pub struct IdGenerator<C: Default + Copy> {
     free_ids: LinkedList<C>,
     max_id: C,
 }
 
-impl<C: Default + Copy + Add<Output = C> + Sub<Output = C> + One> IdBase<C> {
+impl<C: Default + Copy + Add<Output = C> + Sub<Output = C> + One> IdGenerator<C> {
     pub fn acquire(&mut self) -> C
     {
         if !self.free_ids.is_empty() {
@@ -18,7 +18,7 @@ impl<C: Default + Copy + Add<Output = C> + Sub<Output = C> + One> IdBase<C> {
         self.max_id - One::one()
     }
     
-    pub fn release(&mut self, id: C) {
-        self.free_ids.push_back(id);
+    pub fn release(&mut self, id: &C) {
+        self.free_ids.push_back(*id);
     }
 }

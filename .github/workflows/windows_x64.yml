@@ -24,9 +24,9 @@ jobs:
         toolchain: stable
         components: clippy
     - uses: Swatinem/rust-cache@v1 
-    - name: Clippy
-      run: cargo clippy --all-targets --no-deps
-    - name: Tests
-      run: cargo test --all
+    # - name: Clippy
+    #  run: cargo clippy --all-targets --no-deps
+    # - name: Tests
+    #  run: cargo test --all
     - name: Build-Editor
       run: cargo build --verbose

@@ -39,5 +39,11 @@ mod tests {
         
         ecs.destroy(e0);
         ecs.destroy(e2);
+        
+        ecs.add_system(|comp_a: &CompA, comp_b : &CompB| {
+            
+        })
+        
+        
     }
 }

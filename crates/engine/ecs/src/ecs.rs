@@ -6,6 +6,7 @@ use crate::archetype::{ArchetypeID, ArchetypeRegistry};
 use crate::component::{ComponentID, ComponentRegistry};
 use crate::entity::EntityID;
 use crate::id_generator::IdGenerator;
+use crate::system::SystemID;
 
 #[derive(Default)]
 pub struct Ecs {
@@ -150,5 +151,9 @@ impl Ecs {
 
         // Update entity_registry infos
         self.entity_registry.insert(entity, (new_archetype_id, new_entity_index));
+    }
+    
+    pub fn add_system<C>(&mut self, _name: &str, _test: C) -> SystemID {
+        SystemID {}
     }
 }

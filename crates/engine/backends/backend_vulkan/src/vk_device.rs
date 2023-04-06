@@ -109,9 +109,8 @@ impl VkDevice {
         let mut ps: vk::PhysicalDevice = Default::default();
         unsafe {
             if let Some(devices) = gfx.cast::<GfxVulkan>().instance.handle.enumerate_physical_devices().ok() {
-                for device in devices {
-                    ps = device;
-                    break;
+                if !devices.is_empty() {
+                    ps = devices[0];
                 }
             }
         }

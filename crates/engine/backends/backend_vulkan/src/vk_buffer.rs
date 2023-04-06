@@ -60,7 +60,7 @@ pub struct RbBuffer {
 
 impl GfxImageBuilder<Arc<BufferContainer>> for RbBuffer {
     fn build(&self, gfx: &GfxRef, image_id: &GfxImageID) -> Arc<BufferContainer> {
-        let buffer_size = if self.size_override <= 0 { 1 } else { self.size_override };
+        let buffer_size = if self.size_override == 0 { 1 } else { self.size_override };
         let mut usage = VkBufferUsage::from(self.create_infos.usage).0;
 
         if self.create_infos.buffer_type != BufferType::Immutable

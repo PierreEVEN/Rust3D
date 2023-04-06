@@ -57,7 +57,7 @@ impl GfxSurface for VkSurfaceWin32 {
             }
         };
 
-        if surface_capabilities.current_extent.width <= 0 || surface_capabilities.current_extent.height <= 0 {
+        if surface_capabilities.current_extent.width == 0 || surface_capabilities.current_extent.height == 0 {
             return;
         }
 

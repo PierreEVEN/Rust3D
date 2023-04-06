@@ -1,7 +1,4 @@
-﻿use std::alloc::Layout;
-use std::any::TypeId;
-use std::collections::HashMap;
-use std::sync::Arc;
+﻿use std::collections::HashMap;
 
 use crate::component::{ComponentID, ComponentRegistry};
 use crate::entity::EntityID;
@@ -62,6 +59,7 @@ STRUCTURE
 pub struct Archetype {
     data: Vec<ComponentData>,
     entities: Vec<EntityID>,
+    components: Vec<ComponentID>,
 }
 
 impl Archetype {
@@ -75,6 +73,7 @@ impl Archetype {
         Archetype {
             data,
             entities: vec![],
+            components: components.into(),
         }
     }
 
@@ -106,6 +105,23 @@ impl Archetype {
 
         self.drop_entity(entity_index);
     }
+    
+    pub fn update_component_data(&mut self, entity_index: usize, id: &ComponentID, data: Vec<u8>) {
+        for comp in &mut self.data {
+            if comp.id == *id {
+                comp.update_component_data(entity_index, data.as_slice());
+                break;
+            }
+        }
+    }
+    
+    pub fn components(&self) -> &Vec<ComponentID> {
+        &self.components
+    }
+
+    pub fn entity_data(&self, _entity_index: usize) -> Vec<(ComponentID, Vec<u8>)> {
+        todo!()
+    }
 }
 
 /*
@@ -119,7 +135,7 @@ pub struct ArchetypeRegistry {
 }
 
 impl ArchetypeRegistry {
-    pub fn find_or_get(&mut self, components: &[ComponentID], registry: &ComponentRegistry) -> ArchetypeID {
+    pub fn find_or_create(&mut self, components: &[ComponentID], registry: &ComponentRegistry) -> ArchetypeID {
         match self.registry_map.get(components) {
             None => {
                 self.archetypes.push(Archetype::new(components, registry));
@@ -131,11 +147,11 @@ impl ArchetypeRegistry {
         }
     }
 
-    pub fn get_archetype(&self, id: ArchetypeID) -> &Archetype {
-        &self.archetypes[id as usize]
+    pub fn get_archetype(&self, id: &ArchetypeID) -> &Archetype {
+        &self.archetypes[*id as usize]
     }
     
-    pub fn get_archetype_mut(&mut self, id: ArchetypeID) -> &mut Archetype {
-        &mut self.archetypes[id as usize]
+    pub fn get_archetype_mut(&mut self, id: &ArchetypeID) -> &mut Archetype {
+        &mut self.archetypes[*id as usize]
     }
 }

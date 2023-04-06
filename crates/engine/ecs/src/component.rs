@@ -12,7 +12,7 @@ STRUCTURE
  */
 
 pub struct ComponentData {
-    id : TypeId,
+    pub id : TypeId,
 }
 
 /*
@@ -24,7 +24,7 @@ pub struct ComponentRegistry {
 }
 
 impl ComponentRegistry {
-    pub fn get_layout(&self, id: ComponentID) -> Layout {
+    pub fn get_layout(&self, _id: ComponentID) -> Layout {
         todo!()
     }
 }

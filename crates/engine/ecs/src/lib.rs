@@ -9,17 +9,17 @@ TESTS
  */
 
 #[cfg(test)]
-mod tests {
-    use crate::archetype::ArchetypeRegistry;
-    use crate::component::{Component, ComponentID, ComponentRegistry};
+pub mod tests {
+    use crate::component::{Component, ComponentID};
+    use crate::ecs::Ecs;
 
-    struct CompA {
-        a: u32,
+    pub struct CompA {
+        pub a: u32,
     }
 
-    struct CompB {
-        b: usize,
-        c: f64,
+    pub struct CompB {
+        pub b: usize,
+        pub c: f64,
     }
 
     impl Component for CompA {
@@ -36,28 +36,8 @@ mod tests {
 
     #[test]
     fn usage_test() {
-        let mut registry = crate::archetype::ArchetypeRegistry::default();
-        let mut components = crate::component::ComponentRegistry::default();
-
-        let id_a = registry.find_or_get([CompA::component_id(), CompB::component_id()].as_slice(), &components);
-        let id_b = registry.find_or_get([CompA::component_id()].as_slice(), &components);
-
-        registry.get_archetype_mut(id_a).push_entity(0);
-
-        registry.get_archetype_mut(id_a).drop_entity(0);
-
-        registry.get_archetype_mut(id_a).push_entity(1);
-        registry.get_archetype_mut(id_a).push_entity(0);
-
-        registry.get_archetype_mut(id_b).push_entity(2);
-
-        let mut target = registry.get_archetype_mut(id_b);
-        let mut src = registry.get_archetype_mut(id_a);
-
-        src.move_entity_to(0, target);
-
-        registry.get_archetype_mut(id_a).drop_entity(0);
-        registry.get_archetype_mut(id_b).drop_entity(1);
-        registry.get_archetype_mut(id_b).drop_entity(0);
+        let mut ecs = Ecs::default();
+        ecs.add(0, CompA { a: 0 });
+        ecs.remove::<CompA>(0);
     }
 }

@@ -7,3 +7,5 @@ edition = "2021"
 
 [dependencies]
 num = "0.4.0"
+ecs_macro = { path = "../ecs_macro" }
+tuple_list = "0.1.3"

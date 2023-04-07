@@ -27,7 +27,26 @@ struct TestPc {
     time: f32,
 }
 
+
+#[macro_export]
+macro_rules! test {
+        ( toto ) => {
+            println!("coucou");
+        };
+        ( tata ) => {
+            
+        };
+    }
+
 fn main() {
+    
+    let _tokens = quote::quote! {
+        let a : u32;
+        println!("a");
+    };
+    
+    test!(toto);
+    
     // We use a win32 backend with a vulkan renderer
     let engine = backend::create_engine_vulkan();
 

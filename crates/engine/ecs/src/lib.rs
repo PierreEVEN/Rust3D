@@ -11,28 +11,30 @@ TESTS
 
 #[cfg(test)]
 mod tests {
+    use std::any::type_name;
     use crate::ecs::Ecs;
-
+    use tuple_list::TupleList;
+    
+    #[derive(Default)]
     struct CompA {
         pub a: u32,
     }
 
+    #[derive(Default)]
     struct CompB {
         pub b: usize,
         pub c: f64,
     }
-    #[macro_export]
-    macro_rules! lambda {
-        ( $($x:expr, $ty:ty),* ) => {
-            
-        };
-        ( $a:block ) => {
-            
-        };
+    
+    fn add_comp<T, C:TupleList>(value: T, tail : C) {
+        println!("{}", type_name::<T>());
     }
-
+    
     #[test]
     fn usage_test() {
+        
+        add_comp(CompA::default(), CompB::default());
+        
         let mut ecs = Ecs::default();
 
         let e0 = ecs.create();
@@ -50,8 +52,6 @@ mod tests {
         ecs.destroy(e2);
         ecs.remove::<CompB>(e1);
         ecs.destroy(e1);
-
-        lambda!(_compa, &CompA, _comp_b, &CompB);
 
         ecs.add_system("MyWorkFlow", |comp_a: &mut CompA, comp_b: &mut CompB| {
             comp_b.c += comp_a.a as f64;

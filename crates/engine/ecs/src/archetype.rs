@@ -154,4 +154,6 @@ impl ArchetypeRegistry {
     pub fn get_archetype_mut(&mut self, id: &ArchetypeID) -> &mut Archetype {
         self.archetypes.get_mut(*id as usize).expect(format!("Requested archetype id '{id}' is not valid").as_str())
     }
+    
+    pub fn archetype_count(&self) -> usize { self.archetypes.len() }
 }

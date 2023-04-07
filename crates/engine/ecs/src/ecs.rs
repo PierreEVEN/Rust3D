@@ -2,7 +2,7 @@
 use std::collections::HashMap;
 use std::mem::size_of;
 
-use crate::archetype::{ArchetypeID, ArchetypeRegistry};
+use crate::archetype::{Archetype, ArchetypeID, ArchetypeRegistry};
 use crate::component::{ComponentID, ComponentRegistry};
 use crate::entity::EntityID;
 use crate::id_generator::IdGenerator;
@@ -17,6 +17,14 @@ pub struct Ecs {
 }
 
 impl Ecs {
+    pub fn get_archetype(&mut self, id: &ArchetypeID) -> &mut Archetype {
+        self.archetypes.get_archetype_mut(id)
+    }
+
+    pub fn get_archetype_count(&mut self) -> usize {
+        self.archetypes.archetype_count()
+    }
+
     pub fn create(&mut self) -> EntityID {
         let new_id = self.entity_id_manager.acquire();
         self.entity_registry.insert(new_id, (EntityID::MAX, usize::MAX));
@@ -151,9 +159,5 @@ impl Ecs {
 
         // Update entity_registry infos
         self.entity_registry.insert(entity, (new_archetype_id, new_entity_index));
-    }
-    
-    pub fn add_system<C>(&mut self, _name: &str, _test: C) -> SystemID {
-        SystemID {}
     }
 }

@@ -53,6 +53,12 @@ impl<'ecs, Cs: ComponentBatch> Query<'ecs, Cs> {
         self.update_archetypes();
         
         for _archetype in &self.archetypes {
+            todo!()
+            /*
+            let elements : &mut Cs;
+            Cs::project_component(0, _archetype, &elements)
+            _func(
+            */
         }
     }
 
@@ -79,7 +85,7 @@ pub trait ComponentBatch {
     fn ids() -> Self::ComponentIDs;
     fn initialized() -> Self::ComponentType;
     fn has_component(id: &ComponentID) -> bool;
-    fn project_component<'ecs>(entity: &EntityID, comp: &ComponentData) -> &'ecs Self::ComponentType;
+    fn project_component<'ecs>(entity_index: usize, comp: &ComponentData, result: &'ecs mut &Self::ComponentType);
 }
 
 impl<T: Component + Default> ComponentBatch for &T {
@@ -93,8 +99,11 @@ impl<T: Component + Default> ComponentBatch for &T {
         T::default()
     }
     fn has_component(id: &ComponentID) -> bool { T::id() == *id }
-    fn project_component<'ecs>(_entity: &EntityID, _comp: &ComponentData) -> &'ecs Self::ComponentType {
-        todo!()       
+    fn project_component<'ecs>(entity_index: usize, comp: &ComponentData, result: &'ecs mut &Self::ComponentType) {
+        let data = comp.get_component_data(&entity_index);
+        unsafe {
+            *result = &*(data.as_ptr() as *const Self::ComponentType);
+        }
     }
 }
 
@@ -109,8 +118,11 @@ impl<T: Component + Default> ComponentBatch for &mut T {
         T::default()
     }
     fn has_component(id: &ComponentID) -> bool { T::id() == *id }
-    fn project_component<'ecs>(_entity: &EntityID, _comp: &ComponentData) -> &'ecs Self::ComponentType {
-        todo!()
+    fn project_component<'ecs>(entity_index: usize, comp: &ComponentData, result: &'ecs mut &Self::ComponentType) {
+        let data = comp.get_component_data(&entity_index);
+        unsafe {
+            *result = &*(data.as_ptr() as *mut Self::ComponentType);
+        }
     }
 }
 
@@ -132,8 +144,8 @@ macro_rules! query_for_tuples {
                     $($name::has_component(id)) && *
                 }
                 
-                fn project_component<'ecs>(_entity: &EntityID, _comp: &ComponentData) -> &'ecs Self::ComponentType {
-                    todo!()       
+                fn project_component<'ecs>(entity_index: usize, comp: &ComponentData, result: &'ecs mut &Self::ComponentType) {
+                    todo!() //*result = &($($name::project_component(entity_index, comp)), *)
                 }
             }   
         }

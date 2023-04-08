@@ -90,10 +90,10 @@ impl Archetype {
         self.entities.swap_remove(*entity_index);
     }
 
-    pub fn update_component_data(&mut self, entity_index: &usize, id: &ComponentID, data: Vec<u8>) {
+    pub fn update_component_data(&mut self, entity_index: &usize, id: &ComponentID, data: &[u8]) {
         for comp in &mut self.data {
             if comp.id == *id {
-                comp.update_component_data(entity_index, data.as_slice());
+                comp.update_component_data(entity_index, data);
                 break;
             }
         }

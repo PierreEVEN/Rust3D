@@ -1,12 +1,12 @@
 ﻿use std::any::{Any, type_name};
 use std::collections::HashMap;
 use std::mem::size_of;
+use std::slice;
 
 use crate::archetype::{Archetype, ArchetypeID, ArchetypeRegistry};
 use crate::component::{ComponentID, ComponentRegistry};
 use crate::entity::EntityID;
 use crate::id_generator::IdGenerator;
-use crate::system::SystemID;
 
 #[derive(Default)]
 pub struct Ecs {
@@ -44,17 +44,13 @@ impl Ecs {
     }
 
 
-    pub fn add<C: Any>(&mut self, entity: EntityID, mut component: C) {
-        let data = unsafe {
-            Vec::from_raw_parts(
-                &mut component as *mut C as *mut u8,
-                size_of::<C>(),
-                size_of::<C>())
-        };
+    pub fn add<C: Any>(&mut self, entity: EntityID, component: C) {
+        
+        let data = unsafe { slice::from_raw_parts(&component as *const C as *const u8, size_of::<C>()) };
 
         if !self.components.contains::<C>() { self.components.register_component::<C>(); }
 
-        self.add_component(entity, ComponentID::of::<C>(), data.as_slice());
+        self.add_component(entity, ComponentID::of::<C>(), data);
     }
 
     pub fn remove<C: Any>(&mut self, entity: EntityID) {
@@ -75,11 +71,11 @@ impl Ecs {
             let old_archetype = self.archetypes.get_archetype_mut(&old_archetype_id);
 
             let mut component_ids = old_archetype.components().clone();
-            data = old_archetype.entity_data(&old_entity_index).clone();
+            data = old_archetype.entity_data(&old_entity_index);
 
             // Update swapped entity indexes
             let swapped_entity_index = old_archetype.last_index();
-            let swapped_entity = old_archetype.entity_at(&swapped_entity_index).clone();
+            let swapped_entity = *old_archetype.entity_at(&swapped_entity_index);
             self.entity_registry.insert(swapped_entity, (old_archetype_id, swapped_entity_index));
 
             // Remove entity data
@@ -98,9 +94,9 @@ impl Ecs {
 
         // Copy component data
         for (comp_id, comp_data) in data {
-            new_archetype.update_component_data(&new_entity_index, &comp_id, comp_data)
+            new_archetype.update_component_data(&new_entity_index, &comp_id, comp_data.as_slice())
         }
-        new_archetype.update_component_data(&new_entity_index, &component, component_data.into());
+        new_archetype.update_component_data(&new_entity_index, &component, component_data);
 
         // Update entity_registry infos
         self.entity_registry.insert(entity, (new_archetype_id, new_entity_index));
@@ -154,7 +150,7 @@ impl Ecs {
 
         // Copy component data
         for (comp_id, comp_data) in _data {
-            new_archetype.update_component_data(&new_entity_index, &comp_id, comp_data)
+            new_archetype.update_component_data(&new_entity_index, &comp_id, comp_data.as_slice())
         }
 
         // Update entity_registry infos

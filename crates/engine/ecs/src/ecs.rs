@@ -30,6 +30,13 @@ impl Ecs {
             None => {}
             Some((entity_archetype, entity_index)) => {
                 if entity_archetype != ArchetypeID::MAX {
+                    // Update swapped entity indexes
+                    let archetype = self.archetypes.get_archetype(&entity_archetype);
+                    if archetype.entity_count() > 0 {
+                        let swapped_entity_index = archetype.entity_count() - 1;
+                        let swapped_entity = *archetype.entity_at(&swapped_entity_index);
+                        self.entity_registry.insert(swapped_entity, (entity_archetype, entity_index));
+                    }
                     self.archetypes.get_archetype_mut(&entity_archetype).drop_entity(&entity_index);
                 }
             }
@@ -44,7 +51,8 @@ impl Ecs {
     pub fn get_archetype(&self, id: &ArchetypeID) -> &Archetype {
         self.archetypes.get_archetype(id)
     }
-    
+
+    #[inline]
     pub fn get_archetype_mut(&mut self, id: &ArchetypeID) -> &mut Archetype {
         self.archetypes.get_archetype_mut(id)
     }
@@ -78,13 +86,15 @@ impl Ecs {
             data = old_archetype.entity_data(&old_entity_index);
 
             // Update swapped entity indexes
-            let swapped_entity_index = old_archetype.last_index();
-            let swapped_entity = *old_archetype.entity_at(&swapped_entity_index);
-            self.entity_registry.insert(swapped_entity, (old_archetype_id, swapped_entity_index));
+            if old_archetype.entity_count() > 0 {
+                let swapped_entity_index = old_archetype.entity_count() - 1;
+                let swapped_entity = *old_archetype.entity_at(&swapped_entity_index);
+                self.entity_registry.insert(swapped_entity, (old_archetype_id, old_entity_index));
+            }
 
             // Remove entity data
             old_archetype.drop_entity(&old_entity_index);
-            old_archetype.id().insert(component)
+            old_archetype.signature().insert(component)
         };
 
         // Find an archetype containing desired components
@@ -119,12 +129,13 @@ impl Ecs {
             _data = old_archetype.entity_data(&old_entity_index);
             
             // Update swapped entity indexes
-            let swapped_entity_index = old_archetype.last_index();
-            let swapped_entity = *old_archetype.entity_at(&swapped_entity_index);
-            self.entity_registry.insert(swapped_entity, (old_archetype_id, swapped_entity_index));
-
+            if old_archetype.entity_count() > 0 {
+                let swapped_entity_index = old_archetype.entity_count() - 1;
+                let swapped_entity = *old_archetype.entity_at(&swapped_entity_index);
+                self.entity_registry.insert(swapped_entity, (old_archetype_id, old_entity_index));
+            }
             // Remove entity data
-            old_archetype.id().erase(component)
+            old_archetype.signature().erase(component)
         };
 
         // Empty
@@ -147,5 +158,38 @@ impl Ecs {
 
         // Update entity_registry infos
         self.entity_registry.insert(entity, (new_archetype_id, new_entity_index));
+    }
+    
+    pub fn print_stats(&self) {
+        println!("--Entities : [{}] -> [allocated={}:free={}]", self.entity_registry.len(), self.entity_id_manager.allocated_name(), self.entity_id_manager.pool_size());
+        println!("--Components : [count={}] ", self.components.count());
+        for comp in &self.components.ids() {
+            let comp = self.components.component_infos(comp);
+            println!("    {} [{}::{}]", comp.name, comp.layout.size(), comp.layout.align());            
+        }
+        println!("--Archetypes : [count={}] ", self.archetypes.archetypes.len());
+        let mut i = 0;
+        for archetype in &self.archetypes.archetypes {
+            
+            let mut signature = String::new();
+            let mut first = true;
+            for comp in archetype.signature().ids() {
+                if first { first = false }
+                else { signature.push_str("++"); }
+                signature.push_str(self.components.component_infos(comp).name);
+            }
+            println!("    ({signature}) -> [count={}]", archetype.entity_count());
+            
+            for data in &archetype.data {
+                println!("      {} -> [entities={}:item_size={}]", self.components.component_infos(data.id()).name, data.bound_entities(), data.item_size());
+                assert_eq!(data.bound_entities() * data.item_size(), data.raw_len());
+            }  
+            
+            i += 1;
+            if i > 100 {
+            println!("     +{} more", self.archetypes.archetypes.len() as i64 - i + 1);
+                break;
+            }
+        }
     }
 }

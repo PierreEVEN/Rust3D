@@ -2,7 +2,7 @@
 use std::ops;
 use crate::component::ComponentID;
 
-#[derive(Default, PartialEq, Eq, Debug)]
+#[derive(Default, PartialEq, Eq, Debug, Clone)]
 pub struct ArchetypeSignature {
     components: Vec<ComponentID>,
 }

@@ -49,17 +49,35 @@ impl ComponentData {
             std::ptr::copy(src, dst, self.type_size)
         }
     }
-    
+
+    #[inline]
     pub fn as_component<'ecs, C>(&self) -> &'ecs [C] {
         unsafe {
             slice::from_raw_parts(self.data.as_ptr() as *const C, self.entity_count)
         }
     }
-    
+
+    #[inline]
     pub fn as_component_mut<'ecs, C>(&mut self) -> &'ecs mut [C] {
         unsafe {
             slice::from_raw_parts_mut(self.data.as_ptr() as *mut C, self.entity_count)
         }
+    }
+    
+    pub fn raw_len(&self) -> usize {
+        self.data.len()
+    }
+    
+    pub fn item_size(&self) -> usize {
+        self.type_size
+    }
+    
+    pub fn bound_entities(&self) -> usize {
+        self.entity_count
+    }
+    
+    pub fn id(&self) -> &ComponentID {
+        &self.id
     }
 }
 
@@ -70,7 +88,7 @@ STRUCTURE
 pub struct Archetype {
     pub data: Vec<ComponentData>,
     entities: Vec<EntityID>,
-    identifier: ArchetypeSignature,
+    signature: ArchetypeSignature,
 }
 
 impl Archetype {
@@ -84,7 +102,7 @@ impl Archetype {
         Archetype {
             data,
             entities: vec![],
-            identifier,
+            signature: identifier,
         }
     }
 
@@ -112,12 +130,12 @@ impl Archetype {
         }
     }
     
-    pub fn id(&self) -> &ArchetypeSignature {
-        &self.identifier
+    pub fn signature(&self) -> &ArchetypeSignature {
+        &self.signature
     }
 
     pub fn entity_data(&self, entity_index: &usize) -> Vec<(ComponentID, Vec<u8>)> {
-        let mut data = Vec::with_capacity(self.identifier.count());
+        let mut data = Vec::with_capacity(self.signature.count());
         for comp in &self.data {
             let start = entity_index * comp.type_size;
             let end = (entity_index + 1) * comp.type_size;
@@ -129,7 +147,7 @@ impl Archetype {
     }
     
     pub fn component_index(&self, component: &ComponentID) -> usize {
-        for (i, id) in self.identifier.ids().iter().enumerate() {
+        for (i, id) in self.signature.ids().iter().enumerate() {
             if id == component {
                 return i; 
             }
@@ -137,14 +155,11 @@ impl Archetype {
         panic!("archetype doesn't contains given component");
     }
     
-    pub fn last_index(&self) -> usize {
-        self.data[0].entity_count - 1
-    }
-    
     pub fn entity_at(&self, entity_index: &usize) -> &EntityID {
         &self.entities[*entity_index]
     }
-    
+
+    #[inline]
     pub fn entity_count(&self) -> usize {
         self.entities.len()
     }
@@ -156,7 +171,7 @@ REGISTRY
 
 #[derive(Default)]
 pub struct ArchetypeRegistry {
-    archetypes: Vec<Archetype>,
+    pub archetypes: Vec<Archetype>,
     registry_map: HashMap<ArchetypeSignature, ArchetypeID>,
 }
 
@@ -164,7 +179,8 @@ impl ArchetypeRegistry {
     pub fn find_or_create(&mut self, identifier: ArchetypeSignature, registry: &ComponentRegistry) -> ArchetypeID {
         match self.registry_map.get(&identifier) {
             None => {
-                self.archetypes.push(Archetype::new(identifier, registry));
+                self.archetypes.push(Archetype::new(identifier.clone(), registry));
+                self.registry_map.insert(identifier, (self.archetypes.len() - 1)  as ArchetypeID);
                 (self.archetypes.len() - 1) as ArchetypeID
             }
             Some(found_id) => {
@@ -176,7 +192,8 @@ impl ArchetypeRegistry {
     pub fn get_archetype(&self, id: &ArchetypeID) -> &Archetype {
         &self.archetypes[*id as usize]
     }
-    
+
+    #[inline]
     pub fn get_archetype_mut(&mut self, id: &ArchetypeID) -> &mut Archetype {
         self.archetypes.get_mut(*id as usize).unwrap_or_else(|| panic!("Requested archetype id '{id}' is not valid"))
     }
@@ -188,7 +205,7 @@ impl ArchetypeRegistry {
         let mut ids = vec![];
         
         for (i, archetype) in self.archetypes.iter().enumerate() {
-            if archetype.id() & id {
+            if archetype.signature() & id {
                 ids.push(i as ArchetypeID)
             }
         }

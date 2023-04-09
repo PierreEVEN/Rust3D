@@ -23,9 +23,19 @@ struct CompB {
     pub c: f64,
 }
 
-impl Component for CompB { fn id() -> ComponentID { ComponentID::of::<Self>() } }
+#[derive(Default)]
+struct CompC {
+    pub _y: [u64; 32],
+    pub x: u64,
+}
 
 impl Component for CompA { fn id() -> ComponentID { ComponentID::of::<Self>() } }
+impl Component for CompB { fn id() -> ComponentID { ComponentID::of::<Self>() } }
+impl Component for CompC { fn id() -> ComponentID { ComponentID::of::<Self>() } }
+
+pub trait D {}
+
+impl D for CompC {}
 
 /*
 USAGE
@@ -47,33 +57,54 @@ pub fn test_func() {
 
     let bench_length = 1000000;
     
-    println!("REFERENCE");
+    println!("REFERENCE OPTIMAL");
     let start =  Instant::now();
-    let mut reference_data = Vec::with_capacity(bench_length);
+    let mut reference_data = vec![];
     for i in 0..bench_length {
-        reference_data.push(CompA { a: i as u32});
+        reference_data.push(CompC { x: i, _y: Default::default()});
     }
     println!("--Creation : {}ms", start.elapsed().as_micros() as f64 / 1000.0);
+    let start =  Instant::now();
+    for i in &mut reference_data { i.x += 1; }
+    println!("--Iteration : {}ms", start.elapsed().as_micros() as f64 / 1000.0);
 
-    for i in &mut reference_data {
-        i.a += 1;
+    println!("REFERENCE NOT OPTIMAL");
+    let start =  Instant::now();
+    let mut reference_data = vec![];
+    for i in 0..bench_length {
+        reference_data.push(Box::new(CompC { x: i, _y: Default::default()}));
     }
+    println!("--Creation : {}ms", start.elapsed().as_micros() as f64 / 1000.0);
+    let start =  Instant::now();
+    for i in &mut reference_data { i.x += 1; }
     println!("--Iteration : {}ms", start.elapsed().as_micros() as f64 / 1000.0);
     
     println!("ECS");
     let start = Instant::now();
+    let mut entities = Vec::with_capacity(bench_length as usize);
     for i in 0..bench_length {
         let entity = ecs.create();
-        ecs.add(entity, CompA { a: i as u32 });
+        ecs.add(entity, CompC { x: i, _y: Default::default()});
+        entities.push(entity);
     }
-    println!("--Creation : {}ms", start.elapsed().as_micros() as f64 / 1000.0);
-    
+    println!("--Creation : {}ms", start.elapsed().as_micros() as f64 / 1000.0);    
     let start = Instant::now();
-    Query::<&mut CompA>::new(&mut ecs).for_each(|a| {
-        a.a += 1;
-        // println!("ITER A : a = {}", a.a);
-    });
+    Query::<&mut CompC>::new(&mut ecs).for_each(|a| { a.x += 1; });
     println!("--Iteration : {}ms", start.elapsed().as_micros() as f64 / 1000.0);
+    
+    let mut iter = 0;
+    Query::<&mut CompC>::new(&mut ecs).for_each(|a| { iter += 1; assert_eq!(a.x, iter, "index {iter} is wrong"); });
+
+    let start = Instant::now();
+    entities.reverse();
+    for entity in entities {
+        ecs.destroy(entity);
+    }
+    println!("--Deletion : {}ms", start.elapsed().as_micros() as f64 / 1000.0);
+    
+    
+    println!("ECS STATISTICS");
+    ecs.print_stats();
     
     Query::<&CompB>::new(&mut ecs).for_each(|b| {
         println!("ITER B :  b = {}, c = {}", b.b, b.c);

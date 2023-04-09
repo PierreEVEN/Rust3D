@@ -21,4 +21,12 @@ impl<C: Default + Copy + Add<Output = C> + Sub<Output = C> + One> IdGenerator<C>
     pub fn release(&mut self, id: &C) {
         self.free_ids.push_back(*id);
     }
+    
+    pub fn pool_size(&self) -> usize {
+        self.free_ids.len()
+    }
+    
+    pub fn allocated_name(&self) -> C {
+        self.max_id
+    }
 }

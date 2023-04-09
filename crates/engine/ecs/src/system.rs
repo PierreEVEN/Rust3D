@@ -26,6 +26,8 @@ impl<'ecs, Cs: ComponentBatch> Query<'ecs, Cs> {
             archetypes: vec![],
         }
     }
+    
+    #[inline]
     pub fn for_each<Fn: FnMut(Cs::Item<'ecs>)>(&mut self, mut func: Fn) {
         self.update_archetypes();
 
@@ -94,8 +96,8 @@ macro_rules! batch_for_tuples {
             }                
             fn initialized() -> Self::ComponentType { ($($name::initialized()),*) }
             
-            fn fetch<'ecs>(_archetype: &mut Archetype, _index: usize) -> Self::Item<'ecs> {
-                ($($name::fetch(_archetype, _index)), *)
+            fn fetch<'ecs>(archetype: &mut Archetype, index: usize) -> Self::Item<'ecs> {
+                ($($name::fetch(archetype, index)), *)
             }
         }
     }

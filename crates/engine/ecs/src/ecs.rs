@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use std::mem::size_of;
 use std::slice;
 
-use crate::archetype::archetype::{Archetype, ArchetypeID, ArchetypeRegistry};
+use crate::archetype::{Archetype, ArchetypeID, ArchetypeRegistry};
 use crate::archetype::signature::ArchetypeSignature;
 use crate::component::{ComponentID, ComponentRegistry};
 use crate::entity::EntityID;
@@ -39,9 +39,9 @@ impl Ecs {
                     }
                     self.archetypes.get_archetype_mut(&entity_archetype).drop_entity(&entity_index);
                 }
+                self.entity_id_manager.release(&entity);
             }
         };
-        self.entity_id_manager.release(&entity);
     }
 
     pub fn match_archetypes(&self, id: &ArchetypeSignature) -> Vec<ArchetypeID> {

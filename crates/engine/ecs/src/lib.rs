@@ -2,12 +2,11 @@ pub mod entity;
 pub mod ecs;
 pub mod component;
 pub mod id_generator;
-pub mod system;
+pub mod query;
 pub mod archetype;
 
-use crate::component::ComponentID;
 use crate::ecs::Ecs;
-use crate::system::{Component, Query};
+use crate::query::{Query};
 
 /*
 TYPE DECLARATION
@@ -28,14 +27,6 @@ struct CompC {
     pub _y: [u64; 32],
     pub x: u64,
 }
-
-impl Component for CompA { fn id() -> ComponentID { ComponentID::of::<Self>() } }
-impl Component for CompB { fn id() -> ComponentID { ComponentID::of::<Self>() } }
-impl Component for CompC { fn id() -> ComponentID { ComponentID::of::<Self>() } }
-
-pub trait D {}
-
-impl D for CompC {}
 
 /*
 USAGE

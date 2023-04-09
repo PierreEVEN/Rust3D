@@ -1,11 +1,5 @@
 
-/*
-WORK IN PROGRESS
- */
-
-pub trait Component: Default + 'static { fn id() -> ComponentID; }
-
-use crate::archetype::archetype::{Archetype, ArchetypeID};
+use crate::archetype::{Archetype, ArchetypeID};
 use crate::archetype::signature::ArchetypeSignature;
 use crate::component::ComponentID;
 use crate::ecs::Ecs;
@@ -54,12 +48,12 @@ pub trait ComponentBatch {
     fn fetch<'ecs>(archetype: &mut Archetype, index: usize) -> Self::Item<'ecs>;
 }
 
-impl<T: Component> ComponentBatch for &T {
+impl<T: Default + 'static> ComponentBatch for &T {
     type ComponentType = T;
     type ComponentIDs = ArchetypeSignature;
     type Item<'ecs> = &'ecs T;
 
-    fn ids() -> ArchetypeSignature { vec![T::id()].into() }
+    fn ids() -> ArchetypeSignature { vec![ComponentID::of::<T>()].into() }
     fn initialized() -> Self::ComponentType {
         T::default()
     }
@@ -69,12 +63,12 @@ impl<T: Component> ComponentBatch for &T {
     }
 }
 
-impl<T: Component> ComponentBatch for &mut T {
+impl<T: Default + 'static> ComponentBatch for &mut T {
     type ComponentType = T;
     type ComponentIDs = ArchetypeSignature;
     type Item<'ecs> = &'ecs mut T;
 
-    fn ids() -> ArchetypeSignature { vec![T::id()].into() }
+    fn ids() -> ArchetypeSignature { vec![ComponentID::of::<T>()].into() }
     fn initialized() -> Self::ComponentType {
         T::default()
     }

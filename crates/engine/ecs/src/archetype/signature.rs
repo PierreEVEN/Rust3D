@@ -43,6 +43,15 @@ impl ArchetypeSignature {
     pub fn is_empty(&self) -> bool {
         self.components.is_empty()
     }
+    
+    pub fn index_of(&self, component: &ComponentID) -> usize {
+        for (i, c) in self.components.iter().enumerate() {
+            if *component == *c {
+                return i
+            }
+        }
+        panic!("signature doesn't contains component {:?}", component)
+    }
 }
 
 impl ops::BitAnd<ComponentID> for &ArchetypeSignature {
@@ -85,7 +94,7 @@ impl From<Vec<ArchetypeSignature>> for ArchetypeSignature {
         for id in &value { for comp in &id.components { components.push(*comp); } }
         
         components.sort();
-        components.dedup_by(|a, b| { a == b});
+        components.dedup_by(|a, b| {a == b});
         
         Self::new(components)
     }

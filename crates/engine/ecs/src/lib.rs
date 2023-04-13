@@ -96,16 +96,20 @@ pub fn test_func() {
     
     println!("ECS STATISTICS");
     ecs.print_stats();
+
+    Query::<&CompA>::new(&mut ecs).for_each(|a| {
+        println!("ITER B :  a = {}", a.a);
+    });
     
     Query::<&CompB>::new(&mut ecs).for_each(|b| {
-        println!("ITER B :  b = {}, c = {}", b.b, b.c);
+        println!("ITER B : b = {}, c = {}", b.b, b.c);
     });
     
-    Query::<(&mut CompA, &CompB)>::new(&mut ecs).for_each(|(a, b)| {
-        a.a = b.b as u32 + b.c as u32;
-        println!("ITER A ET B : a = {}, b = {}, c = {}", a.a, b.b, b.c);
-    });
-
+    Query::<(&mut CompA, &CompB)>::new(&mut ecs).for_each(|(a, b)| { println!("ITER A ET B : a = {}, b = {}, c = {}", a.a, b.b, b.c); });
+    Query::<(&mut CompB, &CompA)>::new(&mut ecs).for_each(|(b, a)| { println!("ITER A ET B : a = {}, b = {}, c = {}", a.a, b.b, b.c); });
+    Query::<(&CompB, &CompA)>::new(&mut ecs).for_each(|(b, a)| { println!("ITER A ET B : a = {}, b = {}, c = {}", a.a, b.b, b.c); });
+    Query::<(&mut CompB, &mut CompA)>::new(&mut ecs).for_each(|(b, a)| { println!("ITER A ET B : a = {}, b = {}, c = {}", a.a, b.b, b.c); });
+    Query::<(&CompB, &mut CompA)>::new(&mut ecs).for_each(|(b, a)| { println!("ITER A ET B : a = {}, b = {}, c = {}", a.a, b.b, b.c); });
     
     ecs.remove::<CompA>(e2);
     ecs.destroy(e0);

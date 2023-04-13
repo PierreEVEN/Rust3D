@@ -13,7 +13,7 @@ use crate::id_generator::IdGenerator;
 pub struct Ecs {
     entity_registry: HashMap<EntityID, (ArchetypeID, usize)>,
     entity_id_manager: IdGenerator<EntityID>,
-    components: ComponentRegistry,
+    pub components: ComponentRegistry,
     archetypes: ArchetypeRegistry,
 }
 

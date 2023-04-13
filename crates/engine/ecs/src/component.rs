@@ -1,5 +1,5 @@
 ﻿use std::alloc::Layout;
-use std::any::{Any, TypeId};
+use std::any::{Any, type_name, TypeId};
 use std::collections::HashMap;
 use std::mem::{align_of, size_of};
 
@@ -11,12 +11,14 @@ STRUCTURE
 
 pub struct ComponentData {
     pub layout: Layout,
+    pub name: &'static str,
 }
 
 impl ComponentData {
     pub fn new<C: Sized + Any>() -> ComponentData {
         Self {
-            layout: Layout::from_size_align(size_of::<C>(), align_of::<C>()).expect("layout error")
+            layout: Layout::from_size_align(size_of::<C>(), align_of::<C>()).expect("layout error"),
+            name: type_name::<C>()
         }
     }
 }
@@ -43,4 +45,20 @@ impl ComponentRegistry {
     pub fn get_layout(&self, id: &ComponentID) -> &Layout {
         &self.components.get(id).expect("component is not registered yet").layout
     }
+
+    pub fn component_infos(&self, id: &ComponentID) -> &ComponentData {
+        self.components.get(id).expect("component is not registered yet")
+    }
+    
+    pub fn count(&self) -> usize {
+        self.components.len()
+    }
+    
+    pub fn ids(&self) -> Vec<ComponentID> {
+        let mut keys = Vec::with_capacity(self.components.len());
+        for k in self.components.keys() {
+            keys.push(*k);
+        }
+        keys
+    } 
 }

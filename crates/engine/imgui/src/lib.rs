@@ -83,7 +83,7 @@ impl ImGUiContext {
         unsafe { ImFontAtlas_GetTexDataAsRGBA32(io.Fonts, &mut pixels, &mut width, &mut height, null_mut()) }
         let data_size = width * height * PixelFormat::R8G8B8A8_UNORM.type_size() as i32;
 
-        let font_texture = gfx.create_image(format!("imgui_font"), ImageCreateInfos {
+        let font_texture = gfx.create_image("imgui_font".to_string(), ImageCreateInfos {
             params: ImageParams {
                 pixel_format: PixelFormat::R8G8B8A8_UNORM,
                 image_type: Texture2d(width as u32, height as u32),
@@ -93,7 +93,7 @@ impl ImGUiContext {
             },
             pixels: Some(unsafe { Vec::from_raw_parts(pixels, data_size as usize, data_size as usize) }),
         });
-        unsafe { (&mut *io.Fonts).TexID = font_texture.__static_view_handle() as ImTextureID; }
+        unsafe { (*io.Fonts).TexID = font_texture.__static_view_handle() as ImTextureID; }
 
         let shader_path = String::from("data/shaders/imgui_material.shb");
         let shader_text = match fs::read_to_string(shader_path.clone()) {
@@ -111,7 +111,7 @@ impl ImGUiContext {
         };
 
         let imgui_pass_id = PassID::new("imgui_render_pass");
-        let imgui_render_pass = gfx.create_render_pass(format!("imgui_render_pass"), RenderPassCreateInfos {
+        let imgui_render_pass = gfx.create_render_pass("imgui_render_pass".to_string(), RenderPassCreateInfos {
             pass_id: PassID::new("imgui_render_pass"),
             color_attachments: vec![RenderPassAttachment {
                 name: "color".to_string(),
@@ -156,9 +156,9 @@ impl ImGUiContext {
             }
         };
 
-        let image_sampler = gfx.create_image_sampler(format!("imgui_default_sampler"), SamplerCreateInfos {});
+        let image_sampler = gfx.create_image_sampler("imgui_default_sampler".to_string(), SamplerCreateInfos {});
 
-        let shader_program = gfx.create_shader_program(format!("imgui_shader"), &imgui_render_pass, &ShaderProgramInfos {
+        let shader_program = gfx.create_shader_program("imgui_shader".to_string(), &imgui_render_pass, &ShaderProgramInfos {
             vertex_stage: ShaderProgramStage {
                 spirv: vertex_sprv.binary,
                 descriptor_bindings: vertex_sprv.bindings,
@@ -190,7 +190,7 @@ impl ImGUiContext {
         shader_instance.bind_sampler(&BindPoint::new("sSampler"), &image_sampler);
 
 
-        let mesh = gfx.create_mesh(format!("imgui_dynamic_mesh"), &MeshCreateInfos {
+        let mesh = gfx.create_mesh("imgui_dynamic_mesh".to_string(), &MeshCreateInfos {
             vertex_structure_size: size_of::<ImDrawVert>() as u32,
             vertex_count: 0,
             index_count: 0,
@@ -264,12 +264,12 @@ impl ImGUiContext {
                                   vertex_start,
                                   slice::from_raw_parts(
                                       cmd_list.VtxBuffer.Data as *const u8,
-                                      cmd_list.VtxBuffer.Size as usize * size_of::<ImDrawVert>() as usize,
+                                      cmd_list.VtxBuffer.Size as usize * size_of::<ImDrawVert>(),
                                   ),
                                   index_start,
                                   slice::from_raw_parts(
                                       cmd_list.IdxBuffer.Data as *const u8,
-                                      cmd_list.IdxBuffer.Size as usize * size_of::<ImDrawIdx>() as usize,
+                                      cmd_list.IdxBuffer.Size as usize * size_of::<ImDrawIdx>(),
                                   ),
                     );
 

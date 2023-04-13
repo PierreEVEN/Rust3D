@@ -2,7 +2,7 @@
 
 use macros::*;
 
-#[derive(Debug, Copy, Clone, PartialEq, OpsAdd, OpsSub, OpsMul, OpsDiv, DefaultConstruct)]
+#[derive(Debug, Copy, Clone, PartialEq, Default, OpsAdd, OpsSub, OpsMul, OpsDiv, DefaultConstruct)]
 pub struct Vec2<T: Default> {
     pub x: T,
     pub y: T,

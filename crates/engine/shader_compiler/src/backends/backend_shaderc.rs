@@ -9,6 +9,7 @@ use crate::includer::Includer;
 use crate::reflect::SpirvReflector;
 use crate::types::ShaderErrorResult;
 
+#[derive(Default)]
 pub struct BackendShaderC {}
 
 impl BackendShaderC {
@@ -23,11 +24,11 @@ fn include_callback(_name: &str, include_type: IncludeType, _source: &str, _incl
         IncludeType::Standard => {}
     }
 
-    return Err("failed to include file".to_string());
+    Err("failed to include file".to_string())
 }
 
 impl CompilerBackend for BackendShaderC {
-    fn compile_to_spirv(&self, shader_code: &Vec<ShaderChunk>, virtual_path: &Path, source_language: ShaderLanguage, _shader_stage: ShaderStage, _previous_stage_data: InterstageData) -> Result<CompilationResult, ShaderErrorResult> {
+    fn compile_to_spirv(&self, shader_code: &[ShaderChunk], virtual_path: &Path, source_language: ShaderLanguage, _shader_stage: ShaderStage, _previous_stage_data: InterstageData) -> Result<CompilationResult, ShaderErrorResult> {
         let mut errors = ShaderErrorResult::default();
 
         let compiler = match Compiler::new() {
@@ -71,18 +72,18 @@ impl CompilerBackend for BackendShaderC {
                 let mut error = compile_error.to_string();
                 error += "\n";
                 println!("test : {}", compile_error);
-                for line in compile_error.to_string().split("\n") {
+                for line in compile_error.to_string().split('\n') {
                     let mut line_pos = None;
                     let mut column = None;
 
                     let message = if line.contains(": error:") {
-                        line_pos = Some(line.split(":").nth(1).unwrap().parse::<isize>().unwrap());
+                        line_pos = Some(line.split(':').nth(1).unwrap().parse::<isize>().unwrap());
                         line.split(": error:").nth(1).unwrap()
                     } else if line.contains("): error") {
                         let error = line.split("): error").nth(1).unwrap();
                         if error.contains("at column ") {
-                            line_pos = Some(line.split("(").nth(1).unwrap().split(")").nth(0).unwrap().parse::<isize>().unwrap());
-                            column = Some(error.split("at column ").nth(1).unwrap().split(", ").nth(0).unwrap().parse::<isize>().unwrap());
+                            line_pos = Some(line.split('(').nth(1).unwrap().split(')').next().unwrap().parse::<isize>().unwrap());
+                            column = Some(error.split("at column ").nth(1).unwrap().split(", ").next().unwrap().parse::<isize>().unwrap());
                             error.split(", ").nth(1).unwrap()
                         } else {
                             error
@@ -107,7 +108,7 @@ impl CompilerBackend for BackendShaderC {
                     errors.push(line_pos, column, "BackendShaderC::compile_to_spirv", message, virtual_path.to_str().unwrap());
                 }
 
-                errors.push(None, None, "Shader compilation failed", format!("{shader}").as_str(), virtual_path.to_str().unwrap());
+                errors.push(None, None, "Shader compilation failed", shader.to_string().as_str(), virtual_path.to_str().unwrap());
 
                 return Err(errors);
             }
@@ -125,6 +126,7 @@ impl CompilerBackend for BackendShaderC {
     }
 }
 
+#[derive(Default)]
 pub struct ShaderCIncluder {}
 
 impl ShaderCIncluder {
@@ -134,17 +136,17 @@ impl ShaderCIncluder {
 }
 
 impl Includer for ShaderCIncluder {
-    fn include_local(&self, file: &String, _virtual_path: &String) -> Result<(String, String), ShaderErrorResult> {
+    fn include_local(&self, file: &str, virtual_path: &str) -> Result<(String, String), ShaderErrorResult> {
         let mut errors = ShaderErrorResult::default();
-        errors.push(None, None, "ShaderCIncluder::include_local", format!("failed to include '{}' : include are not supported yet", file).as_str(), _virtual_path);
+        errors.push(None, None, "ShaderCIncluder::include_local", format!("failed to include '{}' : include are not supported yet", file).as_str(), virtual_path);
         Err(errors)
     }
 
-    fn include_system(&self, _file: &String, _virtual_path: &String) -> Result<(String, String), ShaderErrorResult> {
+    fn include_system(&self, _: &str, _: &str) -> Result<(String, String), ShaderErrorResult> {
         todo!()
     }
 
-    fn release_include(&self, _file: &String, _virtual_path: &String) {}
+    fn release_include(&self, _: &str, _: &str) {}
 
-    fn add_include_path(&self, _include_path: &String) {}
+    fn add_include_path(&self, _include_path: &str) {}
 }

@@ -243,7 +243,7 @@ impl GfxImageBuilder<(vk::ImageView, vk::DescriptorImageInfo)> for RbImageView {
         } else {
             let device = &gfx.cast::<GfxVulkan>().device;
             let view = vk_check!(unsafe { 
-                (*device).handle.create_image_view(&vk::ImageViewCreateInfo::builder()
+                device.handle.create_image_view(&vk::ImageViewCreateInfo::builder()
                 .image(self.images.get(swapchain_ref).0)
                 .view_type(view_type)
                 .format(*VkPixelFormat::from(&self.create_infos.pixel_format))
@@ -381,7 +381,7 @@ impl VkImage {
 
             let device = &self.gfx.cast::<GfxVulkan>().device;
             unsafe {
-                (*device).handle.cmd_pipeline_barrier(
+                device.handle.cmd_pipeline_barrier(
                     command_buffer,
                     source_destination_stages.0,
                     source_destination_stages.1,

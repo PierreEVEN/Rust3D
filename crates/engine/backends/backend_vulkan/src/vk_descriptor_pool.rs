@@ -72,7 +72,7 @@ impl VkDescriptorPool {
         let device = &self.gfx.cast::<GfxVulkan>().device;
 
         self.gfx.cast::<GfxVulkan>().set_vk_object_name(
-            vk_check!(unsafe { (*device).handle.allocate_descriptor_sets(&descriptor_info) })[0],
+            vk_check!(unsafe { device.handle.allocate_descriptor_sets(&descriptor_info) })[0],
 format!("descriptor set\t\t: {}", name).as_str())
         
     }

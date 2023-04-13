@@ -116,7 +116,7 @@ impl GfxCommandBuffer for VkCommandBuffer {
     fn bind_program(&self, program: &Arc<dyn ShaderProgram>) {
         unsafe {
             self.gfx.cast::<GfxVulkan>().device.handle.cmd_bind_pipeline(
-                self.command_buffer.get(&*self.image_id.read().unwrap()),
+                self.command_buffer.get(&self.image_id.read().unwrap()),
                 vk::PipelineBindPoint::GRAPHICS,
                 program.cast::<VkShaderProgram>().pipeline,
             );
@@ -124,14 +124,14 @@ impl GfxCommandBuffer for VkCommandBuffer {
     }
 
     fn bind_shader_instance(&self, instance: &Arc<dyn ShaderInstance>) {
-        instance.cast::<VkShaderInstance>().refresh_descriptors(&*self.image_id.read().unwrap());
+        instance.cast::<VkShaderInstance>().refresh_descriptors(&self.image_id.read().unwrap());
         unsafe {
             self.gfx.cast::<GfxVulkan>().device.handle.cmd_bind_descriptor_sets(
-                self.command_buffer.get(&*self.image_id.read().unwrap()),
+                self.command_buffer.get(&self.image_id.read().unwrap()),
                 vk::PipelineBindPoint::GRAPHICS,
                 *instance.cast::<VkShaderInstance>().pipeline_layout,
                 0,
-                &[instance.cast::<VkShaderInstance>().descriptor_sets.read().unwrap().get(&*self.image_id.read().unwrap())],
+                &[instance.cast::<VkShaderInstance>().descriptor_sets.read().unwrap().get(&self.image_id.read().unwrap())],
                 &[],
             );
         }
@@ -146,8 +146,8 @@ impl GfxCommandBuffer for VkCommandBuffer {
         let vertex_buffer = mesh.vertex_buffer().cast::<VkBuffer>();
         unsafe {
             self.gfx.cast::<GfxVulkan>().device.handle.cmd_bind_index_buffer(
-                self.command_buffer.get(&*self.image_id.read().unwrap()),
-                index_buffer.get_handle(&*self.image_id.read().unwrap()),
+                self.command_buffer.get(&self.image_id.read().unwrap()),
+                index_buffer.get_handle(&self.image_id.read().unwrap()),
                 0 as vk::DeviceSize,
                 match mesh.index_type() {
                     IndexBufferType::Uint16 => { vk::IndexType::UINT16 }
@@ -155,12 +155,12 @@ impl GfxCommandBuffer for VkCommandBuffer {
                 });
 
             self.gfx.cast::<GfxVulkan>().device.handle.cmd_bind_vertex_buffers(
-                self.command_buffer.get(&*self.image_id.read().unwrap()),
+                self.command_buffer.get(&self.image_id.read().unwrap()),
                 0,
-                &[vertex_buffer.get_handle(&*self.image_id.read().unwrap())],
+                &[vertex_buffer.get_handle(&self.image_id.read().unwrap())],
                 &[0])
         }
-        unsafe { self.gfx.cast::<GfxVulkan>().device.handle.cmd_draw_indexed(self.command_buffer.get(&*self.image_id.read().unwrap()), index_count, instance_count, first_index, vertex_offset, first_instance) }
+        unsafe { self.gfx.cast::<GfxVulkan>().device.handle.cmd_draw_indexed(self.command_buffer.get(&self.image_id.read().unwrap()), index_count, instance_count, first_index, vertex_offset, first_instance) }
     }
 
     fn draw_mesh_indirect(&self, _mesh: &Arc<Mesh>) {
@@ -168,12 +168,12 @@ impl GfxCommandBuffer for VkCommandBuffer {
     }
 
     fn draw_procedural(&self, vertex_count: u32, first_vertex: u32, instance_count: u32, first_instance: u32) {
-        unsafe { self.gfx.cast::<GfxVulkan>().device.handle.cmd_draw(self.command_buffer.get(&*self.image_id.read().unwrap()), vertex_count, instance_count, first_vertex, first_instance) }
+        unsafe { self.gfx.cast::<GfxVulkan>().device.handle.cmd_draw(self.command_buffer.get(&self.image_id.read().unwrap()), vertex_count, instance_count, first_vertex, first_instance) }
     }
 
     fn set_scissor(&self, scissors: Scissors) {
         unsafe {
-            self.gfx.cast::<GfxVulkan>().device.handle.cmd_set_scissor(self.command_buffer.get(&*self.image_id.read().unwrap()), 0, &[vk::Rect2D {
+            self.gfx.cast::<GfxVulkan>().device.handle.cmd_set_scissor(self.command_buffer.get(&self.image_id.read().unwrap()), 0, &[vk::Rect2D {
                 extent: vk::Extent2D { width: scissors.width, height: scissors.height },
                 offset: vk::Offset2D { x: scissors.min_x, y: scissors.min_y },
             }])
@@ -182,7 +182,7 @@ impl GfxCommandBuffer for VkCommandBuffer {
 
     fn push_constant(&self, program: &Arc<dyn ShaderProgram>, data: BufferMemory, stage: ShaderStage) {
         unsafe {
-            self.gfx.cast::<GfxVulkan>().device.handle.cmd_push_constants(self.command_buffer.get(&*self.image_id.read().unwrap()), *program.cast::<VkShaderProgram>().pipeline_layout, match stage {
+            self.gfx.cast::<GfxVulkan>().device.handle.cmd_push_constants(self.command_buffer.get(&self.image_id.read().unwrap()), *program.cast::<VkShaderProgram>().pipeline_layout, match stage {
                 ShaderStage::Vertex => { vk::ShaderStageFlags::VERTEX }
                 ShaderStage::Fragment => { vk::ShaderStageFlags::FRAGMENT }
             }, 0, data.as_slice())

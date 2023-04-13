@@ -201,7 +201,7 @@ impl VkShaderProgram {
         for _ in &render_pass.get_config().color_attachments
         {
             color_blend_attachment.push(vk::PipelineColorBlendAttachmentState::builder()
-                .blend_enable(if create_infos.shader_properties.alpha_mode == AlphaMode::Opaque { false } else { true })
+                .blend_enable(create_infos.shader_properties.alpha_mode != AlphaMode::Opaque)
                 .src_color_blend_factor(if create_infos.shader_properties.alpha_mode == AlphaMode::Opaque { vk::BlendFactor::ZERO } else { vk::BlendFactor::SRC_ALPHA })
                 .dst_color_blend_factor(if create_infos.shader_properties.alpha_mode == AlphaMode::Opaque { vk::BlendFactor::ZERO } else { vk::BlendFactor::ONE_MINUS_SRC_ALPHA })
                 .color_blend_op(vk::BlendOp::ADD)
@@ -271,7 +271,7 @@ impl VkShaderProgram {
             _fragment_module: fragment_module,
             pipeline,
             pipeline_layout,
-            descriptor_set_layout: descriptor_set_layout.clone(),
+            descriptor_set_layout,
             bindings,
             name,
         })

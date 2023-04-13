@@ -64,9 +64,9 @@ impl GfxSurface for VkSurfaceWin32 {
         let present_modes = vk_check!(unsafe { self._surface_loader.get_physical_device_surface_present_modes(self.gfx.cast::<GfxVulkan>().physical_device_vk.handle, self.surface) });
 
         let mut composite_alpha = vk::CompositeAlphaFlagsKHR::OPAQUE;
-        for alpha_flag in vec![vk::CompositeAlphaFlagsKHR::OPAQUE, vk::CompositeAlphaFlagsKHR::PRE_MULTIPLIED, vk::CompositeAlphaFlagsKHR::POST_MULTIPLIED, vk::CompositeAlphaFlagsKHR::INHERIT] {
-            if surface_capabilities.supported_composite_alpha.contains(alpha_flag) {
-                composite_alpha = alpha_flag;
+        for alpha_flag in &[vk::CompositeAlphaFlagsKHR::OPAQUE, vk::CompositeAlphaFlagsKHR::PRE_MULTIPLIED, vk::CompositeAlphaFlagsKHR::POST_MULTIPLIED, vk::CompositeAlphaFlagsKHR::INHERIT] {
+            if surface_capabilities.supported_composite_alpha.contains(*alpha_flag) {
+                composite_alpha = *alpha_flag;
             }
         }
         let mut present_mode = vk::PresentModeKHR::FIFO;
@@ -106,8 +106,9 @@ impl GfxSurface for VkSurfaceWin32 {
         *swapchain_ref = Some(swapchain);
 
         let images = vk_check!(unsafe { self._swapchain_loader.get_swapchain_images(swapchain) });
-        for i in 0..images.len() {
-            self.gfx.cast::<GfxVulkan>().set_vk_object_name(images[i], format!("swapchain image\t: surface('{}')@[0:{}]", self.window.get_title(), i).as_str());
+        
+        for (i, image) in images.iter().enumerate() {
+            self.gfx.cast::<GfxVulkan>().set_vk_object_name(*image, format!("swapchain image\t: surface('{}')@[0:{}]", self.window.get_title(), i).as_str());
         }
 
         let mut image = self.surface_image.write().unwrap();
@@ -160,7 +161,7 @@ impl GfxSurface for VkSurfaceWin32 {
             return Err(SurfaceAcquireResult::Failed("invalid resolution".to_string()));
         }
 
-        let current_image_acquire_semaphore = self.image_acquire_semaphore.get(&self.get_current_ref());
+        let current_image_acquire_semaphore = self.image_acquire_semaphore.get(self.get_current_ref());
         let swapchain = self.swapchain.read().unwrap();
         let (image_index, _acquired_image) = match unsafe { self._swapchain_loader.acquire_next_image(swapchain.unwrap(), u64::MAX, current_image_acquire_semaphore, vk::Fence::default()) } {
             Ok(result) => { result }
@@ -190,7 +191,7 @@ impl GfxSurface for VkSurfaceWin32 {
         let render_pass = render_pass.cast::<VkRenderPassInstance>();
 
         let _present_info = vk::PresentInfoKHR::builder()
-            .wait_semaphores(&[render_pass.render_finished_semaphore.get(&self.get_current_ref())])
+            .wait_semaphores(&[render_pass.render_finished_semaphore.get(self.get_current_ref())])
             .swapchains(&[self.swapchain.read().unwrap().unwrap()])
             .image_indices(&[current_image])
             .build();
@@ -198,7 +199,7 @@ impl GfxSurface for VkSurfaceWin32 {
         match &self.present_queue {
             None => { Err(SurfaceAcquireResult::Failed("no present queue".to_string())) }
             Some(queue) => {
-                return match queue.present(&self._swapchain_loader, _present_info) {
+                match queue.present(&self._swapchain_loader, _present_info) {
                     Ok(_) => { Ok(()) }
                     Err(present_error) => {
                         Err(match present_error {
@@ -211,7 +212,7 @@ impl GfxSurface for VkSurfaceWin32 {
                             }
                         })
                     }
-                };
+                }
             }
         }
     }
@@ -271,14 +272,12 @@ impl VkSurfaceWin32 {
 
         let mut present_queue = None;
 
-        let mut index: u32 = 0;
-        for _ in unsafe { gfx.cast::<GfxVulkan>().instance.handle.get_physical_device_queue_family_properties(gfx.cast::<GfxVulkan>().physical_device_vk.handle) } {
+        for (index, _) in (0_u32..).zip(unsafe { gfx.cast::<GfxVulkan>().instance.handle.get_physical_device_queue_family_properties(gfx.cast::<GfxVulkan>().physical_device_vk.handle) }.into_iter()) {
             if vk_check!(unsafe { surface_loader.get_physical_device_surface_support(gfx.cast::<GfxVulkan>().physical_device_vk.handle, index, surface) }) {
                 let queue = unsafe { gfx.cast::<GfxVulkan>().device.handle.get_device_queue(index, 0) };
-                present_queue = Some(VkQueue::new(&gfx.cast::<GfxVulkan>().device.handle, queue, vk::QueueFlags::empty(), index, &gfx));
+                present_queue = Some(VkQueue::new(&gfx.cast::<GfxVulkan>().device.handle, queue, vk::QueueFlags::empty(), index, gfx));
                 break;
             }
-            index += 1;
         }
 
         let surface = Arc::new(Self {
@@ -292,7 +291,7 @@ impl VkSurfaceWin32 {
             window: window.clone(),
             gfx: gfx_copy,
             present_queue,
-            image_acquire_semaphore: GfxResource::new(gfx, RbSemaphore { name: name.clone() }),
+            image_acquire_semaphore: GfxResource::new(gfx, RbSemaphore { name }),
             surface_image: RwLock::default(),
             extent: RwLock::new(vk::Extent2D { width: 0, height: 0 }),
         });

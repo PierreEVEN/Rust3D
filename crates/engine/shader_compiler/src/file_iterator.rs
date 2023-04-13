@@ -55,16 +55,16 @@ impl AddAssign<i64> for FileIterator {
 
 impl PartialEq<char> for FileIterator {
     fn eq(&self, other: &char) -> bool {
-        return self.current() == *other;
+        self.current() == *other
     }
 }
 
 impl FileIterator {
-    pub fn new(shader_code: &String) -> Self {
+    pub fn new(shader_code: &str) -> Self {
         Self {
             line_count: 1,
             ptr: 0,
-            shader: shader_code.clone(),
+            shader: shader_code.to_string(),
             end: '\0',
         }
     }

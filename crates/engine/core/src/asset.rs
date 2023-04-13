@@ -42,10 +42,7 @@ impl AssetMetaData {
     }
 
     pub fn get_save_path(&self) -> Option<String> {
-        match &*self.save_path.read().unwrap() {
-            None => { None }
-            Some(path) => { Some(path.clone()) }
-        }
+        (*self.save_path.read().unwrap()).as_ref().cloned()
     }
 
     pub fn get_name(&self) -> String {

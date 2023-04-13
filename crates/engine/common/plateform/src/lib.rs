@@ -29,8 +29,11 @@ impl ToString for Monitor {
     }
 }
 
+#[derive(Debug, Clone)]
+pub struct WindowCreationError;
+
 pub trait Platform {
-    fn create_window(&self, create_infos: WindowCreateInfos) -> Result<Arc<dyn Window>, ()>;
+    fn create_window(&self, create_infos: WindowCreateInfos) -> Result<Arc<dyn Window>, WindowCreationError>;
     fn monitor_count(&self) -> usize;
     fn get_monitor(&self, index: usize) -> Monitor;
     fn collect_monitors(&self);

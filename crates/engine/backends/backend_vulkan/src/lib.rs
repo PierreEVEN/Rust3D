@@ -121,7 +121,7 @@ impl GfxInterface for GfxVulkan {
     }
 
     fn create_image(&self, name: String, create_infos: ImageCreateInfos) -> Arc<dyn GfxImage> {
-        VkImage::new(&self.get_ref(), name, create_infos)
+        VkImage::new_ptr(&self.get_ref(), name, create_infos)
     }
 
     fn create_image_sampler(&self, name: String, create_infos: SamplerCreateInfos) -> Arc<dyn ImageSampler> {
@@ -145,7 +145,7 @@ impl GfxInterface for GfxVulkan {
 }
 
 impl GfxVulkan {
-    pub fn new() -> GfxRef {
+    pub fn new_ref() -> GfxRef {
         unsafe { G_VULKAN = Some(ash::Entry::load().expect("failed to load vulkan library")); }
 
         let instance = VkInstance::new(InstanceCreateInfos {

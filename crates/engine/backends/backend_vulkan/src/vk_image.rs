@@ -274,7 +274,7 @@ impl GfxImageBuilder<(vk::ImageView, vk::DescriptorImageInfo)> for RbImageView {
 }
 
 impl VkImage {
-    pub fn new(gfx: &GfxRef, name: String, create_infos: ImageCreateInfos) -> Arc<dyn GfxImage> {
+    pub fn new_ptr(gfx: &GfxRef, name: String, create_infos: ImageCreateInfos) -> Arc<dyn GfxImage> {
         let params = create_infos.params;
 
         let image_views = if params.read_only {

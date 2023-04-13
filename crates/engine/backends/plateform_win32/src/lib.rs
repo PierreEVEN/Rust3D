@@ -12,7 +12,7 @@ use windows::Win32::UI::WindowsAndMessaging::{CreateWindowExW, CS_DBLCLKS, CS_HR
 use windows::Win32::UI::WindowsAndMessaging::*;
 
 use maths::rect2d::Rect2D;
-use plateform::{Monitor, Platform};
+use plateform::{Monitor, Platform, WindowCreationError};
 use plateform::input_system::InputManager;
 use plateform::window::{PlatformEvent, Window, WindowCreateInfos};
 
@@ -156,7 +156,7 @@ unsafe extern "system" fn wnd_proc(hwnd: HWND, msg: u32, wparam: WPARAM, lparam:
 }
 
 impl Platform for PlatformWin32 {
-    fn create_window(&self, create_infos: WindowCreateInfos) -> Result<Arc<dyn Window>, ()> {
+    fn create_window(&self, create_infos: WindowCreateInfos) -> Result<Arc<dyn Window>, WindowCreationError> {
         let window = WindowWin32::new(create_infos);
         let hwnd = window.hwnd.into();
         self.windows.write().unwrap().insert(hwnd, window.clone());

@@ -1,4 +1,5 @@
 ﻿use std::collections::HashMap;
+use std::fmt::Error;
 use std::os::raw::{c_char};
 use std::sync::{Arc, RwLock};
 
@@ -169,7 +170,7 @@ impl VkDevice {
         }
     }
 
-    pub fn get_queue(&self, flags: vk::QueueFlags) -> Result<Arc<VkQueue>, ()> {
+    pub fn get_queue(&self, flags: vk::QueueFlags) -> Result<Arc<VkQueue>, Error> {
         match self.queues.get(&flags) {
             None => {}
             Some(queues) => {
@@ -180,7 +181,7 @@ impl VkDevice {
         }
 
 
-        Err(())
+        Err(Error::default())
     }
 
 }

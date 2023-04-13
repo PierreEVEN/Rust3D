@@ -169,7 +169,7 @@ fn win32_keyboard(wp: WPARAM, scan_code: u32) -> Option<KeyboardKey> {
 
 
 pub fn win32_input(msg: u32, wparam: WPARAM, lparam: LPARAM, input_manager: &InputManager) {
-    let _extended: bool = if lparam.0 & 0x01000000 == 0 { false } else { true };
+    let _extended: bool = lparam.0 & 0x01000000 != 0;
     let scancode: u32 = ((lparam.0 & 0x00ff0000) >> 16) as u32;
 
     match msg {

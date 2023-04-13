@@ -12,38 +12,38 @@ pub struct Rect2D<T: Default> {
 
 impl<T: Default + ops::Add + ops::Sub + Copy + PartialOrd> Rect2D<T> where <T as ops::Sub>::Output: Into<T>, <T as ops::Add>::Output: Into<T> {
     pub fn width(&self) -> T {
-        return (self.max_x() - self.min_x()).into()
+        (self.max_x() - self.min_x()).into()
     }
     pub fn height(&self) -> T {
-        return (self.max_y() - self.min_y()).into()
+        (self.max_y() - self.min_y()).into()
     }
 
     pub fn min_x(&self) -> T {
         if self._min_x > self._max_x {
             return self._max_x
         }
-        return self._min_x
+        self._min_x
     }
     
     pub fn min_y(&self) -> T {
         if self._min_y > self._max_y {
             return self._max_y
         }
-        return self._min_y
+        self._min_y
     }
 
     pub fn max_x(&self) -> T {
         if self._max_x < self._min_x {
             return self._min_x
         }
-        return self._max_x
+        self._max_x
     }
 
     pub fn max_y(&self) -> T {
         if self._max_y < self._min_y {
             return self._min_y
         }
-        return self._max_y
+        self._max_y
     }
     
     pub fn rect(x: T, y: T, width : T, height : T) -> Rect2D<T> {

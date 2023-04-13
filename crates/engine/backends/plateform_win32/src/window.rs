@@ -41,8 +41,8 @@ impl WindowWin32 {
             let mut initial_rect = RECT {
                 left: 0,
                 top: 0,
-                right: create_infos.geometry.width() as i32,
-                bottom: create_infos.geometry.height() as i32,
+                right: create_infos.geometry.width(),
+                bottom: create_infos.geometry.height(),
             };
 
             AdjustWindowRectEx(&mut initial_rect, style, false, ex_style);
@@ -51,8 +51,8 @@ impl WindowWin32 {
                 PCWSTR(utf8_to_utf16(WIN_CLASS_NAME).as_ptr()),
                 PCWSTR(utf8_to_utf16(create_infos.name.as_str()).as_ptr()),
                 style,
-                create_infos.geometry.min_x() as i32 + initial_rect.left,
-                create_infos.geometry.min_y() as i32 + initial_rect.top,
+                create_infos.geometry.min_x() + initial_rect.left,
+                create_infos.geometry.min_y() + initial_rect.top,
                 initial_rect.right - initial_rect.left,
                 initial_rect.bottom - initial_rect.top,
                 HWND::default(),
@@ -61,10 +61,7 @@ impl WindowWin32 {
                 None,
             );
 
-            match check_win32_error() {
-                Err(_message) => { panic!("failed to create window : {_message}"); }
-                Ok(_) => {}
-            }
+            if let Err(_message) = check_win32_error() { panic!("failed to create window : {_message}"); }
 
             let window = WindowWin32 {
                 hwnd,
@@ -77,12 +74,12 @@ impl WindowWin32 {
 
             window.set_background_alpha(create_infos.background_alpha);
 
-            return Arc::new(window);
+            Arc::new(window)
         }
     }
 
     pub fn trigger_event(&self, event_type: &PlatformEvent) {
-        match self.event_map.write().unwrap().get_mut(&event_type) {
+        match self.event_map.write().unwrap().get_mut(event_type) {
             None => {}
             Some(events) => {
                 for event in events {
@@ -95,7 +92,7 @@ impl WindowWin32 {
 
 impl Window for WindowWin32 {
     fn set_geometry(&self, _geometry: RectI32) {
-        (*self.geometry.write().unwrap()) = _geometry.clone()
+        (*self.geometry.write().unwrap()) = _geometry
     }
 
     fn get_geometry(&self) -> RectI32 {

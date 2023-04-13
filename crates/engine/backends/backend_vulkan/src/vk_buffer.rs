@@ -130,7 +130,7 @@ struct BufferContainer {
 
 impl Drop for BufferContainer {
     fn drop(&mut self) {
-        self.gfx.cast::<GfxVulkan>().device.allocator.write().unwrap().free(std::mem::replace(&mut self.allocation.write().unwrap(), vulkan::Allocation::default())).expect("failed to free buffer");
+        self.gfx.cast::<GfxVulkan>().device.allocator.write().unwrap().free(std::mem::take(&mut self.allocation.write().unwrap())).expect("failed to free buffer");
     }
 }
 
@@ -228,7 +228,7 @@ impl VkBuffer {
             buffer_size: AtomicU32::new(create_infos.size),
             gfx: gfx.clone(),
             create_infos: *create_infos,
-            name: name,
+            name,
         }
     }
 

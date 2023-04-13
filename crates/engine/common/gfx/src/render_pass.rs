@@ -73,7 +73,7 @@ impl FrameGraph {
 
         let res = surface.get_owning_window().get_geometry();
 
-        let draw_pass = _gfx.create_render_pass(format!("main_render_pass"), render_pass_ci).instantiate(surface, Vec2u32::new(res.width() as u32, res.height() as u32));
+        let draw_pass = _gfx.create_render_pass("main_render_pass".to_string(), render_pass_ci).instantiate(surface, Vec2u32::new(res.width() as u32, res.height() as u32));
 
         Arc::new(Self {
             surface: surface.clone(),
@@ -86,9 +86,10 @@ impl FrameGraph {
     }
 
     pub fn begin(&self) -> Result<(), String> {
-        return match self.surface.acquire(&self.present_pass) {
+        match self.surface.acquire(&self.present_pass) {
             Ok(_) => {
-                Ok(self.present_pass.draw())
+                self.present_pass.draw();
+                Ok(())
             }
             Err(error) => {
                 match error {
@@ -101,7 +102,7 @@ impl FrameGraph {
                     }
                 }
             }
-        };
+        }
     }
 
     pub fn submit(&self) {

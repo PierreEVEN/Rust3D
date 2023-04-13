@@ -50,10 +50,7 @@ impl VkRenderPass {
         // add color color_attachments
         for attachment in &create_infos.color_attachments
         {
-            match attachment.image_format {
-                PixelFormat::UNDEFINED => { panic!("wrong pixel format") }
-                _ => {}
-            };
+            if let PixelFormat::UNDEFINED = attachment.image_format { panic!("wrong pixel format") };
 
             let attachment_index: u32 = attachment_descriptions.len() as u32;
 
@@ -88,10 +85,7 @@ impl VkRenderPass {
         match &create_infos.depth_attachment {
             None => {}
             Some(attachment) => {
-                match attachment.image_format {
-                    PixelFormat::UNDEFINED => { panic!("wrong depth pixel format") }
-                    _ => {}
-                };
+                if let PixelFormat::UNDEFINED = attachment.image_format { panic!("wrong depth pixel format") };
 
                 let attachment_index: u32 = attachment_descriptions.len() as u32;
 

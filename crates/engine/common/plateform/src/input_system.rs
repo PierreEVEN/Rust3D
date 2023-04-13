@@ -12,6 +12,7 @@ pub enum ActionType {
 pub type ActionMappingCallback = Box<dyn FnMut(&InputAction, ActionType)>;
 pub type AxisMappingCallback = Box<dyn FnMut(&InputAxis)>;
 
+#[derive(Default)]
 pub struct InputAction {
     released_key_left: i8,
     key_mapping: HashMap<InputMapping, bool>,
@@ -46,6 +47,7 @@ impl InputAxis {
     }
 }
 
+#[derive(Default)]
 pub struct InputManager {
     action_mapping: RwLock<HashMap<String, InputAction>>,
     axis_mapping: RwLock<HashMap<String, InputAxis>>,
@@ -100,18 +102,15 @@ impl InputManager {
     }
 
     pub fn _press_input(&self, pressed_key: InputMapping) {
-        match self.input_states.write() {
-            Ok(mut input_states) => { if !input_states.contains_key(&pressed_key) { input_states.insert(pressed_key, 1.0); } }
-            Err(_) => {}
-        }
+        if let Ok(mut input_states) = self.input_states.write() { input_states.entry(pressed_key).or_insert(1.0); }
 
-        for (_, action) in &mut *self.action_mapping.write().unwrap() {
+        for action in self.action_mapping.write().unwrap().values_mut() {
             let mut just_pressed = false;
 
             match action.key_mapping.get_mut(&pressed_key) {
                 None => {}
                 Some(pressed) => {
-                    if *pressed != true {
+                    if !(*pressed) {
                         action.released_key_left -= 1;
                         *pressed = true;
                         just_pressed = true;
@@ -131,17 +130,14 @@ impl InputManager {
     }
 
     pub fn _release_input(&self, pressed_key: InputMapping) {
-        match self.input_states.write() {
-            Ok(mut input_states) => { if input_states.contains_key(&pressed_key) { input_states.remove(&pressed_key); } }
-            Err(_) => {}
-        }
+        if let Ok(mut input_states) = self.input_states.write() { if input_states.contains_key(&pressed_key) { input_states.remove(&pressed_key); } }
 
-        for (_, action) in &mut *self.action_mapping.write().unwrap() {
+        for action in self.action_mapping.write().unwrap().values_mut() {
             let mut just_released = false;
             match action.key_mapping.get_mut(&pressed_key) {
                 None => {}
                 Some(pressed) => {
-                    if *pressed != false {
+                    if *pressed {
                         if action.released_key_left == 0 {
                             just_released = true;
                         }

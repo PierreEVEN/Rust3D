@@ -17,7 +17,7 @@ impl Deref for VkExtent2D {
 
 impl From<Vec2u32> for VkExtent2D {
     fn from(size: Vec2u32) -> Self {
-        VkExtent2D { 0: Extent2D { width: size.x, height: size.y } }
+        VkExtent2D(Extent2D { width: size.x, height: size.y })
     }
 }
 
@@ -235,8 +235,7 @@ impl From<&PixelFormat> for VkPixelFormat {
 
 impl From<vk::Format> for GfxPixelFormat {
     fn from(format: Format) -> Self {
-        GfxPixelFormat {
-            0: match format {
+        GfxPixelFormat(match format {
                 Format::UNDEFINED => { PixelFormat::UNDEFINED }
                 Format::R4G4_UNORM_PACK8 => { PixelFormat::R4G4_UNORM_PACK8 }
                 Format::R4G4B4A4_UNORM_PACK16 => { PixelFormat::R4G4B4A4_UNORM_PACK16 }
@@ -422,8 +421,7 @@ impl From<vk::Format> for GfxPixelFormat {
                 Format::ASTC_12X12_UNORM_BLOCK => { PixelFormat::ASTC_12X12_UNORM_BLOCK }
                 Format::ASTC_12X12_SRGB_BLOCK => { PixelFormat::ASTC_12X12_SRGB_BLOCK }
                 _ => { PixelFormat::UNDEFINED }
-            }
-        }
+            })
     }
 }
 
@@ -438,8 +436,7 @@ impl Deref for VkColorSpace {
 
 impl From<ColorSpace> for VkColorSpace {
     fn from(color_space: ColorSpace) -> Self {
-        VkColorSpace {
-            0: match color_space {
+        VkColorSpace(match color_space {
                 ColorSpace::SRGB_NONLINEAR => { ColorSpaceKHR::SRGB_NONLINEAR }
                 ColorSpace::DISPLAY_P3_NONLINEAR => { ColorSpaceKHR::DISPLAY_P3_NONLINEAR_EXT }
                 ColorSpace::EXTENDED_SRGB_LINEAR => { ColorSpaceKHR::EXTENDED_SRGB_LINEAR_EXT }
@@ -457,7 +454,6 @@ impl From<ColorSpace> for VkColorSpace {
                 ColorSpace::EXTENDED_SRGB_NONLINEAR => { ColorSpaceKHR::EXTENDED_SRGB_NONLINEAR_EXT }
                 ColorSpace::DISPLAY_NATIVE => { ColorSpaceKHR::DISPLAY_NATIVE_AMD }
                 ColorSpace::DCI_P3_LINEAR => { ColorSpaceKHR::DCI_P3_NONLINEAR_EXT }
-            }
-        }
+            })
     }
 }

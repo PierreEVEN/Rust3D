@@ -11,7 +11,7 @@ use maths::vec4::Vec4F32;
 
 pub fn _demo_objects(gfx: &GfxRef, surface: &Arc<dyn GfxSurface>) {
     // GPU Buffer example
-    let mut _test_buffer = gfx.create_buffer(format!("demo_buffer"), &BufferCreateInfo {
+    let mut _test_buffer = gfx.create_buffer("demo_buffer".to_string(), &BufferCreateInfo {
         buffer_type: BufferType::Immutable,
         usage: BufferUsage::IndexData,
         access: BufferAccess::Default,
@@ -22,7 +22,7 @@ pub fn _demo_objects(gfx: &GfxRef, surface: &Arc<dyn GfxSurface>) {
     // Framegraph example
     let res = Vec2u32::new(800, 600);
 
-    let g_buffer_pass = gfx.create_render_pass(format!("demo_gbuffer"), RenderPassCreateInfos {
+    let g_buffer_pass = gfx.create_render_pass("demo_gbuffer".to_string(), RenderPassCreateInfos {
         pass_id: PassID::new("GBuffers"),
         color_attachments: vec![
             RenderPassAttachment {
@@ -54,7 +54,7 @@ pub fn _demo_objects(gfx: &GfxRef, surface: &Arc<dyn GfxSurface>) {
         is_present_pass: false,
     });
 
-    let deferred_combine_pass = gfx.create_render_pass(format!("demo_deferred_combine"), RenderPassCreateInfos {
+    let deferred_combine_pass = gfx.create_render_pass("demo_deferred_combine".to_string(), RenderPassCreateInfos {
         pass_id: PassID::new("deferred_combine"),
         color_attachments: vec![RenderPassAttachment {
             name: "color".to_string(),

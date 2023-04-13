@@ -12,9 +12,7 @@ use gfx::GfxRef;
 use crate::{GfxVulkan, vk_check};
 
 pub fn get_required_device_extensions() -> Vec<*const c_char> {
-    let mut result = Vec::new();
-    result.push("VK_KHR_swapchain\0".as_ptr() as *const c_char);
-    result
+    vec!["VK_KHR_swapchain\0".as_ptr() as *const c_char]
 }
 
 pub struct VkQueue {
@@ -76,7 +74,7 @@ impl VkDevice {
                     .build());
         }
 
-        let mut extensions = get_required_device_extensions().clone();
+        let mut extensions = get_required_device_extensions();
         if gfx.cast::<GfxVulkan>().instance.enable_validation_layers() {
             extensions.push("VK_EXT_debug_marker\0".as_ptr() as *const c_char);
         }
@@ -108,7 +106,7 @@ impl VkDevice {
 
         let mut ps: vk::PhysicalDevice = Default::default();
         unsafe {
-            if let Some(devices) = gfx.cast::<GfxVulkan>().instance.handle.enumerate_physical_devices().ok() {
+            if let Ok(devices) = gfx.cast::<GfxVulkan>().instance.handle.enumerate_physical_devices() {
                 if !devices.is_empty() {
                     ps = devices[0];
                 }

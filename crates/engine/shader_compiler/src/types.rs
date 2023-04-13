@@ -26,7 +26,7 @@ impl ShaderErrorResult {
         })
     }
     pub fn empty(&self) -> bool {
-        self.error_list.len() == 0
+        self.error_list.is_empty()
     }
 }
 
@@ -38,8 +38,8 @@ impl ToString for ShaderErrorResult {
         let mut index = 1;
         for error in &self.error_list {
             let mut text = String::new();
-            let multiline = error.text.contains("\n");
-            for line in error.text.split("\n") {
+            let multiline = error.text.contains('\n');
+            for line in error.text.split('\n') {
                 text += "\t\t\t";
                 if multiline {
                     text += "| ";

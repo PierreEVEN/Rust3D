@@ -59,12 +59,12 @@ impl Mesh {
 
     pub fn resize(&self, _: &GfxImageID, vertex_count: u32, index_count: u32) {
         self.index_buffer.resize_buffer(index_count * self.index_buffer_type as u32);
-        self.vertex_buffer.resize_buffer(vertex_count * self.vertex_struct_size as u32);
+        self.vertex_buffer.resize_buffer(vertex_count * self.vertex_struct_size);
     }
 
     pub fn set_data(&self, image_id: &GfxImageID, from_vertex: u32, vertex_data: &[u8], from_index: u32, index_data: &[u8]) {
         self.index_buffer.set_data(image_id, from_index * self.index_buffer_type as u32, index_data);
-        self.vertex_buffer.set_data(image_id, from_vertex * self.vertex_struct_size as u32, vertex_data);
+        self.vertex_buffer.set_data(image_id, from_vertex * self.vertex_struct_size, vertex_data);
     }
 
     pub fn index_type(&self) -> IndexBufferType {

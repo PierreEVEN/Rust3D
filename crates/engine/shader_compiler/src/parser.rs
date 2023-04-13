@@ -50,9 +50,9 @@ impl ProgramData {
 
     pub fn get_available_passes(&self) -> Vec<PassID> {
         let mut result = Vec::<PassID>::new();
-        for (_, value) in &self.chunks {
-            for (key, _) in value {
-                if !result.contains(&key) {
+        for value in self.chunks.values() {
+            for key in value.keys() {
+                if !result.contains(key) {
                     result.push(key.clone());
                 }
             }
@@ -64,7 +64,7 @@ impl ProgramData {
 pub struct Parser {
     file_iterator: FileIterator,
     includer: Box<dyn Includer>,
-    internal_properties: HashMap::<String, String>,
+    internal_properties: HashMap<String, String>,
     pub properties: ShaderProperties,
     pub default_values: HashMap<String, String>,
     pub program_data: ProgramData,
@@ -100,10 +100,10 @@ impl Parser {
             line.push(self.file_iterator.current());
             self.file_iterator += 1;
         }
-        return line;
+        line
     }
 
-    fn get_next_chunk(&mut self, virtual_path: &String) -> Result<ShaderChunk, ShaderErrorResult>
+    fn get_next_chunk(&mut self, virtual_path: &str) -> Result<ShaderChunk, ShaderErrorResult>
     {
         let mut current_indentation: i64 = 0;
         let mut found_body = false;
@@ -121,16 +121,16 @@ impl Parser {
                 self.file_iterator += 2;
                 found_body = true;
                 let file = Self::trim_string(&self.file_iterator.get_next_line());
-                let result = (*self.includer).include_local(&file, &virtual_path);
+                let result = (*self.includer).include_local(&file, virtual_path);
                 match result {
                     Ok((name, data)) => {
                         chunk.line_start = self.file_iterator.current_line() as u32;
                         chunk.content = data;
                         chunk.virtual_path = name;
-                        self.includer.release_include(&file, &virtual_path);
+                        self.includer.release_include(&file, virtual_path);
                     }
                     Err(new_error) => {
-                        self.includer.release_include(&file, &virtual_path);
+                        self.includer.release_include(&file, virtual_path);
                         error += new_error;
                     }
                 }
@@ -220,10 +220,10 @@ impl Parser {
     }
 
     fn is_void(chr: char) -> bool {
-        return chr == ' ' || chr == '\t' || chr == '\r' || chr == '\n';
+        chr == ' ' || chr == '\t' || chr == '\r' || chr == '\n'
     }
 
-    fn split_string(string: &String, separators: &Vec<char>) -> Vec<String> {
+    fn split_string(string: &str, separators: &[char]) -> Vec<String> {
         let mut content = Vec::<String>::new();
         let mut current_string = String::new();
         for chr in string.chars() {
@@ -240,17 +240,17 @@ impl Parser {
         content
     }
 
-    fn parse_head(header: &String) -> Result<Vec<(String, String)>, ShaderErrorResult>
+    fn parse_head(header: &str) -> Result<Vec<(String, String)>, ShaderErrorResult>
     {
         let mut fields = Vec::new();
         let mut errors = ShaderErrorResult::default();
-        let head_lines = Self::split_string(header, &vec![';']);
-        for i in 0..head_lines.len()
+        let head_lines = Self::split_string(header, &[';']);
+        for (i, head_line) in head_lines.iter().enumerate()
         {
-            let prop_field = Self::split_string(&head_lines[i], &vec!['=']);
+            let prop_field = Self::split_string(head_line, &['=']);
             if prop_field.len() != 2
             {
-                errors.push(Some(i as isize), None, "Parser::parse_head", &format!("syntax error").to_string(), "");
+                errors.push(Some(i as isize), None, "Parser::parse_head", "syntax error", "");
                 continue;
             }
 
@@ -262,13 +262,13 @@ impl Parser {
         Ok(fields)
     }
 
-    fn parse_chunk_head(header: &String) -> Vec<PassID>
+    fn parse_chunk_head(header: &str) -> Vec<PassID>
     {
         let mut passes = Vec::new();
-        for field in Self::split_string(header, &vec![',']) {
+        for field in Self::split_string(header, &[',']) {
             passes.push(PassID::new(Self::trim_string(&field).as_str()));
         }
-        return passes;
+        passes
     }
 
     fn get_property(&self, field: &str) -> &str
@@ -279,7 +279,7 @@ impl Parser {
         }
     }
 
-    pub fn new(shader_code: &String, file_path: &String, includer: Box<dyn Includer>) -> Result<Self, ShaderErrorResult> {
+    pub fn new(shader_code: &str, file_path: &str, includer: Box<dyn Includer>) -> Result<Self, ShaderErrorResult> {
         let mut errors = ShaderErrorResult::default();
 
         let mut parser = Self {
@@ -303,7 +303,7 @@ impl Parser {
         }
     }
 
-    fn parse_shader(&mut self, file_path: &String) -> Result<(), ShaderErrorResult>
+    fn parse_shader(&mut self, file_path: &str) -> Result<(), ShaderErrorResult>
     {
         let mut errors = ShaderErrorResult::default();
 
@@ -314,13 +314,13 @@ impl Parser {
             if self.file_iterator.match_string("#pragma")
             {
                 let pragma_directive = self.file_iterator.get_next_line();
-                let fields = Self::split_string(&pragma_directive, &vec![' ', '\t']);
+                let fields = Self::split_string(&pragma_directive, &[' ', '\t']);
                 
                 let mut content = String::from("");
-                
-                for i in 1..fields.len() {
-                    if fields[i].chars().any(|c| c.is_ascii_alphanumeric()) {
-                        content = Self::trim_string(&fields[i]);
+
+                for field in fields.iter().skip(1) {
+                    if field.chars().any(|c| c.is_ascii_alphanumeric()) {
+                        content = Self::trim_string(field);
                         break;
                     }
                 }
@@ -358,7 +358,7 @@ impl Parser {
                     Ok(chunk) => {
                         let mut chunk_data = chunk.clone();
                         if chunk_data.virtual_path.is_empty() {
-                            chunk_data.virtual_path = file_path.clone();
+                            chunk_data.virtual_path = file_path.to_string();
                         }
                         for pass in Self::parse_chunk_head(&global_args) {
                             self.program_data.push_chunk(&pass, &ShaderStage::Vertex, chunk_data.clone());
@@ -375,11 +375,11 @@ impl Parser {
             if self.file_iterator.match_string("vertex")
             {
                 let vertex_args = self.get_next_definition();
-                match self.get_next_chunk(&file_path) {
+                match self.get_next_chunk(file_path) {
                     Ok(vertex_chunk) => {
                         let mut chunk_data = vertex_chunk.clone();
                         if chunk_data.virtual_path.is_empty() {
-                            chunk_data.virtual_path = file_path.clone();
+                            chunk_data.virtual_path = file_path.to_string();
                         }
                         for pass in Self::parse_chunk_head(&vertex_args) {
                             self.program_data.push_chunk(&pass, &ShaderStage::Vertex,chunk_data.clone());
@@ -395,11 +395,11 @@ impl Parser {
             if self.file_iterator.match_string("fragment")
             {
                 let fragment_args = self.get_next_definition();
-                match self.get_next_chunk(&file_path) {
+                match self.get_next_chunk(file_path) {
                     Ok(fragment_chunk) => {
                         let mut chunk_data = fragment_chunk.clone();
                         if chunk_data.virtual_path.is_empty() {
-                            chunk_data.virtual_path = file_path.clone();
+                            chunk_data.virtual_path = file_path.to_string();
                         }
                         for pass in Self::parse_chunk_head(&fragment_args) {
                             self.program_data.push_chunk(&pass, &ShaderStage::Fragment,chunk_data.clone());

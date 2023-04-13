@@ -68,7 +68,7 @@ impl<T: Clone> GfxResource<T> {
         }
 
         {
-            match self.resources.read().unwrap().deref().get(&reference) {
+            match self.resources.read().unwrap().deref().get(reference) {
                 None => {}
                 Some(resource) => { return resource.clone(); }
             }

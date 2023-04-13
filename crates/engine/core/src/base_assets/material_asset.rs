@@ -37,9 +37,7 @@ impl MaterialAsset {
     }
     
     pub fn instantiate(&self) -> Arc<MaterialInstanceAsset> {
-        let instance = MaterialInstanceAsset::new(&self.meta_data.asset_manager);
-        
-        instance
+        MaterialInstanceAsset::new(&self.meta_data.asset_manager)
     }
 
     pub fn set_shader_code(&self, virtual_path: &Path, shader_text: String) {
@@ -71,7 +69,7 @@ impl MaterialAsset {
             None => {}
             Some(parser) => {
                 // Vertex shader
-                let vertex_code = match parser.program_data.get_data(&pass, &ShaderStage::Vertex) {
+                let vertex_code = match parser.program_data.get_data(pass, &ShaderStage::Vertex) {
                     Ok(code) => { code }
                     Err(error) => {
                         println!("failed to get vertex shader data :\n{}", error.to_string());
@@ -79,7 +77,7 @@ impl MaterialAsset {
                     }
                 };
                 // Fragment shader
-                let fragment_code = match parser.program_data.get_data(&pass, &ShaderStage::Fragment) {
+                let fragment_code = match parser.program_data.get_data(pass, &ShaderStage::Fragment) {
                     Ok(code) => { code }
                     Err(error) => {
                         println!("failed to get fragment shader data :\n{}", error.to_string());

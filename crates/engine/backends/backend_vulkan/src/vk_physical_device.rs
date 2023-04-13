@@ -87,7 +87,7 @@ impl VkPhysicalDevice {
         
         let mut result = Vec::new();
         unsafe {
-            if let Some(extensions) = gfx.instance.handle.enumerate_device_extension_properties((*physical_device).handle).ok() {
+            if let Ok(extensions) = gfx.instance.handle.enumerate_device_extension_properties(physical_device.handle) {
                 for extension in extensions {
                     result.push(extension);
                 }

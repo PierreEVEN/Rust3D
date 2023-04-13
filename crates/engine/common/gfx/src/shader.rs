@@ -62,7 +62,7 @@ impl PartialEq<Self> for PassID {
 
 impl Display for PassID {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        return write!(f, "{}", self.internal_id);
+        write!(f, "{}", self.internal_id)
     }
 }
 
@@ -93,17 +93,12 @@ pub struct ShaderProgramStage {
 }
 
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub enum ShaderLanguage
 {
+    #[default]
     HLSL,
     GLSL,
-}
-
-impl Default for ShaderLanguage {
-    fn default() -> Self {
-        ShaderLanguage::HLSL
-    }
 }
 
 #[derive(Clone)]
@@ -136,74 +131,49 @@ impl Default for ShaderProperties {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Default)]
 pub enum Culling
 {
     None,
     Front,
+    #[default]
     Back,
     Both,
 }
 
-impl Default for Culling {
-    fn default() -> Self {
-        Culling::Back
-    }
-}
-
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Default)]
 pub enum FrontFace
 {
     Clockwise,
+    #[default]
     CounterClockwise,
 }
 
-impl Default for FrontFace {
-    fn default() -> Self {
-        FrontFace::CounterClockwise
-    }
-}
-
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Default)]
 pub enum Topology
 {
     Points,
     Lines,
+    #[default]
     Triangles,
 }
 
-impl Default for Topology {
-    fn default() -> Self {
-        Topology::Triangles
-    }
-}
-
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Default)]
 pub enum PolygonMode
 {
     Point,
     Line,
+    #[default]
     Fill,
 }
 
-impl Default for PolygonMode {
-    fn default() -> Self {
-        PolygonMode::Fill
-    }
-}
-
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Default)]
 pub enum AlphaMode
 {
+    #[default]
     Opaque,
     Translucent,
     Additive,
-}
-
-impl Default for AlphaMode {
-    fn default() -> Self {
-        AlphaMode::Opaque
-    }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]

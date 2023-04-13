@@ -97,7 +97,7 @@ impl GfxImageBuilder<vk::Framebuffer> for RbFramebuffer {
 
 impl VkRenderPassInstance {
     pub fn new(gfx: &GfxRef, name: String, surface: &Arc<dyn GfxSurface>, owner: Arc<dyn RenderPass>, res: Vec2u32) -> VkRenderPassInstance {
-        let clear_values = (&owner).get_clear_values().clone();
+        let clear_values = owner.get_clear_values().clone();
 
         let render_pass = owner.cast::<VkRenderPass>().render_pass;
 
@@ -136,10 +136,10 @@ impl VkRenderPassInstance {
 
         VkRenderPassInstance {
             render_finished_semaphore: GfxResource::new(gfx, RbSemaphore {name: name.clone()}),
-            pass_command_buffers: VkCommandBuffer::new(gfx, name.clone(), &surface),
+            pass_command_buffers: VkCommandBuffer::new(gfx, name.clone(), surface),
             framebuffers: GfxResource::new(gfx, RbFramebuffer { render_pass, res, images: images.clone(), name: name.clone() }),
             owner,
-            clear_value: clear_values.clone(),
+            clear_value: clear_values,
             gfx: gfx.clone(),
             surface: surface.clone(),
             resolution: RwLock::new(res),
@@ -177,9 +177,9 @@ impl RenderPassInstance for VkRenderPassInstance {
         let device = &self.gfx.cast::<GfxVulkan>().device;
 
         // Begin buffer
-        let command_buffer = self.pass_command_buffers.command_buffer.get(&self.surface.get_current_ref());
+        let command_buffer = self.pass_command_buffers.command_buffer.get(self.surface.get_current_ref());
         
-        vk_check!(unsafe { (*device).handle.begin_command_buffer(command_buffer, &vk::CommandBufferBeginInfo::default()) });
+        vk_check!(unsafe { device.handle.begin_command_buffer(command_buffer, &vk::CommandBufferBeginInfo::default()) });
 
         let mut clear_values = Vec::new();
         for clear_value in &self.clear_value {
@@ -207,7 +207,7 @@ impl RenderPassInstance for VkRenderPassInstance {
         let res = self.resolution.read().unwrap();
         let begin_infos = vk::RenderPassBeginInfo::builder()
             .render_pass(self.owner.cast::<VkRenderPass>().render_pass)
-            .framebuffer(self.framebuffers.get(&self.surface.get_current_ref()))
+            .framebuffer(self.framebuffers.get(self.surface.get_current_ref()))
             .render_area(vk::Rect2D {
                 offset: vk::Offset2D { x: 0, y: 0 },
                 extent: vk::Extent2D { width: res.x, height: res.y },
@@ -215,10 +215,10 @@ impl RenderPassInstance for VkRenderPassInstance {
             .clear_values(clear_values.as_slice())
             .build();
 
-        unsafe { (*device).handle.cmd_begin_render_pass(command_buffer, &begin_infos, vk::SubpassContents::INLINE) };
+        unsafe { device.handle.cmd_begin_render_pass(command_buffer, &begin_infos, vk::SubpassContents::INLINE) };
 
         unsafe {
-            (*device).handle.cmd_set_viewport(command_buffer, 0, &[vk::Viewport::builder()
+            device.handle.cmd_set_viewport(command_buffer, 0, &[vk::Viewport::builder()
                 .x(0.0)
                 .y(res.y as _)
                 .width(res.x as _)
@@ -230,7 +230,7 @@ impl RenderPassInstance for VkRenderPassInstance {
         };
 
         unsafe {
-            (*device).handle.cmd_set_scissor(command_buffer, 0, &[vk::Rect2D {
+            device.handle.cmd_set_scissor(command_buffer, 0, &[vk::Rect2D {
                 offset: vk::Offset2D { x: 0, y: 0 },
                 extent: vk::Extent2D { width: res.x, height: res.y },
             }])
@@ -251,7 +251,7 @@ impl RenderPassInstance for VkRenderPassInstance {
             Err(_) => { panic!("failed to access render callback") }
         }
 
-        let command_buffer = self.pass_command_buffers.command_buffer.get(&self.surface.get_current_ref());
+        let command_buffer = self.pass_command_buffers.command_buffer.get(self.surface.get_current_ref());
         self.gfx.cast::<GfxVulkan>().set_vk_object_name(command_buffer, format!("command buffer\t\t: {} - {}", self.owner.get_config().pass_id, self.surface.get_current_ref()).as_str());
 
         // End pass
@@ -264,7 +264,7 @@ impl RenderPassInstance for VkRenderPassInstance {
             wait_semaphores.push(self.wait_semaphores.read().unwrap().unwrap());
         }
         for child in &*self.children.read().unwrap() {
-            wait_semaphores.push(child.cast::<VkRenderPassInstance>().render_finished_semaphore.get(&self.surface.get_current_ref()));
+            wait_semaphores.push(child.cast::<VkRenderPassInstance>().render_finished_semaphore.get(self.surface.get_current_ref()));
         }
 
         let wait_stages = vec![vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT; wait_semaphores.len()];
@@ -273,7 +273,7 @@ impl RenderPassInstance for VkRenderPassInstance {
             .wait_semaphores(wait_semaphores.as_slice())
             .wait_dst_stage_mask(wait_stages.as_slice())
             .command_buffers(&[command_buffer])
-            .signal_semaphores(&[self.render_finished_semaphore.get(&self.surface.get_current_ref())])
+            .signal_semaphores(&[self.render_finished_semaphore.get(self.surface.get_current_ref())])
             .build());
     }
 

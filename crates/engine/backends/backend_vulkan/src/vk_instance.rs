@@ -106,7 +106,7 @@ impl VkInstance {
 
         let mut device_map = HashMap::new();
         unsafe {
-            if let Some(devices) = instance.enumerate_physical_devices().ok() {
+            if let Ok(devices) = instance.enumerate_physical_devices() {
                 for device in devices {
                     let (device, vk_device) = VkPhysicalDevice::new(&instance, device);
                     device_map.insert(device, vk_device);
@@ -116,7 +116,7 @@ impl VkInstance {
 
         Ok(Self {
             handle: instance,
-            debug_util_loader: debug_util_loader,
+            debug_util_loader,
             _debug_messenger: debug_messenger,
             enable_validation_layers,
             device_map,
@@ -124,7 +124,7 @@ impl VkInstance {
     }
 
     pub fn is_layer_available(layer: &str) -> bool {
-        if let Some(layer_properties) = g_vulkan!().enumerate_instance_layer_properties().ok() {
+        if let Ok(layer_properties) = g_vulkan!().enumerate_instance_layer_properties() {
             unsafe {
                 for layer_details in layer_properties {
                     if CStr::from_ptr(layer_details.layer_name.as_ptr()).to_str().expect("failed to read layer name") == layer {
@@ -137,7 +137,7 @@ impl VkInstance {
     }
 
     pub fn is_extension_available(layer: &str) -> bool {
-        if let Some(extensions_properties) = g_vulkan!().enumerate_instance_extension_properties(None).ok() {
+        if let Ok(extensions_properties) = g_vulkan!().enumerate_instance_extension_properties(None) {
             unsafe {
                 for extension in extensions_properties {
                     if CStr::from_ptr(extension.extension_name.as_ptr()).to_str().expect("failed to read extension name") == layer {
@@ -150,12 +150,12 @@ impl VkInstance {
     }
 
     pub fn enable_validation_layers(&self) -> bool {
-        return self.enable_validation_layers;
+        self.enable_validation_layers
     }
 
     pub fn enumerate_physical_devices(&self) -> Vec<PhysicalDevice> {
         let mut result = Vec::new();
-        for (device, _) in &self.device_map {
+        for device in self.device_map.keys() {
             result.push(device.clone());
         }
         result
@@ -164,13 +164,10 @@ impl VkInstance {
     pub fn enumerate_graphic_devices_vk(&self) -> Vec<PhysicalDevice> {
         let mut result = Vec::new();
         for device in self.enumerate_physical_devices() {
-            match self.get_vk_device(&device) {
-                Ok(vk_device) => {
-                    if vk_device.suitable_for_graphics() {
-                        result.push(device);
-                    }
+            if let Ok(vk_device) = self.get_vk_device(&device) {
+                if vk_device.suitable_for_graphics() {
+                    result.push(device);
                 }
-                Err(_) => {}
             }
         }
         result
@@ -204,7 +201,7 @@ impl VkInstance {
 
 unsafe extern "system" fn vulkan_debug_callback(message_severity: vk::DebugUtilsMessageSeverityFlagsEXT, message_type: vk::DebugUtilsMessageTypeFlagsEXT, p_callback_data: *const vk::DebugUtilsMessengerCallbackDataEXT, _user_data: *mut std::os::raw::c_void) -> vk::Bool32 {
     let callback_data = *p_callback_data;
-    let message_id_number: i32 = callback_data.message_id_number as i32;
+    let message_id_number: i32 = callback_data.message_id_number;
 
     let message_id_name = if callback_data.p_message_id_name.is_null() {
         Cow::from("")
@@ -222,7 +219,7 @@ unsafe extern "system" fn vulkan_debug_callback(message_severity: vk::DebugUtils
     let mut object_handle = None;
     let mut object_type = None;
 
-    let mut split = message.split("]");
+    let mut split = message.split(']');
     split.next();
 
     let mut right = String::new();
@@ -230,17 +227,17 @@ unsafe extern "system" fn vulkan_debug_callback(message_severity: vk::DebugUtils
         right += item;
         right += "]";
     }
-    if right.len() > 0 {
-        right = (&right[0..(right.len() - 1)]).to_string();
+    if !right.is_empty() {
+        right = right[0..(right.len() - 1)].to_string();
     }
-    let mut right = right.split(",");
-    match right.nth(0) {
+    let mut right = right.split(',');
+    match right.next() {
         None => {}
         Some(obj) => {
-            match obj.split(":").nth(1) {
+            match obj.split(':').nth(1) {
                 None => {}
                 Some(obj) => {
-                    match obj.split("=").nth(1) {
+                    match obj.split('=').nth(1) {
                         None => {}
                         Some(handle) => {
                             object_handle = Some(handle);
@@ -250,13 +247,13 @@ unsafe extern "system" fn vulkan_debug_callback(message_severity: vk::DebugUtils
             }
         }
     }
-    match right.nth(0) {
+    match right.next() {
         None => {}
         Some(right) => {
-            match right.split(";").nth(0) {
+            match right.split(';').next() {
                 None => {}
                 Some(obj_type) => {
-                    match obj_type.split("=").nth(1) {
+                    match obj_type.split('=').nth(1) {
                         None => {}
                         Some(obj_type) => { object_type = Some(obj_type) }
                     }
@@ -264,7 +261,7 @@ unsafe extern "system" fn vulkan_debug_callback(message_severity: vk::DebugUtils
             }
         }
     }
-    let split = message.split("|");
+    let split = message.split('|');
     let message_text = match split.last() {
         None => { Some(message.to_string()) }
         Some(last) => { Some(last.to_string()) }

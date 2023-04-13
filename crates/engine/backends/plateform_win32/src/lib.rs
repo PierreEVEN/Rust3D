@@ -37,7 +37,7 @@ impl Hash for HashableHWND {
 
 impl From<HWND> for HashableHWND {
     fn from(hwnd: HWND) -> Self {
-        Self { 0: hwnd }
+        Self(hwnd)
     }
 }
 
@@ -53,14 +53,17 @@ impl PlatformWin32 {
             // Ensure time precision is the highest
             timeBeginPeriod(1);
 
-            let mut win_class = WNDCLASSEXW::default();
-            win_class.cbSize = size_of::<WNDCLASSEXW>() as u32;
-            win_class.style = CS_HREDRAW | CS_VREDRAW | CS_DBLCLKS;
-            win_class.lpszClassName = PCWSTR(utf8_to_utf16(WIN_CLASS_NAME).as_ptr());
-            win_class.hbrBackground = HBRUSH(GetStockObject(BLACK_BRUSH).0);
-            win_class.hCursor = LoadCursorW(HMODULE::default(), IDC_ARROW).unwrap();
-            win_class.cbClsExtra = size_of::<usize>() as i32;
-            win_class.lpfnWndProc = Some(wnd_proc);
+            let win_class = WNDCLASSEXW {
+                cbSize: size_of::<WNDCLASSEXW>() as u32,
+                style: CS_HREDRAW | CS_VREDRAW | CS_DBLCLKS,
+                lpszClassName: PCWSTR(utf8_to_utf16(WIN_CLASS_NAME).as_ptr()),
+                hbrBackground: HBRUSH(GetStockObject(BLACK_BRUSH).0),
+                hCursor: LoadCursorW(HMODULE::default(), IDC_ARROW).unwrap(),
+                cbClsExtra: size_of::<usize>() as i32,
+                lpfnWndProc: Some(wnd_proc),
+                ..Default::default() 
+            };
+            
             assert_ne!(RegisterClassExW(&win_class), 0);
         }
 
@@ -104,7 +107,7 @@ impl PlatformWin32 {
         // Collect monitors
         platform.collect_monitors();
 
-        return platform;
+        platform
     }
 
 
@@ -154,10 +157,10 @@ unsafe extern "system" fn wnd_proc(hwnd: HWND, msg: u32, wparam: WPARAM, lparam:
 
 impl Platform for PlatformWin32 {
     fn create_window(&self, create_infos: WindowCreateInfos) -> Result<Arc<dyn Window>, ()> {
-        let window = WindowWin32::new(create_infos.clone());
+        let window = WindowWin32::new(create_infos);
         let hwnd = window.hwnd.into();
         self.windows.write().unwrap().insert(hwnd, window.clone());
-        return Ok(window);
+        Ok(window)
     }
 
     fn monitor_count(&self) -> usize {
@@ -188,8 +191,8 @@ impl Platform for PlatformWin32 {
         unsafe {
             let mut msg = std::mem::zeroed();
             if PeekMessageW(&mut msg, HWND::default(), 0, 0, PM_REMOVE) != false {
-                TranslateMessage(&mut msg);
-                DispatchMessageW(&mut msg);
+                TranslateMessage(&msg);
+                DispatchMessageW(&msg);
             }
         }
     }

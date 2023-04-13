@@ -55,7 +55,7 @@ fn main() {
     let imgui_context = ImGUiContext::new(&engine.gfx);
 
     // Create render pass and pass instances
-    let g_buffer_pass = engine.gfx.create_render_pass(format!("gbuffer"), RenderPassCreateInfos {
+    let g_buffer_pass = engine.gfx.create_render_pass("gbuffer".to_string(), RenderPassCreateInfos {
         pass_id: PassID::new("deferred_combine"),
         color_attachments: vec![RenderPassAttachment {
             name: "color".to_string(),
@@ -83,7 +83,7 @@ fn main() {
     let background_image = read_image_from_file(&engine.gfx, Path::new("data/textures/cat_stretching.png")).expect("failed to create image");
 
     // Create sampler
-    let generic_image_sampler = engine.gfx.create_image_sampler(format!("bg_image"),SamplerCreateInfos {});
+    let generic_image_sampler = engine.gfx.create_image_sampler("bg_image".to_string(),SamplerCreateInfos {});
 
     // Create material instance
     let surface_combine_shader = demo_material.get_program(&PassID::new("surface_pass")).unwrap().instantiate();
@@ -143,16 +143,13 @@ fn main() {
                 surface_combine_shader.bind_texture(&BindPoint::new("ui_result"), &imgui_pass.get_images()[0]);
                 surface_combine_shader.bind_texture(&BindPoint::new("scene_result"), &def_combine.get_images()[0]);
             }
-            _ => {}
+            PlatformEvent::WindowClosed => {}
         }
     }));
 
     // Game loop
     while engine.run() {
         engine.platform.poll_events();
-        match main_framegraph.begin() {
-            Ok(_) => { main_framegraph.submit(); }
-            Err(_) => {}
-        };
+        if main_framegraph.begin().is_ok() { main_framegraph.submit(); };
     }
 }

@@ -92,10 +92,10 @@ impl GfxInterface for GfxVulkan {
         unsafe { (&self.physical_device as *const PhysicalDevice as *mut PhysicalDevice).write(selected_device.clone()) };
         unsafe { (&self.physical_device_vk as *const VkPhysicalDevice as *mut VkPhysicalDevice).write(self.instance.get_vk_device(&selected_device).expect("failed to get physical device information for vulkan").clone()) };
         unsafe { (&self.device as *const VkDevice as *mut VkDevice).write(VkDevice::new(&self.get_ref())) };
-        unsafe { (&self.command_pool as *const VkCommandPool as *mut VkCommandPool).write(VkCommandPool::new(&self.get_ref(), format!("global"))) };
+        unsafe { (&self.command_pool as *const VkCommandPool as *mut VkCommandPool).write(VkCommandPool::new(&self.get_ref(), "global".to_string())) };
         unsafe { (&self.descriptor_pool as *const VkDescriptorPool as *mut VkDescriptorPool).write(VkDescriptorPool::new(&self.get_ref(), 64, 64)) };
 
-        self.set_vk_object_name(self.device.handle.handle(), format!("device\t\t: global ").as_str());
+        self.set_vk_object_name(self.device.handle.handle(), "device\t\t: global ");
         self.set_vk_object_name(self.physical_device_vk.handle, format!("physical device\t\t: {}", self.physical_device.device_name).as_str());
     }
 
@@ -140,7 +140,7 @@ impl GfxInterface for GfxVulkan {
     }
 
     fn get_ref(&self) -> GfxRef {
-        self.gfx_ref.upgrade().unwrap().clone()
+        self.gfx_ref.upgrade().unwrap()
     }
 }
 

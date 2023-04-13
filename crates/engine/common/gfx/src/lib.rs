@@ -50,17 +50,14 @@ impl dyn GfxInterface {
     }
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Default)]
 pub enum PhysicalDeviceType {
+    #[default]
     Undefined,
     IntegratedGPU,
     DedicatedGPU,
     VirtualGPU,
     CPU,
-}
-
-impl Default for PhysicalDeviceType {
-    fn default() -> Self { PhysicalDeviceType::Undefined }
 }
 
 #[derive(Default, Clone)]

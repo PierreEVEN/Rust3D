@@ -70,7 +70,7 @@ impl BufferMemory {
 
     pub fn get_ptr(&self, offset: usize) -> *mut u8 {
         let data = self.data as *mut u8;
-        unsafe { data.offset(offset as isize) }
+        unsafe { data.add(offset) }
     }
 
     pub fn get_size(&self) -> usize {

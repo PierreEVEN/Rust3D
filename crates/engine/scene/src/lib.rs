@@ -2,13 +2,13 @@ use ecs::ecs::Ecs;
 use gfx::command_buffer::GfxCommandBuffer;
 
 pub struct Scene {
-    ecs: Ecs,
-    draw_system: Vec<u8>,
-    tick_systems: Vec<u8>,
+    _ecs: Ecs,
+    _draw_system: Vec<u8>,
+    _tick_systems: Vec<u8>,
 }
 
 impl Scene {
-    pub fn collect_render_commands(&self, command_buffer: &dyn GfxCommandBuffer, render_flags : u32) {
+    pub fn collect_render_commands(&self, _command_buffer: &dyn GfxCommandBuffer, _render_flags : u32) {
         // run parallel
         
         

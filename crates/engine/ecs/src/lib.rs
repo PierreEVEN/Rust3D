@@ -46,7 +46,7 @@ pub fn test_func() {
     ecs.add(e2, CompA { a: 2 });
     ecs.add(e2, CompB { b: 5, c: 6.0 });
 
-    let bench_length = 1000000;
+    let bench_length = 100;
     
     println!("REFERENCE OPTIMAL");
     let start =  Instant::now();

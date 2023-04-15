@@ -193,6 +193,7 @@ dependencies = [
  "ecs",
  "gfx",
  "imgui",
+ "job_system",
  "macros",
  "maths",
  "plateform",

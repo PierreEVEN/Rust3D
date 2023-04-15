@@ -29,6 +29,8 @@ struct TestPc {
 
 fn main() {
     
+    job_system::test_func();
+    
     ecs::test_func();
     
     // We use a win32 backend with a vulkan renderer

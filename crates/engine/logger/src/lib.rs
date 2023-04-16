@@ -109,7 +109,7 @@ lazy_static! {
 }
 
 pub fn set_main_thread() {
-    set_thread_label(thread::current().id(), "main thread");
+    set_thread_label(thread::current().id(), "main_thread");
 }
 
 pub fn set_thread_label(id: ThreadId, name: &str) {
@@ -237,6 +237,16 @@ macro_rules! fatal {
         }
     })
 }
+
+#[macro_export]
+macro_rules! init {
+    () => ({
+        $crate::set_main_thread();
+        $crate::bind_logger(Box::new(FileLogger::new(Path::new("saved/log/"), env!("CARGO_PKG_NAME"))));
+    })
+}
+
+
 pub struct StandardOutputLogger {}
 
 impl Logger for StandardOutputLogger {

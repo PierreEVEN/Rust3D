@@ -198,8 +198,9 @@ impl ImGUiContext {
             index_buffer_type: IndexBufferType::Uint16,
             vertex_data: None,
             index_data: None,
-        });
+        }); 
 
+        logger::info!("initialized imgui context");
         Arc::new(Self {
             font_texture,
             context: imgui_context,

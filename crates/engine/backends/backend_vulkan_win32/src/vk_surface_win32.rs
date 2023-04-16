@@ -297,6 +297,7 @@ impl VkSurfaceWin32 {
         });
 
         surface.create_or_recreate();
+        logger::info!("Created vulkan surface for win32 platform");
         surface
     }
 } 

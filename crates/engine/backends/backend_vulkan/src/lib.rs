@@ -171,6 +171,7 @@ impl GfxVulkan {
             render_passes: RwLock::default(),
         });
         unsafe { (&gfx.gfx_ref as *const Weak<GfxVulkan> as *mut Weak<GfxVulkan>).write(Arc::downgrade(&gfx)) };
+        logger::info!("Created vulkan gfx backend");
         gfx
     }
 
@@ -253,6 +254,7 @@ impl Drop for GfxVulkan {
         unsafe {
             G_VULKAN = None;
         }
+        logger::info!("Destroyed vulkan gfx backend");
     }
 }
 

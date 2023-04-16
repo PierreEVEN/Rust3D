@@ -106,7 +106,7 @@ impl PlatformWin32 {
 
         // Collect monitors
         platform.collect_monitors();
-
+        logger::info!("Created win32 platform backend");
         platform
     }
 
@@ -138,6 +138,7 @@ impl Drop for PlatformWin32 {
             );
             timeEndPeriod(1);
         }
+        logger::info!("Destroyed win32 platform backend");
     }
 }
 
@@ -157,6 +158,7 @@ unsafe extern "system" fn wnd_proc(hwnd: HWND, msg: u32, wparam: WPARAM, lparam:
 
 impl Platform for PlatformWin32 {
     fn create_window(&self, create_infos: WindowCreateInfos) -> Result<Arc<dyn Window>, WindowCreationError> {
+        logger::info!("create window '{}'", create_infos.name);
         let window = WindowWin32::new(create_infos);
         let hwnd = window.hwnd.into();
         self.windows.write().unwrap().insert(hwnd, window.clone());

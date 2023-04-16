@@ -29,12 +29,8 @@ struct TestPc {
 }
 
 fn main() {
-    logger::set_main_thread();
-    logger::bind_logger(Box::new(FileLogger::new(Path::new("saved/log/"), env!("CARGO_PKG_NAME"))));
-
-    ecs::test_func();
-    let mut js = job_system::test_func();
-
+    logger::init!();
+    
     // We use a win32 backend with a vulkan renderer
     let engine = backend::create_engine_vulkan();
 
@@ -157,7 +153,5 @@ fn main() {
         if main_framegraph.begin().is_ok() { main_framegraph.submit(); };
     }
 
-    for _ in 0..10 {
-        js.schedule(move || {});
-    }
+    logger::info!("shutting down editor...");
 }

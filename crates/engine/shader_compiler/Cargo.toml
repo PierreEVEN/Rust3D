@@ -7,3 +7,4 @@ edition = "2021"
 shaderc = "0.8.2"
 gfx = { path = "../common/gfx" }
 rspirv-reflect = "0.7.0"
+logger = {path = "../logger"}

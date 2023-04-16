@@ -53,7 +53,7 @@ macro_rules! g_vulkan {
     () => {
         #[allow(unused_unsafe)]
         match unsafe { &G_VULKAN } {
-            None => { panic!("vulkan has not been loaded yet"); }
+            None => { logger::fatal!("vulkan has not been loaded yet"); }
             Some(entry) => { entry }
         }
     }
@@ -71,7 +71,7 @@ macro_rules! vk_check {
     ($expression:expr) => {
         match $expression {
             Ok(object) => { object }
-            Err(vk_err) => { panic!("vk error : {}\non '{}'", vk_err.to_string(), stringify!(expression)) }
+            Err(vk_err) => { logger::fatal!("vk error : {}\non '{}'", vk_err.to_string(), stringify!(expression)) }
         }
     }
 }
@@ -171,6 +171,7 @@ impl GfxVulkan {
             render_passes: RwLock::default(),
         });
         unsafe { (&gfx.gfx_ref as *const Weak<GfxVulkan> as *mut Weak<GfxVulkan>).write(Arc::downgrade(&gfx)) };
+        logger::info!("Created vulkan gfx backend");
         gfx
     }
 
@@ -231,7 +232,7 @@ impl GfxVulkan {
             } else if TypeId::of::<vk::SwapchainKHR>() == TypeId::of::<T>() {
                 vk::ObjectType::SWAPCHAIN_KHR
             } else {
-                panic!("unhandled object type id")
+                logger::fatal!("unhandled object type id")
             };
 
         let string_name = format!("{}\0", name);
@@ -253,6 +254,7 @@ impl Drop for GfxVulkan {
         unsafe {
             G_VULKAN = None;
         }
+        logger::info!("Destroyed vulkan gfx backend");
     }
 }
 

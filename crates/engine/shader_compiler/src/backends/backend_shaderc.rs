@@ -71,7 +71,7 @@ impl CompilerBackend for BackendShaderC {
             Err(compile_error) => {
                 let mut error = compile_error.to_string();
                 error += "\n";
-                println!("test : {}", compile_error);
+                logger::error!("test : {}", compile_error);
                 for line in compile_error.to_string().split('\n') {
                     let mut line_pos = None;
                     let mut column = None;

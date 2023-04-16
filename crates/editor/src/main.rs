@@ -13,6 +13,7 @@ use gfx::shader::{PassID, ShaderStage};
 use gfx::shader_instance::BindPoint;
 use gfx::types::{ClearValues, PixelFormat};
 use imgui::ImGUiContext;
+use logger::FileLogger;
 use maths::rect2d::Rect2D;
 use maths::vec2::Vec2u32;
 use maths::vec4::Vec4F32;
@@ -28,8 +29,7 @@ struct TestPc {
 }
 
 fn main() {
-    
-    ecs::test_func();
+    logger::init!();
     
     // We use a win32 backend with a vulkan renderer
     let engine = backend::create_engine_vulkan();
@@ -83,7 +83,7 @@ fn main() {
     let background_image = read_image_from_file(&engine.gfx, Path::new("data/textures/cat_stretching.png")).expect("failed to create image");
 
     // Create sampler
-    let generic_image_sampler = engine.gfx.create_image_sampler("bg_image".to_string(),SamplerCreateInfos {});
+    let generic_image_sampler = engine.gfx.create_image_sampler("bg_image".to_string(), SamplerCreateInfos {});
 
     // Create material instance
     let surface_combine_shader = demo_material.get_program(&PassID::new("surface_pass")).unwrap().instantiate();
@@ -102,7 +102,7 @@ fn main() {
         let demo_material = demo_material.clone();
         main_framegraph.main_pass().on_render(Box::new(move |command_buffer| {
             match demo_material.get_program(&command_buffer.get_pass_id()) {
-                None => { panic!("failed to find compatible permutation [{}]", command_buffer.get_pass_id()); }
+                None => { logger::fatal!("failed to find compatible permutation [{}]", command_buffer.get_pass_id()); }
                 Some(program) => {
                     time_pc_data.time = start.elapsed().as_millis() as f32 / 1000.0;
                     command_buffer.bind_program(&program);
@@ -120,7 +120,7 @@ fn main() {
         let shader_2_instance = background_shader.clone();
         def_combine.on_render(Box::new(move |command_buffer| {
             match demo_material.get_program(&command_buffer.get_pass_id()) {
-                None => { panic!("failed to find compatible permutation [{}]", command_buffer.get_pass_id()); }
+                None => { logger::fatal!("failed to find compatible permutation [{}]", command_buffer.get_pass_id()); }
                 Some(program) => {
                     time_pc_data.time = start.elapsed().as_millis() as f32 / 1000.0;
                     command_buffer.bind_program(&program);
@@ -152,4 +152,6 @@ fn main() {
         engine.platform.poll_events();
         if main_framegraph.begin().is_ok() { main_framegraph.submit(); };
     }
+
+    logger::info!("shutting down editor...");
 }

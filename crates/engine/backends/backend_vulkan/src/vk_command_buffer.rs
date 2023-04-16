@@ -51,7 +51,7 @@ pub fn submit_command_buffer(gfx: &GfxRef, command_buffer: vk::CommandBuffer, qu
                 .build());
         }
         Err(_) => {
-            panic!("failed to find queue");
+            logger::fatal!("failed to find queue");
         }
     }
 }
@@ -62,7 +62,7 @@ impl VkCommandPool {
         let create_infos = vk::CommandPoolCreateInfo::builder()
             .flags(vk::CommandPoolCreateFlags::RESET_COMMAND_BUFFER)
             .queue_family_index(match gfx.cast::<GfxVulkan>().device.queues.get(&vk::QueueFlags::GRAPHICS) {
-                None => { panic!("failed to find queue"); }
+                None => { logger::fatal!("failed to find queue"); }
                 Some(queue) => { queue[0].index }
             })
             .build();

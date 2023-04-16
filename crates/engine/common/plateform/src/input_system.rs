@@ -73,13 +73,13 @@ impl InputManager {
 
     pub fn bind_action(&self, name: &str, event: ActionMappingCallback) {
         match self.action_mapping.write().unwrap().get_mut(name) {
-            None => { panic!("cannot find action {name}"); }
+            None => { logger::fatal!("cannot find action {name}"); }
             Some(mapping) => { mapping.callbacks.write().unwrap().push(event); }
         }
     }
     pub fn bind_axis(&self, name: &str, event: AxisMappingCallback) {
         match self.axis_mapping.write().unwrap().get_mut(name) {
-            None => { panic!("cannot find axis {name}"); }
+            None => { logger::fatal!("cannot find axis {name}"); }
             Some(mapping) => { mapping.callbacks.write().unwrap().push(event); }
         }
     }
@@ -118,7 +118,7 @@ impl InputManager {
                 }
             }
             if action.released_key_left < 0 {
-                panic!("press progress should never be under 0");
+                logger::fatal!("press progress should never be under 0");
             }
             if action.released_key_left == 0 {
                 let action_type = if just_pressed { ActionType::Press } else { ActionType::Hold };

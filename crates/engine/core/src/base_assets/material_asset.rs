@@ -51,7 +51,7 @@ impl MaterialAsset {
             }
             Err(error) => {
                 *self.parsed_shader.write().unwrap() = None;
-                panic!("shader syntax error : \n{}", error.to_string())
+                logger::fatal!("shader syntax error : \n{}", error.to_string())
             }
         };
         self.permutations.write().unwrap().clear();
@@ -72,7 +72,7 @@ impl MaterialAsset {
                 let vertex_code = match parser.program_data.get_data(pass, &ShaderStage::Vertex) {
                     Ok(code) => { code }
                     Err(error) => {
-                        println!("failed to get vertex shader data :\n{}", error.to_string());
+                        logger::error!("failed to get vertex shader data :\n{}", error.to_string());
                         return None;
                     }
                 };
@@ -80,7 +80,7 @@ impl MaterialAsset {
                 let fragment_code = match parser.program_data.get_data(pass, &ShaderStage::Fragment) {
                     Ok(code) => { code }
                     Err(error) => {
-                        println!("failed to get fragment shader data :\n{}", error.to_string());
+                        logger::error!("failed to get fragment shader data :\n{}", error.to_string());
                         return None;
                     }
                 };
@@ -91,7 +91,7 @@ impl MaterialAsset {
                 }) {
                     Ok(sprv) => { sprv }
                     Err(error) => {
-                        println!("Failed to compile vertex shader : \n{}", error.to_string());
+                        logger::error!("Failed to compile vertex shader : \n{}", error.to_string());
                         return None;
                     }
                 };
@@ -102,7 +102,7 @@ impl MaterialAsset {
                 }) {
                     Ok(sprv) => { sprv }
                     Err(error) => {
-                        println!("Failed to compile fragment shader : \n{}", error.to_string());
+                        logger::error!("Failed to compile fragment shader : \n{}", error.to_string());
                         return None;
                     }
                 };
@@ -123,7 +123,7 @@ impl MaterialAsset {
                 };
 
                 let render_pass = match self.meta_data.asset_manager.graphics().find_render_pass(pass) {
-                    None => { panic!("trying to create shader program for render pass [{pass}], but this render pass is not available or registered") }
+                    None => { logger::fatal!("trying to create shader program for render pass [{pass}], but this render pass is not available or registered") }
                     Some(pass) => { pass }
                 };
                 

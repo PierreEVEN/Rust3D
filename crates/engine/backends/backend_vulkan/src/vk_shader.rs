@@ -261,7 +261,7 @@ impl VkShaderProgram {
 
         let pipeline = match unsafe { gfx.cast::<GfxVulkan>().device.handle.create_graphics_pipelines(vk::PipelineCache::default(), &[ci_pipeline], None) } {
             Ok(pipeline) => { pipeline[0] }
-            Err(_) => { panic!("failed to create graphic pipelines") }
+            Err(_) => { logger::fatal!("failed to create graphic pipelines") }
         };
         gfx.cast::<GfxVulkan>().set_vk_object_name(pipeline, format!("graphic pipeline\t\t: {}", name).as_str());
 

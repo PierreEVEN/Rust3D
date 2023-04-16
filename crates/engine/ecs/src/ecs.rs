@@ -121,7 +121,7 @@ impl Ecs {
         let mut _data = vec![];
 
         let new_components = if old_archetype_id == ArchetypeID::MAX {
-            panic!("Current entity doesn't contains any components")
+            logger::fatal!("Current entity doesn't contains any components")
         } else {
             // Retrieve data from existing archetype, then drop entity from it
             let old_archetype = self.archetypes.get_archetype_mut(&old_archetype_id);
@@ -161,13 +161,13 @@ impl Ecs {
     }
     
     pub fn print_stats(&self) {
-        println!("--Entities : [{}] -> [allocated={}:free={}]", self.entity_registry.len(), self.entity_id_manager.allocated_name(), self.entity_id_manager.pool_size());
-        println!("--Components : [count={}] ", self.components.count());
+        logger::debug!(0, "--Entities : [{}] -> [allocated={}:free={}]", self.entity_registry.len(), self.entity_id_manager.allocated_name(), self.entity_id_manager.pool_size());
+        logger::debug!(0, "--Components : [count={}] ", self.components.count());
         for comp in &self.components.ids() {
             let comp = self.components.component_infos(comp);
-            println!("    {} [{}::{}]", comp.name, comp.layout.size(), comp.layout.align());            
+            logger::debug!(0, "    {} [{}::{}]", comp.name, comp.layout.size(), comp.layout.align());            
         }
-        println!("--Archetypes : [count={}] ", self.archetypes.archetypes.len());
+        logger::debug!(0, "--Archetypes : [count={}] ", self.archetypes.archetypes.len());
         let mut i = 0;
         for archetype in &self.archetypes.archetypes {
             
@@ -178,16 +178,16 @@ impl Ecs {
                 else { signature.push_str("++"); }
                 signature.push_str(self.components.component_infos(comp).name);
             }
-            println!("    ({signature}) -> [count={}]", archetype.entity_count());
+            logger::debug!(0, "    ({signature}) -> [count={}]", archetype.entity_count());
             
             for data in &archetype.data {
-                println!("      {} -> [entities={}:item_size={}]", self.components.component_infos(data.id()).name, data.bound_entities(), data.item_size());
+                logger::debug!(0, "      {} -> [entities={}:item_size={}]", self.components.component_infos(data.id()).name, data.bound_entities(), data.item_size());
                 assert_eq!(data.bound_entities() * data.item_size(), data.raw_len());
             }  
             
             i += 1;
             if i > 100 {
-            println!("     +{} more", self.archetypes.archetypes.len() as i64 - i + 1);
+                logger::debug!(0, "     +{} more", self.archetypes.archetypes.len() as i64 - i + 1);
                 break;
             }
         }

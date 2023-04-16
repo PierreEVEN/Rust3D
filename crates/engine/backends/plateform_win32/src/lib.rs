@@ -99,14 +99,14 @@ impl PlatformWin32 {
 
                 match check_win32_error() {
                     Ok(_) => (),
-                    Err(_message) => panic!("failed to send platform pointer to wndclass : {_message}"),
+                    Err(_message) => logger::fatal!("failed to send platform pointer to wndclass : {_message}"),
                 }
             }
         }
 
         // Collect monitors
         platform.collect_monitors();
-
+        logger::info!("Created win32 platform backend");
         platform
     }
 
@@ -138,6 +138,7 @@ impl Drop for PlatformWin32 {
             );
             timeEndPeriod(1);
         }
+        logger::info!("Destroyed win32 platform backend");
     }
 }
 
@@ -157,6 +158,7 @@ unsafe extern "system" fn wnd_proc(hwnd: HWND, msg: u32, wparam: WPARAM, lparam:
 
 impl Platform for PlatformWin32 {
     fn create_window(&self, create_infos: WindowCreateInfos) -> Result<Arc<dyn Window>, WindowCreationError> {
+        logger::info!("create window '{}'", create_infos.name);
         let window = WindowWin32::new(create_infos);
         let hwnd = window.hwnd.into();
         self.windows.write().unwrap().insert(hwnd, window.clone());
@@ -183,7 +185,7 @@ impl Platform for PlatformWin32 {
 
         match check_win32_error() {
             Ok(_) => (),
-            Err(_message) => panic!("failed to get monitor information : {_message}"),
+            Err(_message) => logger::fatal!("failed to get monitor information : {_message}"),
         }
     }
 
@@ -216,7 +218,7 @@ unsafe extern "system" fn enum_display_monitors_callback(monitor: HMONITOR, _: H
     let mut dpi_y = 0;
     match GetDpiForMonitor(monitor, MDT_EFFECTIVE_DPI, &mut dpi_x, &mut dpi_y) {
         Ok(_) => (),
-        Err(error) => panic!("failed to get DPI for monitor {}", error)
+        Err(error) => logger::fatal!("failed to get DPI for monitor {}", error)
     }
 
     let monitors = (userdata.0 as *mut Vec<Monitor>)
@@ -242,7 +244,7 @@ unsafe extern "system" fn enum_display_monitors_callback(monitor: HMONITOR, _: H
 
     match check_win32_error() {
         Ok(_) => (),
-        Err(_message) => panic!("failed to get monitor information : {_message}"),
+        Err(_message) => logger::fatal!("failed to get monitor information : {_message}"),
     }
     BOOL::from(true)
 }

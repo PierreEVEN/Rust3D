@@ -224,7 +224,7 @@ impl VkSurfaceWin32 {
 
         let handle = match window.get_handle() {
             RawWindowHandle::Win32(handle) => { handle }
-            _ => { panic!("invalid window handle"); }
+            _ => { logger::fatal!("invalid window handle"); }
         };
 
         let ci_surface = vk::Win32SurfaceCreateInfoKHR::builder()
@@ -297,6 +297,7 @@ impl VkSurfaceWin32 {
         });
 
         surface.create_or_recreate();
+        logger::info!("Created vulkan surface for win32 platform");
         surface
     }
 } 

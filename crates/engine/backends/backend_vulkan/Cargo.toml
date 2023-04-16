@@ -9,3 +9,4 @@ maths = {path = "../../maths"}
 macros = {path = "../../macros"}
 ash = "0.37.2"
 gpu-allocator =  { version= "0.22.0", default-features = false, features=["vulkan"]}
+logger = { path = "../../logger"}

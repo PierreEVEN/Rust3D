@@ -8,3 +8,4 @@ shader_compiler = { path = "../shader_compiler" }
 gfx = { path = "../common/gfx" }
 plateform = { path = "../common/plateform" }
 gfx-maths = "0.2.8"
+logger = {path = "../logger"}

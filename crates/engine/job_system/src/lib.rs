@@ -1,102 +1,58 @@
+pub mod worker;
+pub mod job_pool;
 
 extern crate num_cpus;
 
-use std::sync::Arc;
-use std::thread;
-use std::thread::JoinHandle;
+use std::ptr::null_mut;
+use std::sync::{Arc, Mutex};
+use crate::job_pool::{JobData};
+use crate::worker::{Worker, WorkerSharedData};
 
-pub type JobHandle = usize;
-
-pub trait Job {
-    fn exec(self);
+#[derive(Copy, Clone)]
+pub struct JobPtr {
+    job_ptr: *mut JobData,
 }
 
-pub struct JobImpl<Fn: FnOnce()> {
-    job_fn: Fn
-}
-
-impl <Fn: FnOnce()>Job for JobImpl<Fn> {
-    fn exec(self) {
-        (self.job_fn)();
+impl JobPtr {
+    pub fn null() -> Self {
+        Self { job_ptr: null_mut() }
     }
-}
-
-impl <Fn: 'static + FnOnce()>JobImpl<Fn> {
-    pub fn new(job_fn: Fn) -> Self {
+    pub fn new(pool: &mut JobData) -> Self {
         Self {
-            job_fn
-        }
-    }
-}
-
-pub struct Worker {
-    worker_id: usize,
-    job_pool: Arc<JobPool>,
-    running_thread: JoinHandle<()>,
-}
-
-impl Worker {
-    pub fn new(worker_id: usize, job_pool: Arc<JobPool>) -> Self {
-        
-        let running_thread = thread::spawn(|| {
-            
-        });
-        
-        Self {
-            worker_id,
-            job_pool,
-            running_thread,
+            job_ptr: pool as *const JobData as *mut JobData,
         }
     }
     
-    pub fn id(&self) -> usize {
-        self.worker_id
-    }
-    
-    pub fn push_job(&mut self, job: Box<dyn Job>) -> JobHandle {
-        todo!()
-    }
-}
-
-pub struct JobPool {
-    jobs: Vec<Box<dyn Job>>,
-}
-
-impl JobPool {
-    pub fn new() -> Self {
-        Self { jobs: vec![] }
-    }
-    
-    pub fn push(&self, job: &dyn Job) -> JobHandle {
-        todo!()
-    }
-    
-    pub fn pop(&self) -> &dyn Job {
-        todo!()
+    pub fn read(&self) -> &JobData {
+        if self.job_ptr.is_null() { logger::fatal!("Job pointer is null") }
+        unsafe { &*self.job_ptr }
     }
 }
 
 pub struct JobSystem {
     workers: Vec<Worker>,
     current_worker: usize,
+    shared_data: Arc<WorkerSharedData>
 }
 
 impl JobSystem {
-    pub fn new(num_parallel_worker: usize) -> Self {
-        let mut workers = Vec::with_capacity(num_parallel_worker);
-        
-        let job_pool = Arc::new(JobPool::new());
-        
-        for i in 0..num_parallel_worker {
-            workers.push(Worker::new(i, job_pool.clone()));
+    pub fn new(debug_name: &str, num_worker_threads: usize) -> Self {
+        logger::info!("create job system '{debug_name}' with {num_worker_threads} worker threads");
+        let mut workers = Vec::with_capacity(num_worker_threads);
+
+        let shared_data = Arc::new(WorkerSharedData::new(num_worker_threads));
+
+        for i in 0..num_worker_threads {
+            workers.push(Worker::new(debug_name,i, shared_data.clone()));
         }
-        
+
         Self {
             workers,
             current_worker: 0,
+            shared_data,
         }
     }
-    
+
     pub fn available_cpu_threads() -> usize {
         num_cpus::get()
     }
@@ -105,44 +61,54 @@ impl JobSystem {
         self.current_worker = (self.current_worker + 1) % self.workers.len();
         &mut self.workers[self.current_worker]
     }
-    
-    pub fn schedule<Fn: 'static + FnOnce()>(&mut self, job_fn: Fn) -> JobHandle {
+
+    pub fn schedule<Fn: 'static + FnOnce()>(&mut self, job_fn: Fn) -> JobPtr {
         // Pick a random worker
         let worker = self.next_worker();
-        
+
         // then queue new job
-        worker.push_job(Box::new(JobImpl::new(job_fn)))
+        worker.push_job(JobData::new(job_fn))
     }
-    
-    pub fn wait_idle(&self, _handle : JobHandle) {
-        todo!()
+
+    pub fn wait_idle(&self, _handle: JobPtr) {
+        todo!("wait on job semaphore")
     }
-    
 }
 
+impl Drop for JobSystem {
+    fn drop(&mut self) {
+        self.shared_data.stop();
+        for worker in &self.workers {
+            worker.join();
+        } 
+    }
+}
 
-#[cfg(test)]
-mod tests {
-    use std::ops::Deref;
-    use std::sync::{Arc, Mutex};
-    use crate::JobSystem;
+pub fn test_func() -> JobSystem {
+    let mut js = JobSystem::new("JS_Global", JobSystem::available_cpu_threads());
 
-    #[test]
-    pub fn tests() {
-        
-        let mut js = JobSystem::new(JobSystem::available_cpu_threads());
-        
-        let counter = Arc::new(Mutex::new(0));
-        
+    let counter = Arc::new(Mutex::new(0));
+    
+    let n_tasks = 50;
+    for i in 1..n_tasks + 1 {
+        logger::info!("spawn heavy task #{i}/{n_tasks}");
         let cnt = counter.clone();
-        let handle = js.schedule(move || {
-            for i in 0..10000 {
+        let _handle = js.schedule(move || {
+            for _ in 0..1000000 {
                 *cnt.as_ref().lock().expect("ok") += 1;
             }
-            println!("i'll do my task");
+            logger::info!("finished heavy task #{i}/{n_tasks}");
         });
-        
-        js.wait_idle(handle);
-        println!("result : {}", counter.as_ref().lock().expect("ok"))
+    }
+    js
+}
+
+#[cfg(test)]
+mod test {
+    use crate::{test_func};
+
+    #[test]
+    fn test() {
+        test_func();
     }
 }

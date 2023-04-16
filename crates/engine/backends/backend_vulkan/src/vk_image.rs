@@ -44,7 +44,7 @@ impl GfxImage for VkImage {
 
     fn set_data(&self, data: &[u8]) {
         if data.len() != self.get_data_size() as usize {
-            panic!("invalid image memory length : {} (expected {})", data.len(), self.get_data_size());
+            logger::fatal!("invalid image memory length : {} (expected {})", data.len(), self.get_data_size());
         }
         if self.image_params.read_only {
             // Create data transfer buffer
@@ -88,10 +88,10 @@ impl GfxImage for VkImage {
             }
             match self.gfx.cast::<GfxVulkan>().device.get_queue(vk::QueueFlags::TRANSFER) {
                 Ok(queue) => { queue.wait(); }
-                Err(_) => {panic!("failed to find queue"); }
+                Err(_) => {logger::fatal!("failed to find queue"); }
             }
         } else {
-            panic!("Applying modification to non-static image is not allowed yet");
+            logger::fatal!("Applying modification to non-static image is not allowed yet");
         }
     }
 
@@ -101,7 +101,7 @@ impl GfxImage for VkImage {
 
     fn resize(&self, new_type: ImageType) {
         if self.is_from_existing_images {
-            panic!("image created from existing images cannot be resized");
+            logger::fatal!("image created from existing images cannot be resized");
         }
 
         if new_type == self.get_type() {
@@ -182,7 +182,7 @@ impl GfxImageBuilder<CombinedImageData> for RbImage {
         });
 
         if allocation.is_err() {
-            panic!("failed to allocate image memory");
+            logger::fatal!("failed to allocate image memory");
         }
 
         let allocation = allocation.unwrap();
@@ -315,7 +315,7 @@ impl VkImage {
 
     pub fn from_existing_images(gfx: &GfxRef, name: String, existing_images: GfxResource<CombinedImageData>, image_params: ImageParams) -> Arc<dyn GfxImage> {
         if existing_images.is_static() != image_params.read_only {
-            panic!("trying to create framebuffer from existing images, but images was created as read only")
+            logger::fatal!("trying to create framebuffer from existing images, but images was created as read only")
         }
 
         let image_usage = image_params;
@@ -374,7 +374,7 @@ impl VkImage {
 
                 (vk::PipelineStageFlags::TRANSFER, vk::PipelineStageFlags::FRAGMENT_SHADER)
             } else {
-                panic!("Unsupported layout transition");
+                logger::fatal!("Unsupported layout transition");
             };
 
             *current_layout = new_layout;
@@ -391,7 +391,7 @@ impl VkImage {
                     &[barrier]);
             }
         } else {
-            panic!("changing image layout on dynamic images is not supported yet");
+            logger::fatal!("changing image layout on dynamic images is not supported yet");
         }
     }
 

@@ -36,7 +36,7 @@ impl VkInstance {
         for (mut layer_name, required) in create_infos.required_layers {
             let is_available = VkInstance::is_layer_available(layer_name.as_str());
             if !is_available {
-                if required { panic!("required layer [{}] is not available", layer_name); } else { println!("optional layer [{}] is not available", layer_name); }
+                if required { logger::fatal!("required layer [{}] is not available", layer_name); } else { logger::warning!("optional layer [{}] is not available", layer_name); }
                 continue;
             }
             layer_name += "\0";
@@ -45,7 +45,7 @@ impl VkInstance {
         for (mut extension_name, required) in create_infos.required_extensions {
             let is_available = VkInstance::is_extension_available(extension_name.as_str());
             if !is_available {
-                if required { panic!("required layer [{}] is not available", extension_name); } else { println!("optional layer [{}] is not available", extension_name); }
+                if required { logger::fatal!("required layer [{}] is not available", extension_name); } else { logger::warning!("optional layer [{}] is not available", extension_name); }
                 continue;
             }
             extension_name += "\0";
@@ -269,7 +269,7 @@ unsafe extern "system" fn vulkan_debug_callback(message_severity: vk::DebugUtils
 
     #[cfg(not(debug_assertions))]
     {
-        println!(
+        logger::error!(
             "[{}] {:?} {:?}: [{}] :\n\t=>{} -{}\n\t=>{}\n",
             &message_id_number.to_string(),
             message_type,
@@ -292,7 +292,7 @@ unsafe extern "system" fn vulkan_debug_callback(message_severity: vk::DebugUtils
     }
 
     #[cfg(debug_assertions)]
-    panic!(
+    logger::fatal!(
         "[{}] {:?} {:?}: [{}] :\n\t=>{} -{}\n\t=>{}\n",
         &message_id_number.to_string(),
         message_type,

@@ -18,3 +18,4 @@ imgui = { path = "../engine/imgui" }
 backend_launcher = { path = "../engine/backends/backend_launcher" }
 ecs = { path = "../engine/ecs" }
 job_system = { path = "../engine/job_system" }
+logger = {path = "../engine/logger"}

@@ -27,10 +27,21 @@ struct TestPc {
     time: f32,
 }
 
+fn test_run() {
+    logger::debug!(0, "This is a debug message");
+    #[cfg(debug_assertions)]
+    logger::debug!(10, "This is a debug message");
+    logger::info!("This is an info message");
+    logger::warning!("This is a warning message");
+    logger::error!("This is an error message");
+    logger::fatal!("This is a fatal message");
+}
+
 fn main() {
-    
+    test_run();
+
     let mut js = job_system::test_func();
-    
+
     // We use a win32 backend with a vulkan renderer
     let engine = backend::create_engine_vulkan();
 
@@ -83,7 +94,7 @@ fn main() {
     let background_image = read_image_from_file(&engine.gfx, Path::new("data/textures/cat_stretching.png")).expect("failed to create image");
 
     // Create sampler
-    let generic_image_sampler = engine.gfx.create_image_sampler("bg_image".to_string(),SamplerCreateInfos {});
+    let generic_image_sampler = engine.gfx.create_image_sampler("bg_image".to_string(), SamplerCreateInfos {});
 
     // Create material instance
     let surface_combine_shader = demo_material.get_program(&PassID::new("surface_pass")).unwrap().instantiate();
@@ -152,9 +163,8 @@ fn main() {
         engine.platform.poll_events();
         if main_framegraph.begin().is_ok() { main_framegraph.submit(); };
     }
-    
+
     for _ in 0..10 {
-        js.schedule(move || {
-        });
+        js.schedule(move || {});
     }
 }

@@ -11,7 +11,8 @@ members = [
     "crates/engine/common/*",
     "crates/editor",
     "crates/engine/scene",
-    "crates/engine/job_system"
+    "crates/engine/job_system",
+    "crates/engine/logger"
 ]
 default-members = ["crates/editor/"]
 

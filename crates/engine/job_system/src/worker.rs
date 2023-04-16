@@ -106,7 +106,7 @@ impl Worker {
                 if !data_copy.contains_jobs() { break; }
             }
         });
-
+        
         Self {
             worker_id,
             running_thread,

@@ -1,12 +1,14 @@
-use std::collections::HashMap;
-use std::sync::Mutex;
-use lazy_static::lazy_static;
-use std::thread::{ThreadId};
 use std::{env, fs, thread};
+use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 use std::fs::File;
 use std::io::Write;
-use std::path::Path;
+use std::path::{Path, PathBuf};
+use std::sync::Mutex;
+use std::thread::ThreadId;
+
+use chrono::DateTime;
+use lazy_static::lazy_static;
 use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
 
 pub trait Logger: Send {
@@ -91,13 +93,13 @@ impl Display for LogMessage {
             Some(thread_id) => { "::".to_string() + get_thread_label(thread_id).as_str() }
         };
         f.write_str(
-        format!("{} |{}| [{}{}] : {}",
-                chrono::Utc::now().format("%H:%M:%S"),
-                self.severity,
-                self.context,
-                thread_name,
-                self.text
-        ).as_str())
+            format!("{} |{}| [{}{}] : {}",
+                    chrono::Utc::now().format("%H:%M:%S"),
+                    self.severity,
+                    self.context,
+                    thread_name,
+                    self.text
+            ).as_str())
     }
 }
 
@@ -138,6 +140,15 @@ macro_rules! debug {
         use std::thread;
         $crate::broadcast_log($crate::LogMessage {
             severity: $crate::LogSeverity::DEBUG($level),
+            thread_id: Some(thread::current().id()),
+            context: env!("CARGO_PKG_NAME").to_string(),
+            text: format!($($fmt_args)*)
+        }, "".to_string());
+    });
+    ($($fmt_args:tt)*) => ({
+        use std::thread;
+        $crate::broadcast_log($crate::LogMessage {
+            severity: $crate::LogSeverity::DEBUG(0),
             thread_id: Some(thread::current().id()),
             context: env!("CARGO_PKG_NAME").to_string(),
             text: format!($($fmt_args)*)
@@ -239,36 +250,56 @@ impl Logger for StandardOutputLogger {
             stdout.set_color(ColorSpec::new().set_fg(Some(Color::Black)).set_bg(Some(Color::Rgb(150, 150, 150)))).unwrap();
             writeln!(&mut stdout, "\n{}", backtrace).unwrap();
         }
-        
-        stdout.flush().unwrap();
         stdout.set_color(&ColorSpec::default()).unwrap();
+        stdout.flush().unwrap();
     }
 }
 
 pub struct FileLogger {
     file: File,
+    path: String,
 }
 
 impl FileLogger {
-    pub fn new(path: &Path) -> Self {
-        let file = if path.exists() {
-            File::open(path)
+    pub fn new(save_path: &Path, log_file_name: &str) -> Self {
+
+        let mut log_full_path = save_path.join(log_file_name);
+        log_full_path.set_extension("log");
+        if log_full_path.exists() {
+            let dt: DateTime<chrono::Utc> = log_full_path.metadata().unwrap().modified().unwrap().into();
+            
+            let moved_log_file_name = PathBuf::from(format!("{log_file_name}_{}", dt.format("%Y.%m.%d-%H.%M.%S"))).to_str().unwrap().to_string();
+            let mut iter = 0;
+            loop {
+                
+                let moved_log_file_name = PathBuf::from(if iter < 1 { format!("{}.log", moved_log_file_name) } else { format!("{moved_log_file_name}({iter}).log") });
+                
+                let new_path = save_path.join(moved_log_file_name);
+                if new_path.as_path().exists() {
+                    iter += 1;
+                    continue;
+                }
+                fs::rename(log_full_path.clone(), new_path.as_path()).unwrap_or_else(|error| error!("Failed to rename {:?} to {:?} : {error}", log_full_path, new_path.as_path()));
+                break;
+            }
         }
-        else {
-            fs::create_dir_all(path.parent().unwrap()).unwrap();
-            File::create(path)
-        }.expect("failed to create file");
+        assert!(!log_full_path.exists());
+        let file = {
+            fs::create_dir_all(save_path).unwrap();
+            File::create(log_full_path.clone())
+        }.unwrap_or_else(|_| fatal!("failed to create file {:?}", log_full_path));
         Self {
-            file
+            file,
+            path: save_path.to_str().unwrap().to_string(),
         }
     }
 }
 
 impl Logger for FileLogger {
     fn print(&mut self, message: &LogMessage, backtrace: &str) {
-        self.file.write_all(message.to_string().as_bytes()).unwrap();
+        self.file.write_all(message.to_string().as_bytes()).unwrap_or_else(|_| error!("Failed to write to {}", self.path));
         if !backtrace.is_empty() {
-            self.file.write_all(format!("\n{backtrace}").as_bytes()).unwrap();
+            self.file.write_all(format!("\n{backtrace}").as_bytes()).unwrap_or_else(|_| error!("Failed to write to {}", self.path));
         }
         self.file.write_all("\n".as_bytes()).unwrap();
         self.file.flush().expect("failed to flush file");

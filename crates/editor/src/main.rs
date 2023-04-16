@@ -30,7 +30,7 @@ struct TestPc {
 
 fn main() {
     logger::set_main_thread();
-    logger::bind_logger(Box::new(FileLogger::new(Path::new("saved/log/last.log"))));
+    logger::bind_logger(Box::new(FileLogger::new(Path::new("saved/log/"), env!("CARGO_PKG_NAME"))));
 
     ecs::test_func();
     let mut js = job_system::test_func();

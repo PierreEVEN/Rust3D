@@ -36,13 +36,14 @@ pub struct JobSystem {
 }
 
 impl JobSystem {
-    pub fn new(num_worker_threads: usize) -> Self {
+    pub fn new(debug_name: &str, num_worker_threads: usize) -> Self {
+        logger::info!("create job system '{debug_name}' with {num_worker_threads} worker threads");
         let mut workers = Vec::with_capacity(num_worker_threads);
 
         let shared_data = Arc::new(WorkerSharedData::new(num_worker_threads));
 
         for i in 0..num_worker_threads {
-            workers.push(Worker::new(i, shared_data.clone()));
+            workers.push(Worker::new(debug_name,i, shared_data.clone()));
         }
 
         Self {
@@ -84,25 +85,21 @@ impl Drop for JobSystem {
 }
 
 pub fn test_func() -> JobSystem {
-    let mut js = JobSystem::new(JobSystem::available_cpu_threads());
+    let mut js = JobSystem::new("JS_Global", JobSystem::available_cpu_threads());
 
     let counter = Arc::new(Mutex::new(0));
     
-    for i in 0..10 {
+    let n_tasks = 50;
+    for i in 1..n_tasks + 1 {
+        logger::info!("spawn heavy task #{i}/{n_tasks}");
         let cnt = counter.clone();
         let _handle = js.schedule(move || {
-            
-            println!("Task {i} Start");
-            for _ in 0..10000000 {
+            for _ in 0..1000000 {
                 *cnt.as_ref().lock().expect("ok") += 1;
             }
-            println!("Task {i} done : {}", cnt.as_ref().lock().expect("ok"));
+            logger::info!("finished heavy task #{i}/{n_tasks}");
         });
     }
-
-    println!("registration done...");
-
-    println!("result : {}", counter.as_ref().lock().expect("ok"));
     js
 }
 

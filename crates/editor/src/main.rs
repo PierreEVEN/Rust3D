@@ -27,19 +27,10 @@ struct TestPc {
     time: f32,
 }
 
-fn test_run() {
-    logger::debug!(0, "This is a debug message");
-    #[cfg(debug_assertions)]
-    logger::debug!(10, "This is a debug message");
-    logger::info!("This is an info message");
-    logger::warning!("This is a warning message");
-    logger::error!("This is an error message");
-    logger::fatal!("This is a fatal message");
-}
-
 fn main() {
-    test_run();
+    logger::set_main_thread();
 
+    ecs::test_func();
     let mut js = job_system::test_func();
 
     // We use a win32 backend with a vulkan renderer

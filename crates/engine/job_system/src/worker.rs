@@ -3,7 +3,7 @@ use std::thread;
 use std::thread::JoinHandle;
 use std::time::Duration;
 use crate::job_pool::{JobData, JobPool};
-use crate::JobPtr;
+use crate::{JobPtr};
 
 pub struct WorkerSharedData {
     job_pool: Vec<Mutex<JobPool>>,
@@ -83,9 +83,12 @@ pub struct Worker {
 }
 
 impl Worker {
-    pub fn new(worker_id: usize, shared_data: Arc<WorkerSharedData>) -> Self {
+    pub fn new(job_system_name: &str, worker_id: usize, shared_data: Arc<WorkerSharedData>) -> Self {
         let data_copy = shared_data.clone();
+        let js_name = job_system_name.to_string();
         let running_thread = thread::spawn(move || {
+            logger::set_thread_label(thread::current().id(), format!("{js_name}::{worker_id}").as_str());
+            
             loop {
                 let mut stop = false;
                 while !stop {

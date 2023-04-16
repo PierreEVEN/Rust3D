@@ -2,14 +2,13 @@ use std::collections::HashMap;
 use std::sync::Mutex;
 use lazy_static::lazy_static;
 use std::thread::{ThreadId};
-use colored::{ColoredString, Colorize};
-use std::env;
+use std::{env, thread};
 use std::fmt::{Display, Formatter};
-use std::time::SystemTime;
-use time::OffsetDateTime;
+use std::io::Write;
+use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
 
 pub trait Logger: Send {
-    fn print(&mut self, message: &LogMessage);
+    fn print(&mut self, message: &LogMessage, backtrace: &str);
 }
 
 #[derive(Default)]
@@ -23,24 +22,26 @@ pub enum LogSeverity {
 }
 
 impl LogSeverity {
-    pub fn colorize(&self, text: &str) -> ColoredString {
+    pub fn color(&self) -> ColorSpec {
+        let mut col = ColorSpec::new();
         match self {
             LogSeverity::DEBUG(_) => {
-                text.blue()
+                col.set_fg(Some(Color::Blue))
             }
             LogSeverity::INFO => {
-                text.cyan()
+                col.set_fg(Some(Color::Cyan))
             }
             LogSeverity::WARNING => {
-                text.yellow()
+                col.set_fg(Some(Color::Yellow))
             }
             LogSeverity::ERROR => {
-                text.red()
+                col.set_fg(Some(Color::Red))
             }
             LogSeverity::FATAL => {
-                text.purple()
+                col.set_fg(Some(Color::Magenta))
             }
-        }
+        };
+        col
     }
 
     pub fn should_display_now(&self) -> bool {
@@ -81,110 +82,111 @@ pub struct LogMessage {
     pub thread_id: Option<ThreadId>,
 }
 
-impl LogMessage {
-    pub fn to_string_colored(&self) -> ColoredString {
+impl Display for LogMessage {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let thread_name = match self.thread_id {
             None => { "".to_string() }
-            Some(thread_id) => { "::".to_string() + get_thread_name(thread_id).as_str() }
+            Some(thread_id) => { "::".to_string() + get_thread_label(thread_id).as_str() }
         };
-
-        const DATE_FORMAT_STR: &'static str = "%Y-%m-%d][%H:%M:%S";
-        let dt: OffsetDateTime = SystemTime::now().into();
-        let dt2 = OffsetDateTime::now_utc();  // Also uses std::time (v0.2.26)
-
-        println!("{}", dt.format(DATE_FORMAT_STR));
-        println!("{}", dt2.format(DATE_FORMAT_STR));
-
-        self.severity.colorize(format!("{:?} |{}| [{}{}] : {}",
-                                       "",
-                                       self.severity,
-                                       self.context,
-                                       thread_name,
-                                       self.text
+        f.write_str(
+        format!("{} |{}| [{}{}] : {}",
+                chrono::Utc::now().format("%H:%M:%S"),
+                self.severity,
+                self.context,
+                thread_name,
+                self.text
         ).as_str())
     }
 }
 
 lazy_static! {
     static ref LOGGERS: Mutex<Vec<Box<dyn Logger>>> = Mutex::new(vec![Box::new(StandardOutputLogger{})]);
-    static ref THREAD_NAMES: Mutex<HashMap<ThreadId, String>> = Default::default();
+    static ref THREAD_LABELS: Mutex<HashMap<ThreadId, String>> = Default::default();
 }
 
-pub fn set_thread_name(id: ThreadId, name: &str) {
-    THREAD_NAMES.lock().expect("lock failed").insert(id, name.to_string());
+pub fn set_main_thread() {
+    set_thread_label(thread::current().id(), "main thread");
 }
 
-pub fn get_thread_name(id: ThreadId) -> String {
-    match THREAD_NAMES.lock().expect("lock failed").get(&id) {
+pub fn set_thread_label(id: ThreadId, name: &str) {
+    THREAD_LABELS.lock().expect("lock failed").insert(id, name.to_string());
+}
+
+pub fn get_thread_label(id: ThreadId) -> String {
+    match THREAD_LABELS.lock().expect("lock failed").get(&id) {
         None => { "unregistered_thread_name".to_string() }
         Some(name) => { name.clone() }
     }
 }
 
-pub fn broadcast_log(message: LogMessage) {
+pub fn broadcast_log(message: LogMessage, backtrace: String) {
     if !message.severity.should_display_now() { return; }
     for logger in &mut *LOGGERS.lock().expect("lock failed") {
-        logger.print(&message);
+        logger.print(&message, &backtrace);
     }
 }
 
 #[macro_export]
 macro_rules! debug {
     ($level:expr, $($fmt_args:tt)*) => ({
+        use std::thread;
         $crate::broadcast_log($crate::LogMessage {
             severity: $crate::LogSeverity::DEBUG($level),
-            thread_id: None,
+            thread_id: Some(thread::current().id()),
             context: env!("CARGO_PKG_NAME").to_string(),
             text: format!($($fmt_args)*)
-        });
+        }, "".to_string());
     })
 }
 
 #[macro_export]
 macro_rules! info {
     ($($fmt_args:tt)*) => ({
+        use std::thread;
         $crate::broadcast_log($crate::LogMessage {
             severity: $crate::LogSeverity::INFO,
-            thread_id: None,
+            thread_id: Some(thread::current().id()),
             context: env!("CARGO_PKG_NAME").to_string(),
             text: format!($($fmt_args)*)
-        });
+        }, "".to_string());
     })
 }
-
 
 #[macro_export]
 macro_rules! warning {
     ($($fmt_args:tt)*) => ({
+        use std::thread;
         $crate::broadcast_log($crate::LogMessage {
             severity: $crate::LogSeverity::WARNING,
-            thread_id: None,
+            thread_id: Some(thread::current().id()),
             context: env!("CARGO_PKG_NAME").to_string(),
             text: format!($($fmt_args)*)
-        });
+        }, "".to_string());
     })
 }
-
 
 #[macro_export]
 macro_rules! error {
     ($($fmt_args:tt)*) => ({
+        use std::thread;
         #[cfg(not(debug_assertions))]
         $crate::broadcast_log($crate::LogMessage {
             severity: $crate::LogSeverity::ERROR,
-            thread_id: None,
+            thread_id: Some(thread::current().id()),
             context: env!("CARGO_PKG_NAME").to_string(),
             text: format!($($fmt_args)*),
-        });
+        }, "".to_string());
         #[cfg(debug_assertions)]
         {
             use std::backtrace::Backtrace;
             $crate::broadcast_log($crate::LogMessage {
                 severity: $crate::LogSeverity::ERROR,
-                thread_id: None,
+                thread_id: Some(thread::current().id()),
                 context: env!("CARGO_PKG_NAME").to_string(),
-                text: format!("{}\n{}", format!($($fmt_args)*), Backtrace::capture()),
-            });
+                text: format!($($fmt_args)*),
+            },
+            Backtrace::force_capture().to_string()
+            );
         }
     })
 }
@@ -192,14 +194,15 @@ macro_rules! error {
 #[macro_export]
 macro_rules! fatal {
     ($($fmt_args:tt)*) => ({
+        use std::thread;
         #[cfg(not(debug_assertions))]
         {
             $crate::broadcast_log($crate::LogMessage {
                 severity: $crate::LogSeverity::FATAL,
-                thread_id: None,
+                thread_id: Some(thread::current().id()),
                 context: env!("CARGO_PKG_NAME").to_string(),
                 text: format!($($fmt_args)*),
-            });
+            }, "".to_string());
             panic!($($fmt_args)*);
         }
         #[cfg(debug_assertions)]
@@ -207,10 +210,12 @@ macro_rules! fatal {
             use std::backtrace::Backtrace;
             $crate::broadcast_log($crate::LogMessage {
                 severity: $crate::LogSeverity::FATAL,
-                thread_id: None,
+                thread_id: Some(thread::current().id()),
                 context: env!("CARGO_PKG_NAME").to_string(),
-                text: format!("{}\n{}", format!($($fmt_args)*), Backtrace::capture()),
-            });
+                text: format!($($fmt_args)*),
+            },
+            Backtrace::force_capture().to_string()
+            );
             std::process::exit(-1);
         }
     })
@@ -218,7 +223,18 @@ macro_rules! fatal {
 pub struct StandardOutputLogger {}
 
 impl Logger for StandardOutputLogger {
-    fn print(&mut self, message: &LogMessage) {
-        println!("{}", message.to_string_colored());
+    fn print(&mut self, message: &LogMessage, backtrace: &str) {
+        let mut stdout = StandardStream::stdout(ColorChoice::Always);
+
+        stdout.set_color(&message.severity.color()).unwrap();
+
+        writeln!(&mut stdout, "{}", message).unwrap();
+        if !backtrace.is_empty() {
+            stdout.set_color(ColorSpec::new().set_fg(Some(Color::Black)).set_bg(Some(Color::Rgb(150, 150, 150)))).unwrap();
+            writeln!(&mut stdout, "\n{}", backtrace).unwrap();
+        }
+        
+        stdout.flush().unwrap();
+        stdout.set_color(&ColorSpec::default()).unwrap();
     }
 }

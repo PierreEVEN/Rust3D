@@ -47,30 +47,30 @@ pub fn test_func() {
     ecs.add(e2, CompB { b: 5, c: 6.0 });
 
     let bench_length = 100;
-    
-    println!("REFERENCE OPTIMAL");
+
+    logger::info!("REFERENCE OPTIMAL");
     let start =  Instant::now();
     let mut reference_data = vec![];
     for i in 0..bench_length {
         reference_data.push(CompC { x: i, _y: Default::default()});
     }
-    println!("--Creation : {}ms", start.elapsed().as_micros() as f64 / 1000.0);
+    logger::info!("--Creation : {}ms", start.elapsed().as_micros() as f64 / 1000.0);
     let start =  Instant::now();
     for i in &mut reference_data { i.x += 1; }
-    println!("--Iteration : {}ms", start.elapsed().as_micros() as f64 / 1000.0);
+    logger::info!("--Iteration : {}ms", start.elapsed().as_micros() as f64 / 1000.0);
 
-    println!("REFERENCE NOT OPTIMAL");
+    logger::info!("REFERENCE NOT OPTIMAL");
     let start =  Instant::now();
     let mut reference_data = vec![];
     for i in 0..bench_length {
         reference_data.push(Box::new(CompC { x: i, _y: Default::default()}));
     }
-    println!("--Creation : {}ms", start.elapsed().as_micros() as f64 / 1000.0);
+    logger::info!("--Creation : {}ms", start.elapsed().as_micros() as f64 / 1000.0);
     let start =  Instant::now();
     for i in &mut reference_data { i.x += 1; }
-    println!("--Iteration : {}ms", start.elapsed().as_micros() as f64 / 1000.0);
-    
-    println!("ECS");
+    logger::info!("--Iteration : {}ms", start.elapsed().as_micros() as f64 / 1000.0);
+
+    logger::info!("ECS");
     let start = Instant::now();
     let mut entities = Vec::with_capacity(bench_length as usize);
     for i in 0..bench_length {
@@ -78,10 +78,10 @@ pub fn test_func() {
         ecs.add(entity, CompC { x: i, _y: Default::default()});
         entities.push(entity);
     }
-    println!("--Creation : {}ms", start.elapsed().as_micros() as f64 / 1000.0);    
+    logger::info!("--Creation : {}ms", start.elapsed().as_micros() as f64 / 1000.0);    
     let start = Instant::now();
     Query::<&mut CompC>::new(&mut ecs).for_each(|a| { a.x += 1; });
-    println!("--Iteration : {}ms", start.elapsed().as_micros() as f64 / 1000.0);
+    logger::info!("--Iteration : {}ms", start.elapsed().as_micros() as f64 / 1000.0);
     
     let mut iter = 0;
     Query::<&mut CompC>::new(&mut ecs).for_each(|a| { iter += 1; assert_eq!(a.x, iter, "index {iter} is wrong"); });
@@ -91,25 +91,25 @@ pub fn test_func() {
     for entity in entities {
         ecs.destroy(entity);
     }
-    println!("--Deletion : {}ms", start.elapsed().as_micros() as f64 / 1000.0);
-    
-    
-    println!("ECS STATISTICS");
+    logger::info!("--Deletion : {}ms", start.elapsed().as_micros() as f64 / 1000.0);
+
+
+    logger::info!("ECS STATISTICS");
     ecs.print_stats();
 
     Query::<&CompA>::new(&mut ecs).for_each(|a| {
-        println!("ITER B :  a = {}", a.a);
+        logger::info!("ITER B :  a = {}", a.a);
     });
     
     Query::<&CompB>::new(&mut ecs).for_each(|b| {
-        println!("ITER B : b = {}, c = {}", b.b, b.c);
+        logger::info!("ITER B : b = {}, c = {}", b.b, b.c);
     });
     
-    Query::<(&mut CompA, &CompB)>::new(&mut ecs).for_each(|(a, b)| { println!("ITER A ET B : a = {}, b = {}, c = {}", a.a, b.b, b.c); });
-    Query::<(&mut CompB, &CompA)>::new(&mut ecs).for_each(|(b, a)| { println!("ITER A ET B : a = {}, b = {}, c = {}", a.a, b.b, b.c); });
-    Query::<(&CompB, &CompA)>::new(&mut ecs).for_each(|(b, a)| { println!("ITER A ET B : a = {}, b = {}, c = {}", a.a, b.b, b.c); });
-    Query::<(&mut CompB, &mut CompA)>::new(&mut ecs).for_each(|(b, a)| { println!("ITER A ET B : a = {}, b = {}, c = {}", a.a, b.b, b.c); });
-    Query::<(&CompB, &mut CompA)>::new(&mut ecs).for_each(|(b, a)| { println!("ITER A ET B : a = {}, b = {}, c = {}", a.a, b.b, b.c); });
+    Query::<(&mut CompA, &CompB)>::new(&mut ecs).for_each(|(a, b)| { logger::info!("ITER A ET B : a = {}, b = {}, c = {}", a.a, b.b, b.c); });
+    Query::<(&mut CompB, &CompA)>::new(&mut ecs).for_each(|(b, a)| { logger::info!("ITER A ET B : a = {}, b = {}, c = {}", a.a, b.b, b.c); });
+    Query::<(&CompB, &CompA)>::new(&mut ecs).for_each(|(b, a)| { logger::info!("ITER A ET B : a = {}, b = {}, c = {}", a.a, b.b, b.c); });
+    Query::<(&mut CompB, &mut CompA)>::new(&mut ecs).for_each(|(b, a)| { logger::info!("ITER A ET B : a = {}, b = {}, c = {}", a.a, b.b, b.c); });
+    Query::<(&CompB, &mut CompA)>::new(&mut ecs).for_each(|(b, a)| { logger::info!("ITER A ET B : a = {}, b = {}, c = {}", a.a, b.b, b.c); });
     
     ecs.remove::<CompA>(e2);
     ecs.destroy(e0);

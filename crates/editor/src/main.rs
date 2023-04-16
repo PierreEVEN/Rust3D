@@ -29,9 +29,7 @@ struct TestPc {
 
 fn main() {
     
-    job_system::test_func();
-    
-    ecs::test_func();
+    let mut js = job_system::test_func();
     
     // We use a win32 backend with a vulkan renderer
     let engine = backend::create_engine_vulkan();
@@ -153,5 +151,10 @@ fn main() {
     while engine.run() {
         engine.platform.poll_events();
         if main_framegraph.begin().is_ok() { main_framegraph.submit(); };
+    }
+    
+    for _ in 0..10 {
+        js.schedule(move || {
+        });
     }
 }

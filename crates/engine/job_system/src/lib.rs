@@ -32,21 +32,23 @@ impl JobPtr {
 pub struct JobSystem {
     workers: Vec<Worker>,
     current_worker: usize,
+    shared_data: Arc<WorkerSharedData>
 }
 
 impl JobSystem {
     pub fn new(num_worker_threads: usize) -> Self {
         let mut workers = Vec::with_capacity(num_worker_threads);
 
-        let job_pool = Arc::new(WorkerSharedData::new(num_worker_threads));
+        let shared_data = Arc::new(WorkerSharedData::new(num_worker_threads));
 
         for i in 0..num_worker_threads {
-            workers.push(Worker::new(i, job_pool.clone()));
+            workers.push(Worker::new(i, shared_data.clone()));
         }
 
         Self {
             workers,
             current_worker: 0,
+            shared_data,
         }
     }
 
@@ -72,8 +74,16 @@ impl JobSystem {
     }
 }
 
+impl Drop for JobSystem {
+    fn drop(&mut self) {
+        self.shared_data.stop();
+        for worker in &self.workers {
+            worker.join();
+        } 
+    }
+}
 
-pub fn test_func() {
+pub fn test_func() -> JobSystem {
     let mut js = JobSystem::new(JobSystem::available_cpu_threads());
 
     let counter = Arc::new(Mutex::new(0));
@@ -92,7 +102,8 @@ pub fn test_func() {
 
     println!("registration done...");
 
-    println!("result : {}", counter.as_ref().lock().expect("ok"))
+    println!("result : {}", counter.as_ref().lock().expect("ok"));
+    js
 }
 
 #[cfg(test)]
@@ -101,6 +112,6 @@ mod test {
 
     #[test]
     fn test() {
-        test_func()
+        test_func();
     }
 }

@@ -1,11 +1,15 @@
-﻿use std::sync::{Arc, Mutex};
+﻿use std::sync::{Arc, Condvar, Mutex};
 use std::thread;
 use std::thread::JoinHandle;
+use std::time::Duration;
 use crate::job_pool::{JobData, JobPool};
 use crate::JobPtr;
 
 pub struct WorkerSharedData {
     job_pool: Vec<Mutex<JobPool>>,
+    sleep_condition: Condvar,
+    sleep_mutex: Mutex<()>,
+    stop: Mutex<bool>,
 }
 
 impl WorkerSharedData {
@@ -15,7 +19,12 @@ impl WorkerSharedData {
             job_pool.push(Mutex::new(JobPool::new()))
         }
 
-        Self { job_pool }
+        Self {
+            job_pool,
+            sleep_condition: Default::default(),
+            sleep_mutex: Mutex::new(()),
+            stop: Mutex::new(false),
+        }
     }
 
     pub fn next_job(&self, worker_index: usize) -> Option<JobData> {
@@ -34,7 +43,10 @@ impl WorkerSharedData {
         for pool in &self.job_pool {
             match pool.lock() {
                 Ok(mut pool) => {
-                    return (*pool).pop();
+                    match (*pool).pop() {
+                        None => {}
+                        Some(job) => { return Some(job); }
+                    };
                 }
                 Err(_) => { panic!("failed to lock pool"); }
             };
@@ -48,11 +60,25 @@ impl WorkerSharedData {
             Err(_) => { panic!("failed to lock pool") }
         }
     }
+
+    pub fn stop(&self) {
+        *self.stop.lock().expect("failed to lock") = true;
+        self.sleep_condition.notify_all();
+    }
+
+    pub fn contains_jobs(&self) -> bool {
+        for pool in &self.job_pool {
+            if !pool.lock().expect("lock failed").is_empty() {
+                return true;
+            }
+        }
+        false
+    }
 }
 
 pub struct Worker {
     worker_id: usize,
-    _running_thread: JoinHandle<()>,
+    running_thread: JoinHandle<()>,
     shared_data: Arc<WorkerSharedData>,
 }
 
@@ -61,16 +87,29 @@ impl Worker {
         let data_copy = shared_data.clone();
         let running_thread = thread::spawn(move || {
             loop {
-                match data_copy.next_job(worker_id) {
-                    None => {}
-                    Some(mut job) => { job.execute() }
-                };
+                let mut stop = false;
+                while !stop {
+                    match data_copy.next_job(worker_id) {
+                        None => {
+                            match data_copy.sleep_condition.wait(data_copy.sleep_mutex.lock().expect("failed to lock")) {
+                                Ok(_) => {
+                                    if *data_copy.stop.lock().expect("lock failed") {
+                                        stop = true;
+                                    }
+                                }
+                                Err(_) => { panic!("Wait for new task failed somewhere") }
+                            };
+                        }
+                        Some(mut job) => { job.execute() }
+                    };
+                }
+                if !data_copy.contains_jobs() { break; }
             }
         });
 
         Self {
             worker_id,
-            _running_thread: running_thread,
+            running_thread,
             shared_data,
         }
     }
@@ -80,6 +119,15 @@ impl Worker {
     }
 
     pub fn push_job(&mut self, job: JobData) -> JobPtr {
-        self.shared_data.push_job(self.worker_id, job)
+        let job = self.shared_data.push_job(self.worker_id, job);
+        self.shared_data.sleep_condition.notify_one();
+        job
+    }
+
+    pub fn join(&self) {
+        while !self.running_thread.is_finished() {
+            self.shared_data.sleep_condition.notify_one();
+            thread::sleep(Duration::from_millis(1));
+        }
     }
 }

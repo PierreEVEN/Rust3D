@@ -216,6 +216,7 @@ version = "0.1.0"
 dependencies = [
  "gfx",
  "gfx-maths",
+ "lazy_static",
  "logger",
  "plateform",
  "shader_compiler",

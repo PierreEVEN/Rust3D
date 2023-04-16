@@ -152,6 +152,4 @@ fn main() {
         engine.platform.poll_events();
         if main_framegraph.begin().is_ok() { main_framegraph.submit(); };
     }
-
-    logger::info!("shutting down editor...");
 }

@@ -9,3 +9,4 @@ gfx = { path = "../common/gfx" }
 plateform = { path = "../common/plateform" }
 gfx-maths = "0.2.8"
 logger = {path = "../logger"}
+lazy_static = "1.4.0"

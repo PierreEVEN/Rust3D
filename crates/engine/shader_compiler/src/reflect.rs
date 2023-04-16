@@ -14,7 +14,7 @@ impl SpirvReflector {
     pub fn new(spirv_code: &Vec<u32>) -> SpirvReflector {
         let info = match Reflection::new_from_spirv(unsafe { slice::from_raw_parts(spirv_code.as_ptr() as *const u8, spirv_code.len() * 4) }) {
             Ok(reflection) => { reflection }
-            Err(_) => { panic!("failed to get reflection data") }
+            Err(_) => { logger::fatal!("failed to get reflection data") }
         };
 
         let mut bindings = Vec::new();
@@ -37,13 +37,13 @@ impl SpirvReflector {
                                 rspirv_reflect::DescriptorType::UNIFORM_BUFFER_DYNAMIC => { DescriptorType::UniformBufferDynamic }
                                 rspirv_reflect::DescriptorType::STORAGE_BUFFER_DYNAMIC => { DescriptorType::StorageBufferDynamic }
                                 rspirv_reflect::DescriptorType::INPUT_ATTACHMENT => { DescriptorType::InputAttachment }
-                                _ => { panic!("unhandled binding type"); }
+                                _ => { logger::fatal!("unhandled binding type"); }
                             },
                         });
                     }
                 }
             }
-            Err(_) => { panic!("failed to get reflection data") }
+            Err(_) => { logger::fatal!("failed to get reflection data") }
         }
         
         let mut push_constant_size: u32 = 0;
@@ -53,7 +53,7 @@ impl SpirvReflector {
                     push_constant_size = push_constant.size;
                 }
             }
-            Err(_) => { panic!("failed to get reflection data") }
+            Err(_) => { logger::fatal!("failed to get reflection data") }
         }
 
         SpirvReflector { bindings, push_constant_size }

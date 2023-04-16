@@ -58,13 +58,13 @@ impl<T: Clone> GfxResource<T> {
 
     pub fn get_static(&self) -> T {
         if !self.static_resource {
-            panic!("The current resource is not static. You should call get(...) instead.");
+            logger::fatal!("The current resource is not static. You should call get(...) instead.");
         }
         self.resources.read().unwrap().deref().get(&GfxImageID::null()).unwrap().clone()
     }
     pub fn get(&self, reference: &GfxImageID) -> T {
         if self.static_resource {
-            panic!("The current resource is static. You should call get_static(...) instead.");
+            logger::fatal!("The current resource is static. You should call get_static(...) instead.");
         }
 
         {
@@ -75,7 +75,7 @@ impl<T: Clone> GfxResource<T> {
         }
 
         self.resources.write().unwrap().insert(reference.clone(), self.builder.read().unwrap().as_ref().build(match &self.gfx {
-            None => { panic!("gfx is not valid") }
+            None => { logger::fatal!("gfx is not valid") }
             Some(gfx) => { gfx }
         }, reference));
         self.resources.read().unwrap().get(reference).unwrap().clone()

@@ -121,7 +121,7 @@ impl Ecs {
         let mut _data = vec![];
 
         let new_components = if old_archetype_id == ArchetypeID::MAX {
-            panic!("Current entity doesn't contains any components")
+            logger::fatal!("Current entity doesn't contains any components")
         } else {
             // Retrieve data from existing archetype, then drop entity from it
             let old_archetype = self.archetypes.get_archetype_mut(&old_archetype_id);

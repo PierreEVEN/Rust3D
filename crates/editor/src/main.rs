@@ -13,6 +13,7 @@ use gfx::shader::{PassID, ShaderStage};
 use gfx::shader_instance::BindPoint;
 use gfx::types::{ClearValues, PixelFormat};
 use imgui::ImGUiContext;
+use logger::FileLogger;
 use maths::rect2d::Rect2D;
 use maths::vec2::Vec2u32;
 use maths::vec4::Vec4F32;
@@ -29,6 +30,7 @@ struct TestPc {
 
 fn main() {
     logger::set_main_thread();
+    logger::bind_logger(Box::new(FileLogger::new(Path::new("saved/log/last.log"))));
 
     ecs::test_func();
     let mut js = job_system::test_func();
@@ -104,7 +106,7 @@ fn main() {
         let demo_material = demo_material.clone();
         main_framegraph.main_pass().on_render(Box::new(move |command_buffer| {
             match demo_material.get_program(&command_buffer.get_pass_id()) {
-                None => { panic!("failed to find compatible permutation [{}]", command_buffer.get_pass_id()); }
+                None => { logger::fatal!("failed to find compatible permutation [{}]", command_buffer.get_pass_id()); }
                 Some(program) => {
                     time_pc_data.time = start.elapsed().as_millis() as f32 / 1000.0;
                     command_buffer.bind_program(&program);
@@ -122,7 +124,7 @@ fn main() {
         let shader_2_instance = background_shader.clone();
         def_combine.on_render(Box::new(move |command_buffer| {
             match demo_material.get_program(&command_buffer.get_pass_id()) {
-                None => { panic!("failed to find compatible permutation [{}]", command_buffer.get_pass_id()); }
+                None => { logger::fatal!("failed to find compatible permutation [{}]", command_buffer.get_pass_id()); }
                 Some(program) => {
                     time_pc_data.time = start.elapsed().as_millis() as f32 / 1000.0;
                     command_buffer.bind_program(&program);

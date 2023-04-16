@@ -208,7 +208,7 @@ pub fn enum_to_str(input: TokenStream) -> TokenStream {
 
         let tokens = match TokenStream::from_str(string.as_str()) {
             Ok(ts) => { ts }
-            Err(_) => { panic!("failed to parse token") }
+            Err(_) => { logger::fatal!("failed to parse token") }
         };
 
         return tokens;

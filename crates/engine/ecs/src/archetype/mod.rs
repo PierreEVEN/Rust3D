@@ -154,7 +154,7 @@ impl Archetype {
                 return i;
             }
         }
-        panic!("archetype doesn't contains given component");
+        logger::fatal!("archetype doesn't contains given component");
     }
 
     pub fn entity_at(&self, entity_index: &usize) -> &EntityID {
@@ -197,7 +197,7 @@ impl ArchetypeRegistry {
 
     #[inline]
     pub fn get_archetype_mut(&mut self, id: &ArchetypeID) -> &mut Archetype {
-        self.archetypes.get_mut(*id as usize).unwrap_or_else(|| panic!("Requested archetype id '{id}' is not valid"))
+        self.archetypes.get_mut(*id as usize).unwrap_or_else(|| logger::fatal!("Requested archetype id '{id}' is not valid"))
     }
 
     pub fn archetype_count(&self) -> usize { self.archetypes.len() }

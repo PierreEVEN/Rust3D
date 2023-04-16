@@ -55,6 +55,7 @@ dependencies = [
  "backend_vulkan_win32",
  "core",
  "gfx",
+ "logger",
  "plateform",
  "plateform_win32",
 ]
@@ -79,6 +80,7 @@ dependencies = [
  "backend_vulkan",
  "gfx",
  "gpu-allocator",
+ "logger",
  "macros",
  "maths",
  "plateform",
@@ -214,6 +216,7 @@ version = "0.1.0"
 dependencies = [
  "gfx",
  "gfx-maths",
+ "logger",
  "plateform",
  "shader_compiler",
 ]
@@ -349,6 +352,7 @@ name = "gfx"
 version = "0.1.0"
 dependencies = [
  "enumflags2",
+ "logger",
  "maths",
  "plateform",
 ]
@@ -426,6 +430,7 @@ dependencies = [
  "core",
  "gfx",
  "imgui-bindings",
+ "logger",
  "macros",
  "maths",
  "memoffset",
@@ -520,6 +525,7 @@ dependencies = [
 name = "macros"
 version = "0.1.0"
 dependencies = [
+ "logger",
  "quote",
  "syn 2.0.12",
 ]
@@ -683,6 +689,7 @@ name = "plateform"
 version = "0.1.0"
 dependencies = [
  "enumflags2",
+ "logger",
  "macros",
  "maths",
  "raw-window-handle",
@@ -692,6 +699,7 @@ dependencies = [
 name = "plateform_win32"
 version = "0.1.0"
 dependencies = [
+ "logger",
  "maths",
  "plateform",
  "raw-window-handle",
@@ -785,6 +793,7 @@ version = "0.1.0"
 dependencies = [
  "ecs",
  "gfx",
+ "logger",
 ]
 
 [[package]]
@@ -798,6 +807,7 @@ name = "shader_compiler"
 version = "0.1.0"
 dependencies = [
  "gfx",
+ "logger",
  "rspirv-reflect",
  "shaderc",
 ]
@@ -887,6 +897,7 @@ name = "third_party_io"
 version = "0.1.0"
 dependencies = [
  "gfx",
+ "logger",
  "stb_image_rust",
  "stb_image_write_rust",
 ]

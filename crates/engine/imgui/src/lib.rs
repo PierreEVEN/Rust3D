@@ -98,7 +98,7 @@ impl ImGUiContext {
         let shader_path = String::from("data/shaders/imgui_material.shb");
         let shader_text = match fs::read_to_string(shader_path.clone()) {
             Ok(file_data) => { file_data }
-            Err(_) => { panic!("failed to read imgui shader file") }
+            Err(_) => { logger::fatal!("failed to read imgui shader file") }
         };
         let parse_result = Parser::new(&shader_text, &shader_path, Box::new(ShaderCIncluder::new()));
         let imgui_parser_result = match parse_result {
@@ -106,7 +106,7 @@ impl ImGUiContext {
                 result
             }
             Err(error) => {
-                panic!("imgui shader syntax error : \n{}", error.to_string())
+                logger::fatal!("imgui shader syntax error : \n{}", error.to_string())
             }
         };
 
@@ -127,11 +127,11 @@ impl ImGUiContext {
         });
         let vertex_data = match imgui_parser_result.program_data.get_data(&imgui_pass_id, &ShaderStage::Vertex) {
             Ok(data) => { data }
-            Err(_) => { panic!("failed to get vertex data"); }
+            Err(_) => { logger::fatal!("failed to get vertex data"); }
         };
         let fragment_data = match imgui_parser_result.program_data.get_data(&imgui_pass_id, &ShaderStage::Fragment) {
             Ok(data) => { data }
-            Err(_) => { panic!("failed to get fragment data"); }
+            Err(_) => { logger::fatal!("failed to get fragment data"); }
         };
 
         let shader_backend = BackendShaderC::new();
@@ -142,7 +142,7 @@ impl ImGUiContext {
         }) {
             Ok(sprv) => { sprv }
             Err(error) => {
-                panic!("Failed to compile vertex shader : \n{}", error.to_string());
+                logger::fatal!("Failed to compile vertex shader : \n{}", error.to_string());
             }
         };
 
@@ -152,7 +152,7 @@ impl ImGUiContext {
         }) {
             Ok(sprv) => { sprv }
             Err(error) => {
-                panic!("Failed to compile fragment shader : \n{}", error.to_string());
+                logger::fatal!("Failed to compile fragment shader : \n{}", error.to_string());
             }
         };
 

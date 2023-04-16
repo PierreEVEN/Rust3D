@@ -99,7 +99,7 @@ impl VkShaderInstance {
 
             for binding in &self.base_bindings {
                 write_desc_set.push(match self.bindings.read().unwrap().get(&binding.bind_point) {
-                    None => { panic!("binding {} is not specified", binding.bind_point.name) }
+                    None => { logger::fatal!("binding {} is not specified", binding.bind_point.name) }
                     Some(bindings) => {
                         match bindings {
                             ShaderInstanceBinding::Sampler(sampler) => {

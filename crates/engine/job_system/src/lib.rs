@@ -24,7 +24,7 @@ impl JobPtr {
     }
     
     pub fn read(&self) -> &JobData {
-        if self.job_ptr.is_null() { panic!("Job pointer is null") }
+        if self.job_ptr.is_null() { logger::fatal!("Job pointer is null") }
         unsafe { &*self.job_ptr }
     }
 }

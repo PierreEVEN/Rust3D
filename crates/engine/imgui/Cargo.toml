@@ -14,3 +14,4 @@ maths = { path = "../maths" }
 memoffset = "0.8.0"
 core = { path = "../core" }
 plateform = { path = "../common/plateform" }
+logger = {path = "../logger"}

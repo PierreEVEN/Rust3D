@@ -224,7 +224,7 @@ impl VkSurfaceWin32 {
 
         let handle = match window.get_handle() {
             RawWindowHandle::Win32(handle) => { handle }
-            _ => { panic!("invalid window handle"); }
+            _ => { logger::fatal!("invalid window handle"); }
         };
 
         let ci_surface = vk::Win32SurfaceCreateInfoKHR::builder()

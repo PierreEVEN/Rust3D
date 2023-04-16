@@ -90,12 +90,12 @@ impl GfxImageBuilder<Arc<BufferContainer>> for RbBuffer {
             Ok(allocation) => { allocation }
             Err(alloc_error) => {
                 match alloc_error {
-                    AllocationError::OutOfMemory => { panic!("failed to create buffer : out of memory") }
-                    AllocationError::FailedToMap(_string) => { panic!("failed to create buffer : failed to map : {_string}") }
-                    AllocationError::NoCompatibleMemoryTypeFound => { panic!("failed to create buffer : no compatible memory type found") }
-                    AllocationError::InvalidAllocationCreateDesc => { panic!("failed to create buffer : invalid buffer create infos") }
-                    AllocationError::InvalidAllocatorCreateDesc(_string) => { panic!("failed to create buffer : invalid allocator create infos : {_string}") }
-                    AllocationError::Internal(_string) => { panic!("failed to create buffer : {_string}") }
+                    AllocationError::OutOfMemory => { logger::fatal!("failed to create buffer : out of memory") }
+                    AllocationError::FailedToMap(_string) => { logger::fatal!("failed to create buffer : failed to map : {_string}") }
+                    AllocationError::NoCompatibleMemoryTypeFound => { logger::fatal!("failed to create buffer : no compatible memory type found") }
+                    AllocationError::InvalidAllocationCreateDesc => { logger::fatal!("failed to create buffer : invalid buffer create infos") }
+                    AllocationError::InvalidAllocatorCreateDesc(_string) => { logger::fatal!("failed to create buffer : invalid allocator create infos : {_string}") }
+                    AllocationError::Internal(_string) => { logger::fatal!("failed to create buffer : {_string}") }
                 }
             }
         };
@@ -110,7 +110,7 @@ impl GfxImageBuilder<Arc<BufferContainer>> for RbBuffer {
 
         match allocation.mapped_ptr()
         {
-            None => { panic!("memory is not host visible") }
+            None => { logger::fatal!("memory is not host visible") }
             Some(_) => {}
         }
 
@@ -145,20 +145,20 @@ pub struct VkBuffer {
 impl GfxBuffer for VkBuffer {
     fn set_data(&self, frame: &GfxImageID, start_offset: u32, data: &[u8]) {
         if self.create_infos.buffer_type == BufferType::Immutable {
-            panic!("Modifying data on immutable buffers is not allowed");
+            logger::fatal!("Modifying data on immutable buffers is not allowed");
         }
         if start_offset + data.len() as u32 > self.buffer_size.load(Ordering::Acquire) {
-            panic!("buffer is to small : size={}, expected={}", self.buffer_size.load(Ordering::Acquire), start_offset + data.len() as u32);
+            logger::fatal!("buffer is to small : size={}, expected={}", self.buffer_size.load(Ordering::Acquire), start_offset + data.len() as u32);
         }
 
         unsafe {
             match self.create_infos.buffer_type {
                 BufferType::Immutable => {
-                    panic!("Modifying data on immutable buffers is not allowed");
+                    logger::fatal!("Modifying data on immutable buffers is not allowed");
                 }
                 BufferType::Static => {
                     match self.container.get_static().allocation.read().unwrap().mapped_ptr() {
-                        None => { panic!("memory is not host visible") }
+                        None => { logger::fatal!("memory is not host visible") }
                         Some(allocation) => {
                             data.as_ptr().copy_to((allocation.as_ptr() as *mut u8).offset(start_offset as isize), data.len());
                         }
@@ -171,13 +171,13 @@ impl GfxBuffer for VkBuffer {
                     match self.container.get(frame).allocation.read() {
                         Ok(allocation) => {
                             match allocation.mapped_ptr() {
-                                None => { panic!("memory [{}] is not host visible for frame {}", allocation.memory().as_raw(), frame.image_id()); }
+                                None => { logger::fatal!("memory [{}] is not host visible for frame {}", allocation.memory().as_raw(), frame.image_id()); }
                                 Some(allocation_ptr) => {
                                     data.as_ptr().copy_to((allocation_ptr.as_ptr() as *mut u8).offset(start_offset as isize), data.len());
                                 }
                             }
                         }
-                        Err(_) => { panic!("failed to read allocation") }
+                        Err(_) => { logger::fatal!("failed to read allocation") }
                     };
                 }
             }
@@ -190,7 +190,7 @@ impl GfxBuffer for VkBuffer {
 
         match self.create_infos.buffer_type {
             BufferType::Immutable => {
-                panic!("an immutable buffer is not resizable");
+                logger::fatal!("an immutable buffer is not resizable");
             }
             BufferType::Static => {
                 vk_check!(unsafe { self.gfx.cast::<GfxVulkan>().device.handle.device_wait_idle() });

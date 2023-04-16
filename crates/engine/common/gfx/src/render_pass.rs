@@ -113,7 +113,7 @@ impl FrameGraph {
                     SurfaceAcquireResult::Resized => {
                         self.present_pass.resize(self.surface.get_extent());
                     }
-                    SurfaceAcquireResult::Failed(_error) => { panic!("Failed to submit surface : {_error}") }
+                    SurfaceAcquireResult::Failed(_error) => { logger::fatal!("Failed to submit surface : {_error}") }
                 }
             }
         };

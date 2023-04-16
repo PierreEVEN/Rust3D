@@ -61,7 +61,7 @@ impl WindowWin32 {
                 None,
             );
 
-            if let Err(_message) = check_win32_error() { panic!("failed to create window : {_message}"); }
+            if let Err(_message) = check_win32_error() { logger::fatal!("failed to create window : {_message}"); }
 
             let window = WindowWin32 {
                 hwnd,

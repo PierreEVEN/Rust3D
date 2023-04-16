@@ -50,7 +50,7 @@ impl ArchetypeSignature {
                 return i
             }
         }
-        panic!("signature doesn't contains component {:?}", component)
+        logger::fatal!("signature doesn't contains component {:?}", component)
     }
 }
 

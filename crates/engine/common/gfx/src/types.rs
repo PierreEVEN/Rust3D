@@ -218,7 +218,7 @@ impl PixelFormat {
     pub fn type_size(&self) -> u32 {
         match &self {
             PixelFormat::UNDEFINED => {
-                panic!("not available")
+                logger::fatal!("not available")
             }
             PixelFormat::R4G4_UNORM_PACK8 => { 1 }
             PixelFormat::R4G4B4A4_UNORM_PACK16 => { 2 }

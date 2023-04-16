@@ -32,7 +32,7 @@ impl Engine {
     pub fn get() -> Arc<Self> {
         unsafe {
             match &ENGINE_REFERENCE {
-                None => { panic!("engine is not valid in the current context"); }
+                None => { logger::fatal!("engine is not valid in the current context"); }
                 Some(engine) => { engine.clone() }
             }
         }

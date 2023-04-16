@@ -34,7 +34,7 @@ impl WorkerSharedData {
                     return (*pool).pop();
                 }
             }
-            Err(_) => { panic!("failed to lock pool") }
+            Err(_) => { logger::fatal!("failed to lock pool") }
         }
         self.steal_job()
     }
@@ -48,7 +48,7 @@ impl WorkerSharedData {
                         Some(job) => { return Some(job); }
                     };
                 }
-                Err(_) => { panic!("failed to lock pool"); }
+                Err(_) => { logger::fatal!("failed to lock pool"); }
             };
         }
         None
@@ -57,7 +57,7 @@ impl WorkerSharedData {
     pub fn push_job(&self, worker_index: usize, job: JobData) -> JobPtr {
         match self.job_pool[worker_index].lock() {
             Ok(mut pool) => { (*pool).push(job) }
-            Err(_) => { panic!("failed to lock pool") }
+            Err(_) => { logger::fatal!("failed to lock pool") }
         }
     }
 
@@ -100,7 +100,7 @@ impl Worker {
                                         stop = true;
                                     }
                                 }
-                                Err(_) => { panic!("Wait for new task failed somewhere") }
+                                Err(_) => { logger::fatal!("Wait for new task failed somewhere") }
                             };
                         }
                         Some(mut job) => { job.execute() }

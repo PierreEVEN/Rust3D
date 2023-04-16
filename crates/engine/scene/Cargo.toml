@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 ecs = {path = "../ecs"}
 gfx = {path = "../common/gfx"}
+logger = {path = "../logger"}

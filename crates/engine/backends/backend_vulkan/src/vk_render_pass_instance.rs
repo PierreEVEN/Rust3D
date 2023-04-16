@@ -248,7 +248,7 @@ impl RenderPassInstance for VkRenderPassInstance {
                     }
                 }
             }
-            Err(_) => { panic!("failed to access render callback") }
+            Err(_) => { logger::fatal!("failed to access render callback") }
         }
 
         let command_buffer = self.pass_command_buffers.command_buffer.get(self.surface.get_current_ref());

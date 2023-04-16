@@ -2,9 +2,11 @@ use std::collections::HashMap;
 use std::sync::Mutex;
 use lazy_static::lazy_static;
 use std::thread::{ThreadId};
-use std::{env, thread};
+use std::{env, fs, thread};
 use std::fmt::{Display, Formatter};
+use std::fs::File;
 use std::io::Write;
+use std::path::Path;
 use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
 
 pub trait Logger: Send {
@@ -117,6 +119,10 @@ pub fn get_thread_label(id: ThreadId) -> String {
         None => { "unregistered_thread_name".to_string() }
         Some(name) => { name.clone() }
     }
+}
+
+pub fn bind_logger(logger: Box<dyn Logger>) {
+    LOGGERS.lock().expect("failed to lock").push(logger);
 }
 
 pub fn broadcast_log(message: LogMessage, backtrace: String) {
@@ -236,5 +242,35 @@ impl Logger for StandardOutputLogger {
         
         stdout.flush().unwrap();
         stdout.set_color(&ColorSpec::default()).unwrap();
+    }
+}
+
+pub struct FileLogger {
+    file: File,
+}
+
+impl FileLogger {
+    pub fn new(path: &Path) -> Self {
+        let file = if path.exists() {
+            File::open(path)
+        }
+        else {
+            fs::create_dir_all(path.parent().unwrap()).unwrap();
+            File::create(path)
+        }.expect("failed to create file");
+        Self {
+            file
+        }
+    }
+}
+
+impl Logger for FileLogger {
+    fn print(&mut self, message: &LogMessage, backtrace: &str) {
+        self.file.write_all(message.to_string().as_bytes()).unwrap();
+        if !backtrace.is_empty() {
+            self.file.write_all(format!("\n{backtrace}").as_bytes()).unwrap();
+        }
+        self.file.write_all("\n".as_bytes()).unwrap();
+        self.file.flush().expect("failed to flush file");
     }
 }

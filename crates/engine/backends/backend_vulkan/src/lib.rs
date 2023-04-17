@@ -7,8 +7,9 @@ use std::ffi::CStr;
 use std::mem::MaybeUninit;
 use std::os::raw::c_char;
 use std::sync::{Arc, RwLock, Weak};
+use std::sync::atomic::{AtomicBool, Ordering};
 
-use ash::vk;
+use ash::{vk};
 
 use gfx::{GfxInterface, GfxRef, PhysicalDevice};
 use gfx::buffer::{BufferCreateInfo, GfxBuffer};
@@ -18,6 +19,7 @@ use gfx::image_sampler::{ImageSampler, SamplerCreateInfos};
 use gfx::render_pass::{RenderPass, RenderPassCreateInfos};
 use gfx::shader::{PassID, ShaderProgram, ShaderProgramInfos};
 use gfx::surface::GfxSurface;
+use logger::fatal;
 
 use crate::vk_buffer::VkBuffer;
 use crate::vk_command_buffer::{VkCommandBuffer, VkCommandPool};
@@ -46,18 +48,19 @@ mod vk_shader_instance;
 mod vk_descriptor_pool;
 mod vk_dst_set_layout;
 
-pub static mut G_VULKAN: Option<ash::Entry> = None;
-
+//pub static mut G_VULKAN: Option<ash::Entry> = None;
+/*
 #[macro_export]
 macro_rules! g_vulkan {    
     () => {
         #[allow(unused_unsafe)]
-        match unsafe { &G_VULKAN } {
+        match unsafe { &$crate::G_VULKAN } {
             None => { logger::fatal!("vulkan has not been loaded yet"); }
             Some(entry) => { entry }
         }
     }
 }
+ */
 
 #[macro_export]
 macro_rules! to_c_char {
@@ -76,8 +79,12 @@ macro_rules! vk_check {
     }
 }
 
+#[derive(Default)]
 pub struct GfxVulkan {
-    pub instance: VkInstance,
+    ash_entry: ash::Entry,
+    initialized: AtomicBool,
+
+    pub instance: MaybeUninit<VkInstance>,
     pub physical_device: PhysicalDevice,
     pub physical_device_vk: VkPhysicalDevice,
     pub device: VkDevice,
@@ -88,6 +95,23 @@ pub struct GfxVulkan {
 }
 
 impl GfxInterface for GfxVulkan {
+    fn init(&self) {
+        match VkInstance::new(self.ash_entry.clone(), InstanceCreateInfos {
+            enable_validation_layers: true,
+            required_extensions: vec![],
+            ..InstanceCreateInfos::default()
+        }) {
+            Ok(instance) => { unsafe { (&self.instance as *mut VkInstance).write(instance); } }
+            Err(error) => { fatal!("failed to create vulkan instance : {error}"); }
+        }
+
+        self.initialized.store(true, Ordering::SeqCst);
+    }
+
+    fn is_ready(&self) -> bool {
+        self.initialized.load(Ordering::SeqCst)
+    }
+
     fn set_physical_device(&self, selected_device: PhysicalDevice) {
         unsafe { (&self.physical_device as *const PhysicalDevice as *mut PhysicalDevice).write(selected_device.clone()) };
         unsafe { (&self.physical_device_vk as *const VkPhysicalDevice as *mut VkPhysicalDevice).write(self.instance.get_vk_device(&selected_device).expect("failed to get physical device information for vulkan").clone()) };
@@ -145,33 +169,15 @@ impl GfxInterface for GfxVulkan {
 }
 
 impl GfxVulkan {
-    pub fn new_ref() -> GfxRef {
-        unsafe { G_VULKAN = Some(ash::Entry::load().expect("failed to load vulkan library")); }
+    pub fn new() -> Self {
+        let ash_entry = unsafe { ash::Entry::load() }.expect("failed to load vulkan library");
 
-        let instance = VkInstance::new(InstanceCreateInfos {
-            enable_validation_layers: true,
-            required_extensions: vec![],
-            ..InstanceCreateInfos::default()
-        }).expect("failed to create instance");
-
-        let physical_device = MaybeUninit::zeroed();
-        let physical_device_vk = MaybeUninit::zeroed();
-        let device = MaybeUninit::zeroed();
-        let command_pool = MaybeUninit::zeroed();
-        let descriptor_pool = MaybeUninit::zeroed();
-
-        let gfx = Arc::new(Self {
-            instance,
-            physical_device: unsafe { physical_device.assume_init() },
-            physical_device_vk: unsafe { physical_device_vk.assume_init() },
-            device: unsafe { device.assume_init() },
-            gfx_ref: Weak::new(),
-            command_pool: unsafe { command_pool.assume_init() },
-            descriptor_pool: unsafe { descriptor_pool.assume_init() },
-            render_passes: RwLock::default(),
-        });
-        unsafe { (&gfx.gfx_ref as *const Weak<GfxVulkan> as *mut Weak<GfxVulkan>).write(Arc::downgrade(&gfx)) };
-        logger::info!("Created vulkan gfx backend");
+        let gfx = Self {
+            ash_entry,
+            initialized: AtomicBool::new(false),
+            ..Default::default()
+        };
+        logger::info!("Created vulkan gfx backend. Waiting for initialization...");
         gfx
     }
 
@@ -232,7 +238,7 @@ impl GfxVulkan {
             } else if TypeId::of::<vk::SwapchainKHR>() == TypeId::of::<T>() {
                 vk::ObjectType::SWAPCHAIN_KHR
             } else {
-                logger::fatal!("unhandled object type id")
+                fatal!("unhandled object type id")
             };
 
         let string_name = format!("{}\0", name);
@@ -251,9 +257,6 @@ impl GfxVulkan {
 
 impl Drop for GfxVulkan {
     fn drop(&mut self) {
-        unsafe {
-            G_VULKAN = None;
-        }
         logger::info!("Destroyed vulkan gfx backend");
     }
 }

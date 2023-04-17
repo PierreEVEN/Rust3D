@@ -15,7 +15,7 @@ pub mod backend {
 
     pub fn create_engine_vulkan() -> Arc<Engine> {
         #[cfg(windows)]
-        Engine::new(PlatformWin32::new(), GfxVulkan::new_ref())
+        Engine::new(PlatformWin32::new(), Arc::new(GfxVulkan::new()))
     }
     
     pub fn create_surface_vulkan(gfx: &GfxRef, window: &Arc<dyn Window>) -> Arc<dyn GfxSurface> {

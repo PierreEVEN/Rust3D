@@ -1,13 +1,14 @@
 ﻿use std::borrow::Cow;
 use std::collections::HashMap;
 use std::ffi::CStr;
+use std::mem::MaybeUninit;
 use std::os::raw::c_char;
 
 use ash::{extensions::ext, vk};
 
 use gfx::PhysicalDevice;
 
-use crate::{G_VULKAN, g_vulkan, to_c_char};
+use crate::{to_c_char};
 use crate::vk_physical_device::VkPhysicalDevice;
 
 #[derive(Default, Clone)]
@@ -17,16 +18,31 @@ pub struct InstanceCreateInfos {
     pub enable_validation_layers: bool,
 }
 
+#[derive(Default)]
 pub struct VkInstance {
     pub handle: ash::Instance,
     pub debug_util_loader: ext::DebugUtils,
     _debug_messenger: vk::DebugUtilsMessengerEXT,
     enable_validation_layers: bool,
     device_map: HashMap<PhysicalDevice, VkPhysicalDevice>,
+    entry: ash::Entry,
+}
+
+impl Default for VkInstance {
+    fn default() -> Self {
+        Self {
+            handle: (),
+            debug_util_loader: (),
+            _debug_messenger: (),
+            enable_validation_layers: false,
+            device_map: Default::default(),
+            entry: (),
+        }
+    }
 }
 
 impl VkInstance {
-    pub fn new(create_infos: InstanceCreateInfos) -> Result<VkInstance, std::io::Error> {
+    pub fn new(entry: ash::Entry, create_infos: InstanceCreateInfos) -> Result<VkInstance, std::io::Error> {
         // Build extensions and layer
         let mut required_layers = Vec::new();
         let mut required_extensions = Vec::new();
@@ -85,7 +101,7 @@ impl VkInstance {
             enabled_extension_count: extension_names_raw.len() as u32,
             ..Default::default()
         };
-        let instance = unsafe { g_vulkan!().create_instance(&ci_instance, None) }.expect("failed to create instance");
+        let instance = unsafe { entry.create_instance(&ci_instance, None) }.expect("failed to create instance");
 
         // Create debug messenger
         let _debug_info = vk::DebugUtilsMessengerCreateInfoEXT {
@@ -95,7 +111,7 @@ impl VkInstance {
             ..Default::default()
         };
 
-        let debug_util_loader = ext::DebugUtils::new(g_vulkan!(), &instance);
+        let debug_util_loader = ext::DebugUtils::new(&entry, &instance);
 
         let debug_messenger =
             if enable_validation_layers {
@@ -120,11 +136,12 @@ impl VkInstance {
             _debug_messenger: debug_messenger,
             enable_validation_layers,
             device_map,
+            entry,
         })
     }
 
     pub fn is_layer_available(layer: &str) -> bool {
-        if let Ok(layer_properties) = g_vulkan!().enumerate_instance_layer_properties() {
+        if let Ok(layer_properties) = self.entry.enumerate_instance_layer_properties() {
             unsafe {
                 for layer_details in layer_properties {
                     if CStr::from_ptr(layer_details.layer_name.as_ptr()).to_str().expect("failed to read layer name") == layer {

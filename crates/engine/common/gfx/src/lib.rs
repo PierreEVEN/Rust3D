@@ -27,6 +27,10 @@ pub mod mesh;
 pub type GfxRef = Arc<dyn GfxInterface>;
 
 pub trait GfxInterface: GfxCast {
+
+    fn init(&mut self);
+    fn is_ready(&self) -> bool;
+    
     fn set_physical_device(&self, selected_device: PhysicalDevice);
     fn enumerate_physical_devices(&self) -> Vec<PhysicalDevice>;
     fn find_best_suitable_physical_device(&self) -> Result<PhysicalDevice, String>;

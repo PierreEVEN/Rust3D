@@ -6,7 +6,7 @@ use ash::vk;
 use gpu_allocator::vulkan;
 use raw_window_handle::RawWindowHandle;
 
-use backend_vulkan::{g_vulkan, G_VULKAN, GfxVulkan, vk_check};
+use backend_vulkan::{g_vulkan, GfxVulkan, vk_check};
 use backend_vulkan::vk_device::VkQueue;
 use backend_vulkan::vk_image::VkImage;
 use backend_vulkan::vk_render_pass_instance::{RbSemaphore, VkRenderPassInstance};

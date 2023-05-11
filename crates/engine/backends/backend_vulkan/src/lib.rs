@@ -48,20 +48,6 @@ mod vk_shader_instance;
 mod vk_descriptor_pool;
 mod vk_dst_set_layout;
 
-//pub static mut G_VULKAN: Option<ash::Entry> = None;
-/*
-#[macro_export]
-macro_rules! g_vulkan {    
-    () => {
-        #[allow(unused_unsafe)]
-        match unsafe { &$crate::G_VULKAN } {
-            None => { logger::fatal!("vulkan has not been loaded yet"); }
-            Some(entry) => { entry }
-        }
-    }
-}
- */
-
 #[macro_export]
 macro_rules! to_c_char {
     ($str:expr) => {        
@@ -116,7 +102,7 @@ impl Default for GfxVulkan {
 
 impl GfxInterface for GfxVulkan {
     fn init(&mut self) {
-        match VkInstance::new(&self, InstanceCreateInfos {
+        match VkInstance::new(self, InstanceCreateInfos {
             enable_validation_layers: true,
             required_extensions: vec![],
             ..InstanceCreateInfos::default()

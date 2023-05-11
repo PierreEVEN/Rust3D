@@ -132,6 +132,7 @@ impl PlatformWin32 {
 
 impl Drop for PlatformWin32 {
     fn drop(&mut self) {
+        logger::info!("Destroy win32 platform backend");
         unsafe {
             UnregisterClassW(
                 PCWSTR(utf8_to_utf16(WIN_CLASS_NAME).as_ptr()),
@@ -139,7 +140,6 @@ impl Drop for PlatformWin32 {
             );
             timeEndPeriod(1);
         }
-        logger::info!("Destroyed win32 platform backend");
     }
 }
 

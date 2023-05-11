@@ -214,6 +214,7 @@ name = "core"
 version = "0.1.0"
 dependencies = [
  "backend_launcher",
+ "ecs",
  "gfx",
  "gfx-maths",
  "lazy_static",

@@ -6,6 +6,7 @@ use windows::core::PCWSTR;
 use windows::Win32::Foundation::{COLORREF, HMODULE, HWND, RECT};
 use windows::Win32::UI::WindowsAndMessaging::{AdjustWindowRectEx, CreateWindowExW, HMENU, LWA_ALPHA, SetLayeredWindowAttributes, SetWindowTextW, ShowWindow, SW_MAXIMIZE, SW_SHOW, WINDOW_STYLE, WS_CAPTION, WS_EX_LAYERED, WS_MAXIMIZEBOX, WS_MINIMIZEBOX, WS_OVERLAPPED, WS_POPUP, WS_SYSMENU, WS_THICKFRAME, WS_VISIBLE};
 
+use logger::info;
 use maths::rect2d::RectI32;
 use plateform::window::{PlatformEvent, Window, WindowCreateInfos, WindowEventDelegate, WindowFlagBits, WindowFlags};
 
@@ -150,5 +151,11 @@ impl Window for WindowWin32 {
             }
         }
         self.event_map.write().unwrap().insert(event_type, vec![delegate]);
+    }
+}
+
+impl Drop for WindowWin32 {
+    fn drop(&mut self) {
+        info!("Destroy window '{}'", *self.title.read().unwrap());
     }
 }

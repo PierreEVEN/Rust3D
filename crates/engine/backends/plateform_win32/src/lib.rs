@@ -47,8 +47,8 @@ pub struct PlatformWin32 {
     input_manager: InputManager,
 }
 
-impl PlatformWin32 {
-    pub fn new() -> Arc<PlatformWin32> {
+impl Default for PlatformWin32 {
+    fn default() -> Self {
         unsafe {
             // Ensure time precision is the highest
             timeBeginPeriod(1);
@@ -61,17 +61,17 @@ impl PlatformWin32 {
                 hCursor: LoadCursorW(HMODULE::default(), IDC_ARROW).unwrap(),
                 cbClsExtra: size_of::<usize>() as i32,
                 lpfnWndProc: Some(wnd_proc),
-                ..Default::default() 
+                ..Default::default()
             };
-            
+
             assert_ne!(RegisterClassExW(&win_class), 0);
         }
 
-        let platform = Arc::new(PlatformWin32 {
+        let platform = PlatformWin32 {
             windows: Default::default(),
             monitors: Default::default(),
             input_manager: InputManager::new(),
-        });
+        };
 
         // Set platform pointer into WNDCLASS
         unsafe {
@@ -94,7 +94,7 @@ impl PlatformWin32 {
                 SetClassLongPtrW(
                     window_handle,
                     GET_CLASS_LONG_INDEX(0),
-                    (platform.as_ref() as *const PlatformWin32) as isize,
+                    (&platform as *const PlatformWin32) as isize,
                 );
 
                 match check_win32_error() {
@@ -109,8 +109,9 @@ impl PlatformWin32 {
         logger::info!("Created win32 platform backend");
         platform
     }
+}
 
-
+impl PlatformWin32 {
     fn send_window_message(&self, hwnd: HWND, msg: u32, wparam: WPARAM, lparam: LPARAM) {
         let window_map = self.windows.read();
         if let Some(window) = window_map.unwrap().get(&hwnd.into()) {

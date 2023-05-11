@@ -42,13 +42,15 @@ impl VkQueue {
     }
 
     pub fn wait(&self) {
-        vk_check!(unsafe { self.gfx.cast::<GfxVulkan>().device.handle.wait_for_fences(&[self.fence], true, u64::MAX) });
+        vk_check!(unsafe {
+            self.gfx.cast::<GfxVulkan>().device.assume_init_ref().handle.wait_for_fences(&[self.fence], true, u64::MAX) 
+        });
     }
 
     pub fn submit(&self, submit_infos: vk::SubmitInfo) {
         self.wait();
-        vk_check!(unsafe { self.gfx.cast::<GfxVulkan>().device.handle.reset_fences(&[self.fence]) });
-        vk_check!(unsafe { self.gfx.cast::<GfxVulkan>().device.handle.queue_submit(self.queue, &[submit_infos], self.fence) });
+        vk_check!(unsafe { self.gfx.cast::<GfxVulkan>().device.assume_init_ref().handle.reset_fences(&[self.fence]) });
+        vk_check!(unsafe { self.gfx.cast::<GfxVulkan>().device.assume_init_ref().handle.queue_submit(self.queue, &[submit_infos], self.fence) });
     }
     pub fn present(&self, swapchain: &Swapchain, present_infos: vk::PresentInfoKHR) -> VkResult<bool> {
         unsafe { swapchain.queue_present(self.queue, &present_infos) }
@@ -76,8 +78,10 @@ impl VkDevice {
         }
 
         let mut extensions = get_required_device_extensions();
-        if gfx.cast::<GfxVulkan>().instance.enable_validation_layers() {
-            extensions.push("VK_EXT_debug_marker\0".as_ptr() as *const c_char);
+        unsafe {
+            if gfx.cast::<GfxVulkan>().instance.assume_init_ref().enable_validation_layers() {
+                extensions.push("VK_EXT_debug_marker\0".as_ptr() as *const c_char);
+            }
         }
 
         let device_features = vk::PhysicalDeviceFeatures::builder()
@@ -86,7 +90,7 @@ impl VkDevice {
             .fill_mode_non_solid(true) // Wireframe
             .wide_lines(true)
             .sampler_anisotropy(true)
-            .robust_buffer_access(gfx.cast::<GfxVulkan>().instance.enable_validation_layers())
+            .robust_buffer_access(unsafe { gfx.cast::<GfxVulkan>().instance.assume_init_ref() }.enable_validation_layers())
             .build();
 
         let mut index_features = vk::PhysicalDeviceDescriptorIndexingFeatures::builder()
@@ -107,14 +111,14 @@ impl VkDevice {
 
         let mut ps: vk::PhysicalDevice = Default::default();
         unsafe {
-            if let Ok(devices) = gfx.cast::<GfxVulkan>().instance.handle.enumerate_physical_devices() {
+            if let Ok(devices) = gfx.cast::<GfxVulkan>().instance.assume_init_ref().handle.assume_init_ref().enumerate_physical_devices() {
                 if !devices.is_empty() {
                     ps = devices[0];
                 }
             }
         }
 
-        let device = vk_check!(unsafe { gfx.cast::<GfxVulkan>().instance.handle.create_device(
+        let device = vk_check!(unsafe { gfx.cast::<GfxVulkan>().instance.assume_init_ref().handle.assume_init_ref().create_device(
             ps,
             &ci_device,
             None
@@ -122,7 +126,7 @@ impl VkDevice {
 
         // Create allocator
         let allocator = vulkan::Allocator::new(&vulkan::AllocatorCreateDesc {
-            instance: gfx.cast::<GfxVulkan>().instance.handle.clone(),
+            instance: unsafe { gfx.cast::<GfxVulkan>().instance.assume_init_ref().handle.assume_init_ref() }.clone(),
             device: device.clone(),
             physical_device: gfx.cast::<GfxVulkan>().physical_device_vk.handle,
             debug_settings: gpu_allocator::AllocatorDebugSettings {

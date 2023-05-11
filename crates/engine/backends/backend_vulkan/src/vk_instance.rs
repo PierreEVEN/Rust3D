@@ -8,7 +8,7 @@ use ash::{extensions::ext, vk};
 
 use gfx::PhysicalDevice;
 
-use crate::{to_c_char};
+use crate::{GfxVulkan, to_c_char};
 use crate::vk_physical_device::VkPhysicalDevice;
 
 #[derive(Default, Clone)]
@@ -18,31 +18,28 @@ pub struct InstanceCreateInfos {
     pub enable_validation_layers: bool,
 }
 
-#[derive(Default)]
 pub struct VkInstance {
-    pub handle: ash::Instance,
-    pub debug_util_loader: ext::DebugUtils,
-    _debug_messenger: vk::DebugUtilsMessengerEXT,
+    pub handle: MaybeUninit<ash::Instance>,
+    pub debug_util_loader: MaybeUninit<ext::DebugUtils>,
+    _debug_messenger: MaybeUninit<vk::DebugUtilsMessengerEXT>,
     enable_validation_layers: bool,
     device_map: HashMap<PhysicalDevice, VkPhysicalDevice>,
-    entry: ash::Entry,
 }
 
 impl Default for VkInstance {
     fn default() -> Self {
         Self {
-            handle: (),
-            debug_util_loader: (),
-            _debug_messenger: (),
+            handle: MaybeUninit::zeroed(),
+            debug_util_loader: MaybeUninit::zeroed(),
+            _debug_messenger: MaybeUninit::zeroed(),
             enable_validation_layers: false,
             device_map: Default::default(),
-            entry: (),
         }
     }
 }
 
 impl VkInstance {
-    pub fn new(entry: ash::Entry, create_infos: InstanceCreateInfos) -> Result<VkInstance, std::io::Error> {
+    pub fn new(gfx: &GfxVulkan, create_infos: InstanceCreateInfos) -> Result<VkInstance, std::io::Error> {
         // Build extensions and layer
         let mut required_layers = Vec::new();
         let mut required_extensions = Vec::new();
@@ -50,7 +47,7 @@ impl VkInstance {
         let mut extension_names_raw = Vec::<*const c_char>::new();
 
         for (mut layer_name, required) in create_infos.required_layers {
-            let is_available = VkInstance::is_layer_available(layer_name.as_str());
+            let is_available = gfx.is_layer_available(layer_name.as_str());
             if !is_available {
                 if required { logger::fatal!("required layer [{}] is not available", layer_name); } else { logger::warning!("optional layer [{}] is not available", layer_name); }
                 continue;
@@ -59,7 +56,7 @@ impl VkInstance {
             required_layers.push(layer_name);
         }
         for (mut extension_name, required) in create_infos.required_extensions {
-            let is_available = VkInstance::is_extension_available(extension_name.as_str());
+            let is_available = gfx.is_extension_available(extension_name.as_str());
             if !is_available {
                 if required { logger::fatal!("required layer [{}] is not available", extension_name); } else { logger::warning!("optional layer [{}] is not available", extension_name); }
                 continue;
@@ -69,7 +66,7 @@ impl VkInstance {
         }
 
         // Add validation layers
-        let enable_validation_layers = create_infos.enable_validation_layers && VkInstance::is_layer_available("VK_LAYER_KHRONOS_validation");
+        let enable_validation_layers = create_infos.enable_validation_layers && gfx.is_layer_available("VK_LAYER_KHRONOS_validation");
         if enable_validation_layers {
             required_layers.push("VK_LAYER_KHRONOS_validation\0".to_string());
             required_extensions.push(ext::DebugUtils::name().to_str().unwrap().to_string() + "\0");
@@ -101,7 +98,7 @@ impl VkInstance {
             enabled_extension_count: extension_names_raw.len() as u32,
             ..Default::default()
         };
-        let instance = unsafe { entry.create_instance(&ci_instance, None) }.expect("failed to create instance");
+        let instance = unsafe { gfx.entry().create_instance(&ci_instance, None) }.expect("failed to create instance");
 
         // Create debug messenger
         let _debug_info = vk::DebugUtilsMessengerCreateInfoEXT {
@@ -111,7 +108,7 @@ impl VkInstance {
             ..Default::default()
         };
 
-        let debug_util_loader = ext::DebugUtils::new(&entry, &instance);
+        let debug_util_loader = ext::DebugUtils::new(&gfx.entry(), &instance);
 
         let debug_messenger =
             if enable_validation_layers {
@@ -131,39 +128,12 @@ impl VkInstance {
         }
 
         Ok(Self {
-            handle: instance,
-            debug_util_loader,
-            _debug_messenger: debug_messenger,
+            handle: MaybeUninit::new(instance),
+            debug_util_loader: MaybeUninit::new(debug_util_loader),
+            _debug_messenger: MaybeUninit::new(debug_messenger),
             enable_validation_layers,
             device_map,
-            entry,
         })
-    }
-
-    pub fn is_layer_available(layer: &str) -> bool {
-        if let Ok(layer_properties) = self.entry.enumerate_instance_layer_properties() {
-            unsafe {
-                for layer_details in layer_properties {
-                    if CStr::from_ptr(layer_details.layer_name.as_ptr()).to_str().expect("failed to read layer name") == layer {
-                        return true;
-                    }
-                }
-            }
-        }
-        false
-    }
-
-    pub fn is_extension_available(layer: &str) -> bool {
-        if let Ok(extensions_properties) = g_vulkan!().enumerate_instance_extension_properties(None) {
-            unsafe {
-                for extension in extensions_properties {
-                    if CStr::from_ptr(extension.extension_name.as_ptr()).to_str().expect("failed to read extension name") == layer {
-                        return true;
-                    }
-                }
-            }
-        }
-        false
     }
 
     pub fn enable_validation_layers(&self) -> bool {
@@ -196,22 +166,22 @@ impl VkInstance {
             Some(elem) => { Ok(elem) }
         }
     }
-
+    
     pub fn find_best_suitable_gpu_vk(&self) -> Result<PhysicalDevice, String> {
         let mut max_found: PhysicalDevice = Default::default();
         let mut max_score: u32 = 0;
-
+        
         for device in self.enumerate_graphic_devices_vk() {
             if device.score > max_score {
                 max_score = device.score;
                 max_found = device;
             }
         }
-
+        
         if max_score > 0 {
             return Ok(max_found);
         }
-
+        
         Err("failed to find suitable GPU".to_string())
     }
 }
@@ -219,26 +189,25 @@ impl VkInstance {
 unsafe extern "system" fn vulkan_debug_callback(message_severity: vk::DebugUtilsMessageSeverityFlagsEXT, message_type: vk::DebugUtilsMessageTypeFlagsEXT, p_callback_data: *const vk::DebugUtilsMessengerCallbackDataEXT, _user_data: *mut std::os::raw::c_void) -> vk::Bool32 {
     let callback_data = *p_callback_data;
     let message_id_number: i32 = callback_data.message_id_number;
-
+    
     let message_id_name = if callback_data.p_message_id_name.is_null() {
         Cow::from("")
     } else {
         CStr::from_ptr(callback_data.p_message_id_name).to_string_lossy()
     };
-
+    
     let message = if callback_data.p_message.is_null() {
         Cow::from("")
     } else {
         CStr::from_ptr(callback_data.p_message).to_string_lossy()
     };
-
-
+    
     let mut object_handle = None;
     let mut object_type = None;
-
+    
     let mut split = message.split(']');
     split.next();
-
+    
     let mut right = String::new();
     for item in split {
         right += item;
@@ -283,7 +252,7 @@ unsafe extern "system" fn vulkan_debug_callback(message_severity: vk::DebugUtils
         None => { Some(message.to_string()) }
         Some(last) => { Some(last.to_string()) }
     };
-
+    
     #[cfg(not(debug_assertions))]
     {
         logger::error!(
@@ -307,7 +276,7 @@ unsafe extern "system" fn vulkan_debug_callback(message_severity: vk::DebugUtils
         );
         return vk::FALSE;
     }
-
+    
     #[cfg(debug_assertions)]
     logger::fatal!(
         "[{}] {:?} {:?}: [{}] :\n\t=>{} -{}\n\t=>{}\n",

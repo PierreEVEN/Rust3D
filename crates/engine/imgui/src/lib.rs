@@ -228,7 +228,7 @@ impl ImGUiContext {
             io.DeltaTime = 1.0 / 60.0; //@TODO application::get().delta_time();
 
             // Update mouse
-            let input_manager = Engine::get().platform.input_manager();
+            let input_manager = Engine::get().platform().input_manager();
             io.MouseDown[0] = input_manager.is_input_pressed(InputMapping::MouseButton(MouseButton::Left));
             io.MouseDown[1] = input_manager.is_input_pressed(InputMapping::MouseButton(MouseButton::Right));
             io.MouseDown[2] = input_manager.is_input_pressed(InputMapping::MouseButton(MouseButton::Middle));

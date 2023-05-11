@@ -1,45 +1,29 @@
-use std::fs;
-use std::path::Path;
-use std::time::Instant;
 
-use backend_launcher::backend;
-use core::asset::*;
-use core::base_assets::material_asset::*;
 use core::engine::Engine;
-use gfx::buffer::BufferMemory;
-use gfx::image_sampler::SamplerCreateInfos;
-use gfx::render_pass::{FrameGraph, RenderPassAttachment, RenderPassCreateInfos};
-use gfx::shader::{PassID, ShaderStage};
-use gfx::shader_instance::BindPoint;
-use gfx::types::{ClearValues, PixelFormat};
-use imgui::ImGUiContext;
-use logger::FileLogger;
-use maths::rect2d::Rect2D;
-use maths::vec2::Vec2u32;
-use maths::vec4::Vec4F32;
 use plateform::input_system::{InputAction, InputMapping, KeyboardKey};
-use plateform::window::{PlatformEvent, WindowCreateInfos, WindowFlagBits, WindowFlags};
-use third_party_io::image::read_image_from_file;
 
 mod gfx_demo;
 
-#[repr(C, align(4))]
-struct TestPc {
-    time: f32,
-}
+pub struct TestApp {}
+impl core::engine::App for TestApp {
+    
+} 
 
 fn main() {
-    logger::init!();
     
-    // We use a win32 backend with a vulkan renderer
-    let engine = backend::create_engine_vulkan();
-
-    // Create default inputs
-    let input_manager = engine.platform.input_manager();
+    let mut engine = Engine::new::<TestApp>();
+    engine.start();
+    
+    let input_manager = Engine::get().platform().input_manager();
     input_manager.new_action("MoveForward", InputAction::new().map(InputMapping::Keyboard(KeyboardKey::KeyZ)));
     input_manager.new_action("MoveRight", InputAction::new().map(InputMapping::Keyboard(KeyboardKey::KeyD)));
     input_manager.new_action("MoveLeft", InputAction::new().map(InputMapping::Keyboard(KeyboardKey::KeyQ)));
     input_manager.new_action("MoveBackward", InputAction::new().map(InputMapping::Keyboard(KeyboardKey::KeyS)));
+    
+    
+    /*
+    // We use a win32 backend with a vulkan renderer
+    let engine = backend::create_engine_vulkan();
 
     // Create main window, render surface and framegraph
     let main_window = engine.platform.create_window(WindowCreateInfos {
@@ -114,6 +98,11 @@ fn main() {
         }));
     }
 
+    #[repr(C, align(4))]
+    struct TestPc {
+        time: f32,
+    }
+    
     {
         let start = Instant::now();
         let mut time_pc_data = TestPc { time: 0.0 };
@@ -152,4 +141,5 @@ fn main() {
         engine.platform.poll_events();
         if main_framegraph.begin().is_ok() { main_framegraph.submit(); };
     }
+     */
 }

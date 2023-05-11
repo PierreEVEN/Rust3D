@@ -1,25 +1,31 @@
 
 
 pub mod backend {
-    use std::sync::Arc;
     use backend_vulkan::GfxVulkan;
-    use gfx::{GfxRef};
-    use gfx::surface::GfxSurface;
-    use plateform::window::Window;
-    use core::engine::Engine;
 
     #[cfg(windows)]
-    use backend_vulkan_win32::vk_surface_win32::VkSurfaceWin32;
+    use plateform::Platform;
     #[cfg(windows)]
     use plateform_win32::PlatformWin32;
 
-    pub fn create_engine_vulkan() -> Arc<Engine> {
+    pub fn spawn_platform() -> Box<dyn Platform> {
         #[cfg(windows)]
-        Engine::new(PlatformWin32::new(), Arc::new(GfxVulkan::new()))
+        {
+            Box::<PlatformWin32>::default()
+        }
+    }
+
+    pub fn spawn_gfx() -> Box<dyn gfx::GfxInterface> {
+        #[cfg(windows)]
+        {
+            Box::<GfxVulkan>::default()
+        }
     }
     
+    /*
     pub fn create_surface_vulkan(gfx: &GfxRef, window: &Arc<dyn Window>) -> Arc<dyn GfxSurface> {
         #[cfg(windows)]
         VkSurfaceWin32::new_ptr(gfx, format!("{}_surface", window.get_title()), window, 3)
     }
+     */
 }

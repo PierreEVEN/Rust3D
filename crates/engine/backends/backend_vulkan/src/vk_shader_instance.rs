@@ -70,7 +70,7 @@ struct RbDescriptorSet {
 
 impl GfxImageBuilder<vk::DescriptorSet> for RbDescriptorSet {
     fn build(&self, gfx: &GfxRef, _swapchain_ref: &GfxImageID) -> vk::DescriptorSet {
-        gfx.cast::<GfxVulkan>().descriptor_pool.allocate(self.name.clone(), self.layout)
+        unsafe { gfx.cast::<GfxVulkan>().descriptor_pool.assume_init_ref().allocate(self.name.clone(), self.layout) }
     }
 }
 
@@ -124,7 +124,7 @@ impl VkShaderInstance {
                     .build());
             }
 
-            unsafe { self._gfx.cast::<GfxVulkan>().device.handle.update_descriptor_sets(write_desc_set.as_slice(), &[]); }
+            unsafe { self._gfx.cast::<GfxVulkan>().device.assume_init_ref().handle.update_descriptor_sets(write_desc_set.as_slice(), &[]); }
         }
     }
 }

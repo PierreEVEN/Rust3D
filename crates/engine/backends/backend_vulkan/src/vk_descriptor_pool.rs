@@ -56,7 +56,7 @@ impl VkDescriptorPool {
         ];
 
         self.gfx.cast::<GfxVulkan>().set_vk_object_name(vk_check!(unsafe {
-                    self.gfx.cast::<GfxVulkan>().device.handle.create_descriptor_pool(&vk::DescriptorPoolCreateInfo::builder()
+                    self.gfx.cast::<GfxVulkan>().device.assume_init_ref().handle.create_descriptor_pool(&vk::DescriptorPoolCreateInfo::builder()
                 .flags(vk::DescriptorPoolCreateFlags::FREE_DESCRIPTOR_SET)
                 .max_sets(self.max_descriptor_per_pool)
                 .pool_sizes(pool_sizes.as_slice())
@@ -72,7 +72,7 @@ impl VkDescriptorPool {
         let device = &self.gfx.cast::<GfxVulkan>().device;
 
         self.gfx.cast::<GfxVulkan>().set_vk_object_name(
-            vk_check!(unsafe { device.handle.allocate_descriptor_sets(&descriptor_info) })[0],
+            vk_check!(unsafe { device.assume_init_ref().handle.allocate_descriptor_sets(&descriptor_info) })[0],
 format!("descriptor set\t\t: {}", name).as_str())
         
     }

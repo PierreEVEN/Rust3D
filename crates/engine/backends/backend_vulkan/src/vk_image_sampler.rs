@@ -32,7 +32,7 @@ impl VkImageSampler {
             .unnormalized_coordinates(false)
             .build();
         
-        let sampler = vk_check!(unsafe { gfx.cast::<GfxVulkan>().device.handle.create_sampler(&sampler_create_infos, None) });
+        let sampler = vk_check!(unsafe { gfx.cast::<GfxVulkan>().device.assume_init_ref().handle.create_sampler(&sampler_create_infos, None) });
 
         gfx.cast::<GfxVulkan>().set_vk_object_name(sampler, format!("image sampler\t\t: {}", name).as_str());
         

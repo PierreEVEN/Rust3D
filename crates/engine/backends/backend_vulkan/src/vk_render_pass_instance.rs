@@ -40,7 +40,7 @@ impl GfxImageBuilder<vk::Semaphore> for RbSemaphore {
         let ci_semaphore = vk::SemaphoreCreateInfo::builder().build();
 
         gfx.cast::<GfxVulkan>().set_vk_object_name(
-            vk_check!(unsafe {gfx.cast::<GfxVulkan>().device.handle.create_semaphore(&ci_semaphore, None)}), 
+            vk_check!(unsafe {gfx.cast::<GfxVulkan>().device.assume_init_ref().handle.create_semaphore(&ci_semaphore, None)}), 
             format!("semaphore\t\t: {}@{}", self.name, swapchain_ref).as_str())
     }
 }
@@ -52,12 +52,12 @@ pub struct RbCommandBuffer {
 impl GfxImageBuilder<vk::CommandBuffer> for RbCommandBuffer {
     fn build(&self, gfx: &GfxRef, swapchain_ref: &GfxImageID) -> vk::CommandBuffer {
         let ci_command_buffer = vk::CommandBufferAllocateInfo::builder()
-            .command_pool(gfx.cast::<GfxVulkan>().command_pool.command_pool)
+            .command_pool(unsafe { gfx.cast::<GfxVulkan>().command_pool.assume_init_ref() }.command_pool)
             .command_buffer_count(1)
             .build();
 
         let device = &gfx.cast::<GfxVulkan>().device;
-        let cmd_buffer = vk_check!(unsafe {device.handle.allocate_command_buffers(&ci_command_buffer)})[0];
+        let cmd_buffer = vk_check!(unsafe {device.assume_init_ref().handle.allocate_command_buffers(&ci_command_buffer)})[0];
         gfx.cast::<GfxVulkan>().set_vk_object_name(
             cmd_buffer,
             format!("command_buffer\t: {}@{}", self.name, swapchain_ref).as_str()
@@ -90,7 +90,7 @@ impl GfxImageBuilder<vk::Framebuffer> for RbFramebuffer {
             .build();
 
         gfx.cast::<GfxVulkan>().set_vk_object_name(
-            vk_check!(unsafe { gfx.cast::<GfxVulkan>().device.handle.create_framebuffer(&create_infos, None) }), 
+            vk_check!(unsafe { gfx.cast::<GfxVulkan>().device.assume_init_ref().handle.create_framebuffer(&create_infos, None) }), 
             format!("framebuffer\t\t: {}@{}", self.name, swapchain_ref).as_str())
     }
 }
@@ -179,7 +179,7 @@ impl RenderPassInstance for VkRenderPassInstance {
         // Begin buffer
         let command_buffer = self.pass_command_buffers.command_buffer.get(self.surface.get_current_ref());
         
-        vk_check!(unsafe { device.handle.begin_command_buffer(command_buffer, &vk::CommandBufferBeginInfo::default()) });
+        vk_check!(unsafe { device.assume_init_ref().handle.begin_command_buffer(command_buffer, &vk::CommandBufferBeginInfo::default()) });
 
         let mut clear_values = Vec::new();
         for clear_value in &self.clear_value {
@@ -215,10 +215,10 @@ impl RenderPassInstance for VkRenderPassInstance {
             .clear_values(clear_values.as_slice())
             .build();
 
-        unsafe { device.handle.cmd_begin_render_pass(command_buffer, &begin_infos, vk::SubpassContents::INLINE) };
+        unsafe { device.assume_init_ref().handle.cmd_begin_render_pass(command_buffer, &begin_infos, vk::SubpassContents::INLINE) };
 
         unsafe {
-            device.handle.cmd_set_viewport(command_buffer, 0, &[vk::Viewport::builder()
+            device.assume_init_ref().handle.cmd_set_viewport(command_buffer, 0, &[vk::Viewport::builder()
                 .x(0.0)
                 .y(res.y as _)
                 .width(res.x as _)
@@ -230,7 +230,7 @@ impl RenderPassInstance for VkRenderPassInstance {
         };
 
         unsafe {
-            device.handle.cmd_set_scissor(command_buffer, 0, &[vk::Rect2D {
+            device.assume_init_ref().handle.cmd_set_scissor(command_buffer, 0, &[vk::Rect2D {
                 offset: vk::Offset2D { x: 0, y: 0 },
                 extent: vk::Extent2D { width: res.x, height: res.y },
             }])
@@ -255,8 +255,8 @@ impl RenderPassInstance for VkRenderPassInstance {
         self.gfx.cast::<GfxVulkan>().set_vk_object_name(command_buffer, format!("command buffer\t\t: {} - {}", self.owner.get_config().pass_id, self.surface.get_current_ref()).as_str());
 
         // End pass
-        unsafe { self.gfx.cast::<GfxVulkan>().device.handle.cmd_end_render_pass(command_buffer) };
-        vk_check!(unsafe { self.gfx.cast::<GfxVulkan>().device.handle.end_command_buffer(command_buffer) });
+        unsafe { self.gfx.cast::<GfxVulkan>().device.assume_init_ref().handle.cmd_end_render_pass(command_buffer) };
+        vk_check!(unsafe { self.gfx.cast::<GfxVulkan>().device.assume_init_ref().handle.end_command_buffer(command_buffer) });
 
         // Submit buffer
         let mut wait_semaphores = Vec::new();
@@ -268,13 +268,15 @@ impl RenderPassInstance for VkRenderPassInstance {
         }
 
         let wait_stages = vec![vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT; wait_semaphores.len()];
-        
-        self.gfx.cast::<GfxVulkan>().device.get_queue(vk::QueueFlags::GRAPHICS).unwrap().submit(vk::SubmitInfo::builder()
-            .wait_semaphores(wait_semaphores.as_slice())
-            .wait_dst_stage_mask(wait_stages.as_slice())
-            .command_buffers(&[command_buffer])
-            .signal_semaphores(&[self.render_finished_semaphore.get(self.surface.get_current_ref())])
-            .build());
+
+        unsafe {
+            self.gfx.cast::<GfxVulkan>().device.assume_init_ref().get_queue(vk::QueueFlags::GRAPHICS).unwrap().submit(vk::SubmitInfo::builder()
+                .wait_semaphores(wait_semaphores.as_slice())
+                .wait_dst_stage_mask(wait_stages.as_slice())
+                .command_buffers(&[command_buffer])
+                .signal_semaphores(&[self.render_finished_semaphore.get(self.surface.get_current_ref())])
+                .build());
+        }
     }
 
     fn on_render(&self, callback: GraphRenderCallback) {

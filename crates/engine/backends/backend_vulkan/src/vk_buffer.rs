@@ -74,13 +74,13 @@ impl GfxImageBuilder<Arc<BufferContainer>> for RbBuffer {
             .build();
 
         let buffer = gfx.cast::<GfxVulkan>().set_vk_object_name(
-            vk_check!(unsafe { gfx.cast::<GfxVulkan>().device.handle.create_buffer(&ci_buffer, None) }),
+            vk_check!(unsafe { gfx.cast::<GfxVulkan>().device.assume_init_ref().handle.create_buffer(&ci_buffer, None) }),
             format!("buffer handle\t\t: {}@{}",
                     self.name,
                     image_id).as_str());
-        let requirements = unsafe { gfx.cast::<GfxVulkan>().device.handle.get_buffer_memory_requirements(buffer) };
+        let requirements = unsafe { gfx.cast::<GfxVulkan>().device.assume_init_ref().handle.get_buffer_memory_requirements(buffer) };
 
-        let allocation = match gfx.cast::<GfxVulkan>().device.allocator.write().unwrap().allocate(&vulkan::AllocationCreateDesc {
+        let allocation = match unsafe { gfx.cast::<GfxVulkan>().device.assume_init_ref() }.allocator.write().unwrap().allocate(&vulkan::AllocationCreateDesc {
             name: "buffer allocation",
             requirements,
             location: *VkBufferAccess::from(self.create_infos.access),
@@ -102,7 +102,7 @@ impl GfxImageBuilder<Arc<BufferContainer>> for RbBuffer {
 
 
         unsafe {
-            gfx.cast::<GfxVulkan>().device.handle.bind_buffer_memory(
+            gfx.cast::<GfxVulkan>().device.assume_init_ref().handle.bind_buffer_memory(
                 buffer,
                 gfx.cast::<GfxVulkan>().set_vk_object_name(allocation.memory(), format!("buffer memory\t\t: {}@{}", self.name, image_id).as_str()),
                 allocation.offset()).unwrap()
@@ -130,7 +130,7 @@ struct BufferContainer {
 
 impl Drop for BufferContainer {
     fn drop(&mut self) {
-        self.gfx.cast::<GfxVulkan>().device.allocator.write().unwrap().free(std::mem::take(&mut self.allocation.write().unwrap())).expect("failed to free buffer");
+        unsafe { self.gfx.cast::<GfxVulkan>().device.assume_init_ref().allocator.write().unwrap().free(std::mem::take(&mut self.allocation.write().unwrap())).expect("failed to free buffer"); }
     }
 }
 
@@ -193,7 +193,7 @@ impl GfxBuffer for VkBuffer {
                 logger::fatal!("an immutable buffer is not resizable");
             }
             BufferType::Static => {
-                vk_check!(unsafe { self.gfx.cast::<GfxVulkan>().device.handle.device_wait_idle() });
+                vk_check!(unsafe { self.gfx.cast::<GfxVulkan>().device.assume_init_ref().handle.device_wait_idle() });
                 self.container.invalidate(&self.gfx, RbBuffer { create_infos: self.create_infos, size_override: new_size, name: self.name.clone() });
             }
             BufferType::Dynamic => {

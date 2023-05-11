@@ -79,33 +79,54 @@ macro_rules! vk_check {
     }
 }
 
-#[derive(Default)]
 pub struct GfxVulkan {
-    ash_entry: ash::Entry,
+    ash_entry: Option<ash::Entry>,
     initialized: AtomicBool,
 
     pub instance: MaybeUninit<VkInstance>,
     pub physical_device: PhysicalDevice,
     pub physical_device_vk: VkPhysicalDevice,
-    pub device: VkDevice,
+    pub device: MaybeUninit<VkDevice>,
     pub gfx_ref: Weak<GfxVulkan>,
-    pub command_pool: VkCommandPool,
-    pub descriptor_pool: VkDescriptorPool,
+    pub command_pool: MaybeUninit<VkCommandPool>,
+    pub descriptor_pool: MaybeUninit<VkDescriptorPool>,
     render_passes: RwLock<HashMap<PassID, Arc<dyn RenderPass>>>,
 }
 
+impl Default for GfxVulkan {
+    fn default() -> Self {
+        let ash_entry = unsafe { ash::Entry::load() }.expect("failed to load vulkan library");
+
+        let gfx = Self {
+            ash_entry: Some(ash_entry),
+            initialized: AtomicBool::new(false),
+            instance: MaybeUninit::uninit(),
+            physical_device: Default::default(),
+            physical_device_vk: Default::default(),
+            device: MaybeUninit::uninit(),
+            gfx_ref: Default::default(),
+            command_pool: MaybeUninit::uninit(),
+            descriptor_pool: MaybeUninit::uninit(),
+            render_passes: Default::default(),
+        };
+        logger::info!("Created vulkan gfx backend. Waiting for initialization...");
+        gfx
+    }
+}
+
 impl GfxInterface for GfxVulkan {
-    fn init(&self) {
-        match VkInstance::new(self.ash_entry.clone(), InstanceCreateInfos {
+    fn init(&mut self) {
+        match VkInstance::new(&self, InstanceCreateInfos {
             enable_validation_layers: true,
             required_extensions: vec![],
             ..InstanceCreateInfos::default()
         }) {
-            Ok(instance) => { unsafe { (&self.instance as *mut VkInstance).write(instance); } }
+            Ok(instance) => { self.instance.write(instance); }
             Err(error) => { fatal!("failed to create vulkan instance : {error}"); }
         }
 
         self.initialized.store(true, Ordering::SeqCst);
+        todo!("find a better way to handle gfx_ref")
     }
 
     fn is_ready(&self) -> bool {
@@ -114,22 +135,22 @@ impl GfxInterface for GfxVulkan {
 
     fn set_physical_device(&self, selected_device: PhysicalDevice) {
         unsafe { (&self.physical_device as *const PhysicalDevice as *mut PhysicalDevice).write(selected_device.clone()) };
-        unsafe { (&self.physical_device_vk as *const VkPhysicalDevice as *mut VkPhysicalDevice).write(self.instance.get_vk_device(&selected_device).expect("failed to get physical device information for vulkan").clone()) };
-        unsafe { (&self.device as *const VkDevice as *mut VkDevice).write(VkDevice::new(&self.get_ref())) };
-        unsafe { (&self.command_pool as *const VkCommandPool as *mut VkCommandPool).write(VkCommandPool::new(&self.get_ref(), "global".to_string())) };
-        unsafe { (&self.descriptor_pool as *const VkDescriptorPool as *mut VkDescriptorPool).write(VkDescriptorPool::new(&self.get_ref(), 64, 64)) };
+        unsafe { (&self.physical_device_vk as *const VkPhysicalDevice as *mut VkPhysicalDevice).write(self.instance.assume_init_ref().get_vk_device(&selected_device).expect("failed to get physical device information for vulkan").clone()) };
+        unsafe { (&self.device as *const MaybeUninit<VkDevice> as *mut MaybeUninit<VkDevice>).write(MaybeUninit::new(VkDevice::new(&self.get_ref()))) };
+        unsafe { (&self.command_pool as *const MaybeUninit<VkCommandPool> as *mut MaybeUninit<VkCommandPool>).write(MaybeUninit::new(VkCommandPool::new(&self.get_ref(), "global".to_string()))) };
+        unsafe { (&self.descriptor_pool as *const MaybeUninit<VkDescriptorPool> as *mut MaybeUninit<VkDescriptorPool>).write(MaybeUninit::new(VkDescriptorPool::new(&self.get_ref(), 64, 64))) };
 
-        self.set_vk_object_name(self.device.handle.handle(), "device\t\t: global ");
+        unsafe { self.set_vk_object_name(self.device.assume_init_ref().handle.handle(), "device\t\t: global "); }
         self.set_vk_object_name(self.physical_device_vk.handle, format!("physical device\t\t: {}", self.physical_device.device_name).as_str());
     }
 
 
     fn enumerate_physical_devices(&self) -> Vec<PhysicalDevice> {
-        self.instance.enumerate_physical_devices()
+        unsafe { self.instance.assume_init_ref().enumerate_physical_devices() }
     }
 
     fn find_best_suitable_physical_device(&self) -> Result<PhysicalDevice, String> {
-        self.instance.find_best_suitable_gpu_vk()
+        unsafe { self.instance.assume_init_ref().find_best_suitable_gpu_vk() }
     }
 
     fn create_buffer(&self, name: String, create_infos: &BufferCreateInfo) -> Arc<dyn GfxBuffer> {
@@ -169,18 +190,6 @@ impl GfxInterface for GfxVulkan {
 }
 
 impl GfxVulkan {
-    pub fn new() -> Self {
-        let ash_entry = unsafe { ash::Entry::load() }.expect("failed to load vulkan library");
-
-        let gfx = Self {
-            ash_entry,
-            initialized: AtomicBool::new(false),
-            ..Default::default()
-        };
-        logger::info!("Created vulkan gfx backend. Waiting for initialization...");
-        gfx
-    }
-
     pub fn set_vk_object_name<T: vk::Handle + 'static + Copy>(&self, object: T, name: &str) -> T {
         let object_type =
             if TypeId::of::<vk::Instance>() == TypeId::of::<T>() {
@@ -244,7 +253,7 @@ impl GfxVulkan {
         let string_name = format!("{}\0", name);
 
         unsafe {
-            vk_check!(self.instance.debug_util_loader.set_debug_utils_object_name(self.device.handle.handle(), &vk::DebugUtilsObjectNameInfoEXT::builder()
+            vk_check!(self.instance.assume_init_ref().debug_util_loader.assume_init_ref().set_debug_utils_object_name(self.device.assume_init_ref().handle.handle(), &vk::DebugUtilsObjectNameInfoEXT::builder()
                 .object_type(object_type)
                 .object_handle(object.as_raw())
                 .object_name(CStr::from_ptr(string_name.as_ptr() as *const c_char))
@@ -252,6 +261,42 @@ impl GfxVulkan {
         }
 
         object
+    }
+
+    pub fn entry(&self) -> &ash::Entry {
+        match &self.ash_entry {
+            None => {fatal!("ash entry is not valid")}
+            Some(entry) => {
+                entry
+            }
+        }
+            
+    }
+
+    pub fn is_layer_available(&self, layer: &str) -> bool {
+        if let Ok(layer_properties) = self.entry().enumerate_instance_layer_properties() {
+            unsafe {
+                for layer_details in layer_properties {
+                    if CStr::from_ptr(layer_details.layer_name.as_ptr()).to_str().expect("failed to read layer name") == layer {
+                        return true;
+                    }
+                }
+            }
+        }
+        false
+    }
+
+    pub fn is_extension_available(&self, layer: &str) -> bool {
+        if let Ok(extensions_properties) = self.entry().enumerate_instance_extension_properties(None) {
+            unsafe {
+                for extension in extensions_properties {
+                    if CStr::from_ptr(extension.extension_name.as_ptr()).to_str().expect("failed to read extension name") == layer {
+                        return true;
+                    }
+                }
+            }
+        }
+        false
     }
 }
 

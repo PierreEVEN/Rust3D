@@ -242,7 +242,7 @@ macro_rules! fatal {
 macro_rules! init {
     () => ({
         $crate::set_main_thread();
-        $crate::bind_logger(Box::new(FileLogger::new(Path::new("saved/log/"), env!("CARGO_PKG_NAME"))));
+        $crate::bind_logger(Box::new($crate::FileLogger::new(std::path::Path::new("saved/log/"), env!("CARGO_PKG_NAME"))));
     })
 }
 
@@ -252,7 +252,7 @@ pub struct StandardOutputLogger {}
 impl Logger for StandardOutputLogger {
     fn print(&mut self, message: &LogMessage, backtrace: &str) {
         let mut stdout = StandardStream::stdout(ColorChoice::Always);
-
+        
         stdout.set_color(&message.severity.color()).unwrap();
 
         writeln!(&mut stdout, "{}", message).unwrap();

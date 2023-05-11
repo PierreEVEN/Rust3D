@@ -64,7 +64,7 @@ impl GfxImage for VkImage {
                 begin_command_buffer(&self.gfx, command_buffer, true);
                 self.set_image_layout(&GfxImageID::null(), command_buffer, vk::ImageLayout::TRANSFER_DST_OPTIMAL);
                 // GPU copy command
-                self.gfx.cast::<GfxVulkan>().device.handle.cmd_copy_buffer_to_image(
+                self.gfx.cast::<GfxVulkan>().device.assume_init_ref().handle.cmd_copy_buffer_to_image(
                     command_buffer,
                     transfer_buffer.cast::<VkBuffer>().get_handle(&GfxImageID::null()),
                     self.image.read().unwrap().get_static().0,
@@ -86,9 +86,11 @@ impl GfxImage for VkImage {
                 end_command_buffer(&self.gfx, command_buffer);
                 submit_command_buffer(&self.gfx, command_buffer, vk::QueueFlags::TRANSFER);
             }
-            match self.gfx.cast::<GfxVulkan>().device.get_queue(vk::QueueFlags::TRANSFER) {
-                Ok(queue) => { queue.wait(); }
-                Err(_) => {logger::fatal!("failed to find queue"); }
+            unsafe {
+                match self.gfx.cast::<GfxVulkan>().device.assume_init_ref().get_queue(vk::QueueFlags::TRANSFER) {
+                    Ok(queue) => { queue.wait(); }
+                    Err(_) => { logger::fatal!("failed to find queue"); }
+                }
             }
         } else {
             logger::fatal!("Applying modification to non-static image is not allowed yet");
@@ -165,7 +167,7 @@ impl GfxImageBuilder<CombinedImageData> for RbImage {
             .build();
 
         // Create image
-        let image = vk_check!(unsafe {gfx.cast::<GfxVulkan>().device.handle.create_image(
+        let image = vk_check!(unsafe {gfx.cast::<GfxVulkan>().device.assume_init_ref().handle.create_image(
             &create_infos,
             None
         )});
@@ -173,9 +175,9 @@ impl GfxImageBuilder<CombinedImageData> for RbImage {
         gfx.cast::<GfxVulkan>().set_vk_object_name(image, format!("texture image\t\t: {}@{}", self.name, swapchain_ref).as_str());
 
         // Allocate image memory
-        let allocation = gfx.cast::<GfxVulkan>().device.allocator.write().unwrap().allocate(&vulkan::AllocationCreateDesc {
+        let allocation = unsafe { gfx.cast::<GfxVulkan>().device.assume_init_ref() }.allocator.write().unwrap().allocate(&vulkan::AllocationCreateDesc {
             name: "buffer allocation",
-            requirements: unsafe { gfx.cast::<GfxVulkan>().device.handle.get_image_memory_requirements(image) },
+            requirements: unsafe { gfx.cast::<GfxVulkan>().device.assume_init_ref().handle.get_image_memory_requirements(image) },
             location: *VkBufferAccess::from(BufferAccess::GpuOnly),
             linear: true,
             allocation_scheme: vulkan::AllocationScheme::DedicatedImage(image)
@@ -189,7 +191,7 @@ impl GfxImageBuilder<CombinedImageData> for RbImage {
 
         unsafe { gfx.cast::<GfxVulkan>().set_vk_object_name(allocation.memory(), format!("texture memory\t\t: {}@{}", self.name, swapchain_ref).as_str()); }
 
-        vk_check!(unsafe { gfx.cast::<GfxVulkan>().device.handle.bind_image_memory(image, allocation.memory(), allocation.offset())});
+        vk_check!(unsafe { gfx.cast::<GfxVulkan>().device.assume_init_ref().handle.bind_image_memory(image, allocation.memory(), allocation.offset())});
         (image, Arc::new(allocation))
     }
 }
@@ -214,7 +216,7 @@ impl GfxImageBuilder<(vk::ImageView, vk::DescriptorImageInfo)> for RbImageView {
 
         if self.create_infos.read_only {
             let view = vk_check!(unsafe { 
-                gfx.cast::<GfxVulkan>().device.handle.create_image_view(&vk::ImageViewCreateInfo::builder()
+                gfx.cast::<GfxVulkan>().device.assume_init_ref().handle.create_image_view(&vk::ImageViewCreateInfo::builder()
                 .image(self.images.get_static().0)
                 .view_type(view_type)
                 .format(*VkPixelFormat::from(&self.create_infos.pixel_format))
@@ -243,7 +245,7 @@ impl GfxImageBuilder<(vk::ImageView, vk::DescriptorImageInfo)> for RbImageView {
         } else {
             let device = &gfx.cast::<GfxVulkan>().device;
             let view = vk_check!(unsafe { 
-                device.handle.create_image_view(&vk::ImageViewCreateInfo::builder()
+                device.assume_init_ref().handle.create_image_view(&vk::ImageViewCreateInfo::builder()
                 .image(self.images.get(swapchain_ref).0)
                 .view_type(view_type)
                 .format(*VkPixelFormat::from(&self.create_infos.pixel_format))
@@ -381,7 +383,7 @@ impl VkImage {
 
             let device = &self.gfx.cast::<GfxVulkan>().device;
             unsafe {
-                device.handle.cmd_pipeline_barrier(
+                device.assume_init_ref().handle.cmd_pipeline_barrier(
                     command_buffer,
                     source_destination_stages.0,
                     source_destination_stages.1,

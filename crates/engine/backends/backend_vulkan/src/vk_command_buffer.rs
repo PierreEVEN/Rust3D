@@ -20,19 +20,19 @@ pub struct VkCommandPool {
 
 pub fn create_command_buffer(gfx: &GfxRef, name: String) -> vk::CommandBuffer {
     let create_infos = vk::CommandBufferAllocateInfo::builder()
-        .command_pool(gfx.cast::<GfxVulkan>().command_pool.command_pool)
+        .command_pool(unsafe { gfx.cast::<GfxVulkan>().command_pool.assume_init_ref() }.command_pool)
         .command_buffer_count(1)
         .level(vk::CommandBufferLevel::PRIMARY)
         .build();
     gfx.cast::<GfxVulkan>().set_vk_object_name(
-        vk_check!(unsafe { gfx.cast::<GfxVulkan>().device.handle.
+        vk_check!(unsafe { gfx.cast::<GfxVulkan>().device.assume_init_ref().handle.
             allocate_command_buffers(&create_infos) })[0],
         format!("command_buffer\t: {}", name).as_str(),
     )
 }
 
 pub fn begin_command_buffer(gfx: &GfxRef, command_buffer: vk::CommandBuffer, one_time: bool) {
-    vk_check!(unsafe { gfx.cast::<GfxVulkan>().device.handle.begin_command_buffer(command_buffer, 
+    vk_check!(unsafe { gfx.cast::<GfxVulkan>().device.assume_init_ref().handle.begin_command_buffer(command_buffer, 
         &vk::CommandBufferBeginInfo::builder()
         .flags(if one_time { vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT } else { vk::CommandBufferUsageFlags::empty() })
         .build())
@@ -40,18 +40,20 @@ pub fn begin_command_buffer(gfx: &GfxRef, command_buffer: vk::CommandBuffer, one
 }
 
 pub fn end_command_buffer(gfx: &GfxRef, command_buffer: vk::CommandBuffer) {
-    vk_check!(unsafe { gfx.cast::<GfxVulkan>().device.handle.end_command_buffer(command_buffer)})
+    vk_check!(unsafe { gfx.cast::<GfxVulkan>().device.assume_init_ref().handle.end_command_buffer(command_buffer)})
 }
 
 pub fn submit_command_buffer(gfx: &GfxRef, command_buffer: vk::CommandBuffer, queue_flags: vk::QueueFlags) {
-    match gfx.cast::<GfxVulkan>().device.get_queue(queue_flags) {
-        Ok(queue) => {
-            queue.submit(vk::SubmitInfo::builder()
-                .command_buffers(&[command_buffer])
-                .build());
-        }
-        Err(_) => {
-            logger::fatal!("failed to find queue");
+    unsafe {
+        match gfx.cast::<GfxVulkan>().device.assume_init_ref().get_queue(queue_flags) {
+            Ok(queue) => {
+                queue.submit(vk::SubmitInfo::builder()
+                    .command_buffers(&[command_buffer])
+                    .build());
+            }
+            Err(_) => {
+                logger::fatal!("failed to find queue");
+            }
         }
     }
 }
@@ -61,13 +63,13 @@ impl VkCommandPool {
     pub fn new(gfx: &GfxRef, name: String) -> VkCommandPool {
         let create_infos = vk::CommandPoolCreateInfo::builder()
             .flags(vk::CommandPoolCreateFlags::RESET_COMMAND_BUFFER)
-            .queue_family_index(match gfx.cast::<GfxVulkan>().device.queues.get(&vk::QueueFlags::GRAPHICS) {
+            .queue_family_index(match unsafe { gfx.cast::<GfxVulkan>().device.assume_init_ref() }.queues.get(&vk::QueueFlags::GRAPHICS) {
                 None => { logger::fatal!("failed to find queue"); }
                 Some(queue) => { queue[0].index }
             })
             .build();
 
-        let command_pool = vk_check!(unsafe {gfx.cast::<GfxVulkan>().device.handle.create_command_pool(&create_infos, None)});
+        let command_pool = vk_check!(unsafe {gfx.cast::<GfxVulkan>().device.assume_init_ref().handle.create_command_pool(&create_infos, None)});
 
         gfx.cast::<GfxVulkan>().set_vk_object_name(command_pool, format!("command pool\t\t: {}", name).as_str());
 
@@ -115,7 +117,7 @@ impl VkCommandBuffer {
 impl GfxCommandBuffer for VkCommandBuffer {
     fn bind_program(&self, program: &Arc<dyn ShaderProgram>) {
         unsafe {
-            self.gfx.cast::<GfxVulkan>().device.handle.cmd_bind_pipeline(
+            self.gfx.cast::<GfxVulkan>().device.assume_init_ref().handle.cmd_bind_pipeline(
                 self.command_buffer.get(&self.image_id.read().unwrap()),
                 vk::PipelineBindPoint::GRAPHICS,
                 program.cast::<VkShaderProgram>().pipeline,
@@ -126,7 +128,7 @@ impl GfxCommandBuffer for VkCommandBuffer {
     fn bind_shader_instance(&self, instance: &Arc<dyn ShaderInstance>) {
         instance.cast::<VkShaderInstance>().refresh_descriptors(&self.image_id.read().unwrap());
         unsafe {
-            self.gfx.cast::<GfxVulkan>().device.handle.cmd_bind_descriptor_sets(
+            self.gfx.cast::<GfxVulkan>().device.assume_init_ref().handle.cmd_bind_descriptor_sets(
                 self.command_buffer.get(&self.image_id.read().unwrap()),
                 vk::PipelineBindPoint::GRAPHICS,
                 *instance.cast::<VkShaderInstance>().pipeline_layout,
@@ -145,7 +147,7 @@ impl GfxCommandBuffer for VkCommandBuffer {
         let index_buffer = mesh.index_buffer().cast::<VkBuffer>();
         let vertex_buffer = mesh.vertex_buffer().cast::<VkBuffer>();
         unsafe {
-            self.gfx.cast::<GfxVulkan>().device.handle.cmd_bind_index_buffer(
+            self.gfx.cast::<GfxVulkan>().device.assume_init_ref().handle.cmd_bind_index_buffer(
                 self.command_buffer.get(&self.image_id.read().unwrap()),
                 index_buffer.get_handle(&self.image_id.read().unwrap()),
                 0 as vk::DeviceSize,
@@ -154,13 +156,13 @@ impl GfxCommandBuffer for VkCommandBuffer {
                     IndexBufferType::Uint32 => { vk::IndexType::UINT32 }
                 });
 
-            self.gfx.cast::<GfxVulkan>().device.handle.cmd_bind_vertex_buffers(
+            self.gfx.cast::<GfxVulkan>().device.assume_init_ref().handle.cmd_bind_vertex_buffers(
                 self.command_buffer.get(&self.image_id.read().unwrap()),
                 0,
                 &[vertex_buffer.get_handle(&self.image_id.read().unwrap())],
                 &[0])
         }
-        unsafe { self.gfx.cast::<GfxVulkan>().device.handle.cmd_draw_indexed(self.command_buffer.get(&self.image_id.read().unwrap()), index_count, instance_count, first_index, vertex_offset, first_instance) }
+        unsafe { self.gfx.cast::<GfxVulkan>().device.assume_init_ref().handle.cmd_draw_indexed(self.command_buffer.get(&self.image_id.read().unwrap()), index_count, instance_count, first_index, vertex_offset, first_instance) }
     }
 
     fn draw_mesh_indirect(&self, _mesh: &Arc<Mesh>) {
@@ -168,12 +170,12 @@ impl GfxCommandBuffer for VkCommandBuffer {
     }
 
     fn draw_procedural(&self, vertex_count: u32, first_vertex: u32, instance_count: u32, first_instance: u32) {
-        unsafe { self.gfx.cast::<GfxVulkan>().device.handle.cmd_draw(self.command_buffer.get(&self.image_id.read().unwrap()), vertex_count, instance_count, first_vertex, first_instance) }
+        unsafe { self.gfx.cast::<GfxVulkan>().device.assume_init_ref().handle.cmd_draw(self.command_buffer.get(&self.image_id.read().unwrap()), vertex_count, instance_count, first_vertex, first_instance) }
     }
 
     fn set_scissor(&self, scissors: Scissors) {
         unsafe {
-            self.gfx.cast::<GfxVulkan>().device.handle.cmd_set_scissor(self.command_buffer.get(&self.image_id.read().unwrap()), 0, &[vk::Rect2D {
+            self.gfx.cast::<GfxVulkan>().device.assume_init_ref().handle.cmd_set_scissor(self.command_buffer.get(&self.image_id.read().unwrap()), 0, &[vk::Rect2D {
                 extent: vk::Extent2D { width: scissors.width, height: scissors.height },
                 offset: vk::Offset2D { x: scissors.min_x, y: scissors.min_y },
             }])
@@ -182,7 +184,7 @@ impl GfxCommandBuffer for VkCommandBuffer {
 
     fn push_constant(&self, program: &Arc<dyn ShaderProgram>, data: BufferMemory, stage: ShaderStage) {
         unsafe {
-            self.gfx.cast::<GfxVulkan>().device.handle.cmd_push_constants(self.command_buffer.get(&self.image_id.read().unwrap()), *program.cast::<VkShaderProgram>().pipeline_layout, match stage {
+            self.gfx.cast::<GfxVulkan>().device.assume_init_ref().handle.cmd_push_constants(self.command_buffer.get(&self.image_id.read().unwrap()), *program.cast::<VkShaderProgram>().pipeline_layout, match stage {
                 ShaderStage::Vertex => { vk::ShaderStageFlags::VERTEX }
                 ShaderStage::Fragment => { vk::ShaderStageFlags::FRAGMENT }
             }, 0, data.as_slice())

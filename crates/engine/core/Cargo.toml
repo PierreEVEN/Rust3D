@@ -7,6 +7,7 @@ edition = "2021"
 shader_compiler = { path = "../shader_compiler" }
 gfx = { path = "../common/gfx" }
 plateform = { path = "../common/plateform" }
+backend_launcher = { path = "../backends/backend_launcher" }
 gfx-maths = "0.2.8"
 logger = {path = "../logger"}
 lazy_static = "1.4.0"

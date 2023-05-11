@@ -121,13 +121,13 @@ impl MaterialAsset {
                     },
                     shader_properties: parser.properties.clone()
                 };
-
-                let render_pass = match self.meta_data.asset_manager.graphics().find_render_pass(pass) {
+                
+                let render_pass = match crate::engine::Engine::get().gfx().find_render_pass(pass) {
                     None => { logger::fatal!("trying to create shader program for render pass [{pass}], but this render pass is not available or registered") }
                     Some(pass) => { pass }
                 };
                 
-                let program = self.meta_data.asset_manager.graphics().create_shader_program(self.meta_data.get_name(), &render_pass, &ci_shader);
+                let program = crate::engine::Engine::get().gfx().create_shader_program(self.meta_data.get_name(), &render_pass, &ci_shader);
                 self.permutations.write().unwrap().insert(pass.clone(), ShaderPermutation {
                     shader: program.clone()
                 });

@@ -1,5 +1,3 @@
-
-
 pub mod backend {
     use backend_vulkan::GfxVulkan;
 
@@ -21,7 +19,7 @@ pub mod backend {
             Box::<GfxVulkan>::default()
         }
     }
-    
+
     /*
     pub fn create_surface_vulkan(gfx: &GfxRef, window: &Arc<dyn Window>) -> Arc<dyn GfxSurface> {
         #[cfg(windows)]

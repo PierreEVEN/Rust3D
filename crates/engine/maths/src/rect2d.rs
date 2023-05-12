@@ -1,6 +1,5 @@
-﻿
-use std::{fmt, ops};
 use macros::*;
+use std::{fmt, ops};
 
 #[derive(Debug, Copy, Clone, OpsAdd, OpsSub, DefaultConstruct)]
 pub struct Rect2D<T: Default> {
@@ -10,7 +9,11 @@ pub struct Rect2D<T: Default> {
     _max_y: T,
 }
 
-impl<T: Default + ops::Add + ops::Sub + Copy + PartialOrd> Rect2D<T> where <T as ops::Sub>::Output: Into<T>, <T as ops::Add>::Output: Into<T> {
+impl<T: Default + ops::Add + ops::Sub + Copy + PartialOrd> Rect2D<T>
+where
+    <T as ops::Sub>::Output: Into<T>,
+    <T as ops::Add>::Output: Into<T>,
+{
     pub fn width(&self) -> T {
         (self.max_x() - self.min_x()).into()
     }
@@ -20,45 +23,55 @@ impl<T: Default + ops::Add + ops::Sub + Copy + PartialOrd> Rect2D<T> where <T as
 
     pub fn min_x(&self) -> T {
         if self._min_x > self._max_x {
-            return self._max_x
+            return self._max_x;
         }
         self._min_x
     }
-    
+
     pub fn min_y(&self) -> T {
         if self._min_y > self._max_y {
-            return self._max_y
+            return self._max_y;
         }
         self._min_y
     }
 
     pub fn max_x(&self) -> T {
         if self._max_x < self._min_x {
-            return self._min_x
+            return self._min_x;
         }
         self._max_x
     }
 
     pub fn max_y(&self) -> T {
         if self._max_y < self._min_y {
-            return self._min_y
+            return self._min_y;
         }
         self._max_y
     }
-    
-    pub fn rect(x: T, y: T, width : T, height : T) -> Rect2D<T> {
+
+    pub fn rect(x: T, y: T, width: T, height: T) -> Rect2D<T> {
         Self {
             _min_x: x,
             _min_y: y,
             _max_x: (x + width).into(),
-            _max_y: (y + height).into()
+            _max_y: (y + height).into(),
         }
     }
 }
 
-impl<T: Default + fmt::Display + ops::Add + ops::Sub + Copy + PartialOrd> ToString for Rect2D<T> where <T as ops::Sub>::Output: Into<T>, <T as ops::Add>::Output: Into<T> {
+impl<T: Default + fmt::Display + ops::Add + ops::Sub + Copy + PartialOrd> ToString for Rect2D<T>
+where
+    <T as ops::Sub>::Output: Into<T>,
+    <T as ops::Add>::Output: Into<T>,
+{
     fn to_string(&self) -> String {
-        format!("x={}, y={}, res={}x{}", self.min_x(), self.min_y(), self.width(), self.height())
+        format!(
+            "x={}, y={}, res={}x{}",
+            self.min_x(),
+            self.min_y(),
+            self.width(),
+            self.height()
+        )
     }
 }
 

@@ -1,5 +1,5 @@
-﻿use std::ops;
 use std::collections::HashMap;
+use std::ops;
 
 #[derive(Clone)]
 pub struct ShaderError {
@@ -16,7 +16,14 @@ pub struct ShaderErrorResult {
 }
 
 impl ShaderErrorResult {
-    pub fn push(&mut self, line: Option<isize>, column: Option<isize>, error_id: &str, error_message: &str, file_path: &str) {
+    pub fn push(
+        &mut self,
+        line: Option<isize>,
+        column: Option<isize>,
+        error_id: &str,
+        error_message: &str,
+        file_path: &str,
+    ) {
         self.error_list.push(ShaderError {
             text: error_message.to_string(),
             file_path: file_path.to_string(),
@@ -32,8 +39,6 @@ impl ShaderErrorResult {
 
 impl ToString for ShaderErrorResult {
     fn to_string(&self) -> String {
-        
-        
         let mut result = String::from("stack backtrace:\n");
         let mut index = 1;
         for error in &self.error_list {
@@ -48,13 +53,33 @@ impl ToString for ShaderErrorResult {
                 text += "\n";
             }
 
-
             if error.line.is_some() && error.column.is_some() {
-                result += format!("\t{}: {}\n\t\tat {}:{}:{}\n{}\n", index, error.error_id, error.file_path, error.line.unwrap(), error.column.unwrap(), text).as_str();
+                result += format!(
+                    "\t{}: {}\n\t\tat {}:{}:{}\n{}\n",
+                    index,
+                    error.error_id,
+                    error.file_path,
+                    error.line.unwrap(),
+                    error.column.unwrap(),
+                    text
+                )
+                .as_str();
             } else if error.line.is_some() {
-                result += format!("\t{}: {}\n\t\tat {}:{}:0\n{}\n", index, error.error_id, error.file_path, error.line.unwrap(), text).as_str();
+                result += format!(
+                    "\t{}: {}\n\t\tat {}:{}:0\n{}\n",
+                    index,
+                    error.error_id,
+                    error.file_path,
+                    error.line.unwrap(),
+                    text
+                )
+                .as_str();
             } else {
-                result += format!("\t{}: {}\n\t\tat {}:0:0\n{}\n", index, error.error_id, error.file_path, text).as_str();
+                result += format!(
+                    "\t{}: {}\n\t\tat {}:0:0\n{}\n",
+                    index, error.error_id, error.file_path, text
+                )
+                .as_str();
             }
 
             index += 1;
@@ -72,14 +97,12 @@ impl ops::AddAssign<ShaderErrorResult> for ShaderErrorResult {
 }
 
 #[derive(Clone, Default, Debug)]
-pub struct ShaderBlock
-{
+pub struct ShaderBlock {
     pub name: String,
     pub raw_text: String,
 }
 
-pub struct InterstageData
-{
+pub struct InterstageData {
     pub stage_outputs: HashMap<String, u32>,
     pub binding_index: i32,
 }

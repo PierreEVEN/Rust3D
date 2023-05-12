@@ -1,17 +1,23 @@
-﻿use std::collections::HashMap;
+use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
 use raw_window_handle::{RawWindowHandle, Win32WindowHandle};
 use windows::core::PCWSTR;
 use windows::Win32::Foundation::{COLORREF, HMODULE, HWND, RECT};
-use windows::Win32::UI::WindowsAndMessaging::{AdjustWindowRectEx, CreateWindowExW, HMENU, LWA_ALPHA, SetLayeredWindowAttributes, SetWindowTextW, ShowWindow, SW_MAXIMIZE, SW_SHOW, WINDOW_STYLE, WS_CAPTION, WS_EX_LAYERED, WS_MAXIMIZEBOX, WS_MINIMIZEBOX, WS_OVERLAPPED, WS_POPUP, WS_SYSMENU, WS_THICKFRAME, WS_VISIBLE};
+use windows::Win32::UI::WindowsAndMessaging::{
+    AdjustWindowRectEx, CreateWindowExW, SetLayeredWindowAttributes, SetWindowTextW, ShowWindow,
+    HMENU, LWA_ALPHA, SW_MAXIMIZE, SW_SHOW, WINDOW_STYLE, WS_CAPTION, WS_EX_LAYERED,
+    WS_MAXIMIZEBOX, WS_MINIMIZEBOX, WS_OVERLAPPED, WS_POPUP, WS_SYSMENU, WS_THICKFRAME, WS_VISIBLE,
+};
 
 use logger::info;
 use maths::rect2d::RectI32;
-use plateform::window::{PlatformEvent, Window, WindowCreateInfos, WindowEventDelegate, WindowFlagBits, WindowFlags};
+use plateform::window::{
+    PlatformEvent, Window, WindowCreateInfos, WindowEventDelegate, WindowFlagBits, WindowFlags,
+};
 
-use crate::{utf8_to_utf16, WIN_CLASS_NAME};
 use crate::utils::check_win32_error;
+use crate::{utf8_to_utf16, WIN_CLASS_NAME};
 
 pub struct WindowWin32 {
     pub hwnd: HWND,
@@ -28,13 +34,19 @@ impl WindowWin32 {
         let mut style = WINDOW_STYLE::default();
 
         unsafe {
-            if create_infos.window_flags.contains(WindowFlagBits::Borderless) {
+            if create_infos
+                .window_flags
+                .contains(WindowFlagBits::Borderless)
+            {
                 style |= WS_VISIBLE | WS_POPUP;
             } else {
                 style |= WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX;
             }
 
-            if create_infos.window_flags.contains(WindowFlagBits::Resizable) {
+            if create_infos
+                .window_flags
+                .contains(WindowFlagBits::Resizable)
+            {
                 style |= WS_THICKFRAME | WS_MAXIMIZEBOX;
             }
 
@@ -62,7 +74,9 @@ impl WindowWin32 {
                 None,
             );
 
-            if let Err(_message) = check_win32_error() { logger::fatal!("failed to create window : {_message}"); }
+            if let Err(_message) = check_win32_error() {
+                logger::fatal!("failed to create window : {_message}");
+            }
 
             let window = WindowWin32 {
                 hwnd,
@@ -150,7 +164,10 @@ impl Window for WindowWin32 {
                 return;
             }
         }
-        self.event_map.write().unwrap().insert(event_type, vec![delegate]);
+        self.event_map
+            .write()
+            .unwrap()
+            .insert(event_type, vec![delegate]);
     }
 }
 

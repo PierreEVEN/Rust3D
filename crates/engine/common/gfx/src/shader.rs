@@ -1,12 +1,11 @@
-﻿
+use crate::shader_instance::BindPoint;
+use crate::{GfxCast, ShaderInstance};
 #[cfg(not(debug_assertions))]
 use std::collections::hash_map::DefaultHasher;
 use std::fmt;
 use std::fmt::{Debug, Display, Formatter};
 use std::hash::{Hash, Hasher};
 use std::sync::Arc;
-use crate::{GfxCast, ShaderInstance};
-use crate::shader_instance::BindPoint;
 
 use crate::types::PixelFormat;
 
@@ -14,7 +13,7 @@ use crate::types::PixelFormat;
 pub struct PassID {
     #[cfg(not(debug_assertions))]
     internal_id: u64,
-    
+
     #[cfg(debug_assertions)]
     internal_id: String,
 }
@@ -31,7 +30,7 @@ impl PassID {
         }
         #[cfg(debug_assertions)]
         Self {
-            internal_id: id_name.to_string()
+            internal_id: id_name.to_string(),
         }
     }
 }
@@ -40,7 +39,7 @@ impl Hash for PassID {
     fn hash<H: Hasher>(&self, state: &mut H) {
         #[cfg(not(debug_assertions))]
         state.write_u64(self.internal_id);
-        
+
         #[cfg(debug_assertions)]
         state.write(self.internal_id.as_bytes());
     }
@@ -92,18 +91,15 @@ pub struct ShaderProgramStage {
     pub stage_input: Vec<ShaderStageInput>,
 }
 
-
 #[derive(Clone, Debug, Default)]
-pub enum ShaderLanguage
-{
+pub enum ShaderLanguage {
     #[default]
     HLSL,
     GLSL,
 }
 
 #[derive(Clone)]
-pub struct ShaderProperties
-{
+pub struct ShaderProperties {
     pub shader_version: String,
     pub shader_language: ShaderLanguage,
     pub culling: Culling,
@@ -132,8 +128,7 @@ impl Default for ShaderProperties {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Default)]
-pub enum Culling
-{
+pub enum Culling {
     None,
     Front,
     #[default]
@@ -142,16 +137,14 @@ pub enum Culling
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Default)]
-pub enum FrontFace
-{
+pub enum FrontFace {
     Clockwise,
     #[default]
     CounterClockwise,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Default)]
-pub enum Topology
-{
+pub enum Topology {
     Points,
     Lines,
     #[default]
@@ -159,8 +152,7 @@ pub enum Topology
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Default)]
-pub enum PolygonMode
-{
+pub enum PolygonMode {
     Point,
     Line,
     #[default]
@@ -168,8 +160,7 @@ pub enum PolygonMode
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Default)]
-pub enum AlphaMode
-{
+pub enum AlphaMode {
     #[default]
     Opaque,
     Translucent,
@@ -177,8 +168,7 @@ pub enum AlphaMode
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
-pub enum ShaderStage
-{
+pub enum ShaderStage {
     Vertex,
     Fragment,
 }
@@ -193,8 +183,7 @@ impl Display for ShaderStage {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub enum DescriptorType
-{
+pub enum DescriptorType {
     Sampler,
     CombinedImageSampler,
     SampledImage,
@@ -215,7 +204,7 @@ pub struct ShaderProgramInfos {
     pub shader_properties: ShaderProperties,
 }
 
-pub trait ShaderProgram : GfxCast {
+pub trait ShaderProgram: GfxCast {
     fn get_bindings(&self) -> Vec<DescriptorBinding>;
     fn instantiate(&self) -> Arc<dyn ShaderInstance>;
 }

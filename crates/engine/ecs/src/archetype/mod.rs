@@ -1,8 +1,8 @@
-﻿pub mod signature;
+pub mod signature;
 
+use crate::archetype::signature::ArchetypeSignature;
 use std::collections::HashMap;
 use std::slice;
-use crate::archetype::signature::ArchetypeSignature;
 
 use crate::component::{ComponentID, ComponentRegistry};
 use crate::entity::EntityID;
@@ -18,7 +18,12 @@ pub struct ComponentData {
 
 impl ComponentData {
     pub fn new(id: ComponentID, type_size: usize) -> ComponentData {
-        Self { id, data: vec![], type_size, entity_count: 0 }
+        Self {
+            id,
+            data: vec![],
+            type_size,
+            entity_count: 0,
+        }
     }
 
     pub fn extend(&mut self) {
@@ -54,16 +59,12 @@ impl ComponentData {
 
     #[inline]
     pub fn as_component<'ecs, C>(&self) -> &'ecs [C] {
-        unsafe {
-            slice::from_raw_parts(self.data.as_ptr() as *const C, self.entity_count)
-        }
+        unsafe { slice::from_raw_parts(self.data.as_ptr() as *const C, self.entity_count) }
     }
 
     #[inline]
     pub fn as_component_mut<'ecs, C>(&mut self) -> &'ecs mut [C] {
-        unsafe {
-            slice::from_raw_parts_mut(self.data.as_ptr() as *mut C, self.entity_count)
-        }
+        unsafe { slice::from_raw_parts_mut(self.data.as_ptr() as *mut C, self.entity_count) }
     }
 
     pub fn raw_len(&self) -> usize {
@@ -178,16 +179,20 @@ pub struct ArchetypeRegistry {
 }
 
 impl ArchetypeRegistry {
-    pub fn find_or_create(&mut self, identifier: ArchetypeSignature, registry: &ComponentRegistry) -> ArchetypeID {
+    pub fn find_or_create(
+        &mut self,
+        identifier: ArchetypeSignature,
+        registry: &ComponentRegistry,
+    ) -> ArchetypeID {
         match self.registry_map.get(&identifier) {
             None => {
-                self.archetypes.push(Archetype::new(identifier.clone(), registry));
-                self.registry_map.insert(identifier, (self.archetypes.len() - 1)  as ArchetypeID);
+                self.archetypes
+                    .push(Archetype::new(identifier.clone(), registry));
+                self.registry_map
+                    .insert(identifier, (self.archetypes.len() - 1) as ArchetypeID);
                 (self.archetypes.len() - 1) as ArchetypeID
             }
-            Some(found_id) => {
-                *found_id
-            }
+            Some(found_id) => *found_id,
         }
     }
 
@@ -197,13 +202,16 @@ impl ArchetypeRegistry {
 
     #[inline]
     pub fn get_archetype_mut(&mut self, id: &ArchetypeID) -> &mut Archetype {
-        self.archetypes.get_mut(*id as usize).unwrap_or_else(|| logger::fatal!("Requested archetype id '{id}' is not valid"))
+        self.archetypes
+            .get_mut(*id as usize)
+            .unwrap_or_else(|| logger::fatal!("Requested archetype id '{id}' is not valid"))
     }
 
-    pub fn archetype_count(&self) -> usize { self.archetypes.len() }
+    pub fn archetype_count(&self) -> usize {
+        self.archetypes.len()
+    }
 
     pub fn match_archetypes(&self, id: &ArchetypeSignature) -> Vec<ArchetypeID> {
-
         let mut ids = vec![];
 
         for (i, archetype) in self.archetypes.iter().enumerate() {

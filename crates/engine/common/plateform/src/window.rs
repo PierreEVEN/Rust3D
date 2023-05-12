@@ -1,4 +1,4 @@
-﻿use std::hash::{Hash, Hasher};
+use std::hash::{Hash, Hasher};
 
 use enumflags2::{bitflags, BitFlags};
 use raw_window_handle::RawWindowHandle;
@@ -33,8 +33,8 @@ pub enum PlatformEvent {
 impl PlatformEvent {
     pub fn id(&self) -> u16 {
         match self {
-            PlatformEvent::WindowClosed => { 1 }
-            PlatformEvent::WindowResized(_, _) => { 2 }
+            PlatformEvent::WindowClosed => 1,
+            PlatformEvent::WindowResized(_, _) => 2,
         }
     }
 }

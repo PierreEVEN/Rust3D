@@ -1,10 +1,10 @@
-﻿use std::collections::HashMap;
-use std::sync::{Arc, RwLock};
 use crate::asset::{AssetFactory, GameAsset};
 use crate::asset_id::AssetID;
 use crate::asset_type_id::AssetTypeID;
 use crate::base_assets::material_asset::MaterialAssetFactory;
 use crate::base_assets::mesh_asset::MeshAssetFactory;
+use std::collections::HashMap;
+use std::sync::{Arc, RwLock};
 
 pub struct AssetManager {
     factories: RwLock<HashMap<AssetTypeID, Arc<dyn AssetFactory>>>,
@@ -27,13 +27,16 @@ impl Default for AssetManager {
 
 impl AssetManager {
     pub fn register_factory(&self, factory: Arc<dyn AssetFactory>) {
-        self.factories.write().unwrap().insert(factory.asset_id(), factory);
+        self.factories
+            .write()
+            .unwrap()
+            .insert(factory.asset_id(), factory);
     }
 
     pub fn find_factory(&self, type_id: AssetTypeID) -> Result<Arc<dyn AssetFactory>, String> {
         match self.factories.read().unwrap().get(&type_id) {
-            None => { Err("failed to find factory".to_string()) }
-            Some(factory) => { Ok(factory.clone()) }
+            None => Err("failed to find factory".to_string()),
+            Some(factory) => Ok(factory.clone()),
         }
     }
 }

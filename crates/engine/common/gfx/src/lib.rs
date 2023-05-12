@@ -1,4 +1,7 @@
+use logger::fatal;
 use std::hash::{Hash, Hasher};
+use std::mem::MaybeUninit;
+use std::ops::Deref;
 use std::sync::Arc;
 
 use crate::buffer::{BufferCreateInfo, GfxBuffer};
@@ -8,40 +11,84 @@ use crate::image_sampler::{ImageSampler, SamplerCreateInfos};
 use crate::mesh::{Mesh, MeshCreateInfos};
 use crate::render_pass::{RenderPass, RenderPassCreateInfos};
 use crate::shader::{PassID, ShaderProgram, ShaderProgramInfos};
-use crate::shader_instance::{ShaderInstance};
+use crate::shader_instance::ShaderInstance;
 use crate::surface::GfxSurface;
 use crate::types::GfxCast;
 
+pub mod buffer;
+pub mod command_buffer;
+pub mod gfx_resource;
+pub mod image;
+pub mod image_sampler;
+pub mod mesh;
+pub mod render_pass;
+pub mod shader;
+pub mod shader_instance;
 pub mod surface;
 pub mod types;
-pub mod buffer;
-pub mod shader;
-pub mod render_pass;
-pub mod image;
-pub mod gfx_resource;
-pub mod command_buffer;
-pub mod image_sampler;
-pub mod shader_instance;
-pub mod mesh;
-
-pub type GfxRef = Arc<dyn GfxInterface>;
 
 pub trait GfxInterface: GfxCast {
-
     fn init(&mut self);
     fn is_ready(&self) -> bool;
-    
+
     fn set_physical_device(&self, selected_device: PhysicalDevice);
     fn enumerate_physical_devices(&self) -> Vec<PhysicalDevice>;
     fn find_best_suitable_physical_device(&self) -> Result<PhysicalDevice, String>;
     fn create_buffer(&self, name: String, create_infos: &BufferCreateInfo) -> Arc<dyn GfxBuffer>;
-    fn create_shader_program(&self, name: String, render_pass: &Arc<dyn RenderPass>, create_infos: &ShaderProgramInfos) -> Arc<dyn ShaderProgram>;
-    fn create_render_pass(&self, name: String, create_infos: RenderPassCreateInfos) -> Arc<dyn RenderPass>;
+    fn create_shader_program(
+        &self,
+        name: String,
+        render_pass: &Arc<dyn RenderPass>,
+        create_infos: &ShaderProgramInfos,
+    ) -> Arc<dyn ShaderProgram>;
+    fn create_render_pass(
+        &self,
+        name: String,
+        create_infos: RenderPassCreateInfos,
+    ) -> Arc<dyn RenderPass>;
     fn create_image(&self, name: String, create_infos: ImageCreateInfos) -> Arc<dyn GfxImage>;
-    fn create_image_sampler(&self, name: String, create_infos: SamplerCreateInfos) -> Arc<dyn ImageSampler>;
+    fn create_image_sampler(
+        &self,
+        name: String,
+        create_infos: SamplerCreateInfos,
+    ) -> Arc<dyn ImageSampler>;
     fn find_render_pass(&self, pass_id: &PassID) -> Option<Arc<dyn RenderPass>>;
-    fn create_command_buffer(&self, name: String, surface: &Arc<dyn GfxSurface>) -> Arc<dyn GfxCommandBuffer>;
-    fn get_ref(&self) -> GfxRef;
+    fn create_command_buffer(
+        &self,
+        name: String,
+        surface: &Arc<dyn GfxSurface>,
+    ) -> Arc<dyn GfxCommandBuffer>;
+}
+
+#[derive(Default)]
+pub struct Gfx {
+    instance: Option<*const dyn GfxInterface>,
+}
+
+static mut GFX_INSTANCE: MaybeUninit<Gfx> = MaybeUninit::<Gfx>::uninit();
+
+impl Gfx {
+    fn from(gfx: &dyn GfxInterface) -> Self {
+        Self {
+            instance: Some(gfx),
+        }
+    }
+    pub fn get() -> &'static Self {
+        unsafe { GFX_INSTANCE.assume_init_ref() }
+    }
+}
+
+impl Deref for Gfx {
+    type Target = dyn GfxInterface;
+
+    fn deref(&self) -> &Self::Target {
+        match self.instance {
+            None => {
+                fatal!("This gfx reference have not been initialized. Please ensure GfxInterface.init() have been called before")
+            }
+            Some(gfx) => unsafe { gfx.as_ref().unwrap() },
+        }
+    }
 }
 
 impl dyn GfxInterface {
@@ -50,7 +97,11 @@ impl dyn GfxInterface {
     }
 
     pub fn create_mesh(&self, name: String, create_infos: &MeshCreateInfos) -> Arc<Mesh> {
-        Mesh::new(&self.get_ref(), name, create_infos)
+        Mesh::new(name, create_infos)
+    }
+
+    pub fn pre_init(&self) {
+        unsafe { GFX_INSTANCE = MaybeUninit::new(Gfx::from(self)) }
     }
 }
 

@@ -1,6 +1,5 @@
-﻿
-use std::ops;
 use macros::*;
+use std::ops;
 
 #[derive(Debug, Copy, Clone, OpsAdd, OpsSub, OpsMul, OpsDiv, DefaultConstruct)]
 pub struct Vec4<T: Default> {

@@ -1,16 +1,14 @@
-﻿use std::collections::HashMap;
+use std::collections::HashMap;
 use std::fmt::Error;
-use std::os::raw::{c_char};
+use std::os::raw::c_char;
 use std::sync::{Arc, RwLock};
 
-use ash::vk;
 use ash::extensions::khr::Swapchain;
 use ash::prelude::VkResult;
+use ash::vk;
 use gpu_allocator::vulkan;
 
-use gfx::GfxRef;
-
-use crate::{GfxVulkan, vk_check};
+use crate::{vk_check, GfxVulkan};
 
 pub fn get_required_device_extensions() -> Vec<*const c_char> {
     vec!["VK_KHR_swapchain\0".as_ptr() as *const c_char]
@@ -20,12 +18,16 @@ pub struct VkQueue {
     queue: vk::Queue,
     pub flags: vk::QueueFlags,
     pub index: u32,
-    gfx: GfxRef,
     fence: vk::Fence,
 }
 
 impl VkQueue {
-    pub fn new(device: &ash::Device, queue: vk::Queue, flags: vk::QueueFlags, index: u32, gfx: &GfxRef) -> Arc<Self> {
+    pub fn new(
+        device: &ash::Device,
+        queue: vk::Queue,
+        flags: vk::QueueFlags,
+        index: u32,
+    ) -> Arc<Self> {
         let ci_fence = vk::FenceCreateInfo::builder()
             .flags(vk::FenceCreateFlags::SIGNALED)
             .build();
@@ -36,23 +38,42 @@ impl VkQueue {
             queue,
             flags,
             index,
-            gfx: gfx.clone(),
             fence,
         })
     }
 
     pub fn wait(&self) {
         vk_check!(unsafe {
-            self.gfx.cast::<GfxVulkan>().device.assume_init_ref().handle.wait_for_fences(&[self.fence], true, u64::MAX) 
+            GfxVulkan::get()
+                .device
+                .assume_init_ref()
+                .handle
+                .wait_for_fences(&[self.fence], true, u64::MAX)
         });
     }
 
     pub fn submit(&self, submit_infos: vk::SubmitInfo) {
         self.wait();
-        vk_check!(unsafe { self.gfx.cast::<GfxVulkan>().device.assume_init_ref().handle.reset_fences(&[self.fence]) });
-        vk_check!(unsafe { self.gfx.cast::<GfxVulkan>().device.assume_init_ref().handle.queue_submit(self.queue, &[submit_infos], self.fence) });
+        vk_check!(unsafe {
+            GfxVulkan::get()
+                .device
+                .assume_init_ref()
+                .handle
+                .reset_fences(&[self.fence])
+        });
+        vk_check!(unsafe {
+            GfxVulkan::get()
+                .device
+                .assume_init_ref()
+                .handle
+                .queue_submit(self.queue, &[submit_infos], self.fence)
+        });
     }
-    pub fn present(&self, swapchain: &Swapchain, present_infos: vk::PresentInfoKHR) -> VkResult<bool> {
+    pub fn present(
+        &self,
+        swapchain: &Swapchain,
+        present_infos: vk::PresentInfoKHR,
+    ) -> VkResult<bool> {
         unsafe { swapchain.queue_present(self.queue, &present_infos) }
     }
 }
@@ -63,23 +84,27 @@ pub struct VkDevice {
     pub allocator: Arc<RwLock<vulkan::Allocator>>,
 }
 
-
-impl VkDevice {
-    pub fn new(gfx: &GfxRef) -> VkDevice {
+impl Default for VkDevice {
+    fn default() -> Self {
         let mut ci_queues = Vec::<vk::DeviceQueueCreateInfo>::new();
 
         let queue_priorities: f32 = 1.0;
-        for queue in &gfx.cast::<GfxVulkan>().physical_device_vk.queues {
+        for queue in &GfxVulkan::get().physical_device_vk.queues {
             ci_queues.push(
                 vk::DeviceQueueCreateInfo::builder()
                     .queue_family_index(queue.index)
                     .queue_priorities(&[queue_priorities])
-                    .build());
+                    .build(),
+            );
         }
 
         let mut extensions = get_required_device_extensions();
         unsafe {
-            if gfx.cast::<GfxVulkan>().instance.assume_init_ref().enable_validation_layers() {
+            if GfxVulkan::get()
+                .instance
+                .assume_init_ref()
+                .enable_validation_layers()
+            {
                 extensions.push("VK_EXT_debug_marker\0".as_ptr() as *const c_char);
             }
         }
@@ -90,7 +115,9 @@ impl VkDevice {
             .fill_mode_non_solid(true) // Wireframe
             .wide_lines(true)
             .sampler_anisotropy(true)
-            .robust_buffer_access(unsafe { gfx.cast::<GfxVulkan>().instance.assume_init_ref() }.enable_validation_layers())
+            .robust_buffer_access(
+                unsafe { GfxVulkan::get().instance.assume_init_ref() }.enable_validation_layers(),
+            )
             .build();
 
         let mut index_features = vk::PhysicalDeviceDescriptorIndexingFeatures::builder()
@@ -111,69 +138,108 @@ impl VkDevice {
 
         let mut ps: vk::PhysicalDevice = Default::default();
         unsafe {
-            if let Ok(devices) = gfx.cast::<GfxVulkan>().instance.assume_init_ref().handle.assume_init_ref().enumerate_physical_devices() {
+            if let Ok(devices) = GfxVulkan::get()
+                .instance
+                .assume_init_ref()
+                .handle
+                .assume_init_ref()
+                .enumerate_physical_devices()
+            {
                 if !devices.is_empty() {
                     ps = devices[0];
                 }
             }
         }
 
-        let device = vk_check!(unsafe { gfx.cast::<GfxVulkan>().instance.assume_init_ref().handle.assume_init_ref().create_device(
-            ps,
-            &ci_device,
-            None
-        ) });
+        let device = vk_check!(unsafe {
+            GfxVulkan::get()
+                .instance
+                .assume_init_ref()
+                .handle
+                .assume_init_ref()
+                .create_device(ps, &ci_device, None)
+        });
 
         // Create allocator
         let allocator = vulkan::Allocator::new(&vulkan::AllocatorCreateDesc {
-            instance: unsafe { gfx.cast::<GfxVulkan>().instance.assume_init_ref().handle.assume_init_ref() }.clone(),
+            instance: unsafe {
+                GfxVulkan::get()
+                    .instance
+                    .assume_init_ref()
+                    .handle
+                    .assume_init_ref()
+            }
+            .clone(),
             device: device.clone(),
-            physical_device: gfx.cast::<GfxVulkan>().physical_device_vk.handle,
+            physical_device: GfxVulkan::get().physical_device_vk.handle,
             debug_settings: gpu_allocator::AllocatorDebugSettings {
                 log_leaks_on_shutdown: true,
                 ..Default::default()
             },
             buffer_device_address: false,
-        }).expect("failed to create GPU Vulkan memory allocator");
+        })
+        .expect("failed to create GPU Vulkan memory allocator");
 
         let mut queue_map = HashMap::<vk::QueueFlags, Vec<Arc<VkQueue>>>::new();
-        for queue_details in &gfx.cast::<GfxVulkan>().physical_device_vk.queues
-        {
-            let queue = VkQueue::new(&device, unsafe { device.get_device_queue(queue_details.index, 0) }, queue_details.flags, queue_details.index, gfx);
+        for queue_details in &GfxVulkan::get().physical_device_vk.queues {
+            let queue = VkQueue::new(
+                &device,
+                unsafe { device.get_device_queue(queue_details.index, 0) },
+                queue_details.flags,
+                queue_details.index,
+            );
 
             if queue_details.flags.contains(vk::QueueFlags::GRAPHICS) {
                 match queue_map.get_mut(&vk::QueueFlags::GRAPHICS) {
-                    None => { queue_map.insert(vk::QueueFlags::GRAPHICS, vec![queue.clone()]); }
-                    Some(map_item) => { map_item.push(queue.clone()); }
+                    None => {
+                        queue_map.insert(vk::QueueFlags::GRAPHICS, vec![queue.clone()]);
+                    }
+                    Some(map_item) => {
+                        map_item.push(queue.clone());
+                    }
                 }
             }
             if queue_details.flags.contains(vk::QueueFlags::COMPUTE) {
                 match queue_map.get_mut(&vk::QueueFlags::COMPUTE) {
-                    None => { queue_map.insert(vk::QueueFlags::COMPUTE, vec![queue.clone()]); }
-                    Some(map_item) => { map_item.push(queue.clone()); }
+                    None => {
+                        queue_map.insert(vk::QueueFlags::COMPUTE, vec![queue.clone()]);
+                    }
+                    Some(map_item) => {
+                        map_item.push(queue.clone());
+                    }
                 }
             }
             if queue_details.flags.contains(vk::QueueFlags::TRANSFER) {
                 match queue_map.get_mut(&vk::QueueFlags::TRANSFER) {
-                    None => { queue_map.insert(vk::QueueFlags::TRANSFER, vec![queue.clone()]); }
-                    Some(map_item) => { map_item.push(queue.clone()); }
+                    None => {
+                        queue_map.insert(vk::QueueFlags::TRANSFER, vec![queue.clone()]);
+                    }
+                    Some(map_item) => {
+                        map_item.push(queue.clone());
+                    }
                 }
             }
             if queue_details.flags.contains(vk::QueueFlags::SPARSE_BINDING) {
                 match queue_map.get_mut(&vk::QueueFlags::SPARSE_BINDING) {
-                    None => { queue_map.insert(vk::QueueFlags::SPARSE_BINDING, vec![queue.clone()]); }
-                    Some(map_item) => { map_item.push(queue.clone()); }
+                    None => {
+                        queue_map.insert(vk::QueueFlags::SPARSE_BINDING, vec![queue.clone()]);
+                    }
+                    Some(map_item) => {
+                        map_item.push(queue.clone());
+                    }
                 }
             }
         }
 
         Self {
             handle: device,
-            queues : queue_map,
-            allocator : Arc::new(RwLock::new(allocator)),
+            queues: queue_map,
+            allocator: Arc::new(RwLock::new(allocator)),
         }
     }
+}
 
+impl VkDevice {
     pub fn get_queue(&self, flags: vk::QueueFlags) -> Result<Arc<VkQueue>, Error> {
         match self.queues.get(&flags) {
             None => {}
@@ -184,8 +250,6 @@ impl VkDevice {
             }
         }
 
-
         Err(Error::default())
     }
-
 }

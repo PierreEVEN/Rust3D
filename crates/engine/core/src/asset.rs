@@ -1,4 +1,4 @@
-﻿use std::path::Path;
+use std::path::Path;
 use std::sync::{Arc, RwLock};
 
 use crate::asset_manager::AssetManager;
@@ -29,11 +29,11 @@ impl AssetMetaData {
             save_path: RwLock::default(),
         }
     }
-    
+
     pub fn is_transient(&self) -> bool {
         match *self.save_path.read().unwrap() {
-            None => { true }
-            Some(_) => { false }
+            None => true,
+            Some(_) => false,
         }
     }
 

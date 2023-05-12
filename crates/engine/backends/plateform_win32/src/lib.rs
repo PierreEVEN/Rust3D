@@ -1,28 +1,36 @@
-use std::collections::{HashMap};
+use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
 use std::mem::size_of;
 use std::sync::{Arc, RwLock};
 
 use windows::core::PCWSTR;
-use windows::Win32::Foundation::{BOOL, HWND, LPARAM, LRESULT, RECT, WPARAM, HMODULE};
-use windows::Win32::Graphics::Gdi::{BLACK_BRUSH, EnumDisplayMonitors, GetMonitorInfoW, GetStockObject, HBRUSH, HDC, HMONITOR, MONITORINFO};
+use windows::Win32::Foundation::{BOOL, HMODULE, HWND, LPARAM, LRESULT, RECT, WPARAM};
+use windows::Win32::Graphics::Gdi::{
+    EnumDisplayMonitors, GetMonitorInfoW, GetStockObject, BLACK_BRUSH, HBRUSH, HDC, HMONITOR,
+    MONITORINFO,
+};
 use windows::Win32::Media::{timeBeginPeriod, timeEndPeriod};
 use windows::Win32::UI::HiDpi::{GetDpiForMonitor, MDT_EFFECTIVE_DPI};
-use windows::Win32::UI::WindowsAndMessaging::{CreateWindowExW, CS_DBLCLKS, CS_HREDRAW, CS_VREDRAW, DefWindowProcW, DispatchMessageW, GET_CLASS_LONG_INDEX, GetClassLongPtrW, HMENU, IDC_ARROW, LoadCursorW, PeekMessageW, PM_REMOVE, RegisterClassExW, SetClassLongPtrW, TranslateMessage, UnregisterClassW, WINDOW_EX_STYLE, WINDOW_STYLE, WNDCLASSEXW};
 use windows::Win32::UI::WindowsAndMessaging::*;
+use windows::Win32::UI::WindowsAndMessaging::{
+    CreateWindowExW, DefWindowProcW, DispatchMessageW, GetClassLongPtrW, LoadCursorW, PeekMessageW,
+    RegisterClassExW, SetClassLongPtrW, TranslateMessage, UnregisterClassW, CS_DBLCLKS, CS_HREDRAW,
+    CS_VREDRAW, GET_CLASS_LONG_INDEX, HMENU, IDC_ARROW, PM_REMOVE, WINDOW_EX_STYLE, WINDOW_STYLE,
+    WNDCLASSEXW,
+};
 
 use maths::rect2d::Rect2D;
-use plateform::{Monitor, Platform, WindowCreationError};
 use plateform::input_system::InputManager;
 use plateform::window::{PlatformEvent, Window, WindowCreateInfos};
+use plateform::{Monitor, Platform, WindowCreationError};
 
 use crate::utils::{check_win32_error, utf8_to_utf16};
 use crate::win32_inputs::win32_input;
 use crate::window::WindowWin32;
 
-mod window;
 mod utils;
 mod win32_inputs;
+mod window;
 
 const WIN_CLASS_NAME: &str = "r3d_window";
 
@@ -31,7 +39,7 @@ struct HashableHWND(HWND);
 
 impl Hash for HashableHWND {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        state.write_isize(self.0.0);
+        state.write_isize(self.0 .0);
     }
 }
 
@@ -99,7 +107,9 @@ impl Default for PlatformWin32 {
 
                 match check_win32_error() {
                     Ok(_) => (),
-                    Err(_message) => logger::fatal!("failed to send platform pointer to wndclass : {_message}"),
+                    Err(_message) => {
+                        logger::fatal!("failed to send platform pointer to wndclass : {_message}")
+                    }
                 }
             }
         }
@@ -118,11 +128,12 @@ impl PlatformWin32 {
             win32_input(msg, wparam, lparam, &self.input_manager);
 
             match msg {
-                WM_CLOSE => {
-                    window.trigger_event(&PlatformEvent::WindowClosed)
-                }
+                WM_CLOSE => window.trigger_event(&PlatformEvent::WindowClosed),
                 WM_SIZE => {
-                    window.trigger_event(&PlatformEvent::WindowResized(win32_loword!(lparam.0), win32_hiword!(lparam.0)));
+                    window.trigger_event(&PlatformEvent::WindowResized(
+                        win32_loword!(lparam.0),
+                        win32_hiword!(lparam.0),
+                    ));
                 }
                 _ => {}
             }
@@ -143,7 +154,12 @@ impl Drop for PlatformWin32 {
     }
 }
 
-unsafe extern "system" fn wnd_proc(hwnd: HWND, msg: u32, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
+unsafe extern "system" fn wnd_proc(
+    hwnd: HWND,
+    msg: u32,
+    wparam: WPARAM,
+    lparam: LPARAM,
+) -> LRESULT {
     let platform = {
         let ptr = GetClassLongPtrW(hwnd, GET_CLASS_LONG_INDEX(0));
         if ptr == 0 {
@@ -158,7 +174,10 @@ unsafe extern "system" fn wnd_proc(hwnd: HWND, msg: u32, wparam: WPARAM, lparam:
 }
 
 impl Platform for PlatformWin32 {
-    fn create_window(&self, create_infos: WindowCreateInfos) -> Result<Arc<dyn Window>, WindowCreationError> {
+    fn create_window(
+        &self,
+        create_infos: WindowCreateInfos,
+    ) -> Result<Arc<dyn Window>, WindowCreationError> {
         logger::info!("create window '{}'", create_infos.name);
         let window = WindowWin32::new(create_infos);
         let hwnd = window.hwnd.into();
@@ -205,7 +224,12 @@ impl Platform for PlatformWin32 {
     }
 }
 
-unsafe extern "system" fn enum_display_monitors_callback(monitor: HMONITOR, _: HDC, _: *mut RECT, userdata: LPARAM) -> BOOL {
+unsafe extern "system" fn enum_display_monitors_callback(
+    monitor: HMONITOR,
+    _: HDC,
+    _: *mut RECT,
+    userdata: LPARAM,
+) -> BOOL {
     let mut info = MONITORINFO {
         cbSize: size_of::<MONITORINFO>() as u32,
         rcMonitor: Default::default(),
@@ -219,7 +243,7 @@ unsafe extern "system" fn enum_display_monitors_callback(monitor: HMONITOR, _: H
     let mut dpi_y = 0;
     match GetDpiForMonitor(monitor, MDT_EFFECTIVE_DPI, &mut dpi_x, &mut dpi_y) {
         Ok(_) => (),
-        Err(error) => logger::fatal!("failed to get DPI for monitor {}", error)
+        Err(error) => logger::fatal!("failed to get DPI for monitor {}", error),
     }
 
     let monitors = (userdata.0 as *mut Vec<Monitor>)

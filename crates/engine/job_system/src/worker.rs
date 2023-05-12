@@ -1,9 +1,9 @@
-﻿use std::sync::{Arc, Condvar, Mutex};
+use crate::job_pool::{JobData, JobPool};
+use crate::JobPtr;
+use std::sync::{Arc, Condvar, Mutex};
 use std::thread;
 use std::thread::JoinHandle;
 use std::time::Duration;
-use crate::job_pool::{JobData, JobPool};
-use crate::{JobPtr};
 
 pub struct WorkerSharedData {
     job_pool: Vec<Mutex<JobPool>>,
@@ -34,7 +34,9 @@ impl WorkerSharedData {
                     return (*pool).pop();
                 }
             }
-            Err(_) => { logger::fatal!("failed to lock pool") }
+            Err(_) => {
+                logger::fatal!("failed to lock pool")
+            }
         }
         self.steal_job()
     }
@@ -45,10 +47,14 @@ impl WorkerSharedData {
                 Ok(mut pool) => {
                     match (*pool).pop() {
                         None => {}
-                        Some(job) => { return Some(job); }
+                        Some(job) => {
+                            return Some(job);
+                        }
                     };
                 }
-                Err(_) => { logger::fatal!("failed to lock pool"); }
+                Err(_) => {
+                    logger::fatal!("failed to lock pool");
+                }
             };
         }
         None
@@ -56,8 +62,10 @@ impl WorkerSharedData {
 
     pub fn push_job(&self, worker_index: usize, job: JobData) -> JobPtr {
         match self.job_pool[worker_index].lock() {
-            Ok(mut pool) => { (*pool).push(job) }
-            Err(_) => { logger::fatal!("failed to lock pool") }
+            Ok(mut pool) => (*pool).push(job),
+            Err(_) => {
+                logger::fatal!("failed to lock pool")
+            }
         }
     }
 
@@ -83,33 +91,47 @@ pub struct Worker {
 }
 
 impl Worker {
-    pub fn new(job_system_name: &str, worker_id: usize, shared_data: Arc<WorkerSharedData>) -> Self {
+    pub fn new(
+        job_system_name: &str,
+        worker_id: usize,
+        shared_data: Arc<WorkerSharedData>,
+    ) -> Self {
         let data_copy = shared_data.clone();
         let js_name = job_system_name.to_string();
         let running_thread = thread::spawn(move || {
-            logger::set_thread_label(thread::current().id(), format!("{js_name}::{worker_id}").as_str());
-            
+            logger::set_thread_label(
+                thread::current().id(),
+                format!("{js_name}::{worker_id}").as_str(),
+            );
+
             loop {
                 let mut stop = false;
                 while !stop {
                     match data_copy.next_job(worker_id) {
                         None => {
-                            match data_copy.sleep_condition.wait(data_copy.sleep_mutex.lock().expect("failed to lock")) {
+                            match data_copy
+                                .sleep_condition
+                                .wait(data_copy.sleep_mutex.lock().expect("failed to lock"))
+                            {
                                 Ok(_) => {
                                     if *data_copy.stop.lock().expect("lock failed") {
                                         stop = true;
                                     }
                                 }
-                                Err(_) => { logger::fatal!("Wait for new task failed somewhere") }
+                                Err(_) => {
+                                    logger::fatal!("Wait for new task failed somewhere")
+                                }
                             };
                         }
-                        Some(mut job) => { job.execute() }
+                        Some(mut job) => job.execute(),
                     };
                 }
-                if !data_copy.contains_jobs() { break; }
+                if !data_copy.contains_jobs() {
+                    break;
+                }
             }
         });
-        
+
         Self {
             worker_id,
             running_thread,

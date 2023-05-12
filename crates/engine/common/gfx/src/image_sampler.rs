@@ -1,12 +1,8 @@
-﻿use crate::GfxCast;
+use crate::GfxCast;
 
-pub struct SamplerCreateInfos {
-    
-}
+pub struct SamplerCreateInfos {}
 
-pub trait ImageSampler:GfxCast {
-    
-}
+pub trait ImageSampler: GfxCast {}
 
 impl dyn ImageSampler {
     pub fn cast<U: ImageSampler + 'static>(&self) -> &U {

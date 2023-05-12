@@ -1,15 +1,15 @@
-﻿use std::fmt::{Display, Formatter};
+use std::fmt::{Display, Formatter};
 use std::hash::{Hash, Hasher};
-use std::sync::Arc;
 use std::sync::atomic::{AtomicU16, Ordering};
+use std::sync::Arc;
 
 use maths::vec2::Vec2u32;
 use plateform::window::Window;
 
-use crate::{GfxCast, GfxRef};
 use crate::image::GfxImage;
 use crate::render_pass::RenderPassInstance;
 use crate::types::PixelFormat;
+use crate::GfxCast;
 
 pub struct GfxImageID {
     reference: AtomicU16,
@@ -17,7 +17,9 @@ pub struct GfxImageID {
 
 impl Clone for GfxImageID {
     fn clone(&self) -> Self {
-        GfxImageID { reference: AtomicU16::new(self.reference.load(Ordering::Acquire)) }
+        GfxImageID {
+            reference: AtomicU16::new(self.reference.load(Ordering::Acquire)),
+        }
     }
 }
 
@@ -35,7 +37,10 @@ impl GfxImageID {
     }
 
     pub fn update(&self, image_index: u8, render_pass_index: u8) {
-        self.reference.store(image_index as u16 + ((render_pass_index as u16) << 8), Ordering::Release);
+        self.reference.store(
+            image_index as u16 + ((render_pass_index as u16) << 8),
+            Ordering::Release,
+        );
     }
 
     pub fn image_id(&self) -> u8 {
@@ -81,10 +86,12 @@ pub trait GfxSurface: GfxCast {
     fn get_surface_texture(&self) -> Arc<dyn GfxImage>;
     fn get_extent(&self) -> Vec2u32;
 
-    fn get_gfx(&self) -> &GfxRef;
-
-    fn acquire(&self, render_pass: &Arc<dyn RenderPassInstance>) -> Result<(), SurfaceAcquireResult>;
-    fn submit(&self, render_pass: &Arc<dyn RenderPassInstance>) -> Result<(), SurfaceAcquireResult>;
+    fn acquire(
+        &self,
+        render_pass: &Arc<dyn RenderPassInstance>,
+    ) -> Result<(), SurfaceAcquireResult>;
+    fn submit(&self, render_pass: &Arc<dyn RenderPassInstance>)
+        -> Result<(), SurfaceAcquireResult>;
 }
 
 impl dyn GfxSurface {

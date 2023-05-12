@@ -1,8 +1,8 @@
-﻿use std::hash::{Hash, Hasher};
+use std::hash::{Hash, Hasher};
 use std::sync::Arc;
 
-use crate::{GfxCast, GfxImage, ImageSampler};
 use crate::shader::DescriptorBinding;
+use crate::{GfxCast, GfxImage, ImageSampler};
 
 pub struct ShaderInstanceCreateInfos {
     pub bindings: Vec<DescriptorBinding>,
@@ -30,7 +30,7 @@ impl Eq for BindPoint {}
 impl BindPoint {
     pub fn new(name: &str) -> BindPoint {
         BindPoint {
-            name: name.to_string()
+            name: name.to_string(),
         }
     }
 }

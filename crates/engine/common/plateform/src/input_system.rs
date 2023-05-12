@@ -1,6 +1,6 @@
-﻿use std::collections::{HashMap};
-use std::sync::{ RwLock};
 use maths::vec2::{Vec2f32, Vec2i32};
+use std::collections::HashMap;
+use std::sync::RwLock;
 
 #[derive(Copy, Clone)]
 pub enum ActionType {
@@ -61,26 +61,45 @@ pub trait IoInterface {
 
 impl InputManager {
     pub fn new() -> Self {
-        Self { action_mapping: Default::default(), axis_mapping: Default::default(), input_states: Default::default(), mouse_position: RwLock::new(Vec2f32 { x: 0.0, y: 0.0 }) }
+        Self {
+            action_mapping: Default::default(),
+            axis_mapping: Default::default(),
+            input_states: Default::default(),
+            mouse_position: RwLock::new(Vec2f32 { x: 0.0, y: 0.0 }),
+        }
     }
 
     pub fn new_action(&self, name: &str, action: InputAction) {
-        self.action_mapping.write().unwrap().insert(name.to_string(), action);
+        self.action_mapping
+            .write()
+            .unwrap()
+            .insert(name.to_string(), action);
     }
     pub fn new_axis(&self, name: &str, axis: InputAxis) {
-        self.axis_mapping.write().unwrap().insert(name.to_string(), axis);
+        self.axis_mapping
+            .write()
+            .unwrap()
+            .insert(name.to_string(), axis);
     }
 
     pub fn bind_action(&self, name: &str, event: ActionMappingCallback) {
         match self.action_mapping.write().unwrap().get_mut(name) {
-            None => { logger::fatal!("cannot find action {name}"); }
-            Some(mapping) => { mapping.callbacks.write().unwrap().push(event); }
+            None => {
+                logger::fatal!("cannot find action {name}");
+            }
+            Some(mapping) => {
+                mapping.callbacks.write().unwrap().push(event);
+            }
         }
     }
     pub fn bind_axis(&self, name: &str, event: AxisMappingCallback) {
         match self.axis_mapping.write().unwrap().get_mut(name) {
-            None => { logger::fatal!("cannot find axis {name}"); }
-            Some(mapping) => { mapping.callbacks.write().unwrap().push(event); }
+            None => {
+                logger::fatal!("cannot find axis {name}");
+            }
+            Some(mapping) => {
+                mapping.callbacks.write().unwrap().push(event);
+            }
         }
     }
 
@@ -90,19 +109,21 @@ impl InputManager {
 
     pub fn get_input_state(&self, input: InputMapping) -> f32 {
         match self.input_states.read().unwrap().get(&input) {
-            None => { 0.0 }
-            Some(input_value) => { *input_value }
+            None => 0.0,
+            Some(input_value) => *input_value,
         }
     }
     pub fn is_input_pressed(&self, input: InputMapping) -> bool {
         match self.input_states.read().unwrap().get(&input) {
-            None => { false }
-            Some(input_value) => { *input_value != 0.0 }
+            None => false,
+            Some(input_value) => *input_value != 0.0,
         }
     }
 
     pub fn _press_input(&self, pressed_key: InputMapping) {
-        if let Ok(mut input_states) = self.input_states.write() { input_states.entry(pressed_key).or_insert(1.0); }
+        if let Ok(mut input_states) = self.input_states.write() {
+            input_states.entry(pressed_key).or_insert(1.0);
+        }
 
         for action in self.action_mapping.write().unwrap().values_mut() {
             let mut just_pressed = false;
@@ -121,7 +142,11 @@ impl InputManager {
                 logger::fatal!("press progress should never be under 0");
             }
             if action.released_key_left == 0 {
-                let action_type = if just_pressed { ActionType::Press } else { ActionType::Hold };
+                let action_type = if just_pressed {
+                    ActionType::Press
+                } else {
+                    ActionType::Hold
+                };
                 for binding in &mut *action.callbacks.write().unwrap() {
                     binding.as_mut()(action as &InputAction, action_type)
                 }
@@ -130,7 +155,11 @@ impl InputManager {
     }
 
     pub fn _release_input(&self, pressed_key: InputMapping) {
-        if let Ok(mut input_states) = self.input_states.write() { if input_states.contains_key(&pressed_key) { input_states.remove(&pressed_key); } }
+        if let Ok(mut input_states) = self.input_states.write() {
+            if input_states.contains_key(&pressed_key) {
+                input_states.remove(&pressed_key);
+            }
+        }
 
         for action in self.action_mapping.write().unwrap().values_mut() {
             let mut just_released = false;
@@ -182,7 +211,6 @@ pub enum MouseAxis {
     ScrollX,
     ScrollY,
 }
-
 
 #[derive(Copy, Clone, Hash, Eq, PartialEq)]
 pub enum KeyboardKey {

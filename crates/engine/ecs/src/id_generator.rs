@@ -1,6 +1,6 @@
-﻿use std::collections::LinkedList;
-use std::ops::{Add, Sub};
 use num::One;
+use std::collections::LinkedList;
+use std::ops::{Add, Sub};
 
 #[derive(Default)]
 pub struct IdGenerator<C: Default + Copy> {
@@ -9,23 +9,25 @@ pub struct IdGenerator<C: Default + Copy> {
 }
 
 impl<C: Default + Copy + Add<Output = C> + Sub<Output = C> + One> IdGenerator<C> {
-    pub fn acquire(&mut self) -> C
-    {
+    pub fn acquire(&mut self) -> C {
         if !self.free_ids.is_empty() {
-            return self.free_ids.pop_back().expect("list should not be empty there");
+            return self
+                .free_ids
+                .pop_back()
+                .expect("list should not be empty there");
         }
         self.max_id = self.max_id + One::one();
         self.max_id - One::one()
     }
-    
+
     pub fn release(&mut self, id: &C) {
         self.free_ids.push_back(*id);
     }
-    
+
     pub fn pool_size(&self) -> usize {
         self.free_ids.len()
     }
-    
+
     pub fn allocated_name(&self) -> C {
         self.max_id
     }

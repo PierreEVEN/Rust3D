@@ -1,30 +1,37 @@
 use std::sync::{Arc, RwLock, Weak};
 
 use ash::vk;
-use gfx::{GfxRef};
 use gfx::render_pass::{RenderPass, RenderPassCreateInfos, RenderPassInstance};
 use gfx::shader::PassID;
 use gfx::surface::GfxSurface;
 use gfx::types::{ClearValues, PixelFormat};
 use maths::vec2::Vec2u32;
 
-use crate::{GfxVulkan, vk_check};
 use crate::vk_render_pass_instance::VkRenderPassInstance;
 use crate::vk_types::VkPixelFormat;
+use crate::{vk_check, GfxVulkan};
 
 pub struct VkRenderPass {
     pub render_pass: vk::RenderPass,
-    gfx: GfxRef,
     self_ref: RwLock<Weak<VkRenderPass>>,
     default_clear_values: Vec<ClearValues>,
     config: RenderPassCreateInfos,
     pass_id: PassID,
-    name: String
+    name: String,
 }
 
 impl RenderPass for VkRenderPass {
-    fn instantiate(&self, surface: &Arc<dyn GfxSurface>, res: Vec2u32) -> Arc<dyn RenderPassInstance> {
-        Arc::new(VkRenderPassInstance::new(&self.gfx, format!("{}_instance", self.name), surface, self.self_ref.read().unwrap().upgrade().unwrap(), res))
+    fn instantiate(
+        &self,
+        surface: &Arc<dyn GfxSurface>,
+        res: Vec2u32,
+    ) -> Arc<dyn RenderPassInstance> {
+        Arc::new(VkRenderPassInstance::new(
+            format!("{}_instance", self.name),
+            surface,
+            self.self_ref.read().unwrap().upgrade().unwrap(),
+            res,
+        ))
     }
 
     fn get_clear_values(&self) -> &Vec<ClearValues> {
@@ -41,32 +48,39 @@ impl RenderPass for VkRenderPass {
 }
 
 impl VkRenderPass {
-    pub fn new(gfx: &GfxRef, name: String, create_infos: RenderPassCreateInfos) -> Arc<Self> {
+    pub fn new(name: String, create_infos: RenderPassCreateInfos) -> Arc<Self> {
         let mut attachment_descriptions = Vec::<vk::AttachmentDescription>::new();
         let mut color_attachment_references = Vec::<vk::AttachmentReference>::new();
         let mut _depth_attachment_reference = vk::AttachmentReference::default();
         let mut clear_values = Vec::new();
 
         // add color color_attachments
-        for attachment in &create_infos.color_attachments
-        {
-            if let PixelFormat::UNDEFINED = attachment.image_format { logger::fatal!("wrong pixel format") };
+        for attachment in &create_infos.color_attachments {
+            if let PixelFormat::UNDEFINED = attachment.image_format {
+                logger::fatal!("wrong pixel format")
+            };
 
             let attachment_index: u32 = attachment_descriptions.len() as u32;
 
-            attachment_descriptions.push(vk::AttachmentDescription::builder()
-                .format(*VkPixelFormat::from(&attachment.image_format))
-                .samples(vk::SampleCountFlags::TYPE_1)
-                .load_op(match attachment.clear_value {
-                    ClearValues::DontClear => { vk::AttachmentLoadOp::DONT_CARE }
-                    _ => { vk::AttachmentLoadOp::CLEAR }
-                })
-                .store_op(vk::AttachmentStoreOp::STORE)
-                .stencil_load_op(vk::AttachmentLoadOp::DONT_CARE)
-                .stencil_store_op(vk::AttachmentStoreOp::DONT_CARE)
-                .initial_layout(vk::ImageLayout::UNDEFINED)
-                .final_layout(if create_infos.is_present_pass { vk::ImageLayout::PRESENT_SRC_KHR } else { vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL })
-                .build());
+            attachment_descriptions.push(
+                vk::AttachmentDescription::builder()
+                    .format(*VkPixelFormat::from(&attachment.image_format))
+                    .samples(vk::SampleCountFlags::TYPE_1)
+                    .load_op(match attachment.clear_value {
+                        ClearValues::DontClear => vk::AttachmentLoadOp::DONT_CARE,
+                        _ => vk::AttachmentLoadOp::CLEAR,
+                    })
+                    .store_op(vk::AttachmentStoreOp::STORE)
+                    .stencil_load_op(vk::AttachmentLoadOp::DONT_CARE)
+                    .stencil_store_op(vk::AttachmentStoreOp::DONT_CARE)
+                    .initial_layout(vk::ImageLayout::UNDEFINED)
+                    .final_layout(if create_infos.is_present_pass {
+                        vk::ImageLayout::PRESENT_SRC_KHR
+                    } else {
+                        vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL
+                    })
+                    .build(),
+            );
 
             color_attachment_references.push(vk::AttachmentReference {
                 attachment: attachment_index,
@@ -85,23 +99,27 @@ impl VkRenderPass {
         match &create_infos.depth_attachment {
             None => {}
             Some(attachment) => {
-                if let PixelFormat::UNDEFINED = attachment.image_format { logger::fatal!("wrong depth pixel format") };
+                if let PixelFormat::UNDEFINED = attachment.image_format {
+                    logger::fatal!("wrong depth pixel format")
+                };
 
                 let attachment_index: u32 = attachment_descriptions.len() as u32;
 
-                attachment_descriptions.push(vk::AttachmentDescription::builder()
-                    .format(*VkPixelFormat::from(&attachment.image_format))
-                    .samples(vk::SampleCountFlags::TYPE_1)
-                    .load_op(match attachment.clear_value {
-                        ClearValues::DontClear => { vk::AttachmentLoadOp::DONT_CARE }
-                        _ => { vk::AttachmentLoadOp::CLEAR }
-                    })
-                    .store_op(vk::AttachmentStoreOp::STORE)
-                    .stencil_load_op(vk::AttachmentLoadOp::DONT_CARE)
-                    .stencil_store_op(vk::AttachmentStoreOp::DONT_CARE)
-                    .initial_layout(vk::ImageLayout::UNDEFINED)
-                    .final_layout(vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL)
-                    .build());
+                attachment_descriptions.push(
+                    vk::AttachmentDescription::builder()
+                        .format(*VkPixelFormat::from(&attachment.image_format))
+                        .samples(vk::SampleCountFlags::TYPE_1)
+                        .load_op(match attachment.clear_value {
+                            ClearValues::DontClear => vk::AttachmentLoadOp::DONT_CARE,
+                            _ => vk::AttachmentLoadOp::CLEAR,
+                        })
+                        .store_op(vk::AttachmentStoreOp::STORE)
+                        .stencil_load_op(vk::AttachmentLoadOp::DONT_CARE)
+                        .stencil_store_op(vk::AttachmentStoreOp::DONT_CARE)
+                        .initial_layout(vk::ImageLayout::UNDEFINED)
+                        .final_layout(vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL)
+                        .build(),
+                );
 
                 _depth_attachment_reference = vk::AttachmentReference::builder()
                     .attachment(attachment_index)
@@ -111,23 +129,29 @@ impl VkRenderPass {
                 clear_values.push(attachment.clear_value);
             }
         };
-        
+
         let dependencies = vec![
             vk::SubpassDependency::builder()
-                .src_subpass(vk::SUBPASS_EXTERNAL)                                                             // Producer of the dependency
-                .dst_subpass(0)                                                                            // Consumer is our single subpass that will wait for the execution dependency
-                .src_stage_mask(vk::PipelineStageFlags::BOTTOM_OF_PIPE)                                        // Match our pWaitDstStageMask when we vkQueueSubmit
-                .dst_stage_mask(vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT)                               // is a loadOp stage for color color_attachments
-                .src_access_mask(vk::AccessFlags::MEMORY_READ)                                                 // semaphore wait already does memory dependency for us
-                .dst_access_mask(vk::AccessFlags::COLOR_ATTACHMENT_READ | vk::AccessFlags::COLOR_ATTACHMENT_WRITE) // is a loadOp CLEAR access mask for color color_attachments
+                .src_subpass(vk::SUBPASS_EXTERNAL) // Producer of the dependency
+                .dst_subpass(0) // Consumer is our single subpass that will wait for the execution dependency
+                .src_stage_mask(vk::PipelineStageFlags::BOTTOM_OF_PIPE) // Match our pWaitDstStageMask when we vkQueueSubmit
+                .dst_stage_mask(vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT) // is a loadOp stage for color color_attachments
+                .src_access_mask(vk::AccessFlags::MEMORY_READ) // semaphore wait already does memory dependency for us
+                .dst_access_mask(
+                    vk::AccessFlags::COLOR_ATTACHMENT_READ
+                        | vk::AccessFlags::COLOR_ATTACHMENT_WRITE,
+                ) // is a loadOp CLEAR access mask for color color_attachments
                 .dependency_flags(vk::DependencyFlags::BY_REGION)
                 .build(),
             vk::SubpassDependency::builder()
-                .src_subpass(0)                                                                            // Producer of the dependency is our single subpass
-                .dst_subpass(vk::SUBPASS_EXTERNAL)                                                             // Consumer are all commands outside of the render pass
-                .src_stage_mask(vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT)                               // is a storeOp stage for color color_attachments
-                .dst_stage_mask(vk::PipelineStageFlags::BOTTOM_OF_PIPE)                                        // Do not block any subsequent work
-                .src_access_mask(vk::AccessFlags::COLOR_ATTACHMENT_READ | vk::AccessFlags::COLOR_ATTACHMENT_WRITE) // is a storeOp `STORE` access mask for color color_attachments
+                .src_subpass(0) // Producer of the dependency is our single subpass
+                .dst_subpass(vk::SUBPASS_EXTERNAL) // Consumer are all commands outside of the render pass
+                .src_stage_mask(vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT) // is a storeOp stage for color color_attachments
+                .dst_stage_mask(vk::PipelineStageFlags::BOTTOM_OF_PIPE) // Do not block any subsequent work
+                .src_access_mask(
+                    vk::AccessFlags::COLOR_ATTACHMENT_READ
+                        | vk::AccessFlags::COLOR_ATTACHMENT_WRITE,
+                ) // is a storeOp `STORE` access mask for color color_attachments
                 .dst_access_mask(vk::AccessFlags::MEMORY_READ)
                 .dependency_flags(vk::DependencyFlags::BY_REGION)
                 .build(),
@@ -139,19 +163,24 @@ impl VkRenderPass {
             .dependencies(dependencies.as_slice())
             .build();
 
-        let gfx_copy = gfx.clone();
-        let render_pass = vk_check!(unsafe { gfx_copy.cast::<GfxVulkan>().device.assume_init_ref().handle.create_render_pass(&render_pass_infos, None) });
+        let render_pass = vk_check!(unsafe {
+            GfxVulkan::get()
+                .device
+                .assume_init_ref()
+                .handle
+                .create_render_pass(&render_pass_infos, None)
+        });
 
-        gfx.cast::<GfxVulkan>().set_vk_object_name(render_pass, format!("render pass\t\t: {}", name).as_str());
-            
+        GfxVulkan::get()
+            .set_vk_object_name(render_pass, format!("render pass\t\t: {}", name).as_str());
+
         let vk_render_pass = Arc::new(Self {
             render_pass,
-            gfx: gfx.clone(),
             self_ref: RwLock::new(Weak::new()),
             default_clear_values: clear_values,
             pass_id: create_infos.pass_id.clone(),
             config: create_infos.clone(),
-            name
+            name,
         });
 
         {
@@ -159,7 +188,11 @@ impl VkRenderPass {
             *self_ref = Arc::downgrade(&vk_render_pass);
         }
 
-        gfx.cast::<GfxVulkan>().render_passes.write().unwrap().insert(create_infos.pass_id, vk_render_pass.clone());
+        GfxVulkan::get()
+            .render_passes
+            .write()
+            .unwrap()
+            .insert(create_infos.pass_id, vk_render_pass.clone());
 
         vk_render_pass
     }

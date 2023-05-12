@@ -1,13 +1,16 @@
-﻿use std::path::Path;
+use std::path::Path;
 
-use shaderc::{CompileOptions, Compiler, EnvVersion, IncludeCallbackResult, IncludeType, SourceLanguage, SpirvVersion, TargetEnv};
+use shaderc::{
+    CompileOptions, Compiler, EnvVersion, IncludeCallbackResult, IncludeType, SourceLanguage,
+    SpirvVersion, TargetEnv,
+};
 
 use gfx::shader::ShaderStage;
 
-use crate::{CompilationResult, CompilerBackend, InterstageData, ShaderChunk, ShaderLanguage};
 use crate::includer::Includer;
 use crate::reflect::SpirvReflector;
 use crate::types::ShaderErrorResult;
+use crate::{CompilationResult, CompilerBackend, InterstageData, ShaderChunk, ShaderLanguage};
 
 #[derive(Default)]
 pub struct BackendShaderC {}
@@ -18,7 +21,12 @@ impl BackendShaderC {
     }
 }
 
-fn include_callback(_name: &str, include_type: IncludeType, _source: &str, _include_depth: usize) -> IncludeCallbackResult {
+fn include_callback(
+    _name: &str,
+    include_type: IncludeType,
+    _source: &str,
+    _include_depth: usize,
+) -> IncludeCallbackResult {
     match include_type {
         IncludeType::Relative => {}
         IncludeType::Standard => {}
@@ -28,24 +36,42 @@ fn include_callback(_name: &str, include_type: IncludeType, _source: &str, _incl
 }
 
 impl CompilerBackend for BackendShaderC {
-    fn compile_to_spirv(&self, shader_code: &[ShaderChunk], virtual_path: &Path, source_language: ShaderLanguage, _shader_stage: ShaderStage, _previous_stage_data: InterstageData) -> Result<CompilationResult, ShaderErrorResult> {
+    fn compile_to_spirv(
+        &self,
+        shader_code: &[ShaderChunk],
+        virtual_path: &Path,
+        source_language: ShaderLanguage,
+        _shader_stage: ShaderStage,
+        _previous_stage_data: InterstageData,
+    ) -> Result<CompilationResult, ShaderErrorResult> {
         let mut errors = ShaderErrorResult::default();
 
         let compiler = match Compiler::new() {
             None => {
-                errors.push(None, None, "BackendShaderC::compile_to_spirv", "failed to create shaderc compiler", virtual_path.to_str().unwrap());
+                errors.push(
+                    None,
+                    None,
+                    "BackendShaderC::compile_to_spirv",
+                    "failed to create shaderc compiler",
+                    virtual_path.to_str().unwrap(),
+                );
                 return Err(errors);
             }
-            Some(compiler) => { compiler }
+            Some(compiler) => compiler,
         };
-
 
         let mut compile_options = match CompileOptions::new() {
             None => {
-                errors.push(None, None, "BackendShaderC::compile_to_spirv", "failed to create shaderc compile option", virtual_path.to_str().unwrap());
+                errors.push(
+                    None,
+                    None,
+                    "BackendShaderC::compile_to_spirv",
+                    "failed to create shaderc compile option",
+                    virtual_path.to_str().unwrap(),
+                );
                 return Err(errors);
             }
-            Some(compiler) => { compiler }
+            Some(compiler) => compiler,
         };
         compile_options.set_include_callback(include_callback);
         compile_options.set_auto_bind_uniforms(true);
@@ -55,19 +81,25 @@ impl CompilerBackend for BackendShaderC {
         compile_options.set_target_env(TargetEnv::Vulkan, EnvVersion::Vulkan1_2 as u32);
         compile_options.set_target_spirv(SpirvVersion::V1_3);
         compile_options.set_source_language(match source_language {
-            ShaderLanguage::HLSL => { SourceLanguage::HLSL }
-            ShaderLanguage::GLSL => { SourceLanguage::GLSL }
+            ShaderLanguage::HLSL => SourceLanguage::HLSL,
+            ShaderLanguage::GLSL => SourceLanguage::GLSL,
         });
         let mut shader = String::new();
         for block in shader_code {
             shader += block.content.as_str();
         }
 
-        let binary_result = match compiler.compile_into_spirv(&shader, match _shader_stage {
-            ShaderStage::Vertex => { shaderc::ShaderKind::Vertex }
-            ShaderStage::Fragment => { shaderc::ShaderKind::Fragment }
-        }, virtual_path.to_str().unwrap(), "main", Some(&compile_options)) {
-            Ok(binary) => { binary }
+        let binary_result = match compiler.compile_into_spirv(
+            &shader,
+            match _shader_stage {
+                ShaderStage::Vertex => shaderc::ShaderKind::Vertex,
+                ShaderStage::Fragment => shaderc::ShaderKind::Fragment,
+            },
+            virtual_path.to_str().unwrap(),
+            "main",
+            Some(&compile_options),
+        ) {
+            Ok(binary) => binary,
             Err(compile_error) => {
                 let mut error = compile_error.to_string();
                 error += "\n";
@@ -82,18 +114,38 @@ impl CompilerBackend for BackendShaderC {
                     } else if line.contains("): error") {
                         let error = line.split("): error").nth(1).unwrap();
                         if error.contains("at column ") {
-                            line_pos = Some(line.split('(').nth(1).unwrap().split(')').next().unwrap().parse::<isize>().unwrap());
-                            column = Some(error.split("at column ").nth(1).unwrap().split(", ").next().unwrap().parse::<isize>().unwrap());
+                            line_pos = Some(
+                                line.split('(')
+                                    .nth(1)
+                                    .unwrap()
+                                    .split(')')
+                                    .next()
+                                    .unwrap()
+                                    .parse::<isize>()
+                                    .unwrap(),
+                            );
+                            column = Some(
+                                error
+                                    .split("at column ")
+                                    .nth(1)
+                                    .unwrap()
+                                    .split(", ")
+                                    .next()
+                                    .unwrap()
+                                    .parse::<isize>()
+                                    .unwrap(),
+                            );
                             error.split(", ").nth(1).unwrap()
                         } else {
                             error
                         }
-                    } else if line.contains("compilation error") || !line.chars().any(|c| c.is_ascii_alphanumeric()) {
+                    } else if line.contains("compilation error")
+                        || !line.chars().any(|c| c.is_ascii_alphanumeric())
+                    {
                         continue;
                     } else {
                         line
                     };
-
 
                     if line_pos.is_some() {
                         let line = line_pos.unwrap();
@@ -105,10 +157,22 @@ impl CompilerBackend for BackendShaderC {
                         }
                     }
 
-                    errors.push(line_pos, column, "BackendShaderC::compile_to_spirv", message, virtual_path.to_str().unwrap());
+                    errors.push(
+                        line_pos,
+                        column,
+                        "BackendShaderC::compile_to_spirv",
+                        message,
+                        virtual_path.to_str().unwrap(),
+                    );
                 }
 
-                errors.push(None, None, "Shader compilation failed", shader.to_string().as_str(), virtual_path.to_str().unwrap());
+                errors.push(
+                    None,
+                    None,
+                    "Shader compilation failed",
+                    shader.to_string().as_str(),
+                    virtual_path.to_str().unwrap(),
+                );
 
                 return Err(errors);
             }
@@ -117,11 +181,10 @@ impl CompilerBackend for BackendShaderC {
 
         let reflector = SpirvReflector::new(&binary_result);
 
-
         Ok(CompilationResult {
             binary: binary_result,
             bindings: reflector.bindings,
-            push_constant_size: reflector.push_constant_size
+            push_constant_size: reflector.push_constant_size,
         })
     }
 }
@@ -136,9 +199,23 @@ impl ShaderCIncluder {
 }
 
 impl Includer for ShaderCIncluder {
-    fn include_local(&self, file: &str, virtual_path: &str) -> Result<(String, String), ShaderErrorResult> {
+    fn include_local(
+        &self,
+        file: &str,
+        virtual_path: &str,
+    ) -> Result<(String, String), ShaderErrorResult> {
         let mut errors = ShaderErrorResult::default();
-        errors.push(None, None, "ShaderCIncluder::include_local", format!("failed to include '{}' : include are not supported yet", file).as_str(), virtual_path);
+        errors.push(
+            None,
+            None,
+            "ShaderCIncluder::include_local",
+            format!(
+                "failed to include '{}' : include are not supported yet",
+                file
+            )
+            .as_str(),
+            virtual_path,
+        );
         Err(errors)
     }
 

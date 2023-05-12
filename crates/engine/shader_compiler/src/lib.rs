@@ -1,13 +1,13 @@
-use std::path::Path;
-use gfx::shader::{DescriptorBinding, ShaderLanguage, ShaderStage};
 use crate::parser::ShaderChunk;
 use crate::types::{InterstageData, ShaderErrorResult};
+use gfx::shader::{DescriptorBinding, ShaderLanguage, ShaderStage};
+use std::path::Path;
 
-pub mod parser;
-pub mod types;
 mod file_iterator;
 mod includer;
+pub mod parser;
 mod reflect;
+pub mod types;
 
 pub mod backends {
     pub mod backend_shaderc;
@@ -20,5 +20,12 @@ pub struct CompilationResult {
 }
 
 pub trait CompilerBackend {
-    fn compile_to_spirv(&self, shader_code: &[ShaderChunk], virtual_path: &Path, source_language: ShaderLanguage, shader_stage: ShaderStage, previous_stage_data: InterstageData) -> Result<CompilationResult, ShaderErrorResult>;
+    fn compile_to_spirv(
+        &self,
+        shader_code: &[ShaderChunk],
+        virtual_path: &Path,
+        source_language: ShaderLanguage,
+        shader_stage: ShaderStage,
+        previous_stage_data: InterstageData,
+    ) -> Result<CompilationResult, ShaderErrorResult>;
 }

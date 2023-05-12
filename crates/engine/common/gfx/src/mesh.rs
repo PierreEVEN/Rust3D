@@ -1,7 +1,7 @@
-﻿use std::sync::Arc;
-use crate::{BufferCreateInfo, GfxBuffer, GfxRef};
 use crate::buffer::{BufferAccess, BufferType, BufferUsage};
 use crate::surface::GfxImageID;
+use crate::{BufferCreateInfo, Gfx, GfxBuffer};
+use std::sync::Arc;
 
 pub struct Mesh {
     index_buffer: Arc<dyn GfxBuffer>,
@@ -27,19 +27,25 @@ pub struct MeshCreateInfos {
 }
 
 impl Mesh {
-    pub fn new(gfx: &GfxRef, name: String, create_infos: &MeshCreateInfos) -> Arc<Self> {
-        let index_buffer = gfx.create_buffer(format!("mesh::{}::index", name), &BufferCreateInfo {
-            buffer_type: create_infos.buffer_type,
-            usage: BufferUsage::IndexData,
-            access: BufferAccess::CpuToGpu,
-            size: create_infos.index_count * create_infos.index_buffer_type as u32,
-        });
-        let vertex_buffer = gfx.create_buffer(format!("mesh::{}::vertex", name), &BufferCreateInfo {
-            buffer_type: create_infos.buffer_type,
-            usage: BufferUsage::VertexData,
-            access: BufferAccess::CpuToGpu,
-            size: create_infos.vertex_count * create_infos.vertex_structure_size,
-        });
+    pub fn new(name: String, create_infos: &MeshCreateInfos) -> Arc<Self> {
+        let index_buffer = Gfx::get().create_buffer(
+            format!("mesh::{}::index", name),
+            &BufferCreateInfo {
+                buffer_type: create_infos.buffer_type,
+                usage: BufferUsage::IndexData,
+                access: BufferAccess::CpuToGpu,
+                size: create_infos.index_count * create_infos.index_buffer_type as u32,
+            },
+        );
+        let vertex_buffer = Gfx::get().create_buffer(
+            format!("mesh::{}::vertex", name),
+            &BufferCreateInfo {
+                buffer_type: create_infos.buffer_type,
+                usage: BufferUsage::VertexData,
+                access: BufferAccess::CpuToGpu,
+                size: create_infos.vertex_count * create_infos.vertex_structure_size,
+            },
+        );
 
         Arc::new(Self {
             index_buffer,
@@ -58,13 +64,27 @@ impl Mesh {
     }
 
     pub fn resize(&self, _: &GfxImageID, vertex_count: u32, index_count: u32) {
-        self.index_buffer.resize_buffer(index_count * self.index_buffer_type as u32);
-        self.vertex_buffer.resize_buffer(vertex_count * self.vertex_struct_size);
+        self.index_buffer
+            .resize_buffer(index_count * self.index_buffer_type as u32);
+        self.vertex_buffer
+            .resize_buffer(vertex_count * self.vertex_struct_size);
     }
 
-    pub fn set_data(&self, image_id: &GfxImageID, from_vertex: u32, vertex_data: &[u8], from_index: u32, index_data: &[u8]) {
-        self.index_buffer.set_data(image_id, from_index * self.index_buffer_type as u32, index_data);
-        self.vertex_buffer.set_data(image_id, from_vertex * self.vertex_struct_size, vertex_data);
+    pub fn set_data(
+        &self,
+        image_id: &GfxImageID,
+        from_vertex: u32,
+        vertex_data: &[u8],
+        from_index: u32,
+        index_data: &[u8],
+    ) {
+        self.index_buffer.set_data(
+            image_id,
+            from_index * self.index_buffer_type as u32,
+            index_data,
+        );
+        self.vertex_buffer
+            .set_data(image_id, from_vertex * self.vertex_struct_size, vertex_data);
     }
 
     pub fn index_type(&self) -> IndexBufferType {

@@ -1,17 +1,19 @@
-﻿use std::ffi::{CStr};
+use std::ffi::CStr;
 use std::os::raw::c_char;
 use std::sync::Arc;
 
 use ash::vk;
 
-use gfx::GfxRef;
 use gfx::render_pass::RenderPass;
-use gfx::shader::{AlphaMode, Culling, DescriptorBinding, FrontFace, PolygonMode, ShaderProgram, ShaderProgramInfos, Topology};
+use gfx::shader::{
+    AlphaMode, Culling, DescriptorBinding, FrontFace, PolygonMode, ShaderProgram,
+    ShaderProgramInfos, Topology,
+};
 use gfx::shader_instance::{ShaderInstance, ShaderInstanceCreateInfos};
 
-use crate::{GfxVulkan, vk_check, VkRenderPass, VkShaderInstance};
 use crate::vk_dst_set_layout::VkDescriptorSetLayout;
 use crate::vk_types::VkPixelFormat;
+use crate::{vk_check, GfxVulkan, VkRenderPass, VkShaderInstance};
 
 pub struct VkTopology(vk::PrimitiveTopology);
 
@@ -24,9 +26,9 @@ pub struct VkFrontFace(vk::FrontFace);
 impl From<&Topology> for VkTopology {
     fn from(topology: &Topology) -> Self {
         VkTopology(match topology {
-            Topology::Points => { vk::PrimitiveTopology::POINT_LIST }
-            Topology::Lines => { vk::PrimitiveTopology::LINE_LIST }
-            Topology::Triangles => { vk::PrimitiveTopology::TRIANGLE_LIST }
+            Topology::Points => vk::PrimitiveTopology::POINT_LIST,
+            Topology::Lines => vk::PrimitiveTopology::LINE_LIST,
+            Topology::Triangles => vk::PrimitiveTopology::TRIANGLE_LIST,
         })
     }
 }
@@ -34,9 +36,9 @@ impl From<&Topology> for VkTopology {
 impl From<&PolygonMode> for VkPolygonMode {
     fn from(polygon_mode: &PolygonMode) -> Self {
         VkPolygonMode(match polygon_mode {
-            PolygonMode::Point => { vk::PolygonMode::POINT }
-            PolygonMode::Line => { vk::PolygonMode::LINE }
-            PolygonMode::Fill => { vk::PolygonMode::FILL }
+            PolygonMode::Point => vk::PolygonMode::POINT,
+            PolygonMode::Line => vk::PolygonMode::LINE,
+            PolygonMode::Fill => vk::PolygonMode::FILL,
         })
     }
 }
@@ -44,10 +46,10 @@ impl From<&PolygonMode> for VkPolygonMode {
 impl From<&Culling> for VkCullMode {
     fn from(culling: &Culling) -> Self {
         VkCullMode(match culling {
-            Culling::None => { vk::CullModeFlags::NONE }
-            Culling::Front => { vk::CullModeFlags::FRONT }
-            Culling::Back => { vk::CullModeFlags::BACK }
-            Culling::Both => { vk::CullModeFlags::FRONT_AND_BACK }
+            Culling::None => vk::CullModeFlags::NONE,
+            Culling::Front => vk::CullModeFlags::FRONT,
+            Culling::Back => vk::CullModeFlags::BACK,
+            Culling::Both => vk::CullModeFlags::FRONT_AND_BACK,
         })
     }
 }
@@ -55,14 +57,13 @@ impl From<&Culling> for VkCullMode {
 impl From<&FrontFace> for VkFrontFace {
     fn from(culling: &FrontFace) -> Self {
         VkFrontFace(match culling {
-            FrontFace::Clockwise => { vk::FrontFace::CLOCKWISE }
-            FrontFace::CounterClockwise => { vk::FrontFace::COUNTER_CLOCKWISE }
+            FrontFace::Clockwise => vk::FrontFace::CLOCKWISE,
+            FrontFace::CounterClockwise => vk::FrontFace::COUNTER_CLOCKWISE,
         })
     }
 }
 
 pub struct VkShaderProgram {
-    gfx: GfxRef,
     _vertex_module: Arc<VkShaderModule>,
     _fragment_module: Arc<VkShaderModule>,
     pub pipeline: vk::Pipeline,
@@ -78,74 +79,100 @@ impl ShaderProgram for VkShaderProgram {
     }
 
     fn instantiate(&self) -> Arc<dyn ShaderInstance> {
-        VkShaderInstance::new(&self.gfx, format!("{}_instance", self.name), ShaderInstanceCreateInfos { bindings: self.bindings.clone() }, self.pipeline_layout.clone(), self.descriptor_set_layout.clone())
+        VkShaderInstance::new(
+            format!("{}_instance", self.name),
+            ShaderInstanceCreateInfos {
+                bindings: self.bindings.clone(),
+            },
+            self.pipeline_layout.clone(),
+            self.descriptor_set_layout.clone(),
+        )
     }
 }
 
 impl VkShaderProgram {
-    pub fn new(gfx: &GfxRef, name: String, render_pass: &Arc<dyn RenderPass>, create_infos: &ShaderProgramInfos) -> Arc<Self> {
-        let descriptor_set_layout = VkDescriptorSetLayout::new(gfx, name.clone(), &create_infos.vertex_stage.descriptor_bindings, &create_infos.fragment_stage.descriptor_bindings);
+    pub fn new(
+        name: String,
+        render_pass: &Arc<dyn RenderPass>,
+        create_infos: &ShaderProgramInfos,
+    ) -> Arc<Self> {
+        let descriptor_set_layout = VkDescriptorSetLayout::new(
+            name.clone(),
+            &create_infos.vertex_stage.descriptor_bindings,
+            &create_infos.fragment_stage.descriptor_bindings,
+        );
 
         let mut bindings = create_infos.vertex_stage.descriptor_bindings.clone();
         bindings.append(&mut create_infos.fragment_stage.descriptor_bindings.clone());
 
-        let vertex_module = VkShaderModule::new(gfx, name.clone(), &create_infos.vertex_stage.spirv);
-        let fragment_module = VkShaderModule::new(gfx, name.clone(), &create_infos.fragment_stage.spirv);
+        let vertex_module = VkShaderModule::new(name.clone(), &create_infos.vertex_stage.spirv);
+        let fragment_module = VkShaderModule::new(name.clone(), &create_infos.fragment_stage.spirv);
 
         let mut push_constants = Vec::<vk::PushConstantRange>::new();
 
-        if create_infos.vertex_stage.push_constant_size > 0
-        {
-            push_constants.push(vk::PushConstantRange::builder()
-                .stage_flags(vk::ShaderStageFlags::VERTEX)
-                .offset(0)
-                .size(create_infos.vertex_stage.push_constant_size)
-                .build());
+        if create_infos.vertex_stage.push_constant_size > 0 {
+            push_constants.push(
+                vk::PushConstantRange::builder()
+                    .stage_flags(vk::ShaderStageFlags::VERTEX)
+                    .offset(0)
+                    .size(create_infos.vertex_stage.push_constant_size)
+                    .build(),
+            );
         }
-        if create_infos.fragment_stage.push_constant_size > 0
-        {
-            push_constants.push(vk::PushConstantRange::builder()
-                .stage_flags(vk::ShaderStageFlags::FRAGMENT)
-                .offset(0)
-                .size(create_infos.fragment_stage.push_constant_size)
-                .build());
+        if create_infos.fragment_stage.push_constant_size > 0 {
+            push_constants.push(
+                vk::PushConstantRange::builder()
+                    .stage_flags(vk::ShaderStageFlags::FRAGMENT)
+                    .offset(0)
+                    .size(create_infos.fragment_stage.push_constant_size)
+                    .build(),
+            );
         }
 
         let pipeline_layout_infos = vk::PipelineLayoutCreateInfo::builder()
             .set_layouts(&[descriptor_set_layout.descriptor_set_layout])
             .push_constant_ranges(push_constants.as_slice())
             .build();
-        let pipeline_layout = Arc::new(
-            gfx.cast::<GfxVulkan>().set_vk_object_name(
-                vk_check!(unsafe { gfx.cast::<GfxVulkan>().device.assume_init_ref().handle.create_pipeline_layout(&pipeline_layout_infos, None) }),
-                format!("pipeline layout\t\t: {}", name).as_str()));
-        
+        let pipeline_layout = Arc::new(GfxVulkan::get().set_vk_object_name(
+            vk_check!(unsafe {
+                GfxVulkan::get()
+                    .device
+                    .assume_init_ref()
+                    .handle
+                    .create_pipeline_layout(&pipeline_layout_infos, None)
+            }),
+            format!("pipeline layout\t\t: {}", name).as_str(),
+        ));
+
         let mut vertex_attribute_description = Vec::<vk::VertexInputAttributeDescription>::new();
 
         let mut vertex_input_size = 0;
 
-        for input_property in &create_infos.vertex_stage.stage_input
-        {
+        for input_property in &create_infos.vertex_stage.stage_input {
             if input_property.location < 0 {
                 continue;
             }
 
-            vertex_attribute_description.push(vk::VertexInputAttributeDescription::builder()
-                .location(input_property.location as _)
-                .format(*VkPixelFormat::from(&input_property.property_type.format))
-                .offset(input_property.offset)
-                .build());
+            vertex_attribute_description.push(
+                vk::VertexInputAttributeDescription::builder()
+                    .location(input_property.location as _)
+                    .format(*VkPixelFormat::from(&input_property.property_type.format))
+                    .offset(input_property.offset)
+                    .build(),
+            );
 
             vertex_input_size += input_property.property_type.format.type_size()
         }
 
         let mut binding_descriptions = Vec::new();
         if vertex_input_size > 0 {
-            binding_descriptions.push(vk::VertexInputBindingDescription::builder()
-                .binding(0)
-                .stride(vertex_input_size)
-                .input_rate(vk::VertexInputRate::VERTEX)
-                .build());
+            binding_descriptions.push(
+                vk::VertexInputBindingDescription::builder()
+                    .binding(0)
+                    .stride(vertex_input_size)
+                    .input_rate(vk::VertexInputRate::VERTEX)
+                    .build(),
+            );
         }
 
         let vertex_input_state = vk::PipelineVertexInputStateCreateInfo::builder()
@@ -185,7 +212,6 @@ impl VkShaderProgram {
             .alpha_to_one_enable(false)
             .build();
 
-
         let depth_stencil = vk::PipelineDepthStencilStateCreateInfo::builder()
             .depth_test_enable(create_infos.shader_properties.depth_test)
             .depth_write_enable(create_infos.shader_properties.depth_test)
@@ -198,18 +224,42 @@ impl VkShaderProgram {
 
         let mut color_blend_attachment = Vec::<vk::PipelineColorBlendAttachmentState>::new();
 
-        for _ in &render_pass.get_config().color_attachments
-        {
-            color_blend_attachment.push(vk::PipelineColorBlendAttachmentState::builder()
-                .blend_enable(create_infos.shader_properties.alpha_mode != AlphaMode::Opaque)
-                .src_color_blend_factor(if create_infos.shader_properties.alpha_mode == AlphaMode::Opaque { vk::BlendFactor::ZERO } else { vk::BlendFactor::SRC_ALPHA })
-                .dst_color_blend_factor(if create_infos.shader_properties.alpha_mode == AlphaMode::Opaque { vk::BlendFactor::ZERO } else { vk::BlendFactor::ONE_MINUS_SRC_ALPHA })
-                .color_blend_op(vk::BlendOp::ADD)
-                .src_alpha_blend_factor(if create_infos.shader_properties.alpha_mode == AlphaMode::Opaque { vk::BlendFactor::ONE } else { vk::BlendFactor::ONE_MINUS_SRC_ALPHA })
-                .dst_alpha_blend_factor(vk::BlendFactor::ZERO)
-                .alpha_blend_op(vk::BlendOp::ADD)
-                .color_write_mask(vk::ColorComponentFlags::R | vk::ColorComponentFlags::G | vk::ColorComponentFlags::B | vk::ColorComponentFlags::A)
-                .build());
+        for _ in &render_pass.get_config().color_attachments {
+            color_blend_attachment.push(
+                vk::PipelineColorBlendAttachmentState::builder()
+                    .blend_enable(create_infos.shader_properties.alpha_mode != AlphaMode::Opaque)
+                    .src_color_blend_factor(
+                        if create_infos.shader_properties.alpha_mode == AlphaMode::Opaque {
+                            vk::BlendFactor::ZERO
+                        } else {
+                            vk::BlendFactor::SRC_ALPHA
+                        },
+                    )
+                    .dst_color_blend_factor(
+                        if create_infos.shader_properties.alpha_mode == AlphaMode::Opaque {
+                            vk::BlendFactor::ZERO
+                        } else {
+                            vk::BlendFactor::ONE_MINUS_SRC_ALPHA
+                        },
+                    )
+                    .color_blend_op(vk::BlendOp::ADD)
+                    .src_alpha_blend_factor(
+                        if create_infos.shader_properties.alpha_mode == AlphaMode::Opaque {
+                            vk::BlendFactor::ONE
+                        } else {
+                            vk::BlendFactor::ONE_MINUS_SRC_ALPHA
+                        },
+                    )
+                    .dst_alpha_blend_factor(vk::BlendFactor::ZERO)
+                    .alpha_blend_op(vk::BlendOp::ADD)
+                    .color_write_mask(
+                        vk::ColorComponentFlags::R
+                            | vk::ColorComponentFlags::G
+                            | vk::ColorComponentFlags::B
+                            | vk::ColorComponentFlags::A,
+                    )
+                    .build(),
+            );
         }
 
         let shader_stages = Vec::<vk::PipelineShaderStageCreateInfo>::from([
@@ -222,19 +272,18 @@ impl VkShaderProgram {
                 .stage(vk::ShaderStageFlags::FRAGMENT)
                 .module(fragment_module.get_module())
                 .name(unsafe { CStr::from_ptr("main\0".as_ptr() as *const c_char) })
-                .build()
+                .build(),
         ]);
 
         let color_blending = vk::PipelineColorBlendStateCreateInfo::builder()
             .attachments(color_blend_attachment.as_slice())
             .build();
 
-
-        let mut dynamic_states_array = Vec::from([vk::DynamicState::SCISSOR, vk::DynamicState::VIEWPORT]);
+        let mut dynamic_states_array =
+            Vec::from([vk::DynamicState::SCISSOR, vk::DynamicState::VIEWPORT]);
         if create_infos.shader_properties.line_width != 1.0 {
             dynamic_states_array.push(vk::DynamicState::LINE_WIDTH);
         }
-
 
         let dynamic_states = vk::PipelineDynamicStateCreateInfo::builder()
             .dynamic_states(dynamic_states_array.as_slice())
@@ -259,14 +308,22 @@ impl VkShaderProgram {
             .base_pipeline_index(-1)
             .build();
 
-        let pipeline = match unsafe { gfx.cast::<GfxVulkan>().device.assume_init_ref().handle.create_graphics_pipelines(vk::PipelineCache::default(), &[ci_pipeline], None) } {
-            Ok(pipeline) => { pipeline[0] }
-            Err(_) => { logger::fatal!("failed to create graphic pipelines") }
+        let pipeline = match unsafe {
+            GfxVulkan::get()
+                .device
+                .assume_init_ref()
+                .handle
+                .create_graphics_pipelines(vk::PipelineCache::default(), &[ci_pipeline], None)
+        } {
+            Ok(pipeline) => pipeline[0],
+            Err(_) => {
+                logger::fatal!("failed to create graphic pipelines")
+            }
         };
-        gfx.cast::<GfxVulkan>().set_vk_object_name(pipeline, format!("graphic pipeline\t\t: {}", name).as_str());
+        GfxVulkan::get()
+            .set_vk_object_name(pipeline, format!("graphic pipeline\t\t: {}", name).as_str());
 
         Arc::new(Self {
-            gfx: gfx.clone(),
             _vertex_module: vertex_module,
             _fragment_module: fragment_module,
             pipeline,
@@ -279,24 +336,29 @@ impl VkShaderProgram {
 }
 
 pub struct VkShaderModule {
-    _gfx: GfxRef,
     shader_module: vk::ShaderModule,
 }
 
 impl VkShaderModule {
-    pub fn new(gfx: &GfxRef, name: String, spirv: &Vec<u32>) -> Arc<Self> {
+    pub fn new(name: String, spirv: &Vec<u32>) -> Arc<Self> {
         let ci_shader_module = vk::ShaderModuleCreateInfo::builder()
             .code(spirv.as_slice())
             .flags(vk::ShaderModuleCreateFlags::default())
             .build();
 
-        let shader_module = vk_check!(unsafe { gfx.cast::<GfxVulkan>().device.assume_init_ref().handle.create_shader_module(&ci_shader_module, None) });
-        gfx.cast::<GfxVulkan>().set_vk_object_name(shader_module, format!("shader module\t\t: {}", name).as_str());
-
-        Arc::new(Self {
-            _gfx: gfx.clone(),
+        let shader_module = vk_check!(unsafe {
+            GfxVulkan::get()
+                .device
+                .assume_init_ref()
+                .handle
+                .create_shader_module(&ci_shader_module, None)
+        });
+        GfxVulkan::get().set_vk_object_name(
             shader_module,
-        })
+            format!("shader module\t\t: {}", name).as_str(),
+        );
+
+        Arc::new(Self { shader_module })
     }
 
     pub fn get_module(&self) -> vk::ShaderModule {

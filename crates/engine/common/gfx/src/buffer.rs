@@ -1,9 +1,8 @@
-﻿use crate::GfxCast;
 use crate::surface::GfxImageID;
+use crate::GfxCast;
 
 #[derive(Copy, Clone, Eq, PartialEq)]
-pub enum BufferType
-{
+pub enum BufferType {
     // No allowed updates
     Immutable,
     // Pretty never updated. Updating data would cause some freezes
@@ -31,8 +30,7 @@ pub enum BufferUsage {
 }
 
 #[derive(Copy, Clone, Eq, PartialEq)]
-pub enum BufferAccess
-{
+pub enum BufferAccess {
     // Choose best configuration
     Default,
     // Data will be cached on GPU

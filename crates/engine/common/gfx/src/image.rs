@@ -1,7 +1,7 @@
-﻿use enumflags2::{bitflags, BitFlags};
+use enumflags2::{bitflags, BitFlags};
 
-use crate::GfxCast;
 use crate::types::PixelFormat;
+use crate::GfxCast;
 
 #[derive(Copy, Clone)]
 pub enum ImageType {
@@ -16,42 +16,30 @@ pub enum ImageType {
 impl PartialEq for ImageType {
     fn eq(&self, other: &Self) -> bool {
         match self {
-            ImageType::Texture1d(x1) => {
-                match other {
-                    ImageType::Texture1d(x2) => { x1 == x2 }
-                    _ => { false }
-                }
-            }
-            ImageType::Texture2d(x1, y1) => {
-                match other {
-                    ImageType::Texture2d(x2, y2) => { x1 == x2 && y1 == y2 }
-                    _ => { false }
-                }
-            }
-            ImageType::Texture3d(x1, y1, z1) => {
-                match other {
-                    ImageType::Texture3d(x2, y2, z2) => { x1 == x2 && y1 == y2 && z1 == z2 }
-                    _ => { false }
-                }
-            }
-            ImageType::Texture1dArray(x1) => {
-                match other {
-                    ImageType::Texture1dArray(x2) => { x1 == x2 }
-                    _ => { false }
-                }
-            }
-            ImageType::Texture2dArray(x1, y1) => {
-                match other {
-                    ImageType::Texture2dArray(x2, y2) => { x1 == x2 && y1 == y2 }
-                    _ => { false }
-                }
-            }
-            ImageType::TextureCube(x1, y1) => {
-                match other {
-                    ImageType::TextureCube(x2, y2) => { x1 == x2 && y1 == y2 }
-                    _ => { false }
-                }
-            }
+            ImageType::Texture1d(x1) => match other {
+                ImageType::Texture1d(x2) => x1 == x2,
+                _ => false,
+            },
+            ImageType::Texture2d(x1, y1) => match other {
+                ImageType::Texture2d(x2, y2) => x1 == x2 && y1 == y2,
+                _ => false,
+            },
+            ImageType::Texture3d(x1, y1, z1) => match other {
+                ImageType::Texture3d(x2, y2, z2) => x1 == x2 && y1 == y2 && z1 == z2,
+                _ => false,
+            },
+            ImageType::Texture1dArray(x1) => match other {
+                ImageType::Texture1dArray(x2) => x1 == x2,
+                _ => false,
+            },
+            ImageType::Texture2dArray(x1, y1) => match other {
+                ImageType::Texture2dArray(x2, y2) => x1 == x2 && y1 == y2,
+                _ => false,
+            },
+            ImageType::TextureCube(x1, y1) => match other {
+                ImageType::TextureCube(x2, y2) => x1 == x2 && y1 == y2,
+                _ => false,
+            },
         }
     }
 }
@@ -80,15 +68,15 @@ pub struct ImageParams {
 impl ImageParams {
     pub fn get_mip_levels(&self) -> u16 {
         match self.mip_levels {
-            None => { 1 }
-            Some(levels) => { levels }
+            None => 1,
+            Some(levels) => levels,
         }
     }
 
     pub fn array_layers(&self) -> u32 {
         match self.image_type {
-            ImageType::TextureCube(_, _) => { 6 }
-            _ => { 1 }
+            ImageType::TextureCube(_, _) => 6,
+            _ => 1,
         }
     }
 }
@@ -118,23 +106,23 @@ impl dyn GfxImage {
 impl ImageType {
     pub fn pixel_count(&self) -> u32 {
         match self {
-            ImageType::Texture1d(x) => { *x }
-            ImageType::Texture2d(x, y) => { x * y }
-            ImageType::Texture3d(x, y, z) => { x * y * z }
-            ImageType::Texture1dArray(x) => { *x }
-            ImageType::Texture2dArray(x, y) => { x * y }
-            ImageType::TextureCube(x, y) => { x * y * 6 }
+            ImageType::Texture1d(x) => *x,
+            ImageType::Texture2d(x, y) => x * y,
+            ImageType::Texture3d(x, y, z) => x * y * z,
+            ImageType::Texture1dArray(x) => *x,
+            ImageType::Texture2dArray(x, y) => x * y,
+            ImageType::TextureCube(x, y) => x * y * 6,
         }
     }
 
     pub fn dimensions(&self) -> (u32, u32, u32) {
         match self {
-            ImageType::Texture1d(x) => { (*x, 1, 1) }
-            ImageType::Texture2d(x, y) => { (*x, *y, 1) }
-            ImageType::Texture3d(x, y, z) => { (*x, *y, *z) }
-            ImageType::Texture1dArray(x) => { (*x, 1, 1) }
-            ImageType::Texture2dArray(x, y) => { (*x, *y, 1) }
-            ImageType::TextureCube(x, y) => { (*x, *y, 6) }
+            ImageType::Texture1d(x) => (*x, 1, 1),
+            ImageType::Texture2d(x, y) => (*x, *y, 1),
+            ImageType::Texture3d(x, y, z) => (*x, *y, *z),
+            ImageType::Texture1dArray(x) => (*x, 1, 1),
+            ImageType::Texture2dArray(x, y) => (*x, *y, 1),
+            ImageType::TextureCube(x, y) => (*x, *y, 6),
         }
     }
 }

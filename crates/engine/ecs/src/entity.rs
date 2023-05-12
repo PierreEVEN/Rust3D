@@ -1,4 +1,4 @@
-﻿use std::sync::{Arc, RwLock, Weak};
+use std::sync::{Arc, RwLock, Weak};
 
 use crate::ecs::Ecs;
 
@@ -12,7 +12,10 @@ pub struct GameObject {
 
 impl GameObject {
     pub fn new(entity: EntityID, ecs: Weak<RwLock<Ecs>>) -> Self {
-        Self { entity_id: Arc::new(RwLock::new(entity)), ecs_ref: Some(ecs) }
+        Self {
+            entity_id: Arc::new(RwLock::new(entity)),
+            ecs_ref: Some(ecs),
+        }
     }
 
     pub fn is_valid(&self) -> bool {
@@ -20,8 +23,8 @@ impl GameObject {
             return false;
         }
         match &self.ecs_ref {
-            None => { false }
-            Some(ecs) => { ecs.weak_count() > 0 }
+            None => false,
+            Some(ecs) => ecs.weak_count() > 0,
         }
     }
 
@@ -31,14 +34,12 @@ impl GameObject {
         if let Ok(mut entity_id) = self.entity_id.write() {
             match &self.ecs_ref {
                 None => {}
-                Some(ecs) => {
-                    unsafe {
-                        if let Ok(mut ecs) = ecs.as_ptr().as_ref().unwrap().write() {
-                            ecs.destroy(*self.entity_id.read().unwrap());
-                            *entity_id = EntityID::MAX;
-                        }
+                Some(ecs) => unsafe {
+                    if let Ok(mut ecs) = ecs.as_ptr().as_ref().unwrap().write() {
+                        ecs.destroy(*self.entity_id.read().unwrap());
+                        *entity_id = EntityID::MAX;
                     }
-                }
+                },
             }
         }
     }
@@ -46,6 +47,9 @@ impl GameObject {
 
 impl Default for GameObject {
     fn default() -> Self {
-        Self { entity_id: Arc::new(RwLock::new(u32::MAX)), ecs_ref: None }
+        Self {
+            entity_id: Arc::new(RwLock::new(u32::MAX)),
+            ecs_ref: None,
+        }
     }
 }

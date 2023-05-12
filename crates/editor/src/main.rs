@@ -1,15 +1,13 @@
-use std::sync::Arc;
-use core::engine::{Engine, Builder};
+use core::engine::{Builder, Engine};
 use core::world::World;
 use ecs::entity::GameObject;
-use logger::{debug};
 use plateform::input_system::{InputAction, InputMapping, KeyboardKey};
+use plateform::window::PlatformEvent;
+use std::sync::Arc;
 
 mod gfx_demo;
 
-struct Camera {
-    
-}
+struct Camera {}
 
 #[derive(Default)]
 pub struct TestApp {
@@ -17,30 +15,52 @@ pub struct TestApp {
     primary_camera: GameObject,
     //world_view: WorldView,
 }
+
 impl core::engine::App for TestApp {
-    fn pre_initialize(&mut self, builder: &mut Builder) {
-        // Example : override default engine initializer
-        builder.platform = Box::new(|| { (*Builder::default().platform)() });
-    }
+    fn pre_initialize(&mut self, _: &mut Builder) {}
     fn initialized(&mut self) {
         let input_manager = Engine::get().platform().input_manager();
-        input_manager.new_action("MoveForward", InputAction::new().map(InputMapping::Keyboard(KeyboardKey::KeyZ)));
-        input_manager.new_action("MoveRight", InputAction::new().map(InputMapping::Keyboard(KeyboardKey::KeyD)));
-        input_manager.new_action("MoveLeft", InputAction::new().map(InputMapping::Keyboard(KeyboardKey::KeyQ)));
-        input_manager.new_action("MoveBackward", InputAction::new().map(InputMapping::Keyboard(KeyboardKey::KeyS)));
+        input_manager.new_action(
+            "MoveForward",
+            InputAction::new().map(InputMapping::Keyboard(KeyboardKey::KeyZ)),
+        );
+        input_manager.new_action(
+            "MoveRight",
+            InputAction::new().map(InputMapping::Keyboard(KeyboardKey::KeyD)),
+        );
+        input_manager.new_action(
+            "MoveLeft",
+            InputAction::new().map(InputMapping::Keyboard(KeyboardKey::KeyQ)),
+        );
+        input_manager.new_action(
+            "MoveBackward",
+            InputAction::new().map(InputMapping::Keyboard(KeyboardKey::KeyS)),
+        );
 
         // Create world
         self.world = Engine::get().new_world();
-        self.primary_camera = self.world.add_object::<Camera>(Camera{});
-        
+        self.primary_camera = self.world.add_object::<Camera>(Camera {});
+
         // Create primary window
-        let main_window = Engine::get().platform().create_window(plateform::window::WindowCreateInfos {
-            name: "Rust3D Editor".to_string(),
-            geometry: maths::rect2d::Rect2D::rect(300, 400, 800, 600),
-            window_flags: plateform::window::WindowFlags::from_flag(plateform::window::WindowFlagBits::Resizable),
-            background_alpha: 255,
-        }).unwrap();
+        let main_window = Engine::get()
+            .platform()
+            .create_window(plateform::window::WindowCreateInfos {
+                name: "Rust3D Editor".to_string(),
+                geometry: maths::rect2d::Rect2D::rect(300, 400, 800, 600),
+                window_flags: plateform::window::WindowFlags::from_flag(
+                    plateform::window::WindowFlagBits::Resizable,
+                ),
+                background_alpha: 255,
+            })
+            .unwrap();
         main_window.show();
+
+        main_window.bind_event(
+            PlatformEvent::WindowClosed,
+            Box::new(|_| {
+                Engine::get().shutdown();
+            }),
+        );
 
         // Create world view
         //self.world_view = Engine::get().create_view(main_window, Renderer::default_pbr());
@@ -48,7 +68,7 @@ impl core::engine::App for TestApp {
     }
 
     fn new_frame(&mut self, _delta_seconds: f64) {
-        //self.primary_camera.movement(_delta_seconds);        
+        //self.primary_camera.movement(_delta_seconds);
     }
 
     fn request_shutdown(&self) {}
@@ -59,9 +79,6 @@ fn main() {
     let mut engine = Engine::new::<TestApp>();
     engine.start();
 }
-
-
-
 
 /*
 // Create ImGui context

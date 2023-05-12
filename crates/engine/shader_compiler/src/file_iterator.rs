@@ -1,4 +1,4 @@
-﻿use std::ops::{Add, AddAssign, Sub};
+use std::ops::{Add, AddAssign, Sub};
 
 pub struct FileIterator {
     line_count: i64,
@@ -12,8 +12,8 @@ impl Add<i64> for FileIterator {
 
     fn add(self, rhs: i64) -> Self::Output {
         match self.shader.chars().nth((self.ptr + rhs) as usize) {
-            None => { self.end }
-            Some(value) => { value }
+            None => self.end,
+            Some(value) => value,
         }
     }
 }
@@ -23,8 +23,8 @@ impl Add<i64> for &FileIterator {
 
     fn add(self, rhs: i64) -> Self::Output {
         match self.shader.chars().nth((self.ptr + rhs) as usize) {
-            None => { self.end }
-            Some(value) => { value }
+            None => self.end,
+            Some(value) => value,
         }
     }
 }
@@ -110,15 +110,15 @@ impl FileIterator {
 
     pub fn current(&self) -> char {
         match self.shader.chars().nth(self.ptr as usize) {
-            None => { self.end }
-            Some(value) => { value }
+            None => self.end,
+            Some(value) => value,
         }
     }
 
     pub fn next(&self, offset: i64) -> char {
         match self.shader.chars().nth((self.ptr + offset) as usize) {
-            None => { self.end }
-            Some(value) => { value }
+            None => self.end,
+            Some(value) => value,
         }
     }
 }

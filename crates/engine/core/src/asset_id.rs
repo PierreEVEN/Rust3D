@@ -1,4 +1,4 @@
-﻿use std::hash::{Hash, Hasher};
+use std::hash::{Hash, Hasher};
 
 #[derive(Clone, Default)]
 pub struct AssetID {
@@ -7,7 +7,9 @@ pub struct AssetID {
 
 impl AssetID {
     pub fn from(name: &str) -> Self {
-        Self { name: name.to_string() }
+        Self {
+            name: name.to_string(),
+        }
     }
 }
 
@@ -23,6 +25,4 @@ impl PartialEq<Self> for AssetID {
     }
 }
 
-impl Eq for AssetID {
-    
-}
+impl Eq for AssetID {}

@@ -1,7 +1,5 @@
-﻿
-use std::ops;
 use macros::*;
-
+use std::ops;
 
 #[derive(Debug, Copy, Clone, OpsAdd, OpsSub, DefaultConstruct)]
 pub struct Mat2<T: Default> {

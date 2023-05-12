@@ -1,6 +1,6 @@
-﻿use std::collections::VecDeque;
-use std::mem::{MaybeUninit, size_of};
 use crate::JobPtr;
+use std::collections::VecDeque;
+use std::mem::{size_of, MaybeUninit};
 
 pub struct JobData {
     valid: bool,
@@ -10,18 +10,17 @@ pub struct JobData {
 
 impl JobData {
     pub fn new<Fn: 'static + FnOnce()>(job_fn: Fn) -> Self {
-
         let payload = Vec::with_capacity(size_of::<Fn>());
-        unsafe { (payload.as_ptr() as *mut Fn).write(job_fn); }
-        
+        unsafe {
+            (payload.as_ptr() as *mut Fn).write(job_fn);
+        }
+
         Self {
             valid: true,
-            runner: MaybeUninit::new(move |job_ptr| {
-                unsafe {
-                    let mut func_ptr = MaybeUninit::<Fn>::zeroed();
-                    func_ptr.write((job_ptr.read().payload.as_ptr() as *mut Fn).read());
-                    func_ptr.assume_init()();
-                }
+            runner: MaybeUninit::new(move |job_ptr| unsafe {
+                let mut func_ptr = MaybeUninit::<Fn>::zeroed();
+                func_ptr.write((job_ptr.read().payload.as_ptr() as *mut Fn).read());
+                func_ptr.assume_init()();
             }),
             payload,
         }
@@ -30,7 +29,7 @@ impl JobData {
     pub fn is_valid(&self) -> bool {
         self.valid
     }
-    
+
     pub fn execute(&mut self) {
         unsafe { (self.runner.assume_init())(JobPtr::new(self)) }
     }
@@ -43,7 +42,9 @@ pub struct JobPool {
 
 impl JobPool {
     pub fn new() -> Self {
-        Self { jobs: VecDeque::new() }
+        Self {
+            jobs: VecDeque::new(),
+        }
     }
 
     pub fn push(&mut self, job: JobData) -> JobPtr {
@@ -55,5 +56,7 @@ impl JobPool {
         self.jobs.pop_front()
     }
 
-    pub fn is_empty(&self) -> bool { self.jobs.is_empty() }
+    pub fn is_empty(&self) -> bool {
+        self.jobs.is_empty()
+    }
 }

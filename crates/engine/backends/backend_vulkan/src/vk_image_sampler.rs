@@ -1,9 +1,8 @@
-﻿use std::sync::Arc;
 use ash::vk;
-use gfx::GfxRef;
+use std::sync::Arc;
 
+use crate::{vk_check, GfxVulkan};
 use gfx::image_sampler::{ImageSampler, SamplerCreateInfos};
-use crate::{GfxVulkan, vk_check};
 
 pub struct VkImageSampler {
     pub sampler: vk::Sampler,
@@ -13,7 +12,7 @@ pub struct VkImageSampler {
 impl ImageSampler for VkImageSampler {}
 
 impl VkImageSampler {
-    pub fn new(gfx: &GfxRef, name:String, _create_infos: SamplerCreateInfos) -> Arc<Self> {
+    pub fn new(name: String, _create_infos: SamplerCreateInfos) -> Arc<Self> {
         let sampler_create_infos = vk::SamplerCreateInfo::builder()
             .mag_filter(vk::Filter::LINEAR)
             .min_filter(vk::Filter::LINEAR)
@@ -31,22 +30,27 @@ impl VkImageSampler {
             .border_color(vk::BorderColor::INT_OPAQUE_BLACK)
             .unnormalized_coordinates(false)
             .build();
-        
-        let sampler = vk_check!(unsafe { gfx.cast::<GfxVulkan>().device.assume_init_ref().handle.create_sampler(&sampler_create_infos, None) });
 
-        gfx.cast::<GfxVulkan>().set_vk_object_name(sampler, format!("image sampler\t\t: {}", name).as_str());
-        
+        let sampler = vk_check!(unsafe {
+            GfxVulkan::get()
+                .device
+                .assume_init_ref()
+                .handle
+                .create_sampler(&sampler_create_infos, None)
+        });
+
+        GfxVulkan::get()
+            .set_vk_object_name(sampler, format!("image sampler\t\t: {}", name).as_str());
+
         let sampler_info = vk::DescriptorImageInfo::builder()
             .sampler(sampler)
             .image_view(vk::ImageView::null())
             .image_layout(vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL)
             .build();
-        
-        
-        
+
         Arc::new(Self {
             sampler,
-            sampler_info
+            sampler_info,
         })
     }
 }

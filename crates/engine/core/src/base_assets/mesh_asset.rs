@@ -1,4 +1,4 @@
-﻿use std::path::Path;
+use std::path::Path;
 use std::sync::{Arc, RwLock};
 
 use crate::asset::{AssetFactory, AssetMetaData, GameAsset};
@@ -25,7 +25,7 @@ impl MeshAsset {
     pub fn set_material(&self, material: &Arc<MaterialAsset>) {
         *self.material.write().unwrap() = material.clone();
     }
-    
+
     pub fn get_material(&self) -> Arc<MaterialAsset> {
         self.material.read().unwrap().clone()
     }
@@ -52,7 +52,6 @@ impl MeshAssetFactory {
         Arc::new(Self {})
     }
 }
-
 
 impl AssetFactory for MeshAssetFactory {
     fn instantiate_from_asset_path(&self, _path: &Path) -> Arc<dyn GameAsset> {

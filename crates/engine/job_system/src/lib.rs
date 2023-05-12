@@ -1,12 +1,12 @@
-pub mod worker;
 pub mod job_pool;
+pub mod worker;
 
 extern crate num_cpus;
 
+use crate::job_pool::JobData;
+use crate::worker::{Worker, WorkerSharedData};
 use std::ptr::null_mut;
 use std::sync::{Arc, Mutex};
-use crate::job_pool::{JobData};
-use crate::worker::{Worker, WorkerSharedData};
 
 #[derive(Copy, Clone)]
 pub struct JobPtr {
@@ -15,16 +15,20 @@ pub struct JobPtr {
 
 impl JobPtr {
     pub fn null() -> Self {
-        Self { job_ptr: null_mut() }
+        Self {
+            job_ptr: null_mut(),
+        }
     }
     pub fn new(pool: &mut JobData) -> Self {
         Self {
             job_ptr: pool as *const JobData as *mut JobData,
         }
     }
-    
+
     pub fn read(&self) -> &JobData {
-        if self.job_ptr.is_null() { logger::fatal!("Job pointer is null") }
+        if self.job_ptr.is_null() {
+            logger::fatal!("Job pointer is null")
+        }
         unsafe { &*self.job_ptr }
     }
 }
@@ -32,7 +36,7 @@ impl JobPtr {
 pub struct JobSystem {
     workers: Vec<Worker>,
     current_worker: usize,
-    shared_data: Arc<WorkerSharedData>
+    shared_data: Arc<WorkerSharedData>,
 }
 
 impl JobSystem {
@@ -43,7 +47,7 @@ impl JobSystem {
         let shared_data = Arc::new(WorkerSharedData::new(num_worker_threads));
 
         for i in 0..num_worker_threads {
-            workers.push(Worker::new(debug_name,i, shared_data.clone()));
+            workers.push(Worker::new(debug_name, i, shared_data.clone()));
         }
 
         Self {
@@ -80,7 +84,7 @@ impl Drop for JobSystem {
         self.shared_data.stop();
         for worker in &self.workers {
             worker.join();
-        } 
+        }
     }
 }
 
@@ -88,7 +92,7 @@ pub fn test_func() -> JobSystem {
     let mut js = JobSystem::new("JS_Global", JobSystem::available_cpu_threads());
 
     let counter = Arc::new(Mutex::new(0));
-    
+
     let n_tasks = 50;
     for i in 1..n_tasks + 1 {
         logger::info!("spawn heavy task #{i}/{n_tasks}");
@@ -105,7 +109,7 @@ pub fn test_func() -> JobSystem {
 
 #[cfg(test)]
 mod test {
-    use crate::{test_func};
+    use crate::test_func;
 
     #[test]
     fn test() {

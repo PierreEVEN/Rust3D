@@ -1,7 +1,6 @@
 use std::path::Path;
 use std::sync::{Arc, RwLock};
 
-use crate::asset_manager::AssetManager;
 use crate::asset_type_id::AssetTypeID;
 
 pub trait GameAsset {
@@ -16,15 +15,13 @@ pub trait AssetFactory {
 }
 
 pub struct AssetMetaData {
-    pub asset_manager: Arc<AssetManager>,
     name: RwLock<String>,
     save_path: RwLock<Option<String>>,
 }
 
 impl AssetMetaData {
-    pub fn new(asset_manager: &Arc<AssetManager>) -> Self {
+    pub fn new() -> Self {
         Self {
-            asset_manager: asset_manager.clone(),
             name: RwLock::default(),
             save_path: RwLock::default(),
         }

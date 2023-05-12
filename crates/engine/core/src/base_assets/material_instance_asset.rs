@@ -4,7 +4,6 @@ use gfx::shader_instance::BindPoint;
 use std::sync::Arc;
 
 use crate::asset::{AssetMetaData, GameAsset};
-use crate::asset_manager::AssetManager;
 
 pub struct MaterialInstanceAsset {
     meta_data: AssetMetaData,
@@ -25,9 +24,9 @@ impl GameAsset for MaterialInstanceAsset {
 }
 
 impl MaterialInstanceAsset {
-    pub fn new(asset_manager: &Arc<AssetManager>) -> Arc<Self> {
+    pub fn new() -> Arc<Self> {
         Arc::new(Self {
-            meta_data: AssetMetaData::new(asset_manager),
+            meta_data: AssetMetaData::new(),
         })
     }
 

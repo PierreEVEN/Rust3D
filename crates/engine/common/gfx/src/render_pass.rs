@@ -63,10 +63,9 @@ pub type GraphRenderCallback = Box<dyn FnMut(&Arc<dyn GfxCommandBuffer>)>;
 
 impl FrameGraph {
     pub fn from_surface(
-        _gfx: Gfx,
         surface: &Arc<dyn GfxSurface>,
         clear_value: Vec4F32,
-    ) -> Arc<Self> {
+    ) -> Self {
         let render_pass_ci = RenderPassCreateInfos {
             pass_id: PassID::new("surface_pass"),
             color_attachments: vec![RenderPassAttachment {
@@ -80,20 +79,20 @@ impl FrameGraph {
 
         let res = surface.get_owning_window().get_geometry();
 
-        let draw_pass = _gfx
+        let draw_pass = Gfx::get()
             .create_render_pass("main_render_pass".to_string(), render_pass_ci)
             .instantiate(
                 surface,
                 Vec2u32::new(res.width() as u32, res.height() as u32),
             );
 
-        Arc::new(Self {
+        Self {
             surface: surface.clone(),
             present_pass: draw_pass,
-        })
+        }
     }
 
-    pub fn main_pass(&self) -> &Arc<dyn RenderPassInstance> {
+    pub fn present_pass(&self) -> &Arc<dyn RenderPassInstance> {
         &self.present_pass
     }
 

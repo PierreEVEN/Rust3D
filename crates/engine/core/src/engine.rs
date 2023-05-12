@@ -9,6 +9,7 @@ use plateform::Platform;
 use plateform::window::Window;
 
 use crate::asset_manager::AssetManager;
+use crate::renderer::Renderer;
 use crate::world::World;
 use crate::world_view::WorldView;
 
@@ -203,6 +204,10 @@ impl Engine {
         self.check_validity();
         unsafe { self.platform.assume_init_ref().as_ref() }
     }
+    pub fn asset_manager(&self) -> &AssetManager {
+        self.check_validity();
+        unsafe { self.asset_manager.assume_init_ref() }
+    }
 
     pub fn new_world(&self) -> Arc<World> {
         let world = Arc::new(World::new());
@@ -210,8 +215,8 @@ impl Engine {
         world
     }
 
-    pub fn create_view(&self) -> Weak<WorldView> {
-        let new_view = Arc::new(WorldView::default());
+    pub fn create_view(&self, renderer: Renderer) -> Weak<WorldView> {
+        let new_view = Arc::new(WorldView::new(renderer));
         self.views.write().unwrap().push(new_view.clone());
         Arc::downgrade(&new_view)
     }

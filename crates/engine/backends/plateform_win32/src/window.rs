@@ -11,7 +11,6 @@ use maths::rect2d::{Rect2D, RectI32};
 use plateform::window::{
     PlatformEvent, Window, WindowCreateInfos, WindowEventDelegate, WindowFlagBits, WindowFlags,
 };
-use plateform::window::WindowFlagBits::Maximized;
 
 use crate::{utf8_to_utf16, WIN_CLASS_NAME};
 use crate::utils::check_win32_error;
@@ -30,7 +29,7 @@ impl WindowWin32 {
         let ex_style = WS_EX_LAYERED;
         let mut style = WINDOW_STYLE::default();
 
-        let mut window_flags = create_infos.window_flags;
+        let window_flags = create_infos.window_flags;
         
         unsafe {
             if window_flags

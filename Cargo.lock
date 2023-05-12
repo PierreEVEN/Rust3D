@@ -219,8 +219,10 @@ dependencies = [
  "gfx-maths",
  "lazy_static",
  "logger",
+ "maths",
  "plateform",
  "shader_compiler",
+ "third_party_io",
 ]
 
 [[package]]

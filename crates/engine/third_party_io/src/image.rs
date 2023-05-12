@@ -21,7 +21,7 @@ pub enum ImageFormat {
     TGA,
 }
 
-pub fn read_image_from_file(gfx: Gfx, file: &Path) -> Result<Arc<dyn GfxImage>, Error> {
+pub fn read_image_from_file(file: &Path) -> Result<Arc<dyn GfxImage>, Error> {
     let mut width: i32 = 0;
     let mut height: i32 = 0;
     let mut components: i32 = 0;
@@ -40,7 +40,7 @@ pub fn read_image_from_file(gfx: Gfx, file: &Path) -> Result<Arc<dyn GfxImage>, 
                 );
 
                 components = 4;
-                let image = gfx.create_image(
+                let image = Gfx::get().create_image(
                     file.file_name().unwrap().to_str().unwrap().to_string(),
                     ImageCreateInfos {
                         params: ImageParams {

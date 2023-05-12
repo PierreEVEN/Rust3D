@@ -11,7 +11,6 @@ use shader_compiler::types::InterstageData;
 use shader_compiler::CompilerBackend;
 
 use crate::asset::{AssetFactory, AssetMetaData, GameAsset};
-use crate::asset_manager::AssetManager;
 use crate::asset_type_id::AssetTypeID;
 use crate::base_assets::material_instance_asset::MaterialInstanceAsset;
 
@@ -28,9 +27,9 @@ pub struct MaterialAsset {
 }
 
 impl MaterialAsset {
-    pub fn new(asset_manager: &Arc<AssetManager>) -> Arc<Self> {
+    pub fn new() -> Arc<Self> {
         Arc::new(Self {
-            meta_data: AssetMetaData::new(asset_manager),
+            meta_data: AssetMetaData::new(),
             virtual_path: RwLock::default(),
             parsed_shader: RwLock::default(),
             permutations: RwLock::default(),
@@ -39,7 +38,7 @@ impl MaterialAsset {
     }
 
     pub fn instantiate(&self) -> Arc<MaterialInstanceAsset> {
-        MaterialInstanceAsset::new(&self.meta_data.asset_manager)
+        MaterialInstanceAsset::new()
     }
 
     pub fn set_shader_code(&self, virtual_path: &Path, shader_text: String) {

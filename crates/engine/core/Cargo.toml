@@ -12,3 +12,5 @@ gfx-maths = "0.2.8"
 logger = { path = "../logger" }
 lazy_static = "1.4.0"
 ecs = { path = "../ecs" }
+maths = { path = "../maths" }
+third_party_io = { path = "../third_party_io" }

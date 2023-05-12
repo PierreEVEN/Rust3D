@@ -19,9 +19,29 @@ pub type WindowFlags = BitFlags<WindowFlagBits>;
 #[derive(Clone)]
 pub struct WindowCreateInfos {
     pub name: String,
-    pub geometry: RectI32,
+    pub geometry: Option<RectI32>,
     pub window_flags: WindowFlags,
     pub background_alpha: u8,
+}
+
+impl Default for WindowCreateInfos {
+    fn default() -> Self {
+        Self {
+            name: "Unknown window".to_string(),
+            geometry: None,
+            window_flags: WindowFlags::from_flag(WindowFlagBits::Resizable),
+            background_alpha: 255,
+        }
+    }
+}
+
+impl WindowCreateInfos {
+    pub fn default_named(name: &str) -> Self {
+        Self {
+            name: name.to_string(),
+            ..Default::default()
+        }
+    }
 }
 
 #[derive(Clone)]

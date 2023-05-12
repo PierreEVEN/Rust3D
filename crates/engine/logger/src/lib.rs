@@ -137,7 +137,20 @@ pub fn broadcast_log(message: LogMessage, backtrace: String) {
 
 #[macro_export]
 macro_rules! debug {
-    ($level:expr, $($fmt_args:expr), *) => ({
+    ($fmt:expr, $($fmt_args:expr), *) => ({
+        use std::thread;
+        $crate::broadcast_log($crate::LogMessage {
+            severity: $crate::LogSeverity::DEBUG(0),
+            thread_id: Some(thread::current().id()),
+            context: env!("CARGO_PKG_NAME").to_string(),
+            text: format!($fmt, $($fmt_args), *)
+        }, "".to_string());
+    })
+}
+
+#[macro_export]
+macro_rules! debug_lvl {
+    ($level:literal, $($fmt_args:expr), *) => ({
         use std::thread;
         $crate::broadcast_log($crate::LogMessage {
             severity: $crate::LogSeverity::DEBUG($level),
@@ -146,15 +159,6 @@ macro_rules! debug {
             text: format!($($fmt_args), *)
         }, "".to_string());
     });
-    ($($fmt_args:expr), *) => ({
-        use std::thread;
-        $crate::broadcast_log($crate::LogMessage {
-            severity: $crate::LogSeverity::DEBUG(0),
-            thread_id: Some(thread::current().id()),
-            context: env!("CARGO_PKG_NAME").to_string(),
-            text: format!($($fmt_args), *)
-        }, "".to_string());
-    })
 }
 
 #[macro_export]

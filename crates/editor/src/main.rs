@@ -1,22 +1,19 @@
-use core::engine::{Builder, Engine};
+use core::engine::{Builder, Engine, Camera, App};
 use core::world::World;
 use ecs::entity::GameObject;
 use plateform::input_system::{InputAction, InputMapping, KeyboardKey};
-use plateform::window::PlatformEvent;
+use plateform::window::{PlatformEvent, WindowCreateInfos};
 use std::sync::Arc;
 
 mod gfx_demo;
-
-struct Camera {}
 
 #[derive(Default)]
 pub struct TestApp {
     world: Arc<World>,
     primary_camera: GameObject,
-    //world_view: WorldView,
 }
 
-impl core::engine::App for TestApp {
+impl App for TestApp {
     fn pre_initialize(&mut self, _: &mut Builder) {}
     fn initialized(&mut self) {
         let input_manager = Engine::get().platform().input_manager();
@@ -41,36 +38,23 @@ impl core::engine::App for TestApp {
         self.world = Engine::get().new_world();
         self.primary_camera = self.world.add_object::<Camera>(Camera {});
 
-        // Create primary window
-        let main_window = Engine::get()
-            .platform()
-            .create_window(plateform::window::WindowCreateInfos {
-                name: "Rust3D Editor".to_string(),
-                geometry: maths::rect2d::Rect2D::rect(300, 400, 800, 600),
-                window_flags: plateform::window::WindowFlags::from_flag(
-                    plateform::window::WindowFlagBits::Resizable,
-                ),
-                background_alpha: 255,
-            })
-            .unwrap();
-        main_window.show();
-
-        main_window.bind_event(
+        // Create main window
+        let main_window = Engine::get().platform().create_window(WindowCreateInfos::default_named("Rust3D Editor")).unwrap();
+        main_window.upgrade().unwrap().show();
+        main_window.upgrade().unwrap().bind_event(
             PlatformEvent::WindowClosed,
             Box::new(|_| {
                 Engine::get().shutdown();
             }),
         );
 
-        // Create world view
-        //self.world_view = Engine::get().create_view(main_window, Renderer::default_pbr());
-        //self.world_view.attach_to(self.primary_camera);
+        // Create world view and set output to main window
+        let world_view = Engine::get().create_view(/*Renderer::default_pbr()*/);
+        world_view.upgrade().unwrap().add_window(&main_window);
+        world_view.upgrade().unwrap().attach_to(self.primary_camera.clone());
     }
 
-    fn new_frame(&mut self, _delta_seconds: f64) {
-        //self.primary_camera.movement(_delta_seconds);
-    }
-
+    fn new_frame(&mut self, _delta_seconds: f64) {}
     fn request_shutdown(&self) {}
     fn stopped(&self) {}
 }

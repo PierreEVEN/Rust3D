@@ -277,11 +277,11 @@ impl GfxSurface for VkSurfaceWin32 {
 }
 
 impl VkSurfaceWin32 {
-    pub fn new_ptr(
+    pub fn new(
         name: String,
         window: &Arc<dyn Window>,
         image_count: u32,
-    ) -> Arc<dyn GfxSurface> {
+    ) -> Self {
         let handle = match window.get_handle() {
             RawWindowHandle::Win32(handle) => handle,
             _ => {
@@ -401,7 +401,7 @@ impl VkSurfaceWin32 {
             }
         }
 
-        let surface = Arc::new(Self {
+        let surface = Self {
             surface,
             swapchain: Default::default(),
             _surface_loader: surface_loader,
@@ -417,7 +417,7 @@ impl VkSurfaceWin32 {
                 width: 0,
                 height: 0,
             }),
-        });
+        };
 
         surface.create_or_recreate();
         logger::info!("Created vulkan surface for win32 platform");

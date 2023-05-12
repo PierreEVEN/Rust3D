@@ -1,12 +1,16 @@
 use std::mem::MaybeUninit;
+use std::sync::{Arc, RwLock, Weak};
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, RwLock};
 
 use gfx::GfxInterface;
+use gfx::surface::GfxSurface;
+use logger::fatal;
 use plateform::Platform;
+use plateform::window::Window;
 
 use crate::asset_manager::AssetManager;
 use crate::world::World;
+use crate::world_view::WorldView;
 
 pub struct DeltaSeconds {
     last: std::time::Instant,
@@ -49,6 +53,7 @@ pub trait App {
 pub struct Builder {
     pub platform: Box<dyn FnMut() -> Box<dyn Platform>>,
     pub gfx: Box<dyn FnMut() -> Box<dyn GfxInterface>>,
+    pub surface: Box<dyn FnMut(&Weak<dyn Window>) -> Box<dyn GfxSurface>>,
     pub asset_manager: Box<dyn FnMut() -> AssetManager>,
 }
 
@@ -66,7 +71,10 @@ impl Default for Builder {
                 );
                 gfx
             }),
-            asset_manager: Box::new(|| AssetManager::default()),
+            surface: Box::new(|window| {
+                backend_launcher::backend::spawn_surface(window)
+            }),
+            asset_manager: Box::new(AssetManager::default),
         }
     }
 }
@@ -75,6 +83,7 @@ pub struct Engine {
     asset_manager: MaybeUninit<AssetManager>,
     platform: MaybeUninit<Box<dyn Platform>>,
     gfx: MaybeUninit<Box<dyn GfxInterface>>,
+    surface_builder: Box<dyn FnMut(&Weak<dyn Window>) -> Box<dyn GfxSurface>>,
     app: Box<dyn App>,
 
     pre_initialized: AtomicBool,
@@ -82,6 +91,7 @@ pub struct Engine {
     is_stopping: AtomicBool,
 
     worlds: RwLock<Vec<Arc<World>>>,
+    views: RwLock<Vec<Arc<WorldView>>>,
     game_delta: DeltaSeconds,
 }
 
@@ -102,11 +112,13 @@ impl Engine {
             asset_manager: MaybeUninit::uninit(),
             platform: MaybeUninit::uninit(),
             gfx: MaybeUninit::uninit(),
+            surface_builder: Box::new(|_| { fatal!("surface builder is not valid") }),
             app: Box::<GamemodeT>::default(),
             pre_initialized: AtomicBool::new(false),
             initialized: AtomicBool::new(false),
             is_stopping: AtomicBool::new(false),
             worlds: Default::default(),
+            views: Default::default(),
             game_delta: DeltaSeconds::new(None),
         };
         unsafe {
@@ -130,6 +142,7 @@ impl Engine {
         self.platform = MaybeUninit::new((*builder.platform)());
         self.gfx = MaybeUninit::new((*builder.gfx)());
         self.asset_manager = MaybeUninit::new((*builder.asset_manager)());
+        self.surface_builder = builder.surface;
 
         // FINISHED PRE-INITIALIZATION
         self.initialized.store(true, Ordering::SeqCst);
@@ -167,6 +180,20 @@ impl Engine {
             engine
         }
     }
+    
+    pub fn get_mut() -> &'static mut Self {
+        unsafe {
+            assert!(
+                !ENGINE_INSTANCE.is_null(),
+                "Engine is not available there ! Please call Engine::init() before"
+            )
+        }
+        unsafe {
+            let engine = ENGINE_INSTANCE.as_mut().unwrap();
+            engine.check_validity();
+            engine
+        }
+    }
 
     pub fn gfx(&self) -> &dyn GfxInterface {
         self.check_validity();
@@ -183,14 +210,33 @@ impl Engine {
         world
     }
 
+    pub fn create_view(&self) -> Weak<WorldView> {
+        let new_view = Arc::new(WorldView::default());
+        self.views.write().unwrap().push(new_view.clone());
+        Arc::downgrade(&new_view)
+    }
+
+    pub fn new_surface(&mut self, window: &Weak<dyn Window>) -> Box<dyn GfxSurface> {
+        (*self.surface_builder)(window)
+    }
+
     fn engine_loop(&mut self) {
         while !self.is_stopping.load(Ordering::SeqCst) {
             self.game_delta.new_frame();
             self.platform().poll_events();
             self.app.new_frame(self.game_delta.current());
+
+            if let Ok(views) = self.views.read() {
+                for view in &*views {
+                    view.new_frame();
+                }
+            }
         }
     }
 }
+
+#[derive(Default)]
+pub struct Camera {}
 
 impl Drop for Engine {
     fn drop(&mut self) {

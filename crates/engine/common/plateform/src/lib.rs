@@ -4,7 +4,7 @@ pub mod window;
 use crate::input_system::InputManager;
 use crate::window::{Window, WindowCreateInfos};
 use maths::rect2d::Rect2D;
-use std::sync::Arc;
+use std::sync::{Weak};
 
 #[derive(Copy, Clone)]
 pub struct Monitor {
@@ -37,7 +37,7 @@ pub trait Platform {
     fn create_window(
         &self,
         create_infos: WindowCreateInfos,
-    ) -> Result<Arc<dyn Window>, WindowCreationError>;
+    ) -> Result<Weak<dyn Window>, WindowCreationError>;
     fn monitor_count(&self) -> usize;
     fn get_monitor(&self, index: usize) -> Monitor;
     fn collect_monitors(&self);

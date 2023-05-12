@@ -4,20 +4,17 @@ use std::sync::{Arc, RwLock};
 use raw_window_handle::{RawWindowHandle, Win32WindowHandle};
 use windows::core::PCWSTR;
 use windows::Win32::Foundation::{COLORREF, HMODULE, HWND, RECT};
-use windows::Win32::UI::WindowsAndMessaging::{
-    AdjustWindowRectEx, CreateWindowExW, SetLayeredWindowAttributes, SetWindowTextW, ShowWindow,
-    HMENU, LWA_ALPHA, SW_MAXIMIZE, SW_SHOW, WINDOW_STYLE, WS_CAPTION, WS_EX_LAYERED,
-    WS_MAXIMIZEBOX, WS_MINIMIZEBOX, WS_OVERLAPPED, WS_POPUP, WS_SYSMENU, WS_THICKFRAME, WS_VISIBLE,
-};
+use windows::Win32::UI::WindowsAndMessaging::{AdjustWindowRectEx, CreateWindowExW, GetSystemMetrics, HMENU, LWA_ALPHA, SetLayeredWindowAttributes, SetWindowTextW, ShowWindow, SM_CXSCREEN, SM_CYCAPTION,  SM_CYSCREEN, SW_MAXIMIZE, SW_SHOW, WINDOW_STYLE, WS_CAPTION, WS_EX_LAYERED, WS_MAXIMIZEBOX, WS_MINIMIZEBOX, WS_OVERLAPPED, WS_POPUP, WS_SYSMENU, WS_THICKFRAME, WS_VISIBLE};
 
-use logger::info;
-use maths::rect2d::RectI32;
+use logger::{info};
+use maths::rect2d::{Rect2D, RectI32};
 use plateform::window::{
     PlatformEvent, Window, WindowCreateInfos, WindowEventDelegate, WindowFlagBits, WindowFlags,
 };
+use plateform::window::WindowFlagBits::Maximized;
 
-use crate::utils::check_win32_error;
 use crate::{utf8_to_utf16, WIN_CLASS_NAME};
+use crate::utils::check_win32_error;
 
 pub struct WindowWin32 {
     pub hwnd: HWND,
@@ -33,9 +30,10 @@ impl WindowWin32 {
         let ex_style = WS_EX_LAYERED;
         let mut style = WINDOW_STYLE::default();
 
+        let mut window_flags = create_infos.window_flags;
+        
         unsafe {
-            if create_infos
-                .window_flags
+            if window_flags
                 .contains(WindowFlagBits::Borderless)
             {
                 style |= WS_VISIBLE | WS_POPUP;
@@ -43,29 +41,38 @@ impl WindowWin32 {
                 style |= WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX;
             }
 
-            if create_infos
-                .window_flags
+            if window_flags
                 .contains(WindowFlagBits::Resizable)
             {
                 style |= WS_THICKFRAME | WS_MAXIMIZEBOX;
             }
 
+            let geometry = match create_infos.geometry {
+                None => {
+                    //window_flags.insert(Maximized);
+                    let width = GetSystemMetrics(SM_CXSCREEN);
+                    let height = GetSystemMetrics(SM_CYSCREEN);
+                    Rect2D::new(width / 4, GetSystemMetrics(SM_CYCAPTION) + height / 4, width - width / 4, height - height / 4)
+                }
+                Some(geometry) => { geometry }
+            };
+
             // Rect must be adjusted since Win32 api include window decoration in the width/height
             let mut initial_rect = RECT {
                 left: 0,
                 top: 0,
-                right: create_infos.geometry.width(),
-                bottom: create_infos.geometry.height(),
+                right: geometry.width(),
+                bottom: geometry.height(),
             };
-
             AdjustWindowRectEx(&mut initial_rect, style, false, ex_style);
+            
             let hwnd = CreateWindowExW(
                 ex_style,
                 PCWSTR(utf8_to_utf16(WIN_CLASS_NAME).as_ptr()),
                 PCWSTR(utf8_to_utf16(create_infos.name.as_str()).as_ptr()),
                 style,
-                create_infos.geometry.min_x() + initial_rect.left,
-                create_infos.geometry.min_y() + initial_rect.top,
+                geometry.min_x() + initial_rect.left,
+                geometry.min_y() + initial_rect.top,
                 initial_rect.right - initial_rect.left,
                 initial_rect.bottom - initial_rect.top,
                 HWND::default(),
@@ -80,9 +87,9 @@ impl WindowWin32 {
 
             let window = WindowWin32 {
                 hwnd,
-                geometry: RwLock::new(create_infos.geometry),
+                geometry: RwLock::new(geometry),
                 background_alpha: RwLock::new(create_infos.background_alpha),
-                flags: create_infos.window_flags,
+                flags: window_flags,
                 title: RwLock::new(create_infos.name.to_string()),
                 event_map: RwLock::default(),
             };

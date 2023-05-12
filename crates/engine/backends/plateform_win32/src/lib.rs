@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
 use std::mem::size_of;
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, RwLock, Weak};
 
 use windows::core::PCWSTR;
 use windows::Win32::Foundation::{BOOL, HMODULE, HWND, LPARAM, LRESULT, RECT, WPARAM};
@@ -177,12 +177,12 @@ impl Platform for PlatformWin32 {
     fn create_window(
         &self,
         create_infos: WindowCreateInfos,
-    ) -> Result<Arc<dyn Window>, WindowCreationError> {
+    ) -> Result<Weak<dyn Window>, WindowCreationError> {
         logger::info!("create window '{}'", create_infos.name);
         let window = WindowWin32::new(create_infos);
         let hwnd = window.hwnd.into();
         self.windows.write().unwrap().insert(hwnd, window.clone());
-        Ok(window)
+        Ok(Arc::downgrade(&(window as Arc<dyn Window>)))
     }
 
     fn monitor_count(&self) -> usize {

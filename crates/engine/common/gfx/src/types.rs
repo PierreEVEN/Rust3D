@@ -1,6 +1,7 @@
 use maths::vec2::Vec2f32;
 use maths::vec4::Vec4F32;
 use std::any::Any;
+use std::hash::{Hash, Hasher};
 
 #[allow(non_camel_case_types)]
 pub enum ColorSpace {
@@ -24,7 +25,7 @@ pub enum ColorSpace {
 }
 
 #[allow(non_camel_case_types)]
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum PixelFormat {
     UNDEFINED,
     R4G4_UNORM_PACK8,
@@ -211,6 +212,12 @@ pub enum PixelFormat {
     ASTC_12X10_SRGB_BLOCK,
     ASTC_12X12_UNORM_BLOCK,
     ASTC_12X12_SRGB_BLOCK,
+}
+
+impl Hash for PixelFormat {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        (*self as u64).hash(state)
+    }
 }
 
 impl PixelFormat {

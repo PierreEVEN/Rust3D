@@ -11,7 +11,6 @@ use plateform::window::Window;
 use crate::asset_manager::AssetManager;
 use crate::renderer::Renderer;
 use crate::world::World;
-use crate::world_view::WorldView;
 
 pub struct DeltaSeconds {
     last: std::time::Instant,
@@ -92,7 +91,7 @@ pub struct Engine {
     is_stopping: AtomicBool,
 
     worlds: RwLock<Vec<Arc<World>>>,
-    views: RwLock<Vec<Arc<WorldView>>>,
+    views: RwLock<Vec<Renderer>>,
     game_delta: DeltaSeconds,
 }
 
@@ -215,10 +214,8 @@ impl Engine {
         world
     }
 
-    pub fn create_view(&self, renderer: Renderer) -> Weak<WorldView> {
-        let new_view = Arc::new(WorldView::new(renderer));
-        self.views.write().unwrap().push(new_view.clone());
-        Arc::downgrade(&new_view)
+    pub fn add_renderer(&self, renderer: Renderer) {
+        self.views.write().unwrap().push(renderer);
     }
 
     pub fn new_surface(&mut self, window: &Weak<dyn Window>) -> Box<dyn GfxSurface> {

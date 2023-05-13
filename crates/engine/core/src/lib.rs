@@ -4,7 +4,6 @@ pub mod asset_manager;
 pub mod asset_type_id;
 pub mod engine;
 pub mod world;
-pub mod world_view;
 pub mod renderer;
 
 pub mod base_assets {

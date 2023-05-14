@@ -8,7 +8,7 @@ use gfx::image::{GfxImage, ImageCreateInfos, ImageParams, ImageType, ImageUsage}
 use gfx::render_pass::{GraphRenderCallback, RenderPass, RenderPassInstance};
 use gfx::surface::{GfxImageID, GfxSurface};
 use gfx::types::ClearValues;
-use gfx::Gfx;
+use gfx::{Gfx, render_node};
 use maths::vec2::Vec2u32;
 
 use crate::vk_command_buffer::VkCommandBuffer;
@@ -28,6 +28,20 @@ pub struct VkRenderPassInstance {
     pub render_callback: RwLock<Option<GraphRenderCallback>>,
     pub children: RwLock<Vec<Arc<dyn RenderPassInstance>>>,
     name: String,
+}
+
+impl render_node::RenderPassInstance  for VkRenderPassInstance {
+    fn init(&self, context: &render_node::RenderPass) {
+        todo!()
+    }
+
+    fn bind(&self, context: &render_node::RenderPass, res: Vec2u32) {
+        todo!()
+    }
+
+    fn submit(&self, context: &render_node::RenderPass, res: Vec2u32) {
+        todo!()
+    }
 }
 
 pub struct RbSemaphore {
@@ -114,15 +128,7 @@ impl GfxImageBuilder<vk::Framebuffer> for RbFramebuffer {
 }
 
 impl VkRenderPassInstance {
-    pub fn new(
-        name: String,
-        surface: &Arc<dyn GfxSurface>,
-        owner: Arc<dyn RenderPass>,
-        res: Vec2u32,
-    ) -> VkRenderPassInstance {
-        let clear_values = owner.get_clear_values().clone();
-
-        let render_pass = owner.cast::<VkRenderPass>().render_pass;
+    pub fn new(owner: &VkRenderPass, render_pass: &render_node::RenderPass  , res: Vec2u32) -> VkRenderPassInstance {
 
         let mut images = Vec::new();
         if owner.get_config().is_present_pass {
@@ -130,7 +136,7 @@ impl VkRenderPassInstance {
         } else {
             for att_color in &owner.get_config().color_attachments {
                 images.push(Gfx::get().create_image(
-                    format!("render_pass[{}]::attachment[{}]", name, att_color.name),
+                    format!("render_pass[{}]::attachment[{}]", "undefined name", att_color.name),
                     ImageCreateInfos {
                         params: ImageParams {
                             pixel_format: att_color.image_format,

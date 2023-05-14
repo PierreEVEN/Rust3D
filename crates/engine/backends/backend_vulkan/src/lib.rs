@@ -15,11 +15,12 @@ use gfx::buffer::{BufferCreateInfo, GfxBuffer};
 use gfx::command_buffer::GfxCommandBuffer;
 use gfx::image::{GfxImage, ImageCreateInfos};
 use gfx::image_sampler::{ImageSampler, SamplerCreateInfos};
-use gfx::render_pass::{RenderPass, RenderPassCreateInfos};
 use gfx::shader::{PassID, ShaderProgram, ShaderProgramInfos};
 use gfx::surface::GfxSurface;
 use gfx::{Gfx, GfxInterface, PhysicalDevice};
+use gfx::render_node::{RenderPass, RenderPassInstance};
 use logger::fatal;
+use maths::vec2::Vec2u32;
 
 use crate::vk_buffer::VkBuffer;
 use crate::vk_command_buffer::{VkCommandBuffer, VkCommandPool};
@@ -29,7 +30,7 @@ use crate::vk_image::VkImage;
 use crate::vk_image_sampler::VkImageSampler;
 use crate::vk_instance::{InstanceCreateInfos, VkInstance};
 use crate::vk_physical_device::VkPhysicalDevice;
-use crate::vk_render_pass::VkRenderPass;
+use crate::vk_render_pass::{RenderPassPool, VkRenderPass};
 use crate::vk_shader::VkShaderProgram;
 use crate::vk_shader_instance::VkShaderInstance;
 
@@ -82,7 +83,7 @@ pub struct GfxVulkan {
     pub gfx_ref: Weak<GfxVulkan>,
     pub command_pool: MaybeUninit<VkCommandPool>,
     pub descriptor_pool: MaybeUninit<VkDescriptorPool>,
-    render_passes: RwLock<HashMap<PassID, Arc<dyn RenderPass>>>,
+    pub render_pass_pool: RenderPassPool,
 }
 
 impl Default for GfxVulkan {
@@ -99,7 +100,7 @@ impl Default for GfxVulkan {
             gfx_ref: Default::default(),
             command_pool: MaybeUninit::uninit(),
             descriptor_pool: MaybeUninit::uninit(),
-            render_passes: Default::default(),
+            render_pass_pool: Default::default(),
         };
         logger::info!("Created vulkan gfx backend. Waiting for initialization...");
         gfx
@@ -188,18 +189,17 @@ impl GfxInterface for GfxVulkan {
     fn create_shader_program(
         &self,
         name: String,
-        render_pass: &Arc<dyn RenderPass>,
+        render_pass: &Arc<dyn RenderPassInstance>,
         create_infos: &ShaderProgramInfos,
     ) -> Arc<dyn ShaderProgram> {
         VkShaderProgram::new(name, render_pass, create_infos)
     }
 
-    fn create_render_pass(
+    fn instantiate_render_pass(
         &self,
-        name: String,
-        create_infos: RenderPassCreateInfos,
-    ) -> Arc<dyn RenderPass> {
-        VkRenderPass::new(name, create_infos)
+        render_pass: &RenderPass, initial_res: Vec2u32
+    ) -> Box<dyn RenderPassInstance> {
+        self.render_pass_pool.instantiate(render_pass, initial_res)
     }
 
     fn create_image(&self, name: String, create_infos: ImageCreateInfos) -> Arc<dyn GfxImage> {
@@ -214,7 +214,7 @@ impl GfxInterface for GfxVulkan {
         VkImageSampler::new(name, create_infos)
     }
 
-    fn find_render_pass(&self, pass_id: &PassID) -> Option<Arc<dyn RenderPass>> {
+    fn find_render_pass(&self, pass_id: &PassID) -> Option<Arc<dyn RenderPassInstance>> {
         match self.render_passes.read().unwrap().get(pass_id) {
             None => None,
             Some(pass) => Some(pass.clone()),

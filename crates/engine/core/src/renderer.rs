@@ -1,12 +1,7 @@
-﻿use std::collections::{HashMap, HashSet};
-use std::hash::{Hash, Hasher};
-use std::sync::{Arc, RwLock, Weak};
+﻿use std::sync::{Arc, LockResult, RwLock, Weak};
 use ecs::entity::GameObject;
-use gfx::render_pass::FrameGraph;
-use gfx::surface::GfxSurface;
-
+use gfx::render_node::{FrameGraph, RenderNode, Resource, ResourceColor, ResourceDepth};
 use gfx::types::{ClearValues, PixelFormat};
-use logger::fatal;
 use maths::vec2::Vec2f32;
 use maths::vec4::Vec4F32;
 use plateform::window::Window;
@@ -14,18 +9,23 @@ use crate::engine::Engine;
 
 pub struct Renderer {
     frame_graphs: RwLock<Vec<FrameGraph>>,
-    present_pass: RenderPass,
+    present_node: RenderNode,
     camera: RwLock<GameObject>,
 }
 
 impl Renderer {
     pub fn add_window(&self, window: &Weak<dyn Window>) {
-        self.frame_graphs.write().unwrap().push(self.present_pass.compile_to_surface(Engine::get_mut().new_surface(window)));
+        self.frame_graphs.write().unwrap().push(self.present_node.compile_to_surface(Engine::get_mut().new_surface(window)));
     }
 
     pub fn new_frame(&self) {
-        for _frame_graph in &*self.frame_graphs.read().unwrap() {
-            todo!("self.framegraph.render(self.camera)");
+        match self.camera.read() {
+            Ok(camera) => {
+                for _frame_graph in &*self.frame_graphs.read().unwrap() {
+                    _frame_graph.execute(&*camera);
+                }
+            }
+            Err(_) => {}
         }
     }
 
@@ -34,137 +34,10 @@ impl Renderer {
     }
 }
 
-#[derive(Clone)]
-pub struct ResourceColor {
-    pub name: String,
-    pub clear_value: ClearValues,
-    pub image_format: PixelFormat,
-}
-
-#[derive(Clone)]
-pub struct ResourceDepth {
-    pub name: String,
-    pub clear_value: ClearValues,
-    pub image_format: PixelFormat,
-}
-
-#[derive(Clone)]
-pub enum Resource {
-    Color(ResourceColor),
-    Depth(ResourceDepth),
-}
-
-impl Hash for Resource {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        match self {
-            Resource::Color(color_resource) => {
-                state.write_u8(128);
-                color_resource.image_format.hash(state);
-            }
-            Resource::Depth(depth_resource) => {
-                state.write_u8(255);
-                depth_resource.image_format.hash(state);
-            }
-        }
-    }
-}
-
-impl PartialEq for Resource {
-    fn eq(&self, other: &Self) -> bool {
-        match self {
-            Resource::Color(color) => {
-                if let Resource::Color(other_color) = other { color.image_format == other_color.image_format } else { false }
-            }
-            Resource::Depth(depth) => {
-                if let Resource::Depth(other_depth) = other { depth.image_format == other_depth.image_format } else { false }
-            }
-        }
-    }
-}
-
-struct RenderPass {
-    name: String,
-    inputs: Vec<Arc<RenderPass>>,
-    resources: Vec<Resource>,
-    present_pass: bool,
-}
-
-impl RenderPass {
-    pub fn new() -> Self {
-        Self {
-            name: "RenderPass".to_string(),
-            inputs: vec![],
-            resources: vec![],
-            present_pass: false,
-        }
-    }
-
-    pub fn present() -> Self {
-        Self {
-            name: "PresentPass".to_string(),
-            inputs: vec![],
-            resources: vec![],
-            present_pass: true,
-        }
-    }
-
-    pub fn attach(&mut self, previous: Arc<RenderPass>) {
-        if previous.present_pass {
-            fatal!("Present pass cannot be attached to parent pass");
-        }
-        self.inputs.push(previous);
-    }
-
-    pub fn name(mut self, name: &str) -> Self {
-        self.name = name.to_string();
-        self
-    }
-
-    pub fn add_resource(mut self, resource: Resource) -> Self {
-        self.resources.push(resource);
-        self
-    }
-
-    pub fn compile_to_surface(&self, _surface: Box<dyn GfxSurface>) -> FrameGraph {
-        if !self.present_pass { fatal!("Only present pass can be compiled to surface") }
-        let mut resources = HashMap::<Resource, ()>::new();
-        let mut individual_dependency = self.collect_individual_dependencies();
-        
-        
-        
-        
-        todo!("surface compilation is not implemented yet")
-    }
-    
-    fn collect_individual_dependencies(&self) -> Vec::<Arc<RenderPass>> {
-        let mut result = Vec::<Arc<RenderPass>>::new();
-        
-        let mut tested_resources = self.inputs.clone();
-        for input in &self.inputs {
-            let mut other = input.collect_individual_dependencies();
-            tested_resources.append(&mut other);
-        }
-        
-        for resource in &tested_resources {
-            let mut contains = false;
-            for existing in &result {
-                if std::ptr::eq(existing.as_ref(), resource.as_ref()) {
-                    contains = true;
-                    break
-                }
-            }
-            if !contains { result.push(resource.clone()) }
-        }
-        
-        result
-    }
-}
-
 impl Renderer {
     pub fn default_deferred() -> Self {
-        let mut present_pass = RenderPass::present();
-
-        present_pass.attach(Arc::new(RenderPass::new()
+        let mut present_node = RenderNode::present();
+        present_node.attach(Arc::new(RenderNode::new()
             .name("g_buffers")
             .add_resource(Resource::Color(
                 ResourceColor {
@@ -184,7 +57,7 @@ impl Renderer {
 
         Self {
             frame_graphs: Default::default(),
-            present_pass,
+            present_node,
             camera: Default::default(),
         }
     }

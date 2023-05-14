@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use logger::fatal;
 
 use maths::vec2::Vec2u32;
 use maths::vec4::Vec4F32;
@@ -79,7 +80,9 @@ impl FrameGraph {
 
         let res = surface.get_owning_window().get_geometry();
 
-        let draw_pass = Gfx::get()
+        fatal!("outdated code")
+        /*
+                let draw_pass = Gfx::get()
             .create_render_pass("main_render_pass".to_string(), render_pass_ci)
             .instantiate(
                 surface,
@@ -90,6 +93,7 @@ impl FrameGraph {
             surface: surface.clone(),
             present_pass: draw_pass,
         }
+         */
     }
 
     pub fn present_pass(&self) -> &Arc<dyn RenderPassInstance> {

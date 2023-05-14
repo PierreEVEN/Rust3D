@@ -140,7 +140,7 @@ impl ImGUiContext {
         };
 
         let imgui_pass_id = PassID::new("imgui_render_pass");
-        let imgui_render_pass = Gfx::get().create_render_pass(
+        let imgui_render_pass = Gfx::get().instantiate_render_pass(
             "imgui_render_pass".to_string(),
             RenderPassCreateInfos {
                 pass_id: PassID::new("imgui_render_pass"),

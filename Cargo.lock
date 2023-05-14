@@ -355,6 +355,7 @@ dependencies = [
 name = "gfx"
 version = "0.1.0"
 dependencies = [
+ "ecs",
  "enumflags2",
  "logger",
  "maths",

@@ -24,7 +24,7 @@ pub fn _demo_objects(surface: &Arc<dyn GfxSurface>) {
     // Framegraph example
     let res = Vec2u32::new(800, 600);
 
-    let g_buffer_pass = Gfx::get().create_render_pass(
+    let g_buffer_pass = Gfx::get().instantiate_render_pass(
         "demo_gbuffer".to_string(),
         RenderPassCreateInfos {
             pass_id: PassID::new("GBuffers"),
@@ -59,7 +59,7 @@ pub fn _demo_objects(surface: &Arc<dyn GfxSurface>) {
         },
     );
 
-    let deferred_combine_pass = Gfx::get().create_render_pass(
+    let deferred_combine_pass = Gfx::get().instantiate_render_pass(
         "demo_deferred_combine".to_string(),
         RenderPassCreateInfos {
             pass_id: PassID::new("deferred_combine"),

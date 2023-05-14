@@ -3,13 +3,14 @@ use std::hash::{Hash, Hasher};
 use std::mem::MaybeUninit;
 use std::ops::Deref;
 use std::sync::Arc;
+use maths::vec2::Vec2u32;
 
 use crate::buffer::{BufferCreateInfo, GfxBuffer};
 use crate::command_buffer::GfxCommandBuffer;
 use crate::image::{GfxImage, ImageCreateInfos};
 use crate::image_sampler::{ImageSampler, SamplerCreateInfos};
 use crate::mesh::{Mesh, MeshCreateInfos};
-use crate::render_pass::{RenderPass, RenderPassCreateInfos};
+use crate::render_node::{RenderPass, RenderPassInstance};
 use crate::shader::{PassID, ShaderProgram, ShaderProgramInfos};
 use crate::shader_instance::ShaderInstance;
 use crate::surface::GfxSurface;
@@ -26,6 +27,7 @@ pub mod shader;
 pub mod shader_instance;
 pub mod surface;
 pub mod types;
+pub mod render_node;
 
 pub trait GfxInterface: GfxCast {
     fn init(&mut self);
@@ -38,21 +40,20 @@ pub trait GfxInterface: GfxCast {
     fn create_shader_program(
         &self,
         name: String,
-        render_pass: &Arc<dyn RenderPass>,
+        render_pass: &Arc<dyn RenderPassInstance>,
         create_infos: &ShaderProgramInfos,
     ) -> Arc<dyn ShaderProgram>;
-    fn create_render_pass(
+    fn instantiate_render_pass(
         &self,
-        name: String,
-        create_infos: RenderPassCreateInfos,
-    ) -> Arc<dyn RenderPass>;
+        render_pass: &RenderPass, initial_res: Vec2u32
+    ) -> Box<dyn RenderPassInstance>;
     fn create_image(&self, name: String, create_infos: ImageCreateInfos) -> Arc<dyn GfxImage>;
     fn create_image_sampler(
         &self,
         name: String,
         create_infos: SamplerCreateInfos,
     ) -> Arc<dyn ImageSampler>;
-    fn find_render_pass(&self, pass_id: &PassID) -> Option<Arc<dyn RenderPass>>;
+    fn find_render_pass(&self, pass_id: &PassID) -> Option<Arc<dyn RenderPassInstance>>;
     fn create_command_buffer(
         &self,
         name: String,

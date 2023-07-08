@@ -1,32 +1,14 @@
-use std::collections::HashMap;
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc};
 
 use ash::vk;
-use gfx::render_node;
+use gfx::renderer::render_node;
+use gfx::renderer::render_pass::RenderPass;
 use gfx::types::{ClearValues, PixelFormat};
 use maths::vec2::Vec2u32;
 
-use crate::vk_render_pass_instance::VkRenderPassInstance;
 use crate::vk_types::VkPixelFormat;
 use crate::{vk_check, GfxVulkan};
-
-#[derive(Default)]
-pub struct RenderPassPool {
-    render_passes: RwLock<HashMap<Arc<render_node::RenderNode>, Box<VkRenderPass>>>,
-}
-
-impl RenderPassPool {
-    pub fn instantiate(&self, render_pass: &render_node::RenderPass, initial_res: Vec2u32) -> Box<dyn render_node::RenderPassInstance> {
-        Box::new(self.find_or_create(render_pass).create_instance(render_pass, initial_res))
-    }
-
-    fn find_or_create(&self, render_pass: &render_node::RenderPass) -> &VkRenderPass {
-        if !self.render_passes.read().unwrap().contains_key(render_pass.source()) {
-            self.render_passes.write().unwrap().insert(render_pass.source().clone(), Box::new(VkRenderPass::new(render_pass.source())));
-        }
-        &self.render_passes.read().unwrap().get(render_pass.source()).unwrap()
-    }
-}
+use crate::renderer::vk_render_pass_instance::VkRenderPassInstance;
 
 pub struct VkRenderPass {
     pub render_pass: vk::RenderPass,
@@ -148,8 +130,7 @@ impl VkRenderPass {
 
         let render_pass = vk_check!(unsafe {
             GfxVulkan::get()
-                .device
-                .assume_init_ref()
+                .device()
                 .handle
                 .create_render_pass(&render_pass_infos, None)
         });
@@ -165,7 +146,7 @@ impl VkRenderPass {
         vk_render_pass
     }
 
-    pub fn create_instance(&self, render_pass: &render_node::RenderPass, initial_res: Vec2u32) -> VkRenderPassInstance {
+    pub fn create_instance(&self, render_pass: &RenderPass, initial_res: Vec2u32) -> VkRenderPassInstance {
         VkRenderPassInstance::new(self, render_pass, initial_res)        
     }
 }

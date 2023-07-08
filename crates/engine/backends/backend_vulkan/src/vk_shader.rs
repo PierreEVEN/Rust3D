@@ -4,7 +4,6 @@ use std::sync::Arc;
 
 use ash::vk;
 
-use gfx::render_pass::RenderPass;
 use gfx::shader::{
     AlphaMode, Culling, DescriptorBinding, FrontFace, PolygonMode, ShaderProgram,
     ShaderProgramInfos, Topology,
@@ -13,7 +12,7 @@ use gfx::shader_instance::{ShaderInstance, ShaderInstanceCreateInfos};
 
 use crate::vk_dst_set_layout::VkDescriptorSetLayout;
 use crate::vk_types::VkPixelFormat;
-use crate::{vk_check, GfxVulkan, VkRenderPass, VkShaderInstance};
+use crate::{vk_check, GfxVulkan, VkShaderInstance};
 
 pub struct VkTopology(vk::PrimitiveTopology);
 
@@ -93,7 +92,6 @@ impl ShaderProgram for VkShaderProgram {
 impl VkShaderProgram {
     pub fn new(
         name: String,
-        render_pass: &Arc<dyn RenderPass>,
         create_infos: &ShaderProgramInfos,
     ) -> Arc<Self> {
         let descriptor_set_layout = VkDescriptorSetLayout::new(
@@ -223,7 +221,9 @@ impl VkShaderProgram {
             .build();
 
         let mut color_blend_attachment = Vec::<vk::PipelineColorBlendAttachmentState>::new();
-
+        
+        todo!()
+        /*
         for _ in &render_pass.get_config().color_attachments {
             color_blend_attachment.push(
                 vk::PipelineColorBlendAttachmentState::builder()
@@ -332,6 +332,7 @@ impl VkShaderProgram {
             bindings,
             name,
         })
+         */
     }
 }
 

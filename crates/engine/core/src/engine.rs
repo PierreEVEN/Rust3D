@@ -228,9 +228,9 @@ impl Engine {
             self.platform().poll_events();
             self.app.new_frame(self.game_delta.current());
 
-            if let Ok(views) = self.views.read() {
-                for view in &*views {
-                    view.new_frame();
+            if let Ok(renderers) = self.views.read() {
+                for renderer in &*renderers {
+                    renderer.new_frame();
                 }
             }
         }

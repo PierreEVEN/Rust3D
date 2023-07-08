@@ -9,11 +9,14 @@ use gfx::render_pass::{GraphRenderCallback, RenderPass, RenderPassInstance};
 use gfx::surface::{GfxImageID, GfxSurface};
 use gfx::types::ClearValues;
 use gfx::{Gfx, render_node};
+use gfx::renderer::render_node;
+use gfx::renderer::render_pass::RenderPassInstance;
 use maths::vec2::Vec2u32;
 
 use crate::vk_command_buffer::VkCommandBuffer;
 use crate::vk_image::VkImage;
 use crate::{vk_check, GfxVulkan, VkRenderPass};
+use crate::renderer::vk_render_pass::VkRenderPass;
 
 pub struct VkRenderPassInstance {
     pub render_finished_semaphore: GfxResource<vk::Semaphore>,
@@ -28,20 +31,6 @@ pub struct VkRenderPassInstance {
     pub render_callback: RwLock<Option<GraphRenderCallback>>,
     pub children: RwLock<Vec<Arc<dyn RenderPassInstance>>>,
     name: String,
-}
-
-impl render_node::RenderPassInstance  for VkRenderPassInstance {
-    fn init(&self, context: &render_node::RenderPass) {
-        todo!()
-    }
-
-    fn bind(&self, context: &render_node::RenderPass, res: Vec2u32) {
-        todo!()
-    }
-
-    fn submit(&self, context: &render_node::RenderPass, res: Vec2u32) {
-        todo!()
-    }
 }
 
 pub struct RbSemaphore {

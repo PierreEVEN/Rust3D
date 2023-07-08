@@ -1,6 +1,8 @@
 ﻿use std::sync::{Arc, LockResult, RwLock, Weak};
 use ecs::entity::GameObject;
-use gfx::render_node::{FrameGraph, RenderNode, Resource, ResourceColor, ResourceDepth};
+use gfx::renderer::render_graph::FrameGraph;
+use gfx::renderer::render_node::RenderNode;
+use gfx::renderer::renderer_resource::{Resource, ResourceColor, ResourceDepth};
 use gfx::types::{ClearValues, PixelFormat};
 use maths::vec2::Vec2f32;
 use maths::vec4::Vec4F32;
@@ -14,10 +16,11 @@ pub struct Renderer {
 }
 
 impl Renderer {
-    pub fn add_window(&self, window: &Weak<dyn Window>) {
+    /// Compile this renderer to target window surface and add it to the render chain
+    pub fn bind_window_surface(&self, window: &Weak<dyn Window>) {
         self.frame_graphs.write().unwrap().push(self.present_node.compile_to_surface(Engine::get_mut().new_surface(window)));
     }
-
+    
     pub fn new_frame(&self) {
         match self.camera.read() {
             Ok(camera) => {
@@ -29,15 +32,16 @@ impl Renderer {
         }
     }
 
-    pub fn attach_to(&self, camera: &GameObject) {
+    pub fn set_main_view(&self, camera: &GameObject) {
         *self.camera.write().unwrap() = camera.clone()
     }
 }
 
 impl Renderer {
     pub fn default_deferred() -> Self {
-        let mut present_node = RenderNode::present();
-        present_node.attach(Arc::new(RenderNode::new()
+        
+        // Create G-Buffers
+        let g_buffers = RenderNode::default()
             .name("g_buffers")
             .add_resource(Resource::Color(
                 ResourceColor {
@@ -52,8 +56,11 @@ impl Renderer {
                     clear_value: ClearValues::DepthStencil(Vec2f32::new(0.0, 1.0)),
                     image_format: PixelFormat::D32_SFLOAT,
                 }
-            ))
-        ));
+            ));
+        
+        // Create present pass
+        let mut present_node = RenderNode::present();
+        present_node.attach(Arc::new(g_buffers));
 
         Self {
             frame_graphs: Default::default(),
@@ -63,10 +70,10 @@ impl Renderer {
     }
 }
 
+
+
+
 /*
-
-
-
         // Create render pass and pass instances
         let g_buffer_pass = Gfx::get().create_render_pass("gbuffer".to_string(), RenderPassCreateInfos {
             pass_id: PassID::new("deferred_combine"),

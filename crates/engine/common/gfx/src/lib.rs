@@ -10,7 +10,7 @@ use crate::command_buffer::GfxCommandBuffer;
 use crate::image::{GfxImage, ImageCreateInfos};
 use crate::image_sampler::{ImageSampler, SamplerCreateInfos};
 use crate::mesh::{Mesh, MeshCreateInfos};
-use crate::render_node::{RenderPass, RenderPassInstance};
+use crate::renderer::render_pass::{RenderPass, RenderPassInstance};
 use crate::shader::{PassID, ShaderProgram, ShaderProgramInfos};
 use crate::shader_instance::ShaderInstance;
 use crate::surface::GfxSurface;
@@ -22,12 +22,17 @@ pub mod gfx_resource;
 pub mod image;
 pub mod image_sampler;
 pub mod mesh;
-pub mod render_pass;
 pub mod shader;
 pub mod shader_instance;
 pub mod surface;
 pub mod types;
-pub mod render_node;
+
+pub mod renderer {
+    pub mod render_graph;
+    pub mod render_node;
+    pub mod renderer_resource;
+    pub mod render_pass;
+}
 
 pub trait GfxInterface: GfxCast {
     fn init(&mut self);

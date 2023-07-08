@@ -1,4 +1,5 @@
 use enumflags2::{bitflags, BitFlags};
+use maths::vec2::Vec2u32;
 
 use crate::types::PixelFormat;
 use crate::GfxCast;
@@ -67,10 +68,7 @@ pub struct ImageParams {
 
 impl ImageParams {
     pub fn get_mip_levels(&self) -> u16 {
-        match self.mip_levels {
-            None => 1,
-            Some(levels) => levels,
-        }
+        self.mip_levels.unwrap_or(1)
     }
 
     pub fn array_layers(&self) -> u32 {
@@ -95,6 +93,15 @@ pub trait GfxImage: GfxCast {
     fn get_data_size(&self) -> u32;
     fn resize(&self, new_type: ImageType);
     fn __static_view_handle(&self) -> u64;
+}
+
+impl dyn GfxImage {
+    pub fn res_2d(&self) -> Vec2u32 {
+        match self.get_type() {
+            ImageType::Texture2d(res_x, res_y) => {Vec2u32::new(res_x, res_y)}
+            _ => {logger::fatal!("texture is not a 2-dimensional texture")}
+        }
+    }
 }
 
 impl dyn GfxImage {

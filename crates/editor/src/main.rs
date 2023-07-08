@@ -30,8 +30,8 @@ impl App for TestApp {
 
         // Create world view and set output to main window
         let renderer = Renderer::default_deferred();
-        renderer.add_window(&main_window);
-        renderer.attach_to(&self.main_camera);
+        renderer.bind_window_surface(&main_window);
+        renderer.set_main_view(&self.main_camera);
         Engine::get().add_renderer(renderer);
     }
 

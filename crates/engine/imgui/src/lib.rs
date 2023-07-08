@@ -13,9 +13,6 @@ use gfx::image::ImageType::Texture2d;
 use gfx::image::{GfxImage, GfxImageUsageFlags, ImageCreateInfos, ImageParams, ImageUsage};
 use gfx::image_sampler::{ImageSampler, SamplerCreateInfos};
 use gfx::mesh::{IndexBufferType, Mesh, MeshCreateInfos};
-use gfx::render_pass::{
-    RenderPass, RenderPassAttachment, RenderPassCreateInfos, RenderPassInstance,
-};
 use gfx::shader::{
     PassID, ShaderLanguage, ShaderProgram, ShaderProgramInfos, ShaderProgramStage,
     ShaderPropertyType, ShaderStage, ShaderStageInput,
@@ -42,6 +39,8 @@ use shader_compiler::backends::backend_shaderc::{BackendShaderC, ShaderCIncluder
 use shader_compiler::parser::Parser;
 use shader_compiler::types::InterstageData;
 use shader_compiler::CompilerBackend;
+
+/*
 
 pub struct ImGUiContext {
     pub font_texture: Arc<dyn GfxImage>,
@@ -480,3 +479,5 @@ impl ImGUiContext {
         render_pass_instance
     }
 }
+    
+ */

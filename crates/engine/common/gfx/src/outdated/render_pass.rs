@@ -6,7 +6,7 @@ use maths::vec4::Vec4F32;
 
 use crate::surface::SurfaceAcquireResult;
 use crate::types::{ClearValues, PixelFormat};
-use crate::{Gfx, GfxCast, GfxCommandBuffer, GfxImage, GfxSurface, PassID};
+use crate::{GfxCast, GfxCommandBuffer, GfxImage, GfxSurface, PassID};
 
 #[derive(Clone)]
 pub struct RenderPassAttachment {
@@ -72,7 +72,7 @@ impl FrameGraph {
             color_attachments: vec![RenderPassAttachment {
                 name: "color".to_string(),
                 clear_value: ClearValues::Color(clear_value),
-                image_format: surface.get_surface_pixel_format(),
+                image_format: surface.(),
             }],
             depth_attachment: None,
             is_present_pass: true,

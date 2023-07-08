@@ -1,7 +1,6 @@
 extern crate core;
 
 use std::any::TypeId;
-use std::collections::HashMap;
 use std::default::Default;
 use std::ffi::CStr;
 use std::mem::MaybeUninit;
@@ -18,9 +17,10 @@ use gfx::image_sampler::{ImageSampler, SamplerCreateInfos};
 use gfx::shader::{PassID, ShaderProgram, ShaderProgramInfos};
 use gfx::surface::GfxSurface;
 use gfx::{Gfx, GfxInterface, PhysicalDevice};
-use gfx::render_node::{RenderPass, RenderPassInstance};
+use gfx::renderer::render_pass::{RenderPass, RenderPassInstance};
 use logger::fatal;
 use maths::vec2::Vec2u32;
+use crate::renderer::render_pass_pool::RenderPassPool;
 
 use crate::vk_buffer::VkBuffer;
 use crate::vk_command_buffer::{VkCommandBuffer, VkCommandPool};
@@ -30,24 +30,27 @@ use crate::vk_image::VkImage;
 use crate::vk_image_sampler::VkImageSampler;
 use crate::vk_instance::{InstanceCreateInfos, VkInstance};
 use crate::vk_physical_device::VkPhysicalDevice;
-use crate::vk_render_pass::{RenderPassPool, VkRenderPass};
 use crate::vk_shader::VkShaderProgram;
 use crate::vk_shader_instance::VkShaderInstance;
 
-mod vk_buffer;
-mod vk_command_buffer;
-mod vk_descriptor_pool;
+pub mod vk_buffer;
+pub mod vk_command_buffer;
+pub mod vk_descriptor_pool;
 pub mod vk_device;
-mod vk_dst_set_layout;
+pub mod vk_dst_set_layout;
 pub mod vk_image;
-mod vk_image_sampler;
-mod vk_instance;
-mod vk_physical_device;
-mod vk_render_pass;
-pub mod vk_render_pass_instance;
-mod vk_shader;
-mod vk_shader_instance;
+pub mod vk_image_sampler;
+pub mod vk_instance;
+pub mod vk_physical_device;
+pub mod vk_shader;
+pub mod vk_shader_instance;
 pub mod vk_types;
+
+pub mod renderer {
+    pub mod vk_render_pass_instance;
+    pub mod render_pass_pool;
+    pub mod vk_render_pass;
+}
 
 #[macro_export]
 macro_rules! to_c_char {
@@ -128,7 +131,7 @@ impl GfxInterface for GfxVulkan {
 
         self.initialized.store(true, Ordering::SeqCst);
     }
-
+    
     fn is_ready(&self) -> bool {
         self.initialized.load(Ordering::SeqCst)
     }
@@ -192,7 +195,7 @@ impl GfxInterface for GfxVulkan {
         render_pass: &Arc<dyn RenderPassInstance>,
         create_infos: &ShaderProgramInfos,
     ) -> Arc<dyn ShaderProgram> {
-        VkShaderProgram::new(name, render_pass, create_infos)
+        VkShaderProgram::new(name, create_infos)
     }
 
     fn instantiate_render_pass(
@@ -215,10 +218,7 @@ impl GfxInterface for GfxVulkan {
     }
 
     fn find_render_pass(&self, pass_id: &PassID) -> Option<Arc<dyn RenderPassInstance>> {
-        match self.render_passes.read().unwrap().get(pass_id) {
-            None => None,
-            Some(pass) => Some(pass.clone()),
-        }
+        todo!()
     }
 
     fn create_command_buffer(
@@ -231,6 +231,10 @@ impl GfxInterface for GfxVulkan {
 }
 
 impl GfxVulkan {
+    fn device(&self) -> &VkDevice {
+        unsafe { self.device.assume_init_ref() }
+    }
+
     pub fn set_vk_object_name<T: vk::Handle + 'static + Copy>(&self, object: T, name: &str) -> T {
         let object_type = if TypeId::of::<vk::Instance>() == TypeId::of::<T>() {
             vk::ObjectType::INSTANCE

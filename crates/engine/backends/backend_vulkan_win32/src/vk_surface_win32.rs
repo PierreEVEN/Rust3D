@@ -8,15 +8,13 @@ use raw_window_handle::RawWindowHandle;
 
 use backend_vulkan::vk_device::VkQueue;
 use backend_vulkan::vk_image::VkImage;
-use backend_vulkan::vk_render_pass_instance::{RbSemaphore, VkRenderPassInstance};
 use backend_vulkan::vk_types::GfxPixelFormat;
 use backend_vulkan::{vk_check, GfxVulkan};
+use backend_vulkan::renderer::vk_render_pass_instance::RbSemaphore;
 use gfx::gfx_resource::{GfxImageBuilder, GfxResource};
 use gfx::image::{GfxImage, GfxImageUsageFlags, ImageParams, ImageType};
-use gfx::render_pass::RenderPassInstance;
+use gfx::renderer::render_pass::RenderPassInstance;
 use gfx::surface::{GfxImageID, GfxSurface, SurfaceAcquireResult};
-use gfx::types::PixelFormat;
-use maths::vec2::Vec2u32;
 use plateform::window::Window;
 
 pub struct VkSurfaceWin32 {
@@ -31,7 +29,6 @@ pub struct VkSurfaceWin32 {
     window: Arc<dyn Window>,
     surface_image: RwLock<Option<Arc<dyn GfxImage>>>,
     present_queue: Option<Arc<VkQueue>>,
-    extent: RwLock<vk::Extent2D>,
 }
 
 struct RbSurfaceImage {
@@ -173,16 +170,10 @@ impl GfxSurface for VkSurfaceWin32 {
                 usage: GfxImageUsageFlags::empty(),
             },
         ));
-
-        *self.extent.write().unwrap() = surface_capabilities.current_extent;
     }
 
     fn get_owning_window(&self) -> &Arc<dyn Window> {
         &self.window
-    }
-
-    fn get_surface_pixel_format(&self) -> PixelFormat {
-        *GfxPixelFormat::from(self.surface_format.format)
     }
 
     fn get_image_count(&self) -> u8 {
@@ -197,15 +188,12 @@ impl GfxSurface for VkSurfaceWin32 {
         self.surface_image.read().unwrap().as_ref().unwrap().clone()
     }
 
-    fn get_extent(&self) -> Vec2u32 {
-        let extent = self.extent.read().unwrap();
-        Vec2u32::new(extent.width, extent.height)
-    }
-
     fn acquire(
         &self,
         render_pass: &Arc<dyn RenderPassInstance>,
     ) -> Result<(), SurfaceAcquireResult> {
+        todo!()
+        /*
         let geometry = self.window.get_geometry();
 
         if geometry.width() == 0 || geometry.height() == 0 {
@@ -237,18 +225,20 @@ impl GfxSurface for VkSurfaceWin32 {
             }
         };
         self.current_image.update(image_index as u8, 0);
-
+        
         let render_pass = render_pass.cast::<VkRenderPassInstance>();
         let mut wait_sem = render_pass.wait_semaphores.write().unwrap();
         *wait_sem = Some(current_image_acquire_semaphore);
-
         Ok(())
+         */
     }
 
     fn submit(
         &self,
         render_pass: &Arc<dyn RenderPassInstance>,
     ) -> Result<(), SurfaceAcquireResult> {
+        todo!()
+        /*
         let current_image = self.get_current_ref().image_id() as u32;
         let render_pass = render_pass.cast::<VkRenderPassInstance>();
 
@@ -273,6 +263,7 @@ impl GfxSurface for VkSurfaceWin32 {
                 }),
             },
         }
+         */
     }
 }
 
@@ -411,12 +402,8 @@ impl VkSurfaceWin32 {
             current_image: GfxImageID::null(),
             window: window.clone(),
             present_queue,
-            image_acquire_semaphore: GfxResource::new(RbSemaphore { name }),
-            surface_image: RwLock::default(),
-            extent: RwLock::new(vk::Extent2D {
-                width: 0,
-                height: 0,
-            }),
+            image_acquire_semaphore: GfxResource::new( RbSemaphore { name }),
+            surface_image: RwLock::default()
         };
 
         surface.create_or_recreate();

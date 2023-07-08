@@ -2,14 +2,11 @@ use std::fmt::{Display, Formatter};
 use std::hash::{Hash, Hasher};
 use std::sync::atomic::{AtomicU16, Ordering};
 use std::sync::Arc;
-
-use maths::vec2::Vec2u32;
 use plateform::window::Window;
 
 use crate::image::GfxImage;
-use crate::render_pass::RenderPassInstance;
-use crate::types::PixelFormat;
 use crate::GfxCast;
+use crate::renderer::render_pass::RenderPassInstance;
 
 pub struct GfxImageID {
     reference: AtomicU16,
@@ -80,11 +77,9 @@ pub enum SurfaceAcquireResult {
 pub trait GfxSurface: GfxCast {
     fn create_or_recreate(&self);
     fn get_owning_window(&self) -> &Arc<dyn Window>;
-    fn get_surface_pixel_format(&self) -> PixelFormat;
     fn get_image_count(&self) -> u8;
     fn get_current_ref(&self) -> &GfxImageID;
     fn get_surface_texture(&self) -> Arc<dyn GfxImage>;
-    fn get_extent(&self) -> Vec2u32;
 
     fn acquire(
         &self,

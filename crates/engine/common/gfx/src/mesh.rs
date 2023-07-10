@@ -1,5 +1,5 @@
 use crate::buffer::{BufferAccess, BufferType, BufferUsage};
-use crate::surface::GfxImageID;
+use crate::surface::Frame;
 use crate::{BufferCreateInfo, Gfx, GfxBuffer};
 use std::sync::Arc;
 
@@ -63,7 +63,7 @@ impl Mesh {
         &self.vertex_buffer
     }
 
-    pub fn resize(&self, _: &GfxImageID, vertex_count: u32, index_count: u32) {
+    pub fn resize(&self, _: &Frame, vertex_count: u32, index_count: u32) {
         self.index_buffer
             .resize_buffer(index_count * self.index_buffer_type as u32);
         self.vertex_buffer
@@ -72,7 +72,7 @@ impl Mesh {
 
     pub fn set_data(
         &self,
-        image_id: &GfxImageID,
+        image_id: &Frame,
         from_vertex: u32,
         vertex_data: &[u8],
         from_index: u32,

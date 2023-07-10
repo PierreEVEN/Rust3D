@@ -8,19 +8,19 @@ use crate::image::GfxImage;
 use crate::GfxCast;
 use crate::renderer::render_pass::RenderPassInstance;
 
-pub struct GfxImageID {
+pub struct Frame {
     reference: AtomicU16,
 }
 
-impl Clone for GfxImageID {
+impl Clone for Frame {
     fn clone(&self) -> Self {
-        GfxImageID {
+        Frame {
             reference: AtomicU16::new(self.reference.load(Ordering::Acquire)),
         }
     }
 }
 
-impl GfxImageID {
+impl Frame {
     pub fn new(image_index: u8, render_pass_index: u8) -> Self {
         Self {
             reference: AtomicU16::new(image_index as u16 + ((render_pass_index as u16) << 8)),
@@ -49,21 +49,21 @@ impl GfxImageID {
     }
 }
 
-impl PartialEq for GfxImageID {
+impl PartialEq for Frame {
     fn eq(&self, other: &Self) -> bool {
         self.reference.load(Ordering::Acquire) == other.reference.load(Ordering::Acquire)
     }
 }
 
-impl Eq for GfxImageID {}
+impl Eq for Frame {}
 
-impl Hash for GfxImageID {
+impl Hash for Frame {
     fn hash<H: Hasher>(&self, state: &mut H) {
         state.write_u16(self.reference.load(Ordering::Acquire))
     }
 }
 
-impl Display for GfxImageID {
+impl Display for Frame {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.write_str(format!("[{}:{}]", self.render_pass_index(), self.image_id()).as_str())
     }
@@ -78,7 +78,7 @@ pub trait GfxSurface: GfxCast {
     fn create_or_recreate(&self);
     fn get_owning_window(&self) -> &Arc<dyn Window>;
     fn get_image_count(&self) -> u8;
-    fn get_current_ref(&self) -> &GfxImageID;
+    fn get_current_ref(&self) -> &Frame;
     fn get_surface_texture(&self) -> Arc<dyn GfxImage>;
 
     fn acquire(

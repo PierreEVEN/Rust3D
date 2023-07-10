@@ -14,7 +14,7 @@ use backend_vulkan::renderer::vk_render_pass_instance::RbSemaphore;
 use gfx::gfx_resource::{GfxImageBuilder, GfxResource};
 use gfx::image::{GfxImage, GfxImageUsageFlags, ImageParams, ImageType};
 use gfx::renderer::render_pass::RenderPassInstance;
-use gfx::surface::{GfxImageID, GfxSurface, SurfaceAcquireResult};
+use gfx::surface::{Frame, GfxSurface, SurfaceAcquireResult};
 use plateform::window::Window;
 
 pub struct VkSurfaceWin32 {
@@ -25,7 +25,7 @@ pub struct VkSurfaceWin32 {
     _surface_loader: Surface,
     _swapchain_loader: Swapchain,
     image_count: u8,
-    current_image: GfxImageID,
+    current_image: Frame,
     window: Arc<dyn Window>,
     surface_image: RwLock<Option<Arc<dyn GfxImage>>>,
     present_queue: Option<Arc<VkQueue>>,
@@ -36,7 +36,7 @@ struct RbSurfaceImage {
 }
 
 impl GfxImageBuilder<(vk::Image, Arc<vulkan::Allocation>)> for RbSurfaceImage {
-    fn build(&self, _swapchain_ref: &GfxImageID) -> (vk::Image, Arc<vulkan::Allocation>) {
+    fn build(&self, _swapchain_ref: &Frame) -> (vk::Image, Arc<vulkan::Allocation>) {
         (
             self.images[_swapchain_ref.image_id() as usize],
             Arc::new(vulkan::Allocation::default()),
@@ -180,7 +180,7 @@ impl GfxSurface for VkSurfaceWin32 {
         self.image_count
     }
 
-    fn get_current_ref(&self) -> &GfxImageID {
+    fn get_current_ref(&self) -> &Frame {
         &self.current_image
     }
 
@@ -399,7 +399,7 @@ impl VkSurfaceWin32 {
             surface_format,
             _swapchain_loader: swapchain_loader,
             image_count: image_count as u8,
-            current_image: GfxImageID::null(),
+            current_image: Frame::null(),
             window: window.clone(),
             present_queue,
             image_acquire_semaphore: GfxResource::new( RbSemaphore { name }),

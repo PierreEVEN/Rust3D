@@ -9,7 +9,7 @@ use gfx::gfx_resource::{GfxImageBuilder, GfxResource};
 use gfx::image::{
     GfxImage, GfxImageUsageFlags, ImageCreateInfos, ImageParams, ImageType, ImageUsage,
 };
-use gfx::surface::GfxImageID;
+use gfx::surface::Frame;
 use gfx::types::PixelFormat;
 use gfx::Gfx;
 
@@ -67,13 +67,13 @@ impl GfxImage for VkImage {
 
             unsafe {
                 // Copy image data to transfer buffer
-                transfer_buffer.set_data(&GfxImageID::null(), 0, data);
+                transfer_buffer.set_data(&Frame::null(), 0, data);
 
                 // Transfer commands
                 let command_buffer = create_command_buffer(format!("{}_transfer_", self.name));
                 begin_command_buffer(command_buffer, true);
                 self.set_image_layout(
-                    &GfxImageID::null(),
+                    &Frame::null(),
                     command_buffer,
                     vk::ImageLayout::TRANSFER_DST_OPTIMAL,
                 );
@@ -86,7 +86,7 @@ impl GfxImage for VkImage {
                         command_buffer,
                         transfer_buffer
                             .cast::<VkBuffer>()
-                            .get_handle(&GfxImageID::null()),
+                            .get_handle(&Frame::null()),
                         self.image.read().unwrap().get_static().0,
                         vk::ImageLayout::TRANSFER_DST_OPTIMAL,
                         &[vk::BufferImageCopy::builder()
@@ -116,7 +116,7 @@ impl GfxImage for VkImage {
                             .build()],
                     );
                 self.set_image_layout(
-                    &GfxImageID::null(),
+                    &Frame::null(),
                     command_buffer,
                     vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL,
                 );
@@ -207,7 +207,7 @@ pub struct RbImage {
 }
 
 impl GfxImageBuilder<CombinedImageData> for RbImage {
-    fn build(&self, swapchain_ref: &GfxImageID) -> CombinedImageData {
+    fn build(&self, swapchain_ref: &Frame) -> CombinedImageData {
         // Convert image details
         let (image_type, width, height, depth) = match self.type_override {
             ImageType::Texture1d(x) => (vk::ImageType::TYPE_1D, x, 1, 1),
@@ -304,7 +304,7 @@ pub struct RbImageView {
 }
 
 impl GfxImageBuilder<(vk::ImageView, vk::DescriptorImageInfo)> for RbImageView {
-    fn build(&self, swapchain_ref: &GfxImageID) -> (vk::ImageView, vk::DescriptorImageInfo) {
+    fn build(&self, swapchain_ref: &Frame) -> (vk::ImageView, vk::DescriptorImageInfo) {
         let view_type = match self.type_override {
             ImageType::Texture1d(_) => vk::ImageViewType::TYPE_1D,
             ImageType::Texture2d(_, _) => vk::ImageViewType::TYPE_2D,
@@ -499,7 +499,7 @@ impl VkImage {
 
     fn set_image_layout(
         &self,
-        _: &GfxImageID,
+        _: &Frame,
         command_buffer: vk::CommandBuffer,
         new_layout: vk::ImageLayout,
     ) {

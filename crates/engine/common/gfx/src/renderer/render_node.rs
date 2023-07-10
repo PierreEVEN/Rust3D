@@ -3,9 +3,9 @@ use std::sync::{Arc, RwLock};
 use logger::{fatal};
 use maths::vec2::Vec2u32;
 use crate::Gfx;
-use crate::image::{ImageCreateInfos, ImageParams, ImageType};
+use crate::image::{GfxImage, ImageCreateInfos, ImageParams, ImageType};
 use crate::image::ImageUsage::GpuWriteDestination;
-use crate::renderer::render_graph::FrameGraph;
+use crate::renderer::frame_graph::FrameGraph;
 use crate::renderer::render_pass::RenderPass;
 use crate::renderer::renderer_resource::{Resource, ResourceColor, ResourceDepth};
 use crate::renderer::renderer_resource::Resource::{Color, Depth};
@@ -90,6 +90,10 @@ impl RenderNode {
         self
     }
 
+    pub fn get_name(&self) -> &String {
+        &self.name
+    }
+    
     pub fn res_override<H: FnMut(Vec2u32) -> Vec2u32 + 'static>(mut self, func: H) {
         self.compute_res = Arc::new(RwLock::new(func));
     }
@@ -133,7 +137,16 @@ impl RenderNode {
     pub fn compile_to_surface(&self, surface: Box<dyn GfxSurface>) -> FrameGraph {
         if !self.present_pass { fatal!("Only present pass can be compiled to surface") }
         let initial_res = surface.get_surface_texture().res_2d();
-        let mut framegraph = FrameGraph::new_surface(surface);
+        let mut framegraph = FrameGraph::new_surface(surface, 3);
+        Self::compile_item(framegraph.present_pass(), self, initial_res);
+        framegraph
+    }
+
+    /// Compile this graph of RenderPass to a FrameGraph (for surfaces)
+    pub fn compile_to_image(&self, image: Arc<dyn GfxImage>) -> FrameGraph {
+        if !self.present_pass { fatal!("Only present pass can be compiled to surface") }
+        let initial_res = image.res_2d();
+        let mut framegraph = FrameGraph::new_image(image, 3);
         Self::compile_item(framegraph.present_pass(), self, initial_res);
         framegraph
     }

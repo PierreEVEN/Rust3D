@@ -128,7 +128,7 @@ impl VkRenderPass {
             .dependencies(dependencies.as_slice())
             .build();
 
-        let render_pass = vk_check!(unsafe {
+        let vk_render_pass = vk_check!(unsafe {
             GfxVulkan::get()
                 .device()
                 .handle
@@ -136,17 +136,13 @@ impl VkRenderPass {
         });
 
         GfxVulkan::get()
-            .set_vk_object_name(render_pass, format!("render pass : undefined render pass name").as_str());
+            .set_vk_object_name(vk_render_pass, render_pass.get_name());
 
-        let vk_render_pass = Self {
-            render_pass,
+        let render_pass = Self {
+            render_pass: vk_render_pass,
             default_clear_values: clear_values,
         };
 
-        vk_render_pass
-    }
-
-    pub fn create_instance(&self, render_pass: &RenderPass, initial_res: Vec2u32) -> VkRenderPassInstance {
-        VkRenderPassInstance::new(self, render_pass, initial_res)        
+        render_pass
     }
 }

@@ -6,12 +6,12 @@ use crate::command_buffer::GfxCommandBuffer;
 use crate::Gfx;
 use crate::image::GfxImage;
 use crate::renderer::render_node::RenderNode;
-use crate::surface::GfxSurface;
+use crate::surface::{Frame, GfxSurface};
 use crate::types::{ClearValues, GfxCast};
 
 pub trait RenderPassInstance: GfxCast {
-    fn bind(&self, context: &RenderPass, res: Vec2u32, command_buffer: &dyn GfxCommandBuffer);
-    fn submit(&self, context: &RenderPass, command_buffer: &dyn GfxCommandBuffer);
+    fn bind(&self, frame: &Frame, context: &RenderPass, res: Vec2u32, command_buffer: &dyn GfxCommandBuffer);
+    fn submit(&self, frame: &Frame, context: &RenderPass, command_buffer: &dyn GfxCommandBuffer);
 }
 
 impl dyn RenderPassInstance {
@@ -29,7 +29,8 @@ pub struct RenderPass {
     instance: MaybeUninit<Box<dyn RenderPassInstance>>,
     compute_res: Arc<RwLock<dyn FnMut(Vec2u32) -> Vec2u32>>,
     source_node: Arc<RenderNode>,
-    clear_values: Vec<ClearValues>
+    clear_values: Vec<ClearValues>,
+    command_buffer: Arc<dyn GfxCommandBuffer>,
 }
 
 impl RenderPass {
@@ -51,6 +52,7 @@ impl RenderPass {
             compute_res: render_node.compute_res().clone(),
             source_node: render_node.clone(),
             clear_values,
+            command_buffer: Gfx::get().create_command_buffer("unnamed".to_string()),
         };
 
         let instance = Gfx::get().instantiate_render_pass(&render_pass, initial_res);
@@ -68,6 +70,7 @@ impl RenderPass {
             compute_res: Arc::new(RwLock::new(|res| { res })),
             source_node: Arc::new(RenderNode::present()),
             clear_values: vec![ClearValues::DontClear],
+            command_buffer: Gfx::get().create_command_buffer("unnamed".to_string()),
         };
 
         let instance = Gfx::get().instantiate_render_pass(&render_pass, _surface.get_surface_texture().res_2d());
@@ -92,15 +95,15 @@ impl RenderPass {
         unsafe { self.instance.assume_init_ref() }
     }
     
-    pub fn draw(&self, res: Vec2u32, camera: &GameObject) {
+    pub fn draw(&self, frame: &Frame, res: Vec2u32, camera: &GameObject) {
         //TODO parallelize
         for input in &self.inputs {
-            input.draw(res, camera);
+            input.draw(frame, res, camera);
         }
         unsafe {
-            self.instance.assume_init_ref().bind(self, (*self.compute_res.write().unwrap())(res));
+            self.instance.assume_init_ref().bind(frame, self, (*self.compute_res.write().unwrap())(res), &*self.command_buffer);
             logger::info!("draw content here");
-            self.instance.assume_init_ref().submit(self);
+            self.instance.assume_init_ref().submit(frame, self, &*self.command_buffer);
         }
     }
     
@@ -109,4 +112,14 @@ impl RenderPass {
     }
     
     pub fn images(&self) -> &Vec<Arc<dyn GfxImage>> {&self.images}
+    
+    pub fn stringify(&self) -> String {
+        let mut inputs = String::new();
+        
+        for input in &self.inputs {
+            inputs += format!("{}\n", input.stringify()).as_str()
+        }
+        
+        format!("initial res : {}x{}\ninputs : {}", self.res.x, self.res.y, inputs)
+    }
 }

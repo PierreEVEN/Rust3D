@@ -1,4 +1,4 @@
-use crate::surface::GfxImageID;
+use crate::surface::Frame;
 use crate::GfxCast;
 
 #[derive(Copy, Clone, Eq, PartialEq)]
@@ -81,7 +81,7 @@ impl BufferMemory {
 }
 
 pub trait GfxBuffer: GfxCast {
-    fn set_data(&self, frame: &GfxImageID, start_offset: u32, data: &[u8]);
+    fn set_data(&self, frame: &Frame, start_offset: u32, data: &[u8]);
     fn resize_buffer(&self, new_size: u32);
     fn buffer_size(&self) -> u32;
     fn create_infos(&self) -> &BufferCreateInfo;

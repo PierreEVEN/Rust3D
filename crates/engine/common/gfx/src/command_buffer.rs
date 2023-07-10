@@ -33,7 +33,6 @@ pub trait GfxCommandBuffer: GfxCast {
         stage: ShaderStage,
     );
     fn get_pass_id(&self) -> PassID;
-    fn get_surface(&self) -> Arc<dyn GfxSurface>;
 }
 
 impl dyn GfxCommandBuffer {

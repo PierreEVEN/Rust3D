@@ -1,36 +1,49 @@
-use std::sync::{Arc};
+use std::sync::{Arc, RwLock};
 
 use ash::vk;
 
 use gfx::command_buffer::GfxCommandBuffer;
+use gfx::Gfx;
 use gfx::gfx_resource::{GfxImageBuilder, GfxResource};
 use gfx::image::{GfxImage, ImageParams, ImageType, ImageUsage};
-use gfx::surface::{GfxImageID};
 use gfx::renderer::render_pass::{RenderPass, RenderPassInstance};
+use gfx::shader::PassID;
+use gfx::surface::Frame;
+use gfx::types::ClearValues;
 use maths::vec2::Vec2u32;
 
-use crate::vk_image::VkImage;
-use crate::{vk_check, GfxVulkan};
+use crate::{GfxVulkan, vk_check};
 use crate::renderer::vk_render_pass::VkRenderPass;
+use crate::vk_command_buffer::VkCommandBuffer;
+use crate::vk_image::VkImage;
 
 pub struct VkRenderPassInstance {
     pub render_finished_semaphore: GfxResource<vk::Semaphore>,
+    pub wait_semaphores: RwLock<Option<vk::Semaphore>>,
+    pub render_pass: Arc<VkRenderPass>,
+    pub framebuffer: GfxResource<vk::Framebuffer>,
 }
 
 impl VkRenderPassInstance {
-    pub fn new(vk_render_pass: &VkRenderPass, render_pass: &RenderPass, initial_res: Vec2u32) -> Self {
-        Self { 
-            render_finished_semaphore: GfxResource::new(RbSemaphore { name: "todo_name".to_string() })
+    pub fn new(vk_render_pass: Arc<VkRenderPass>, render_pass: &RenderPass, initial_res: Vec2u32) -> Self {
+        Self {
+            render_finished_semaphore: GfxResource::new(RbSemaphore { name: "todo_name".to_string() }),
+            wait_semaphores: RwLock::new(None),
+            render_pass: vk_render_pass.clone(),
+            framebuffer: GfxResource::new(RbFramebuffer {
+                render_pass: vk_render_pass.render_pass,
+                res: initial_res,
+                images: render_pass.images().clone(),
+                name: "unnamed".to_string(),
+            }),
         }
     }
 }
 
 impl RenderPassInstance for VkRenderPassInstance {
-    fn bind(&self, context: &RenderPass, res: Vec2u32, command_buffer: &dyn GfxCommandBuffer) {
-
-        /*
+    fn bind(&self, frame: &Frame, context: &RenderPass, res: Vec2u32, pass_command_buffer: &dyn GfxCommandBuffer) {
         // Begin buffer
-        let command_buffer = command_buffer.cast::<VkCommandBuffer>().command_buffer.get(todo!());
+        let command_buffer = pass_command_buffer.cast::<VkCommandBuffer>().command_buffer.get(frame);
 
         let mut clear_values = Vec::new();
         for color in context.clear_values() {
@@ -49,11 +62,12 @@ impl RenderPassInstance for VkRenderPassInstance {
                 },
             });
         }
-        
+
+
         // begin pass
         let begin_infos = vk::RenderPassBeginInfo::builder()
-            .render_pass(self.owner.cast::<VkRenderPass>().render_pass)
-            .framebuffer(self.framebuffers.get(self.surface.get_current_ref()))
+            .render_pass(self.render_pass.render_pass)
+            .framebuffer(self.framebuffer.get(frame))
             .render_area(vk::Rect2D {
                 offset: vk::Offset2D { x: 0, y: 0 },
                 extent: vk::Extent2D {
@@ -63,10 +77,9 @@ impl RenderPassInstance for VkRenderPassInstance {
             })
             .clear_values(clear_values.as_slice())
             .build();
-        
+
         unsafe {
-            
-            device.assume_init_ref().handle.cmd_begin_render_pass(
+            Gfx::get().cast::<GfxVulkan>().device().handle.cmd_begin_render_pass(
                 command_buffer,
                 &begin_infos,
                 vk::SubpassContents::INLINE,
@@ -74,7 +87,7 @@ impl RenderPassInstance for VkRenderPassInstance {
         };
 
         unsafe {
-            device.assume_init_ref().handle.cmd_set_viewport(
+            Gfx::get().cast::<GfxVulkan>().device().handle.cmd_set_viewport(
                 command_buffer,
                 0,
                 &[vk::Viewport::builder()
@@ -89,7 +102,7 @@ impl RenderPassInstance for VkRenderPassInstance {
         };
 
         unsafe {
-            device.assume_init_ref().handle.cmd_set_scissor(
+            Gfx::get().cast::<GfxVulkan>().device().handle.cmd_set_scissor(
                 command_buffer,
                 0,
                 &[vk::Rect2D {
@@ -101,40 +114,28 @@ impl RenderPassInstance for VkRenderPassInstance {
                 }],
             )
         };
-        
 
-        self.pass_command_buffers.init_for(
-            self.owner.get_pass_id(),
-            self.surface.get_current_ref().clone(),
+    }
+
+    fn submit(&self, frame: &Frame, context: &RenderPass, pass_command_buffer: &dyn GfxCommandBuffer) {
+
+
+        pass_command_buffer.cast::<VkCommandBuffer>().init_for(
+            PassID::new("null"),
+            frame.clone(),
         );
 
-        // Draw content
-        match self.render_callback.write() {
-            Ok(mut render_callback) => match render_callback.as_mut() {
-                None => {}
-                Some(callback) => {
-                    callback(&(self.pass_command_buffers.clone() as Arc<dyn GfxCommandBuffer>))
-                }
-            },
-            Err(_) => {
-                logger::fatal!("failed to access render callback")
-            }
-        }
+        let command_buffer = pass_command_buffer.cast::<VkCommandBuffer>().command_buffer.get(frame);
 
-        let command_buffer = self
-            .pass_command_buffers
-            .command_buffer
-            .get(self.surface.get_current_ref());
         GfxVulkan::get().set_vk_object_name(
             command_buffer,
             format!(
                 "command buffer\t\t: {} - {}",
-                self.owner.get_config().pass_id,
-                self.surface.get_current_ref()
-            )
-                .as_str(),
+                "null",
+                frame.image_id()
+            ).as_str(),
         );
-
+        
         // End pass
         unsafe {
             GfxVulkan::get()
@@ -150,26 +151,22 @@ impl RenderPassInstance for VkRenderPassInstance {
                 .handle
                 .end_command_buffer(command_buffer)
         });
-         */
-    }
 
-    fn submit(&self, context: &RenderPass, command_buffer: &dyn GfxCommandBuffer) {
         // Submit buffer
-        /*
         let mut wait_semaphores = Vec::new();
-        if context.source().is_present_pass() { 
-            wait_semaphores.push(self.wait_semaphores.read().unwrap().unwrap()); 
+        if context.source().is_present_pass() {
+            wait_semaphores.push(self.wait_semaphores.read().unwrap().unwrap());
         }
-        
+
         for pass in context.inputs() {
             wait_semaphores.push(
-                pass.instance().cast::<VkRenderPassInstance>().render_finished_semaphore.get(todo!())
+                pass.instance().cast::<VkRenderPassInstance>().render_finished_semaphore.get(frame)
             )
         }
 
         // Which stages we wants to wait
         let wait_stages = vec![vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT; wait_semaphores.len()];
-        
+
         // Submit
         unsafe {
             GfxVulkan::get()
@@ -180,12 +177,11 @@ impl RenderPassInstance for VkRenderPassInstance {
                     vk::SubmitInfo::builder()
                         .wait_semaphores(wait_semaphores.as_slice())
                         .wait_dst_stage_mask(wait_stages.as_slice())
-                        .command_buffers(&[command_buffer.cast::<VkCommandBuffer>().command_buffer.get(todo!())])
-                        .signal_semaphores(&[self.render_finished_semaphore.get(todo!())])
+                        .command_buffers(&[pass_command_buffer.cast::<VkCommandBuffer>().command_buffer.get(frame)])
+                        .signal_semaphores(&[self.render_finished_semaphore.get(frame)])
                         .build(),
                 );
         }
-         */
     }
 }
 
@@ -194,7 +190,7 @@ pub struct RbSemaphore {
 }
 
 impl GfxImageBuilder<vk::Semaphore> for RbSemaphore {
-    fn build(&self, swapchain_ref: &GfxImageID) -> vk::Semaphore {
+    fn build(&self, swapchain_ref: &Frame) -> vk::Semaphore {
         let ci_semaphore = vk::SemaphoreCreateInfo::builder().build();
 
         GfxVulkan::get().set_vk_object_name(
@@ -215,7 +211,7 @@ pub struct RbCommandBuffer {
 }
 
 impl GfxImageBuilder<vk::CommandBuffer> for RbCommandBuffer {
-    fn build(&self, swapchain_ref: &GfxImageID) -> vk::CommandBuffer {
+    fn build(&self, swapchain_ref: &Frame) -> vk::CommandBuffer {
         let ci_command_buffer = vk::CommandBufferAllocateInfo::builder()
             .command_pool(unsafe { GfxVulkan::get().command_pool.assume_init_ref() }.command_pool)
             .command_buffer_count(1)
@@ -244,7 +240,7 @@ struct RbFramebuffer {
 }
 
 impl GfxImageBuilder<vk::Framebuffer> for RbFramebuffer {
-    fn build(&self, swapchain_ref: &GfxImageID) -> vk::Framebuffer {
+    fn build(&self, swapchain_ref: &Frame) -> vk::Framebuffer {
         let mut attachments = Vec::new();
 
         for image in &self.images {

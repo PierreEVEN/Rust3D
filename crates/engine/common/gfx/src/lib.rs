@@ -28,7 +28,7 @@ pub mod surface;
 pub mod types;
 
 pub mod renderer {
-    pub mod render_graph;
+    pub mod frame_graph;
     pub mod render_node;
     pub mod renderer_resource;
     pub mod render_pass;
@@ -62,7 +62,6 @@ pub trait GfxInterface: GfxCast {
     fn create_command_buffer(
         &self,
         name: String,
-        surface: &Arc<dyn GfxSurface>,
     ) -> Arc<dyn GfxCommandBuffer>;
 }
 

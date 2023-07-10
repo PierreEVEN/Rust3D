@@ -5,23 +5,23 @@ use std::default::Default;
 use std::ffi::CStr;
 use std::mem::MaybeUninit;
 use std::os::raw::c_char;
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, RwLock, Weak};
+use std::sync::atomic::{AtomicBool, Ordering};
 
 use ash::vk;
 
+use gfx::{Gfx, GfxInterface, PhysicalDevice};
 use gfx::buffer::{BufferCreateInfo, GfxBuffer};
 use gfx::command_buffer::GfxCommandBuffer;
 use gfx::image::{GfxImage, ImageCreateInfos};
 use gfx::image_sampler::{ImageSampler, SamplerCreateInfos};
+use gfx::renderer::render_pass::{RenderPass, RenderPassInstance};
 use gfx::shader::{PassID, ShaderProgram, ShaderProgramInfos};
 use gfx::surface::GfxSurface;
-use gfx::{Gfx, GfxInterface, PhysicalDevice};
-use gfx::renderer::render_pass::{RenderPass, RenderPassInstance};
 use logger::fatal;
 use maths::vec2::Vec2u32;
-use crate::renderer::render_pass_pool::RenderPassPool;
 
+use crate::renderer::render_pass_pool::RenderPassPool;
 use crate::vk_buffer::VkBuffer;
 use crate::vk_command_buffer::{VkCommandBuffer, VkCommandPool};
 use crate::vk_descriptor_pool::VkDescriptorPool;
@@ -45,6 +45,7 @@ pub mod vk_physical_device;
 pub mod vk_shader;
 pub mod vk_shader_instance;
 pub mod vk_types;
+pub mod dynamic_resource_ctx;
 
 pub mod renderer {
     pub mod vk_render_pass_instance;
@@ -131,7 +132,7 @@ impl GfxInterface for GfxVulkan {
 
         self.initialized.store(true, Ordering::SeqCst);
     }
-    
+
     fn is_ready(&self) -> bool {
         self.initialized.load(Ordering::SeqCst)
     }
@@ -200,10 +201,8 @@ impl GfxInterface for GfxVulkan {
 
     fn instantiate_render_pass(
         &self,
-        render_pass: &RenderPass, initial_res: Vec2u32
-    ) -> Box<dyn RenderPassInstance> {
-        self.render_pass_pool.instantiate(render_pass, initial_res)
-    }
+        render_pass: &RenderPass, initial_res: Vec2u32,
+    ) -> Box<dyn RenderPassInstance> { Box::new(self.render_pass_pool.instantiate(render_pass, initial_res)) }
 
     fn create_image(&self, name: String, create_infos: ImageCreateInfos) -> Arc<dyn GfxImage> {
         VkImage::new_ptr(name, create_infos)
@@ -224,14 +223,18 @@ impl GfxInterface for GfxVulkan {
     fn create_command_buffer(
         &self,
         name: String,
-        surface: &Arc<dyn GfxSurface>,
     ) -> Arc<dyn GfxCommandBuffer> {
-        VkCommandBuffer::new(name, surface)
+        VkCommandBuffer::new(name)
     }
 }
 
 impl GfxVulkan {
-    fn device(&self) -> &VkDevice {
+    
+    pub fn render_pass_pool(&self) -> &RenderPassPool {
+        &self.render_pass_pool
+    }
+    
+    pub fn device(&self) -> &VkDevice {
         unsafe { self.device.assume_init_ref() }
     }
 

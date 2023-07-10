@@ -8,7 +8,7 @@ use gfx::gfx_resource::{GfxImageBuilder, GfxResource};
 use gfx::mesh::{IndexBufferType, Mesh};
 use gfx::shader::{PassID, ShaderProgram, ShaderStage};
 use gfx::shader_instance::ShaderInstance;
-use gfx::surface::{GfxImageID, GfxSurface};
+use gfx::surface::Frame;
 use gfx::types::Scissors;
 
 use crate::{vk_check, GfxVulkan, VkBuffer, VkShaderInstance, VkShaderProgram};
@@ -120,8 +120,7 @@ impl VkCommandPool {
 pub struct VkCommandBuffer {
     pub command_buffer: GfxResource<vk::CommandBuffer>,
     pass_id: RwLock<PassID>,
-    image_id: RwLock<GfxImageID>,
-    surface: Arc<dyn GfxSurface>,
+    image_id: RwLock<Frame>,
 }
 
 pub struct RbCommandBuffer {
@@ -129,22 +128,21 @@ pub struct RbCommandBuffer {
 }
 
 impl GfxImageBuilder<vk::CommandBuffer> for RbCommandBuffer {
-    fn build(&self, _: &GfxImageID) -> vk::CommandBuffer {
+    fn build(&self, _: &Frame) -> vk::CommandBuffer {
         create_command_buffer(self.name.clone())
     }
 }
 
 impl VkCommandBuffer {
-    pub fn new(name: String, surface: &Arc<dyn GfxSurface>) -> Arc<VkCommandBuffer> {
+    pub fn new(name: String) -> Arc<VkCommandBuffer> {
         Arc::new(VkCommandBuffer {
             command_buffer: GfxResource::new(RbCommandBuffer { name }),
             pass_id: RwLock::new(PassID::new("undefined")),
-            image_id: RwLock::new(GfxImageID::null()),
-            surface: surface.clone(),
+            image_id: RwLock::new(Frame::null()),
         })
     }
 
-    pub fn init_for(&self, new_id: PassID, image_id: GfxImageID) {
+    pub fn init_for(&self, new_id: PassID, image_id: Frame) {
         *self.pass_id.write().unwrap() = new_id;
         *self.image_id.write().unwrap() = image_id;
     }
@@ -318,9 +316,5 @@ impl GfxCommandBuffer for VkCommandBuffer {
 
     fn get_pass_id(&self) -> PassID {
         self.pass_id.read().unwrap().clone()
-    }
-
-    fn get_surface(&self) -> Arc<dyn GfxSurface> {
-        self.surface.clone()
     }
 }

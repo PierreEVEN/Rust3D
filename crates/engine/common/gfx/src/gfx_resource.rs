@@ -3,22 +3,22 @@ use std::default::Default;
 use std::ops::Deref;
 use std::sync::RwLock;
 
-use crate::surface::GfxImageID;
+use crate::surface::Frame;
 
 pub trait GfxImageBuilder<T: Clone> {
-    fn build(&self, swapchain_ref: &GfxImageID) -> T;
+    fn build(&self, swapchain_ref: &Frame) -> T;
 }
 
 struct DefaultSwapchainResourceBuilder {}
 
 impl<T: Clone> GfxImageBuilder<T> for DefaultSwapchainResourceBuilder {
-    fn build(&self, _swapchain_ref: &GfxImageID) -> T {
+    fn build(&self, _swapchain_ref: &Frame) -> T {
         todo!()
     }
 }
 
 pub struct GfxResource<T> {
-    resources: RwLock<HashMap<GfxImageID, T>>,
+    resources: RwLock<HashMap<Frame, T>>,
     builder: RwLock<Box<dyn GfxImageBuilder<T>>>,
     static_resource: bool,
 }
@@ -44,7 +44,7 @@ impl<T: Clone> GfxResource<T> {
         }
     }
     pub fn new_static<U: GfxImageBuilder<T> + 'static>(builder: U) -> Self {
-        let static_ref = GfxImageID::new(0, 0);
+        let static_ref = Frame::new(0, 0);
         Self {
             static_resource: true,
             resources: RwLock::new(HashMap::from([(
@@ -63,11 +63,11 @@ impl<T: Clone> GfxResource<T> {
             .read()
             .unwrap()
             .deref()
-            .get(&GfxImageID::null())
+            .get(&Frame::null())
             .unwrap()
             .clone()
     }
-    pub fn get(&self, reference: &GfxImageID) -> T {
+    pub fn get(&self, reference: &Frame) -> T {
         if self.static_resource {
             logger::fatal!(
                 "The current resource is static. You should call get_static(...) instead."
@@ -102,7 +102,7 @@ impl<T: Clone> GfxResource<T> {
         *builder_ref = Box::new(builder);
 
         if self.static_resource {
-            let static_ref = GfxImageID::null();
+            let static_ref = Frame::null();
             resource_map.insert(static_ref.clone(), builder_ref.build(&static_ref));
         }
     }

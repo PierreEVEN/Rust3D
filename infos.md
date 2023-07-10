@@ -15,6 +15,8 @@ Ces resources sont soit dynamiques, soit statiques.
 - Les resources dynamiques sont automatiquement dupliquées pour chaque render_pass et chaque frame. 
 Il n'y a pas de lien entre chaque instance.
 
+Une resource dynamique est utilisée avec un DynamiqueResourceID
+
 # Renderer
 
 Un renderer est une description d'une pipeline de rendu à haut niveau d'abstraction.
@@ -42,7 +44,23 @@ Chaque node sera instancié en "render_pass"
 
 ## Nommages
 
-| High-Level | Low-Level (compiled)            |
-|------------|---------------------------------|
-| Renderer   | FrameGraph                      |
-| RenderNode | RenderPass + RenderPassInstance |
+| High-Level | Low-Level (compiled)              | Backend                               |
+|------------|-----------------------------------|---------------------------------------|
+| Renderer   | FrameGraph                        | -                                     |
+| RenderNode | RenderPass [ RenderPassInstance ] | VkRenderPassInstance < VkRenderPass > |
+
+## Schemas de rendu
+```
+Engine::engine_loop()
+├── Platform::poll_events()
+└── for renderer in renderers:
+    └── Renderer::new_frame()
+        └── for frame_graph in frame_graphs:
+            └── Framegraph::execute()
+                ├── RenderPass::draw()
+                ├── for input in inputs
+                │   └── RenderPass::draw()
+                ├── RenderPassInstance::bind()
+                ├── // draw stuffs...
+                └── RenderPassInstance::submit()
+```

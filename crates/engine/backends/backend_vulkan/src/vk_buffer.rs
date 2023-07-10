@@ -9,7 +9,7 @@ use gpu_allocator::{AllocationError, MemoryLocation};
 
 use gfx::buffer::{BufferAccess, BufferCreateInfo, BufferType, BufferUsage, GfxBuffer};
 use gfx::gfx_resource::{GfxImageBuilder, GfxResource};
-use gfx::surface::GfxImageID;
+use gfx::surface::Frame;
 
 use crate::{vk_check, GfxVulkan};
 
@@ -56,7 +56,7 @@ pub struct RbBuffer {
 }
 
 impl GfxImageBuilder<Arc<BufferContainer>> for RbBuffer {
-    fn build(&self, image_id: &GfxImageID) -> Arc<BufferContainer> {
+    fn build(&self, image_id: &Frame) -> Arc<BufferContainer> {
         let buffer_size = if self.size_override == 0 {
             1
         } else {
@@ -185,7 +185,7 @@ pub struct VkBuffer {
 }
 
 impl GfxBuffer for VkBuffer {
-    fn set_data(&self, frame: &GfxImageID, start_offset: u32, data: &[u8]) {
+    fn set_data(&self, frame: &Frame, start_offset: u32, data: &[u8]) {
         if self.create_infos.buffer_type == BufferType::Immutable {
             logger::fatal!("Modifying data on immutable buffers is not allowed");
         }
@@ -321,7 +321,7 @@ impl VkBuffer {
         }
     }
 
-    pub fn get_handle(&self, image: &GfxImageID) -> vk::Buffer {
+    pub fn get_handle(&self, image: &Frame) -> vk::Buffer {
         match self.create_infos.buffer_type {
             BufferType::Immutable | BufferType::Static => self.container.get_static().buffer,
             BufferType::Dynamic | BufferType::Immediate => self.container.get(image).buffer,

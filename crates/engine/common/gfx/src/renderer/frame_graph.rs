@@ -1,23 +1,28 @@
-﻿use ecs::entity::GameObject;
+﻿use std::sync::{Arc, LockResult, RwLock};
+
+use ecs::entity::GameObject;
+
 use crate::image::{GfxImage, ImageType};
 use crate::renderer::render_pass::RenderPass;
-use crate::surface::GfxSurface;
+use crate::surface::{Frame, GfxSurface};
 
 /// This is the standard representation of a frame graph.
 /// Then it will be compiled to a representation that fits the running graphic backend.
 pub struct FrameGraph {
     present_pass: RenderPass,
     surface: Option<Box<dyn GfxSurface>>,
+    frame: Frame,
+    max_frames: u8,
 }
 
 impl FrameGraph {
     /// Create a framegraph for a given surface
-    pub fn new_surface(surface: Box<dyn GfxSurface>) -> Self {
-        Self { present_pass: RenderPass::new_present_surface(&*surface), surface: Some(surface) }
+    pub fn new_surface(surface: Box<dyn GfxSurface>, max_frames: u8) -> Self {
+        Self { present_pass: RenderPass::new_present_surface(&*surface), surface: Some(surface), frame: Frame::null(), max_frames }
     }
 
     /// Create a framegraph for a given render target image
-    pub fn new_image(_image: Box<dyn GfxImage>) -> Self {
+    pub fn new_image(_image: Arc<dyn GfxImage>, max_frames: u8) -> Self {
         todo!()
     }
 
@@ -31,7 +36,10 @@ impl FrameGraph {
         match &self.surface {
             None => {}
             Some(surface) => {
-                self.present_pass.draw(surface.get_surface_texture().res_2d(), camera) }
+                self.present_pass.draw(&self.frame, surface.get_surface_texture().res_2d(), camera)
+            }
         }
+        
+        self.frame.update((self.frame.image_id() + 1) % self.max_frames, u8::MAX);
     }
 }

@@ -9,7 +9,7 @@ use gfx::image::GfxImage;
 use gfx::image_sampler::ImageSampler;
 use gfx::shader::DescriptorBinding;
 use gfx::shader_instance::{BindPoint, ShaderInstance, ShaderInstanceCreateInfos};
-use gfx::surface::GfxImageID;
+use gfx::surface::Frame;
 
 use crate::vk_dst_set_layout::VkDescriptorSetLayout;
 use crate::{GfxVulkan, VkImage, VkImageSampler};
@@ -62,7 +62,7 @@ impl ShaderInstance for VkShaderInstance {
 struct RbDescriptorState {}
 
 impl GfxImageBuilder<Arc<AtomicBool>> for RbDescriptorState {
-    fn build(&self, _: &GfxImageID) -> Arc<AtomicBool> {
+    fn build(&self, _: &Frame) -> Arc<AtomicBool> {
         Arc::new(AtomicBool::new(true))
     }
 }
@@ -73,7 +73,7 @@ struct RbDescriptorSet {
 }
 
 impl GfxImageBuilder<vk::DescriptorSet> for RbDescriptorSet {
-    fn build(&self, _swapchain_ref: &GfxImageID) -> vk::DescriptorSet {
+    fn build(&self, _swapchain_ref: &Frame) -> vk::DescriptorSet {
         unsafe {
             GfxVulkan::get()
                 .descriptor_pool
@@ -107,7 +107,7 @@ impl VkShaderInstance {
         self.descriptors_dirty.invalidate(RbDescriptorState {});
     }
 
-    pub fn refresh_descriptors(&self, image_id: &GfxImageID) {
+    pub fn refresh_descriptors(&self, image_id: &Frame) {
         if self
             .descriptors_dirty
             .get(image_id)

@@ -1,7 +1,7 @@
 use enumflags2::{bitflags, BitFlags};
 use maths::vec2::Vec2u32;
 
-use crate::types::PixelFormat;
+use crate::types::{BackgroundColor, PixelFormat};
 use crate::GfxCast;
 
 #[derive(Copy, Clone)]
@@ -64,6 +64,7 @@ pub struct ImageParams {
     pub read_only: bool,
     pub mip_levels: Option<u16>,
     pub usage: GfxImageUsageFlags,
+    pub background_color: BackgroundColor,
 }
 
 impl ImageParams {
@@ -86,6 +87,8 @@ pub struct ImageCreateInfos {
 }
 
 pub trait GfxImage: GfxCast {
+    fn background_color(&self) -> BackgroundColor;
+    fn set_background_color(&self, color: &BackgroundColor);
     fn get_type(&self) -> ImageType;
     fn get_format(&self) -> PixelFormat;
     fn get_data(&self) -> &[u8];

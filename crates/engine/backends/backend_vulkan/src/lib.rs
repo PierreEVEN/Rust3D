@@ -5,7 +5,7 @@ use std::default::Default;
 use std::ffi::CStr;
 use std::mem::MaybeUninit;
 use std::os::raw::c_char;
-use std::sync::{Arc, RwLock, Weak};
+use std::sync::{Arc, Weak};
 use std::sync::atomic::{AtomicBool, Ordering};
 
 use ash::vk;
@@ -17,9 +17,7 @@ use gfx::image::{GfxImage, ImageCreateInfos};
 use gfx::image_sampler::{ImageSampler, SamplerCreateInfos};
 use gfx::renderer::render_pass::{RenderPass, RenderPassInstance};
 use gfx::shader::{PassID, ShaderProgram, ShaderProgramInfos};
-use gfx::surface::GfxSurface;
 use logger::fatal;
-use maths::vec2::Vec2u32;
 
 use crate::renderer::render_pass_pool::RenderPassPool;
 use crate::vk_buffer::VkBuffer;
@@ -193,7 +191,7 @@ impl GfxInterface for GfxVulkan {
     fn create_shader_program(
         &self,
         name: String,
-        render_pass: &Arc<dyn RenderPassInstance>,
+        _render_pass: &Arc<dyn RenderPassInstance>,
         create_infos: &ShaderProgramInfos,
     ) -> Arc<dyn ShaderProgram> {
         VkShaderProgram::new(name, create_infos)
@@ -201,8 +199,8 @@ impl GfxInterface for GfxVulkan {
 
     fn instantiate_render_pass(
         &self,
-        render_pass: &RenderPass, initial_res: Vec2u32,
-    ) -> Box<dyn RenderPassInstance> { Box::new(self.render_pass_pool.instantiate(render_pass, initial_res)) }
+        render_pass: &RenderPass
+    ) -> Box<dyn RenderPassInstance> { Box::new(self.render_pass_pool.instantiate(render_pass)) }
 
     fn create_image(&self, name: String, create_infos: ImageCreateInfos) -> Arc<dyn GfxImage> {
         VkImage::new_ptr(name, create_infos)
@@ -216,7 +214,7 @@ impl GfxInterface for GfxVulkan {
         VkImageSampler::new(name, create_infos)
     }
 
-    fn find_render_pass(&self, pass_id: &PassID) -> Option<Arc<dyn RenderPassInstance>> {
+    fn find_render_pass(&self, _pass_id: &PassID) -> Option<Arc<dyn RenderPassInstance>> {
         todo!()
     }
 

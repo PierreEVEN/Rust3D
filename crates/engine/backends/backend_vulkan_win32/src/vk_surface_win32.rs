@@ -10,11 +10,13 @@ use backend_vulkan::vk_device::VkQueue;
 use backend_vulkan::vk_image::VkImage;
 use backend_vulkan::vk_types::GfxPixelFormat;
 use backend_vulkan::{vk_check, GfxVulkan};
-use backend_vulkan::renderer::vk_render_pass_instance::RbSemaphore;
+use backend_vulkan::renderer::vk_render_pass_instance::{RbSemaphore, VkRenderPassInstance};
 use gfx::gfx_resource::{GfxImageBuilder, GfxResource};
 use gfx::image::{GfxImage, GfxImageUsageFlags, ImageParams, ImageType};
 use gfx::renderer::render_pass::RenderPassInstance;
 use gfx::surface::{Frame, GfxSurface, SurfaceAcquireResult};
+use gfx::types::BackgroundColor;
+use logger::{fatal};
 use plateform::window::Window;
 
 pub struct VkSurfaceWin32 {
@@ -151,7 +153,7 @@ impl GfxSurface for VkSurfaceWin32 {
                     self.window.get_title(),
                     i
                 )
-                .as_str(),
+                    .as_str(),
             );
         }
 
@@ -168,6 +170,7 @@ impl GfxSurface for VkSurfaceWin32 {
                 read_only: false,
                 mip_levels: Some(1),
                 usage: GfxImageUsageFlags::empty(),
+                background_color: BackgroundColor::None,
             },
         ));
     }
@@ -190,10 +193,8 @@ impl GfxSurface for VkSurfaceWin32 {
 
     fn acquire(
         &self,
-        render_pass: &Arc<dyn RenderPassInstance>,
+        render_pass: &dyn RenderPassInstance,
     ) -> Result<(), SurfaceAcquireResult> {
-        todo!()
-        /*
         let geometry = self.window.get_geometry();
 
         if geometry.width() == 0 || geometry.height() == 0 {
@@ -225,34 +226,27 @@ impl GfxSurface for VkSurfaceWin32 {
             }
         };
         self.current_image.update(image_index as u8, 0);
-        
-        let render_pass = render_pass.cast::<VkRenderPassInstance>();
-        let mut wait_sem = render_pass.wait_semaphores.write().unwrap();
-        *wait_sem = Some(current_image_acquire_semaphore);
+
+        render_pass.cast::<VkRenderPassInstance>().init_present_pass(current_image_acquire_semaphore);
         Ok(())
-         */
     }
 
     fn submit(
         &self,
-        render_pass: &Arc<dyn RenderPassInstance>,
+        render_pass: &dyn RenderPassInstance,
     ) -> Result<(), SurfaceAcquireResult> {
-        todo!()
-        /*
         let current_image = self.get_current_ref().image_id() as u32;
         let render_pass = render_pass.cast::<VkRenderPassInstance>();
 
-        let _present_info = vk::PresentInfoKHR::builder()
-            .wait_semaphores(&[render_pass
-                .render_finished_semaphore
-                .get(self.get_current_ref())])
+        let present_info = vk::PresentInfoKHR::builder()
+            .wait_semaphores(&[render_pass.render_finished_semaphore.get(self.get_current_ref())])
             .swapchains(&[self.swapchain.read().unwrap().unwrap()])
             .image_indices(&[current_image])
             .build();
 
         match &self.present_queue {
             None => Err(SurfaceAcquireResult::Failed("no present queue".to_string())),
-            Some(queue) => match queue.present(&self._swapchain_loader, _present_info) {
+            Some(queue) => match queue.present(&self._swapchain_loader, present_info) {
                 Ok(_) => Ok(()),
                 Err(present_error) => Err(match present_error {
                     vk::Result::ERROR_OUT_OF_DATE_KHR | vk::Result::SUBOPTIMAL_KHR => {
@@ -263,7 +257,6 @@ impl GfxSurface for VkSurfaceWin32 {
                 }),
             },
         }
-         */
     }
 }
 
@@ -276,7 +269,7 @@ impl VkSurfaceWin32 {
         let handle = match window.get_handle() {
             RawWindowHandle::Win32(handle) => handle,
             _ => {
-                logger::fatal!("invalid window handle");
+                fatal!("invalid window handle");
             }
         };
 
@@ -364,7 +357,7 @@ impl VkSurfaceWin32 {
                         GfxVulkan::get().physical_device_vk.handle,
                     )
             }
-            .into_iter(),
+                .into_iter(),
         ) {
             if vk_check!(unsafe {
                 surface_loader.get_physical_device_surface_support(
@@ -402,8 +395,8 @@ impl VkSurfaceWin32 {
             current_image: Frame::null(),
             window: window.clone(),
             present_queue,
-            image_acquire_semaphore: GfxResource::new( RbSemaphore { name }),
-            surface_image: RwLock::default()
+            image_acquire_semaphore: GfxResource::new(RbSemaphore { name }),
+            surface_image: RwLock::default(),
         };
 
         surface.create_or_recreate();

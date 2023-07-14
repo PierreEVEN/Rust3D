@@ -2,6 +2,8 @@ use core::engine::{App, Builder, Camera, Engine};
 use core::renderer::Renderer;
 use core::world::World;
 use ecs::entity::GameObject;
+use gfx::types::BackgroundColor;
+use maths::vec4::{Vec4F32};
 use plateform::window::{PlatformEvent, WindowCreateInfos};
 
 mod gfx_demo;
@@ -30,7 +32,7 @@ impl App for TestApp {
 
         // Create world view and set output to main window
         let renderer = Renderer::default_deferred();
-        renderer.bind_window_surface(&main_window);
+        renderer.bind_window_surface(&main_window, &BackgroundColor::Color(Vec4F32::new(0.0, 0.0, 0.0, 1.0)));
         renderer.set_main_view(&self.main_camera);
         Engine::get().add_renderer(renderer);
     }

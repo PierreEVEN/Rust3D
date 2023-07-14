@@ -10,7 +10,7 @@ use stb_image_rust::{stbi_image_free, stbi_load_from_memory};
 use gfx::image::{
     GfxImage, GfxImageUsageFlags, ImageCreateInfos, ImageParams, ImageType, ImageUsage,
 };
-use gfx::types::PixelFormat;
+use gfx::types::{BackgroundColor, PixelFormat};
 
 #[derive(Copy, Clone)]
 pub enum ImageFormat {
@@ -52,6 +52,7 @@ pub fn read_image_from_file(file: &Path) -> Result<Arc<dyn GfxImage>, Error> {
                                     + 1,
                             ),
                             usage: GfxImageUsageFlags::from_flag(ImageUsage::Sampling),
+                            background_color: BackgroundColor::None,
                         },
                         pixels: Some(
                             slice::from_raw_parts(

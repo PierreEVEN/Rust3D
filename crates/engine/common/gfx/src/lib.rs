@@ -3,7 +3,6 @@ use std::hash::{Hash, Hasher};
 use std::mem::MaybeUninit;
 use std::ops::Deref;
 use std::sync::Arc;
-use maths::vec2::Vec2u32;
 
 use crate::buffer::{BufferCreateInfo, GfxBuffer};
 use crate::command_buffer::GfxCommandBuffer;
@@ -13,7 +12,6 @@ use crate::mesh::{Mesh, MeshCreateInfos};
 use crate::renderer::render_pass::{RenderPass, RenderPassInstance};
 use crate::shader::{PassID, ShaderProgram, ShaderProgramInfos};
 use crate::shader_instance::ShaderInstance;
-use crate::surface::GfxSurface;
 use crate::types::GfxCast;
 
 pub mod buffer;
@@ -50,7 +48,7 @@ pub trait GfxInterface: GfxCast {
     ) -> Arc<dyn ShaderProgram>;
     fn instantiate_render_pass(
         &self,
-        render_pass: &RenderPass, initial_res: Vec2u32
+        render_pass: &RenderPass
     ) -> Box<dyn RenderPassInstance>;
     fn create_image(&self, name: String, create_infos: ImageCreateInfos) -> Arc<dyn GfxImage>;
     fn create_image_sampler(

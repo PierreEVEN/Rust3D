@@ -7,6 +7,6 @@ edition = "2021"
 gfx = {path = "../../common/gfx"}
 maths = {path = "../../maths"}
 macros = {path = "../../macros"}
-ash = "0.37.2"
+ash = "0.37.3+1.3.251"
 gpu-allocator =  { version= "0.22.0", default-features = false, features=["vulkan"]}
 logger = { path = "../../logger"}

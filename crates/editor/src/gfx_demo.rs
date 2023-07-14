@@ -1,16 +1,12 @@
 use std::sync::Arc;
-
 use gfx::buffer::*;
-use gfx::shader::PassID;
 use gfx::surface::GfxSurface;
-use gfx::types::*;
 use gfx::Gfx;
-use maths::vec2::{Vec2f32, Vec2u32};
-use maths::vec4::Vec4F32;
+use maths::vec2::{Vec2u32};
 
-pub fn _demo_objects(surface: &Arc<dyn GfxSurface>) {
+pub fn _demo_objects(_surface: &Arc<dyn GfxSurface>) {
     // GPU Buffer example
-    let mut _test_buffer = Gfx::get().create_buffer(
+    let _test_buffer = Gfx::get().create_buffer(
         "demo_buffer".to_string(),
         &BufferCreateInfo {
             buffer_type: BufferType::Immutable,
@@ -21,5 +17,5 @@ pub fn _demo_objects(surface: &Arc<dyn GfxSurface>) {
     );
 
     // Framegraph example
-    let res = Vec2u32::new(800, 600);
+    let _res = Vec2u32::new(800, 600);
 }

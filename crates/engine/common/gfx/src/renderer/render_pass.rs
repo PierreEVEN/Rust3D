@@ -4,14 +4,15 @@ use ecs::entity::GameObject;
 use maths::vec2::Vec2u32;
 use crate::command_buffer::GfxCommandBuffer;
 use crate::Gfx;
-use crate::image::GfxImage;
+use crate::image::{GfxImage, ImageType};
 use crate::renderer::render_node::RenderNode;
-use crate::surface::{Frame, GfxSurface};
-use crate::types::{ClearValues, GfxCast};
+use crate::surface::{Frame};
+use crate::types::{GfxCast};
 
 pub trait RenderPassInstance: GfxCast {
     fn bind(&self, frame: &Frame, context: &RenderPass, res: Vec2u32, command_buffer: &dyn GfxCommandBuffer);
     fn submit(&self, frame: &Frame, context: &RenderPass, command_buffer: &dyn GfxCommandBuffer);
+    fn resize(&self, new_size: Vec2u32);
 }
 
 impl dyn RenderPassInstance {
@@ -29,51 +30,23 @@ pub struct RenderPass {
     instance: MaybeUninit<Box<dyn RenderPassInstance>>,
     compute_res: Arc<RwLock<dyn FnMut(Vec2u32) -> Vec2u32>>,
     source_node: Arc<RenderNode>,
-    clear_values: Vec<ClearValues>,
     command_buffer: Arc<dyn GfxCommandBuffer>,
 }
 
 impl RenderPass {
     pub fn new(resources: Vec<Arc<dyn GfxImage>>, render_node: &Arc<RenderNode>, initial_res: Vec2u32) -> Self {
         
-        let mut clear_values = vec![];
-        for color in &render_node.color_resources() {
-            clear_values.push(color.clear_value);
-        }
-        for depth in &render_node.depth_resource() {
-            clear_values.push(depth.clear_value);
-        }
-        
         let mut render_pass = Self {
             images: resources,
-            res: Default::default(),
+            res: initial_res,
             inputs: vec![],
             instance: MaybeUninit::uninit(),
             compute_res: render_node.compute_res().clone(),
             source_node: render_node.clone(),
-            clear_values,
             command_buffer: Gfx::get().create_command_buffer("unnamed".to_string()),
         };
 
-        let instance = Gfx::get().instantiate_render_pass(&render_pass, initial_res);
-        render_pass.instance = MaybeUninit::new(instance);
-
-        render_pass
-    }
-
-    pub fn new_present_surface(_surface: &dyn GfxSurface) -> Self {
-        let mut render_pass = Self {
-            images: vec![],
-            res: Default::default(),
-            inputs: vec![],
-            instance: MaybeUninit::uninit(),
-            compute_res: Arc::new(RwLock::new(|res| { res })),
-            source_node: Arc::new(RenderNode::present()),
-            clear_values: vec![ClearValues::DontClear],
-            command_buffer: Gfx::get().create_command_buffer("unnamed".to_string()),
-        };
-
-        let instance = Gfx::get().instantiate_render_pass(&render_pass, _surface.get_surface_texture().res_2d());
+        let instance = Gfx::get().instantiate_render_pass(&render_pass);
         render_pass.instance = MaybeUninit::new(instance);
 
         render_pass
@@ -102,24 +75,44 @@ impl RenderPass {
         }
         unsafe {
             self.instance.assume_init_ref().bind(frame, self, (*self.compute_res.write().unwrap())(res), &*self.command_buffer);
-            logger::info!("draw content here");
             self.instance.assume_init_ref().submit(frame, self, &*self.command_buffer);
         }
     }
     
-    pub fn clear_values(&self) -> &Vec<ClearValues> {
-        &self.clear_values
+    pub fn resize(&self, new_size: Vec2u32) {
+        for input in &self.inputs {
+            input.resize(new_size);
+        }
+        if !self.source_node.is_present_pass()
+        {
+            for image in &self.images {
+                image.resize(ImageType::Texture2d(new_size.x, new_size.y))
+            }
+        }
+        unsafe { self.instance.assume_init_ref().resize(new_size) }
     }
     
     pub fn images(&self) -> &Vec<Arc<dyn GfxImage>> {&self.images}
     
     pub fn stringify(&self) -> String {
-        let mut inputs = String::new();
+        let mut dependencies = String::new();
         
-        for input in &self.inputs {
-            inputs += format!("{}\n", input.stringify()).as_str()
+        for dependency in &self.inputs {
+            dependencies += format!("\n{}", dependency.stringify().replace('-', "\t-")).as_str()
+        }
+        if dependencies.is_empty() {
+            dependencies = " [Empty]".to_string()
         }
         
-        format!("initial res : {}x{}\ninputs : {}", self.res.x, self.res.y, inputs)
+        let mut images = String::new();
+        
+        if self.source_node.is_present_pass() {
+            images = "[present format]".to_string()
+        }
+        for image in &self.images {
+            images += format!("{:?} ", image.get_format()).as_str()
+        }
+        
+        format!("\t- name: {}\n\t- images: {}\n\t- initial res: {}x{}\n\t- dependencies:{}\n", self.source_node.get_name(), images, self.res.x, self.res.y, dependencies)
     }
 }

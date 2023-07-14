@@ -106,7 +106,7 @@ impl<T: Clone> GfxResource<T> {
             resource_map.insert(static_ref.clone(), builder_ref.build(&static_ref));
         }
     }
-
+    
     pub fn is_static(&self) -> bool {
         self.static_resource
     }

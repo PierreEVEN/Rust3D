@@ -1,3 +1,6 @@
+
+/*
+
 use std::mem::size_of;
 use std::os::raw::c_char;
 use std::path::Path;
@@ -39,8 +42,6 @@ use shader_compiler::backends::backend_shaderc::{BackendShaderC, ShaderCIncluder
 use shader_compiler::parser::Parser;
 use shader_compiler::types::InterstageData;
 use shader_compiler::CompilerBackend;
-
-/*
 
 pub struct ImGUiContext {
     pub font_texture: Arc<dyn GfxImage>,

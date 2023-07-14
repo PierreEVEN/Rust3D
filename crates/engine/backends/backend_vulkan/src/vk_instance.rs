@@ -259,11 +259,22 @@ unsafe extern "system" fn vulkan_debug_callback(
             },
         },
     }
-    let split = message.split('|');
-    let message_text = match split.last() {
-        None => Some(message.to_string()),
-        Some(last) => Some(last.to_string()),
-    };
+    let split = message.split("MessageID");
+    let split = split.last().unwrap().to_string();
+    let split = split.split('|');
+    
+    let mut message_text = String::new();
+    let mut num = 0;
+    for string in split {
+        num += 1;
+        if num == 1 { continue; }
+        if num != 2 { message_text += "|"; }
+        message_text += string;
+    }
+    
+    if message_text.is_empty() {
+        message_text = message.to_string()
+    }
 
     #[cfg(not(debug_assertions))]
     {
@@ -324,13 +335,6 @@ unsafe extern "system" fn vulkan_debug_callback(
                 "None"
             }
         },
-        match message_text {
-            Some(text) => {
-                text
-            }
-            None => {
-                message.to_string()
-            }
-        }
+        message_text
     );
 }

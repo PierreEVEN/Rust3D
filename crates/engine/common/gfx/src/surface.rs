@@ -83,9 +83,9 @@ pub trait GfxSurface: GfxCast {
 
     fn acquire(
         &self,
-        render_pass: &Arc<dyn RenderPassInstance>,
+        render_pass: &dyn RenderPassInstance,
     ) -> Result<(), SurfaceAcquireResult>;
-    fn submit(&self, render_pass: &Arc<dyn RenderPassInstance>)
+    fn submit(&self, render_pass: &dyn RenderPassInstance)
         -> Result<(), SurfaceAcquireResult>;
 }
 

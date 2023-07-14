@@ -1,5 +1,5 @@
-use maths::vec2::Vec2f32;
-use maths::vec4::Vec4F32;
+use maths::vec2::{Vec2f32};
+use maths::vec4::{Vec4F32};
 use std::any::Any;
 use std::hash::{Hash, Hasher};
 
@@ -536,13 +536,6 @@ impl PixelFormat {
     }
 }
 
-#[derive(Copy, Clone)]
-pub enum ClearValues {
-    DontClear,
-    Color(Vec4F32),
-    DepthStencil(Vec2f32),
-}
-
 pub trait GfxCast: 'static {
     fn as_any(&self) -> &dyn Any;
 }
@@ -559,4 +552,11 @@ pub struct Scissors {
     pub min_y: i32,
     pub width: u32,
     pub height: u32,
+}
+
+#[derive(Copy, Clone, Debug)]
+pub enum BackgroundColor {
+    None,
+    Color(Vec4F32),
+    DepthStencil(Vec2f32),
 }

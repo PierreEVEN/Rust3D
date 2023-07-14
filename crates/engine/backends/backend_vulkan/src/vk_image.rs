@@ -10,7 +10,7 @@ use gfx::image::{
     GfxImage, GfxImageUsageFlags, ImageCreateInfos, ImageParams, ImageType, ImageUsage,
 };
 use gfx::surface::Frame;
-use gfx::types::PixelFormat;
+use gfx::types::{BackgroundColor, PixelFormat};
 use gfx::Gfx;
 
 use crate::vk_buffer::VkBufferAccess;
@@ -24,6 +24,7 @@ type CombinedImageData = (vk::Image, Arc<vulkan::Allocation>);
 
 pub struct VkImage {
     pub image: RwLock<Arc<GfxResource<CombinedImageData>>>,
+    background_color: RwLock<BackgroundColor>,
     pub view: GfxResource<(vk::ImageView, vk::DescriptorImageInfo)>,
     pub image_params: ImageParams,
     pub image_layout: RwLock<vk::ImageLayout>,
@@ -33,6 +34,14 @@ pub struct VkImage {
 }
 
 impl GfxImage for VkImage {
+    fn background_color(&self) -> BackgroundColor {
+        *self.background_color.read().unwrap()
+    }
+
+    fn set_background_color(&self, color: &BackgroundColor) {
+        *self.background_color.write().unwrap() = *color
+    }
+
     fn get_type(&self) -> ImageType {
         *self.image_type.read().unwrap()
     }
@@ -461,6 +470,7 @@ impl VkImage {
             image_type: RwLock::new(params.image_type),
             is_from_existing_images: false,
             name,
+            background_color: RwLock::new(params.background_color),
         });
 
         match create_infos.pixels {
@@ -483,6 +493,7 @@ impl VkImage {
         let images = Arc::new(existing_images);
         Arc::new(Self {
             image: RwLock::new(images.clone()),
+            background_color: RwLock::new(image_params.background_color),
             view: GfxResource::new(RbImageView {
                 images,
                 create_infos: image_usage,

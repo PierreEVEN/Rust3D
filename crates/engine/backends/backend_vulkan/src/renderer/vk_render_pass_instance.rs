@@ -5,38 +5,45 @@ use ash::vk;
 use gfx::command_buffer::GfxCommandBuffer;
 use gfx::Gfx;
 use gfx::gfx_resource::{GfxImageBuilder, GfxResource};
-use gfx::image::{GfxImage, ImageParams, ImageType, ImageUsage};
+use gfx::image::{GfxImage};
+use gfx::renderer::render_node::RenderNode;
 use gfx::renderer::render_pass::{RenderPass, RenderPassInstance};
 use gfx::shader::PassID;
 use gfx::surface::Frame;
-use gfx::types::ClearValues;
+use gfx::types::BackgroundColor;
 use maths::vec2::Vec2u32;
 
 use crate::{GfxVulkan, vk_check};
 use crate::renderer::vk_render_pass::VkRenderPass;
-use crate::vk_command_buffer::VkCommandBuffer;
+use crate::vk_command_buffer::{begin_command_buffer, end_command_buffer, VkCommandBuffer};
 use crate::vk_image::VkImage;
 
 pub struct VkRenderPassInstance {
     pub render_finished_semaphore: GfxResource<vk::Semaphore>,
-    pub wait_semaphores: RwLock<Option<vk::Semaphore>>,
+    pub source_node: Arc<RenderNode>,
+    pub present_semaphore: RwLock<Option<vk::Semaphore>>,
     pub render_pass: Arc<VkRenderPass>,
     pub framebuffer: GfxResource<vk::Framebuffer>,
 }
 
 impl VkRenderPassInstance {
-    pub fn new(vk_render_pass: Arc<VkRenderPass>, render_pass: &RenderPass, initial_res: Vec2u32) -> Self {
+    pub fn new(vk_render_pass: Arc<VkRenderPass>, render_pass: &RenderPass) -> Self {
         Self {
-            render_finished_semaphore: GfxResource::new(RbSemaphore { name: "todo_name".to_string() }),
-            wait_semaphores: RwLock::new(None),
+            render_finished_semaphore: GfxResource::new(RbSemaphore { name: render_pass.source().get_name().clone() }),
+            present_semaphore: RwLock::new(None),
             render_pass: vk_render_pass.clone(),
             framebuffer: GfxResource::new(RbFramebuffer {
                 render_pass: vk_render_pass.render_pass,
-                res: initial_res,
+                res: render_pass.images()[0].res_2d(),
                 images: render_pass.images().clone(),
                 name: "unnamed".to_string(),
             }),
+            source_node: render_pass.source().clone(),
         }
+    }
+    
+    pub fn init_present_pass(&self, submit_semaphore: vk::Semaphore) {
+        *self.present_semaphore.write().unwrap() = Some(submit_semaphore)
     }
 }
 
@@ -44,17 +51,19 @@ impl RenderPassInstance for VkRenderPassInstance {
     fn bind(&self, frame: &Frame, context: &RenderPass, res: Vec2u32, pass_command_buffer: &dyn GfxCommandBuffer) {
         // Begin buffer
         let command_buffer = pass_command_buffer.cast::<VkCommandBuffer>().command_buffer.get(frame);
-
+        
+        begin_command_buffer(command_buffer, false);
+        
         let mut clear_values = Vec::new();
-        for color in context.clear_values() {
-            clear_values.push(match color {
-                ClearValues::DontClear => vk::ClearValue::default(),
-                ClearValues::Color(color) => vk::ClearValue {
+        for image in context.images() {
+            clear_values.push(match image.background_color() {
+                BackgroundColor::None => vk::ClearValue::default(),
+                BackgroundColor::Color(color) => vk::ClearValue {
                     color: vk::ClearColorValue {
                         float32: [color.x, color.y, color.z, color.w],
                     },
                 },
-                ClearValues::DepthStencil(depth_stencil) => vk::ClearValue {
+                BackgroundColor::DepthStencil(depth_stencil) => vk::ClearValue {
                     depth_stencil: vk::ClearDepthStencilValue {
                         depth: depth_stencil.x,
                         stencil: depth_stencil.y as u32,
@@ -130,7 +139,7 @@ impl RenderPassInstance for VkRenderPassInstance {
         GfxVulkan::get().set_vk_object_name(
             command_buffer,
             format!(
-                "command buffer\t\t: {} - {}",
+                "command buffer:{} - {}",
                 "null",
                 frame.image_id()
             ).as_str(),
@@ -144,18 +153,13 @@ impl RenderPassInstance for VkRenderPassInstance {
                 .handle
                 .cmd_end_render_pass(command_buffer)
         };
-        vk_check!(unsafe {
-            GfxVulkan::get()
-                .device
-                .assume_init_ref()
-                .handle
-                .end_command_buffer(command_buffer)
-        });
+        
+        end_command_buffer(command_buffer);
 
         // Submit buffer
         let mut wait_semaphores = Vec::new();
         if context.source().is_present_pass() {
-            wait_semaphores.push(self.wait_semaphores.read().unwrap().unwrap());
+            wait_semaphores.push(self.present_semaphore.read().unwrap().unwrap());
         }
 
         for pass in context.inputs() {
@@ -168,20 +172,30 @@ impl RenderPassInstance for VkRenderPassInstance {
         let wait_stages = vec![vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT; wait_semaphores.len()];
 
         // Submit
-        unsafe {
-            GfxVulkan::get()
-                .device()
-                .get_queue(vk::QueueFlags::GRAPHICS)
-                .unwrap()
-                .submit(
-                    vk::SubmitInfo::builder()
-                        .wait_semaphores(wait_semaphores.as_slice())
-                        .wait_dst_stage_mask(wait_stages.as_slice())
-                        .command_buffers(&[pass_command_buffer.cast::<VkCommandBuffer>().command_buffer.get(frame)])
-                        .signal_semaphores(&[self.render_finished_semaphore.get(frame)])
-                        .build(),
-                );
-        }
+        GfxVulkan::get()
+            .device()
+            .get_queue(vk::QueueFlags::GRAPHICS)
+            .unwrap()
+            .submit(
+                vk::SubmitInfo::builder()
+                    .wait_semaphores(wait_semaphores.as_slice())
+                    .wait_dst_stage_mask(wait_stages.as_slice())
+                    .command_buffers(&[pass_command_buffer.cast::<VkCommandBuffer>().command_buffer.get(frame)])
+                    .signal_semaphores(&[self.render_finished_semaphore.get(frame)])
+                    .build(),
+            );
+    }
+
+    fn resize(&self, new_size: Vec2u32) {
+        /*
+        self.framebuffer.invalidate(RbFramebuffer {
+            render_pass: self.render_pass.as_ref().clone(),
+            res: render_pass.images()[0].res_2d(),
+            images: render_pass.images().clone(),
+            name: "unnamed".to_string(),
+        });
+         */
+        todo!()
     }
 }
 
@@ -192,7 +206,7 @@ pub struct RbSemaphore {
 impl GfxImageBuilder<vk::Semaphore> for RbSemaphore {
     fn build(&self, swapchain_ref: &Frame) -> vk::Semaphore {
         let ci_semaphore = vk::SemaphoreCreateInfo::builder().build();
-
+        
         GfxVulkan::get().set_vk_object_name(
             vk_check!(unsafe {
                 GfxVulkan::get()
@@ -201,7 +215,7 @@ impl GfxImageBuilder<vk::Semaphore> for RbSemaphore {
                     .handle
                     .create_semaphore(&ci_semaphore, None)
             }),
-            format!("semaphore\t\t: {}@{}", self.name, swapchain_ref).as_str(),
+            format!("semaphore:{}@{}", self.name, swapchain_ref).as_str(),
         )
     }
 }
@@ -226,7 +240,7 @@ impl GfxImageBuilder<vk::CommandBuffer> for RbCommandBuffer {
         })[0];
         GfxVulkan::get().set_vk_object_name(
             cmd_buffer,
-            format!("command_buffer\t: {}@{}", self.name, swapchain_ref).as_str(),
+            format!("command_buffer:{}@{}", self.name, swapchain_ref).as_str(),
         );
         cmd_buffer
     }
@@ -263,7 +277,7 @@ impl GfxImageBuilder<vk::Framebuffer> for RbFramebuffer {
                     .handle
                     .create_framebuffer(&create_infos, None)
             }),
-            format!("framebuffer\t\t: {}@{}", self.name, swapchain_ref).as_str(),
+            format!("framebuffer:{}@{}", self.name, swapchain_ref).as_str(),
         )
     }
 }

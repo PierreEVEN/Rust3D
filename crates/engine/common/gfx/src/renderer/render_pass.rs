@@ -1,13 +1,16 @@
 ﻿use std::mem::MaybeUninit;
+use std::ops::DerefMut;
 use std::sync::{Arc, RwLock};
+
 use ecs::entity::GameObject;
 use maths::vec2::Vec2u32;
+
 use crate::command_buffer::GfxCommandBuffer;
 use crate::Gfx;
 use crate::image::{GfxImage, ImageType};
 use crate::renderer::render_node::RenderNode;
-use crate::surface::{Frame};
-use crate::types::{GfxCast};
+use crate::surface::Frame;
+use crate::types::GfxCast;
 
 pub trait RenderPassInstance: GfxCast {
     fn bind(&self, frame: &Frame, context: &RenderPass, res: Vec2u32, command_buffer: &dyn GfxCommandBuffer);
@@ -35,7 +38,6 @@ pub struct RenderPass {
 
 impl RenderPass {
     pub fn new(resources: Vec<Arc<dyn GfxImage>>, render_node: &Arc<RenderNode>, initial_res: Vec2u32) -> Self {
-        
         let mut render_pass = Self {
             images: resources,
             res: initial_res,
@@ -59,7 +61,7 @@ impl RenderPass {
     pub fn add_input(&mut self, input: Arc<RenderPass>) {
         self.inputs.push(input);
     }
-    
+
     pub fn inputs(&self) -> &Vec<Arc<RenderPass>> {
         &self.inputs
     }
@@ -67,7 +69,7 @@ impl RenderPass {
     pub fn instance(&self) -> &Box<dyn RenderPassInstance> {
         unsafe { self.instance.assume_init_ref() }
     }
-    
+
     pub fn draw(&self, frame: &Frame, res: Vec2u32, camera: &GameObject) {
         //TODO parallelize
         for input in &self.inputs {
@@ -75,11 +77,24 @@ impl RenderPass {
         }
         unsafe {
             self.instance.assume_init_ref().bind(frame, self, (*self.compute_res.write().unwrap())(res), &*self.command_buffer);
-            // @TODO draw content
+
+            match camera.world() {
+                None => {}
+                Some(mut ecs) => {
+                    match ecs.upgrade().unwrap().write() {
+                        Ok(mut ecs) => {
+                            self.source_node.draw_content(ecs.deref_mut());
+                        }
+                        Err(_) => {}
+                    }
+                }
+            }
+
+
             self.instance.assume_init_ref().submit(frame, self, &*self.command_buffer);
         }
     }
-    
+
     pub fn resize(&self, new_size: Vec2u32) {
         for input in &self.inputs {
             input.resize(new_size);
@@ -92,28 +107,28 @@ impl RenderPass {
         }
         unsafe { self.instance.assume_init_ref().resize(new_size) }
     }
-    
-    pub fn images(&self) -> &Vec<Arc<dyn GfxImage>> {&self.images}
-    
+
+    pub fn images(&self) -> &Vec<Arc<dyn GfxImage>> { &self.images }
+
     pub fn stringify(&self) -> String {
         let mut dependencies = String::new();
-        
+
         for dependency in &self.inputs {
             dependencies += format!("\n{}", dependency.stringify().replace('-', "\t-")).as_str()
         }
         if dependencies.is_empty() {
             dependencies = " [Empty]".to_string()
         }
-        
+
         let mut images = String::new();
-        
+
         if self.source_node.is_present_pass() {
             images = "[present format]".to_string()
         }
         for image in &self.images {
             images += format!("{:?} ", image.get_format()).as_str()
         }
-        
+
         format!("\t- name: {}\n\t- images: {}\n\t- initial res: {}x{}\n\t- dependencies:{}\n", self.source_node.get_name(), images, self.res.x, self.res.y, dependencies)
     }
 }

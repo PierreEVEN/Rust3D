@@ -63,11 +63,11 @@ impl Ecs {
     pub fn add<C: Any>(&mut self, entity: EntityID, component: C) {
         let data =
             unsafe { slice::from_raw_parts(&component as *const C as *const u8, size_of::<C>()) };
-
+        todo!("use a Component trait instead");
         if !self.components.contains::<C>() {
             self.components.register_component::<C>();
         }
-
+        
         self.add_component(entity, ComponentID::of::<C>(), data);
     }
 
@@ -119,6 +119,7 @@ impl Ecs {
         for (comp_id, comp_data) in data {
             new_archetype.update_component_data(&new_entity_index, &comp_id, comp_data.as_slice())
         }
+        
         new_archetype.update_component_data(&new_entity_index, &component, component_data);
 
         // Update entity_registry infos

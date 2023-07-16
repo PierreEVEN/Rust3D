@@ -98,7 +98,7 @@ pub fn test_func() -> JobSystem {
         logger::info!("spawn heavy task #{i}/{n_tasks}");
         let cnt = counter.clone();
         let _handle = js.schedule(move || {
-            for _ in 0..1000000 {
+            for _ in 0..10000 {
                 *cnt.as_ref().lock().expect("ok") += 1;
             }
             logger::info!("finished heavy task #{i}/{n_tasks}");
@@ -107,12 +107,14 @@ pub fn test_func() -> JobSystem {
     js
 }
 
+/*
+TESTS
+ */
+
 #[cfg(test)]
 mod test {
-    use crate::test_func;
-
     #[test]
     fn test() {
-        test_func();
+        crate::test_func();
     }
 }

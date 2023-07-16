@@ -91,7 +91,6 @@ impl FrameGraph {
                     Ok(_) => {
 
                         self.frame.update(surface.get_current_ref().image_id(), 0);
-                        
                         self.present_pass.draw(&self.frame, surface.get_surface_texture().res_2d(), camera);
                         match surface.submit(self.present_pass.instance().as_ref()) {
                             Ok(_) => {}

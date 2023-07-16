@@ -1,7 +1,10 @@
 ﻿use std::hash::{Hash, Hasher};
 use std::sync::{Arc, RwLock};
-use logger::{fatal};
+use ecs::ecs::Ecs;
+
+use logger::fatal;
 use maths::vec2::Vec2u32;
+
 use crate::renderer::renderer_resource::PassResource;
 
 /// This is a single node of a render graph. 
@@ -9,7 +12,7 @@ use crate::renderer::renderer_resource::PassResource;
 /// In other words :
 /// ```
 /// use gfx::renderer::render_node::RenderNode;
-/// 
+///
 /// let mut parent = RenderNode::default();
 /// let child = RenderNode::default();
 /// parent.attach(std::sync::Arc::new(child))
@@ -21,6 +24,7 @@ pub struct RenderNode {
     resources: Vec<PassResource>,
     compute_res: Arc<RwLock<dyn FnMut(Vec2u32) -> Vec2u32>>,
     present_pass: bool,
+    render_functions: RwLock<Vec<Box<dyn FnMut(&mut Ecs)>>>,
 }
 
 impl Default for RenderNode {
@@ -31,6 +35,7 @@ impl Default for RenderNode {
             resources: vec![],
             compute_res: Arc::new(RwLock::new(|res| { res })),
             present_pass: false,
+            render_functions: Default::default(),
         }
     }
 }
@@ -44,14 +49,15 @@ impl RenderNode {
             resources: vec![],
             compute_res: Arc::new(RwLock::new(|res| { res })),
             present_pass: true,
+            render_functions: Default::default(),
         }
     }
-    
+
     /// Retrieve resources of this pass
     pub fn resources(&self) -> &Vec<PassResource> {
         &self.resources
     }
-    
+
     pub fn is_present_pass(&self) -> bool { self.present_pass }
 
     pub fn attach(&mut self, previous: Arc<RenderNode>) {
@@ -66,10 +72,24 @@ impl RenderNode {
         self
     }
 
+    pub fn find_node(&self, node_name: &str) -> Option<&RenderNode> {
+        if self.get_name() == node_name {
+            return Some(self);
+        }
+
+        for input in self.inputs() {
+            match input.find_node(node_name) {
+                None => {}
+                Some(node) => { return Some(node); }
+            }
+        }
+        None
+    }
+
     pub fn get_name(&self) -> &String {
         &self.name
     }
-    
+
     pub fn res_override<H: FnMut(Vec2u32) -> Vec2u32 + 'static>(mut self, func: H) {
         self.compute_res = Arc::new(RwLock::new(func));
     }
@@ -78,13 +98,26 @@ impl RenderNode {
         self.resources.push(resource);
         self
     }
-    
+
     pub fn compute_res(&self) -> &Arc<RwLock<dyn FnMut(Vec2u32) -> Vec2u32>> {
-        &self.compute_res        
+        &self.compute_res
     }
 
     pub fn inputs(&self) -> &Vec<Arc<RenderNode>> {
         &self.inputs
+    }
+    
+    pub fn add_render_function<T: FnMut(&mut Ecs) + 'static>(&self, render_fn: T) {
+        self.render_functions.write().unwrap().push(Box::new(render_fn))
+    }
+    pub fn draw_content(&self, ecs: &mut Ecs) {
+        match self.render_functions.write() {
+            Ok(mut rf) => {
+                for render_func in &mut *rf {
+                    render_func.as_mut()(ecs);
+                }}
+            Err(_) => {}
+        }
     }
 }
 

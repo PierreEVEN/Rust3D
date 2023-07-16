@@ -1,4 +1,5 @@
 ﻿use std::sync::{Arc, RwLock, Weak};
+
 use ecs::entity::GameObject;
 use gfx::renderer::frame_graph::FrameGraph;
 use gfx::renderer::render_node::RenderNode;
@@ -7,6 +8,7 @@ use gfx::types::{BackgroundColor, PixelFormat};
 use maths::vec2::Vec2f32;
 use maths::vec4::Vec4F32;
 use plateform::window::Window;
+
 use crate::engine::Engine;
 
 pub struct Renderer {
@@ -33,7 +35,7 @@ impl Renderer {
         }
     }
 
-    pub fn set_main_view(&self, camera: &GameObject) {
+    pub fn set_default_view(&self, camera: &GameObject) {
         *self.camera.write().unwrap() = camera.clone()
     }
 }
@@ -47,6 +49,10 @@ impl Renderer {
         }
     }
 
+    pub fn present_node(&self) -> &RenderNode {
+        &*self.present_node
+    }
+
     pub fn default_deferred() -> Self {
         // Create G-Buffers
         let g_buffers = RenderNode::default()
@@ -57,10 +63,10 @@ impl Renderer {
                 format: PixelFormat::R8G8B8A8_UNORM,
             })
             .add_resource(PassResource {
-                    name: "depth".to_string(),
-                    clear_value: BackgroundColor::DepthStencil(Vec2f32::new(0.0, 1.0)),
-                    format: PixelFormat::D32_SFLOAT,
-                });
+                name: "depth".to_string(),
+                clear_value: BackgroundColor::DepthStencil(Vec2f32::new(0.0, 1.0)),
+                format: PixelFormat::D32_SFLOAT,
+            });
 
         // Create present pass
         let mut present_node = RenderNode::present();

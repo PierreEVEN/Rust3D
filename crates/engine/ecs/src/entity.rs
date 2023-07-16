@@ -28,6 +28,17 @@ impl GameObject {
         }
     }
 
+    pub fn world(&self) -> Option<Weak<RwLock<Ecs>>> {
+        if !self.is_valid() { return None; }
+
+        match &self.ecs_ref {
+            None => {}
+            Some(ecs) => { return Some(ecs.clone()); }
+        }
+        
+        return None;
+    }
+
     pub fn destroy(&self) {
         assert!(self.is_valid());
 

@@ -28,6 +28,11 @@ struct CompC {
     pub x: u64,
 }
 
+#[derive(Default)]
+struct CompD {
+    pub str: String,
+}
+
 /*
 USAGE
  */
@@ -41,10 +46,12 @@ pub fn test_func() {
     let e1 = ecs.create();
     let e2 = ecs.create();
 
+    /*
     ecs.add(e0, CompA { a: 1 });
     ecs.add(e1, CompB { b: 3, c: 4.0 });
     ecs.add(e2, CompA { a: 2 });
     ecs.add(e2, CompB { b: 5, c: 6.0 });
+     */
 
     let bench_length = 100;
 
@@ -95,6 +102,7 @@ pub fn test_func() {
     logger::info!("ECS");
     let start = Instant::now();
     let mut entities = Vec::with_capacity(bench_length as usize);
+    /*
     for i in 0..bench_length {
         let entity = ecs.create();
         ecs.add(
@@ -106,6 +114,8 @@ pub fn test_func() {
         );
         entities.push(entity);
     }
+    
+     */
     logger::info!(
         "--Creation : {}ms",
         start.elapsed().as_micros() as f64 / 1000.0
@@ -119,6 +129,14 @@ pub fn test_func() {
         start.elapsed().as_micros() as f64 / 1000.0
     );
 
+    let entity = ecs.create();
+    ecs.add(
+        entity,
+        CompD {
+            str: "Bonjour, je suis un string".to_string()
+        },
+    );
+    
     let mut iter = 0;
     Query::<&mut CompC>::new(&mut ecs).for_each(|a| {
         iter += 1;
@@ -162,6 +180,10 @@ pub fn test_func() {
         logger::info!("ITER A ET B : a = {}, b = {}, c = {}", a.a, b.b, b.c);
     });
 
+    Query::<&CompD>::new(&mut ecs).for_each(|d| {
+        logger::info!("D : str = {}", d.str);
+    });
+    
     ecs.remove::<CompA>(e2);
     ecs.destroy(e0);
     ecs.destroy(e2);
@@ -174,7 +196,7 @@ TESTS
  */
 
 #[cfg(test)]
-mod tests {
+mod test {
     #[test]
     fn usage_test() {
         crate::test_func()

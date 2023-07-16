@@ -17,7 +17,7 @@ use gfx::renderer::render_pass::RenderPassInstance;
 use gfx::surface::{Frame, GfxSurface, SurfaceAcquireResult};
 use gfx::types::BackgroundColor;
 use logger::{fatal};
-use plateform::window::Window;
+use plateform::window::{Window, WindowStatus};
 
 pub struct VkSurfaceWin32 {
     pub surface: vk::SurfaceKHR,
@@ -158,21 +158,28 @@ impl GfxSurface for VkSurfaceWin32 {
         }
 
         let mut image = self.surface_image.write().unwrap();
-        *image = Some(VkImage::from_existing_images(
-            format!("surface('{}')", self.window.get_title()),
-            GfxResource::new(RbSurfaceImage { images }),
-            ImageParams {
-                pixel_format: *GfxPixelFormat::from(self.surface_format.format),
-                image_type: ImageType::Texture2d(
-                    surface_capabilities.current_extent.width,
-                    surface_capabilities.current_extent.height,
-                ),
-                read_only: false,
-                mip_levels: Some(1),
-                usage: GfxImageUsageFlags::empty(),
-                background_color: BackgroundColor::None,
-            },
-        ));
+        match &*image {
+            None => {
+                *image = Some(VkImage::from_existing_images(
+                    format!("surface('{}')", self.window.get_title()),
+                    GfxResource::new(RbSurfaceImage { images }),
+                    ImageParams {
+                        pixel_format: *GfxPixelFormat::from(self.surface_format.format),
+                        image_type: ImageType::Texture2d(
+                            surface_capabilities.current_extent.width,
+                            surface_capabilities.current_extent.height,
+                        ),
+                        read_only: false,
+                        mip_levels: Some(1),
+                        usage: GfxImageUsageFlags::empty(),
+                        background_color: BackgroundColor::None,
+                    },
+                ));
+            }
+            Some(image) => {
+                image.cast::<VkImage>().update_source(GfxResource::new(RbSurfaceImage { images }), ImageType::Texture2d(surface_capabilities.current_extent.width, surface_capabilities.current_extent.height));
+            }
+        }
     }
 
     fn get_owning_window(&self) -> &Arc<dyn Window> {
@@ -196,7 +203,14 @@ impl GfxSurface for VkSurfaceWin32 {
         render_pass: &dyn RenderPassInstance,
     ) -> Result<(), SurfaceAcquireResult> {
         let geometry = self.window.get_geometry();
-
+        
+        match self.window.get_status() {
+            WindowStatus::Minimized => {
+                return Err(SurfaceAcquireResult::Failed("window is minimized".to_string()))
+            }
+            _ => {}
+        }
+        
         if geometry.width() == 0 || geometry.height() == 0 {
             return Err(SurfaceAcquireResult::Failed(
                 "invalid resolution".to_string(),

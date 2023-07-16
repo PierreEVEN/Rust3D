@@ -507,6 +507,19 @@ impl VkImage {
             name,
         })
     }
+    
+    pub fn update_source(&self, existing_images: GfxResource<CombinedImageData>, new_type: ImageType) {  
+        let images = Arc::new(existing_images);
+        
+        *self.image.write().unwrap() = images.clone();
+        self.view.invalidate(RbImageView {
+                images,
+                create_infos: self.image_params,
+                type_override: self.image_params.image_type,
+                name: self.name.clone(),
+            });
+        *self.image_type.write().unwrap() = new_type;
+    }
 
     fn set_image_layout(
         &self,

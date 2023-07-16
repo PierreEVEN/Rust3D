@@ -4,13 +4,11 @@ use std::sync::{Arc, RwLock};
 use raw_window_handle::{RawWindowHandle, Win32WindowHandle};
 use windows::core::PCWSTR;
 use windows::Win32::Foundation::{COLORREF, HMODULE, HWND, RECT};
-use windows::Win32::UI::WindowsAndMessaging::{AdjustWindowRectEx, CreateWindowExW, GetSystemMetrics, HMENU, LWA_ALPHA, SetLayeredWindowAttributes, SetWindowTextW, ShowWindow, SM_CXSCREEN, SM_CYCAPTION,  SM_CYSCREEN, SW_MAXIMIZE, SW_SHOW, WINDOW_STYLE, WS_CAPTION, WS_EX_LAYERED, WS_MAXIMIZEBOX, WS_MINIMIZEBOX, WS_OVERLAPPED, WS_POPUP, WS_SYSMENU, WS_THICKFRAME, WS_VISIBLE};
+use windows::Win32::UI::WindowsAndMessaging::{AdjustWindowRectEx, CreateWindowExW, GetSystemMetrics, HMENU, IsIconic, IsZoomed, LWA_ALPHA, SetLayeredWindowAttributes, SetWindowTextW, ShowWindow, SM_CXSCREEN, SM_CYCAPTION, SM_CYSCREEN, SW_MAXIMIZE, SW_SHOW, WINDOW_STYLE, WS_CAPTION, WS_EX_LAYERED, WS_MAXIMIZEBOX, WS_MINIMIZEBOX, WS_OVERLAPPED, WS_POPUP, WS_SYSMENU, WS_THICKFRAME, WS_VISIBLE};
 
 use logger::{info};
 use maths::rect2d::{Rect2D, RectI32};
-use plateform::window::{
-    PlatformEvent, Window, WindowCreateInfos, WindowEventDelegate, WindowFlagBits, WindowFlags,
-};
+use plateform::window::{PlatformEvent, Window, WindowCreateInfos, WindowEventDelegate, WindowFlagBits, WindowFlags, WindowStatus};
 
 use crate::{utf8_to_utf16, WIN_CLASS_NAME};
 use crate::utils::check_win32_error;
@@ -174,6 +172,18 @@ impl Window for WindowWin32 {
             .write()
             .unwrap()
             .insert(event_type, vec![delegate]);
+    }
+
+    fn get_status(&self) -> WindowStatus {
+        unsafe {
+            if IsIconic(self.hwnd).into() {
+                return WindowStatus::Minimized
+            }
+            if IsZoomed(self.hwnd).into() {
+                return WindowStatus::Maximized
+            }
+        }
+        return WindowStatus::Default
     }
 }
 

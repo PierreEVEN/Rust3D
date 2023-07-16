@@ -16,13 +16,12 @@ use crate::surface::{Frame, GfxSurface, SurfaceAcquireResult};
 pub struct FrameGraph {
     present_pass: RenderPass,
     surface: Option<Box<dyn GfxSurface>>,
-    frame: Frame,
-    max_frames: u8,
+    frame: Frame
 }
 
 impl FrameGraph {
     /// Create a framegraph for a given set of images
-    pub fn new_image(top_node: &Arc<RenderNode>, inputs: Vec<Arc<dyn GfxImage>>, max_frames: u8) -> Self {
+    pub fn new_image(top_node: &Arc<RenderNode>, inputs: Vec<Arc<dyn GfxImage>>) -> Self {
         let initial_res = inputs[0].res_2d();
         let mut present_pass = RenderPass::new(inputs, top_node, initial_res);
         for input in top_node.inputs() {
@@ -33,12 +32,11 @@ impl FrameGraph {
             present_pass,
             surface: None,
             frame: Frame::null(),
-            max_frames,
         }
     }
 
     /// Create a framegraph for a given surface
-    pub fn new_surface(top_node: &Arc<RenderNode>, surface: Box<dyn GfxSurface>, max_frames: u8) -> Self {
+    pub fn new_surface(top_node: &Arc<RenderNode>, surface: Box<dyn GfxSurface>) -> Self {
         let initial_res = surface.get_surface_texture().res_2d();
         let mut present_pass = RenderPass::new(vec![surface.get_surface_texture()], top_node, initial_res);
         for input in top_node.inputs() {
@@ -48,8 +46,7 @@ impl FrameGraph {
         Self {
             present_pass,
             surface: Some(surface),
-            frame: Frame::null(),
-            max_frames,
+            frame: Frame::null()
         }
     }
 
@@ -92,6 +89,9 @@ impl FrameGraph {
             Some(surface) => {
                 match surface.acquire(self.present_pass.instance().as_ref()) {
                     Ok(_) => {
+
+                        self.frame.update(surface.get_current_ref().image_id(), 0);
+                        
                         self.present_pass.draw(&self.frame, surface.get_surface_texture().res_2d(), camera);
                         match surface.submit(self.present_pass.instance().as_ref()) {
                             Ok(_) => {}
@@ -99,19 +99,24 @@ impl FrameGraph {
                                 match err {
                                     SurfaceAcquireResult::Resized => {
                                         self.present_pass.resize(surface.get_surface_texture().res_2d());
-                                        logger::warning!("failed to submit to surface : Surface resized") }
+                                        logger::warning!("failed to submit to surface : Surface resized to {:?}", surface.get_surface_texture().res_2d()) 
+                                    }
                                     SurfaceAcquireResult::Failed(message) => { error!("failed to submit to surface : {}", message) }
                                 }
                             }
                         };
                     }
-                    Err(_err) => {
-                        error!("failed to acquire surface image")
+                    Err(err) => {
+                        match err {
+                            SurfaceAcquireResult::Resized => {
+                                self.present_pass.resize(surface.get_surface_texture().res_2d());
+                                logger::warning!("failed to acquire surface image : Surface resized to {:?}", surface.get_surface_texture().res_2d())
+                            }
+                            SurfaceAcquireResult::Failed(_) => {}
+                        }
                     }
                 };
             }
         }
-
-        self.frame.update((self.frame.image_id() + 1) % self.max_frames, 0);
     }
 }

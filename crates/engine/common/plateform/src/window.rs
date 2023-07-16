@@ -75,6 +75,14 @@ impl Eq for PlatformEvent {}
 
 pub type WindowEventDelegate = Box<dyn FnMut(&PlatformEvent)>;
 
+pub enum WindowStatus {
+    Default,
+    Minimized,
+    Maximized,
+    Borderless,
+    Fullscreen
+}
+
 pub trait Window {
     fn set_geometry(&self, geometry: RectI32);
     fn get_geometry(&self) -> RectI32;
@@ -85,4 +93,5 @@ pub trait Window {
     fn get_background_alpha(&self) -> u8;
     fn get_handle(&self) -> RawWindowHandle;
     fn bind_event(&self, event_type: PlatformEvent, delegate: WindowEventDelegate);
+    fn get_status(&self) -> WindowStatus;
 }

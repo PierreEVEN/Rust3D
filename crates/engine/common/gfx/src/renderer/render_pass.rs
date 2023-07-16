@@ -75,6 +75,7 @@ impl RenderPass {
         }
         unsafe {
             self.instance.assume_init_ref().bind(frame, self, (*self.compute_res.write().unwrap())(res), &*self.command_buffer);
+            // @TODO draw content
             self.instance.assume_init_ref().submit(frame, self, &*self.command_buffer);
         }
     }

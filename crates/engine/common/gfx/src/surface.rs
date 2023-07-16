@@ -80,7 +80,7 @@ pub trait GfxSurface: GfxCast {
     fn get_image_count(&self) -> u8;
     fn get_current_ref(&self) -> &Frame;
     fn get_surface_texture(&self) -> Arc<dyn GfxImage>;
-
+    
     fn acquire(
         &self,
         render_pass: &dyn RenderPassInstance,

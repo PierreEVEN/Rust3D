@@ -3,10 +3,13 @@ use std::collections::HashMap;
 use std::ffi::CStr;
 use std::mem::MaybeUninit;
 use std::os::raw::c_char;
+use std::thread;
 
 use ash::{extensions::ext, vk};
+use ash::vk::{DebugUtilsMessageSeverityFlagsEXT};
 
 use gfx::PhysicalDevice;
+use logger::LogSeverity;
 
 use crate::vk_physical_device::VkPhysicalDevice;
 use crate::{to_c_char, GfxVulkan};
@@ -115,8 +118,11 @@ impl VkInstance {
 
         // Create debug messenger
         let _debug_info = vk::DebugUtilsMessengerCreateInfoEXT {
-            message_severity: vk::DebugUtilsMessageSeverityFlagsEXT::ERROR
-                | vk::DebugUtilsMessageSeverityFlagsEXT::WARNING,
+            message_severity: 
+                DebugUtilsMessageSeverityFlagsEXT::VERBOSE
+                | DebugUtilsMessageSeverityFlagsEXT::INFO
+                | DebugUtilsMessageSeverityFlagsEXT::ERROR
+                | DebugUtilsMessageSeverityFlagsEXT::WARNING,
             message_type: vk::DebugUtilsMessageTypeFlagsEXT::GENERAL
                 | vk::DebugUtilsMessageTypeFlagsEXT::VALIDATION
                 | vk::DebugUtilsMessageTypeFlagsEXT::PERFORMANCE,
@@ -262,7 +268,7 @@ unsafe extern "system" fn vulkan_debug_callback(
     let split = message.split("MessageID");
     let split = split.last().unwrap().to_string();
     let split = split.split('|');
-    
+
     let mut message_text = String::new();
     let mut num = 0;
     for string in split {
@@ -271,7 +277,7 @@ unsafe extern "system" fn vulkan_debug_callback(
         if num != 2 { message_text += "|"; }
         message_text += string;
     }
-    
+
     if message_text.is_empty() {
         message_text = message.to_string()
     }
@@ -311,30 +317,52 @@ unsafe extern "system" fn vulkan_debug_callback(
         );
         return vk::FALSE;
     }
-
+    
+    let mut severity = LogSeverity::INFO;
+    if message_severity.contains(DebugUtilsMessageSeverityFlagsEXT::ERROR) {
+        severity = LogSeverity::FATAL 
+    }
+    if message_severity.contains(DebugUtilsMessageSeverityFlagsEXT::WARNING) {
+        severity = LogSeverity::ERROR
+    }
+    if message_severity.contains(DebugUtilsMessageSeverityFlagsEXT::INFO) {
+        severity = LogSeverity::INFO
+    }
+    if message_severity.contains(DebugUtilsMessageSeverityFlagsEXT::VERBOSE) {
+        severity = LogSeverity::DEBUG(0)
+    }
+    
+    let mid_line = match object_type {
+        Some(obj_type) => {
+            match object_handle {
+                Some(handle) => {
+                    format!("\t=>{} -{}\n", obj_type, handle)
+                }
+                None => {
+                    "".to_string()
+                }
+            }
+        }
+        None => {
+            "".to_string()
+        }
+    };
+    
     #[cfg(debug_assertions)]
-    logger::fatal!(
-        "[{}] {:?} {:?}: [{}] :\n\t=>{} -{}\n\t=>{}\n",
-        &message_id_number.to_string(),
-        message_type,
-        message_severity,
-        message_id_name,
-        match object_type {
-            Some(obj_type) => {
-                obj_type
-            }
-            None => {
-                "None"
-            }
-        },
-        match object_handle {
-            Some(handle) => {
-                handle
-            }
-            None => {
-                "None"
-            }
-        },
-        message_text
-    );
+    {
+        logger::broadcast_log(logger::LogMessage {
+            severity,
+            thread_id: Some(thread::current().id()),
+            context: "ValidationLayers".to_string(),
+            text: format!("[{}] {:?} {:?}: [{}] :\n{}\t=>{}\n",
+                          &message_id_number.to_string(),
+                          message_type,
+                          message_severity,
+                          message_id_name,
+                          mid_line,
+                          message_text),
+        }, "".to_string());
+
+        vk::FALSE
+    }
 }

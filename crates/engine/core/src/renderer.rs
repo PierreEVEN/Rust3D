@@ -20,7 +20,7 @@ impl Renderer {
     pub fn bind_window_surface(&self, window: &Weak<dyn Window>, clear_color: &BackgroundColor) {
         let surface = Engine::get_mut().new_surface(window);
         surface.get_surface_texture().set_background_color(clear_color);
-        let mut frame_graph = FrameGraph::new_surface(&self.present_node, surface, 3);
+        let mut frame_graph = FrameGraph::new_surface(&self.present_node, surface);
         logger::debug!("Compiled frame graph :\n{}", frame_graph.present_pass().stringify());
         self.frame_graphs.write().unwrap().push(frame_graph);
     }

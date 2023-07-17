@@ -5,7 +5,6 @@ use core::world::World;
 use ecs::entity::GameObject;
 use ecs::query::Query;
 use gfx::mesh::Mesh;
-use gfx::renderer::render_node::RenderNode;
 use gfx::shader_instance::ShaderInstance;
 use gfx::types::BackgroundColor;
 use maths::vec4::{Vec4F32};
@@ -68,6 +67,21 @@ impl App for TestApp {
     fn new_frame(&mut self, _delta_seconds: f64) {}
     fn request_shutdown(&self) {}
     fn stopped(&self) {}
+}
+
+
+use std::alloc::{GlobalAlloc, System, Layout};
+
+struct MyAllocator;
+
+unsafe impl GlobalAlloc for MyAllocator {
+    unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
+        System.alloc(layout)
+    }
+
+    unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
+        System.dealloc(ptr, layout)
+    }
 }
 
 fn main() {

@@ -6,6 +6,14 @@ use std::mem::{align_of, size_of};
 pub type ComponentID = TypeId;
 
 /*
+TRAIT
+ */
+
+pub trait Component {
+    
+}
+
+/*
 STRUCTURE
  */
 

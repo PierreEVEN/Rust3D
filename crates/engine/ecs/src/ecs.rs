@@ -1,7 +1,7 @@
 use std::any::Any;
 use std::collections::HashMap;
 use std::mem::size_of;
-use std::slice;
+use std::{mem, slice};
 
 use crate::archetype::signature::ArchetypeSignature;
 use crate::archetype::{Archetype, ArchetypeID, ArchetypeRegistry};
@@ -63,7 +63,8 @@ impl Ecs {
     pub fn add<C: Any>(&mut self, entity: EntityID, component: C) {
         let data =
             unsafe { slice::from_raw_parts(&component as *const C as *const u8, size_of::<C>()) };
-        todo!("use a Component trait instead");
+        mem::forget(component);
+        
         if !self.components.contains::<C>() {
             self.components.register_component::<C>();
         }

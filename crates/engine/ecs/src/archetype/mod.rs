@@ -51,21 +51,14 @@ impl ComponentData {
 
     pub fn update_component_data(&mut self, entity_index: &usize, data: &[u8]) {
         unsafe {
-
             let dst = self.data.as_mut_ptr().add(entity_index * self.type_size);
             let src = data.as_ptr();
             std::ptr::copy(src, dst, self.type_size);
-            
-            struct TestC { pub str: String }
-            unsafe { logger::warning!("store content at {:?} : {}", dst, (*(dst as *const TestC)).str) };
         }
     }
 
     #[inline]
     pub fn as_component<'ecs, C>(&self) -> &'ecs [C] {
-        struct TestC { pub str: String }
-        unsafe { logger::warning!("read content at {:?} : {}", self.data.as_ptr(), (*(self.data.as_ptr() as *const TestC)).str) };
-        
         unsafe { slice::from_raw_parts(self.data.as_ptr() as *const C, self.entity_count) }
     }
 

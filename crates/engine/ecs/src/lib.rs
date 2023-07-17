@@ -46,12 +46,10 @@ pub fn test_func() {
     let e1 = ecs.create();
     let e2 = ecs.create();
 
-    /*
     ecs.add(e0, CompA { a: 1 });
     ecs.add(e1, CompB { b: 3, c: 4.0 });
     ecs.add(e2, CompA { a: 2 });
     ecs.add(e2, CompB { b: 5, c: 6.0 });
-     */
 
     let bench_length = 100;
 
@@ -102,7 +100,7 @@ pub fn test_func() {
     logger::info!("ECS");
     let start = Instant::now();
     let mut entities = Vec::with_capacity(bench_length as usize);
-    /*
+    
     for i in 0..bench_length {
         let entity = ecs.create();
         ecs.add(
@@ -115,7 +113,7 @@ pub fn test_func() {
         entities.push(entity);
     }
     
-     */
+     
     logger::info!(
         "--Creation : {}ms",
         start.elapsed().as_micros() as f64 / 1000.0

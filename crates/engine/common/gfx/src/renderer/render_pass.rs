@@ -83,7 +83,7 @@ impl RenderPass {
                 Some(mut ecs) => {
                     match ecs.upgrade().unwrap().write() {
                         Ok(mut ecs) => {
-                            self.source_node.draw_content(ecs.deref_mut());
+                            self.source_node.draw_content(ecs.deref_mut(), self.command_buffer.as_ref());
                         }
                         Err(_) => {}
                     }

@@ -1,13 +1,17 @@
+use std::ffi::CStr;
+use std::os::raw::c_char;
 //use std::ffi::CStr;
 //use std::os::raw::c_char;
 use std::sync::Arc;
 use ash::vk;
-use gfx::shader::{Culling, DescriptorBinding, FrontFace, PolygonMode, ShaderProgram, ShaderProgramInfos, Topology};
+use gfx::shader::{AlphaMode, Culling, DescriptorBinding, FrontFace, PolygonMode, ShaderProgram, ShaderProgramInfos, Topology};
 use gfx::shader_instance::{ShaderInstance, ShaderInstanceCreateInfos};
 
 use crate::vk_dst_set_layout::VkDescriptorSetLayout;
 //use crate::vk_types::VkPixelFormat;
 use crate::{vk_check, GfxVulkan, VkShaderInstance};
+use crate::renderer::vk_render_pass::VkRenderPass;
+use crate::vk_types::VkPixelFormat;
 //use crate::renderer::vk_render_pass::VkRenderPass;
 
 pub struct VkTopology(vk::PrimitiveTopology);
@@ -87,8 +91,8 @@ impl ShaderProgram for VkShaderProgram {
 
 impl VkShaderProgram {
     pub fn new(
-        _name: String,
-        _create_infos: &ShaderProgramInfos,
+        name: String,
+        create_infos: &ShaderProgramInfos,
     ) -> Arc<Self> {
         todo!()
         /*
@@ -328,7 +332,7 @@ impl VkShaderProgram {
                 bindings,
                 name,
             })
-        */
+         */
     }
 }
 

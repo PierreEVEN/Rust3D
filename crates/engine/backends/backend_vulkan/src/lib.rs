@@ -191,6 +191,7 @@ impl GfxInterface for GfxVulkan {
     fn create_shader_program(
         &self,
         name: String,
+        _render_pass: &Arc<dyn RenderPassInstance>,
         create_infos: &ShaderProgramInfos,
     ) -> Arc<dyn ShaderProgram> {
         VkShaderProgram::new(name, create_infos)

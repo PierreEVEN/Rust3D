@@ -43,6 +43,7 @@ pub trait GfxInterface: GfxCast {
     fn create_shader_program(
         &self,
         name: String,
+        render_pass: &Arc<dyn RenderPassInstance>,
         create_infos: &ShaderProgramInfos,
     ) -> Arc<dyn ShaderProgram>;
     fn instantiate_render_pass(

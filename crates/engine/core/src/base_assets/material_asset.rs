@@ -153,6 +153,7 @@ impl MaterialAsset {
 
                 let program = crate::engine::Engine::get().gfx().create_shader_program(
                     self.meta_data.get_name(),
+                    &render_pass,
                     &ci_shader,
                 );
                 self.permutations.write().unwrap().insert(

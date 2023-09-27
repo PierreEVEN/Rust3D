@@ -1,25 +1,139 @@
 use std::str::FromStr;
-use ast::{Value};
+use crate::ast::{*};
 
 grammar;
 
-pub Pragma: (String, Value) = {
-    r"#pragma[ \t]*" <name:Field> r"[ \t]*=[ \t]*" <value:Value> => (name, value)
+match {
+    "(",
+    ")",
+    "[",
+    "]",
+    "{",
+    "}",
+    "=",
+    ",",
+    ":",
+    ";",
+    ".",
+    r"[+\-*\/%]" => operator,
+    "#pragma" => pragma,
+    r"[0-9]+" => INTEGER,
+    "global" => global,
+    "vertex" => vertex,
+    "fragment" => fragment,
+    "compute" => compute,
+
+    "struct" => struct,
+
+
+    r"[a-zA-Z][a-zA-Z0-9_]*" => WORD,
+    r#""[^"]*""# => QUOTED_STRING,
+
+    // Skip whitespace and comments
+    r"[\s\n]*" => { },
+    r"//[^\n\r]*[\n\r]*" => { }, // `// comment`
+    r"/\*([^\*]*\*+[^\*/])*([^\*]*\*+|[^\*])*\*/" => { }, // `/* comment */`
+    "[^;]+;" => ALL_UNTIL_END,
+    "[^{}]*" => ALL_BUT_BLOCKS
+}
+
+// SHB PARSER
+
+pub InstructionList: ListOf<Instruction> = {
+    <new:Instruction> => ListOf::<Instruction>::new().push(<>),
+    <last:InstructionList> <new:Instruction> => last.push(new)
+}
+
+Instruction : Instruction = {
+    Pragma => <>,
+    global "(" <wl:PassList> ")" "{" <hlsl:HLSL_CODE> "}" => Instruction::Global(wl, hlsl),
+    vertex "(" <wl:PassList> ")" "{" <hlsl:HLSL_CODE> "}" => Instruction::Vertex(wl, hlsl),
+    fragment "(" <wl:PassList> ")" "{" <hlsl:HLSL_CODE> "}" => Instruction::Fragment(wl, hlsl),
+    compute "(" <wl:PassList> ")" "{" <hlsl:HLSL_CODE> "}" => Instruction::Compute(wl, hlsl),
+}
+
+PassList : RenderPassGroup = {
+    <v:String> => RenderPassGroup::new().add(v),
+    <pl:PassList> "," <v:String> => pl.add(v)
+}
+
+Pragma: Instruction = {
+    pragma <name:Word> <value:Value> => Instruction::Pragma(name, value),
+    pragma <name:Word> => Instruction::Pragma(name, Value::None)
+}
+
+Word : String = {
+    WORD => <>.to_string()
 }
 
 Value : Value = {
-    r"-?[0-9]+" => Value::Integer(i64::from_str(<>).unwrap())
+    INTEGER => Value::Integer(i64::from_str(<>).unwrap()),
+    String => Value::String(<>),
 }
 
-Field : String = {
-    r"[a-zA-Z0-9_]+" => <>.to_string()
+String : String = {
+    Word => <>,
+    QUOTED_STRING => <>[1..<>.len() - 1].to_string()
 }
 
-Text : String = {
-    <f:Field> => f,
-    <s:r#"[^"]*"#> => s.to_string()
+// HLSL PARSER
+
+HLSL_CODE : ListOf<HlslInstruction> = {
+    <v:HlslInstruction> => ListOf::<HlslInstruction>::new().push(v),
+    <hl:HLSL_CODE> <v:HlslInstruction> => hl.push(v)
 }
 
-pub QuoteString: String = {
-    "\"" <s:Text> "\"" => s,
-};
+HlslInstruction : HlslInstruction = {
+    struct <name:Word> "{" <fields:StructureFieldList> "}" => HlslInstruction::Struct(name, fields),
+    <return_type:Word> <name:Word> "(" <params:FunctionParameterList> ")" "{" <content:FunctionContent> "}" => HlslInstruction::Function(name, Function { return_type, params: vec![], content} ),
+}
+
+StructureFieldList : ListOf<StructureField> = {
+    StructureField => ListOf::<StructureField>::new().push(<>),
+    <sfl:StructureFieldList> <sf:StructureField> => sfl.push(sf)
+}
+
+StructureField : StructureField = {
+    <struct_type:Word> <name:Word> ";" => StructureField {struct_type, name, value: None, attribute:None},
+    <struct_type:Word> <name:Word> ":" <attribute:ALL_UNTIL_END> => StructureField {struct_type, name, value: None, attribute: Some(attribute.to_string())},
+    <struct_type:Word> <name:Word> ":" <attribute:Word> ";" => StructureField {struct_type, name, value: None, attribute: Some(attribute)},
+}
+
+FunctionParameterList : ListOf<FunctionParameter> = {
+    FunctionParameter => ListOf::<FunctionParameter>::new().push(<>),
+    <sfl:FunctionParameterList> "," <sf:FunctionParameter> => sfl.push(sf)
+}
+
+FunctionContent : String = {
+    AllButBlocks => <>.to_string(),
+    <a:FunctionContent> <b:AllButBlocks> => a + b.as_str()
+}
+
+AllButBlocks : String = {
+    ALL_BUT_BLOCKS => <>.to_string(),
+    ALL_UNTIL_END => <>.to_string(),
+
+    "(" => <>.to_string(),
+    ")" => <>.to_string(),
+    "[" => <>.to_string(),
+    "]" => <>.to_string(),
+    "=" => <>.to_string(),
+    "," => <>.to_string(),
+    ":" => <>.to_string(),
+    ";" => <>.to_string(),
+    "." => <>.to_string(),
+    operator => <>.to_string(),
+    pragma => <>.to_string(),
+    INTEGER => <>.to_string(),
+    global => <>.to_string(),
+    vertex => <>.to_string(),
+    fragment => <>.to_string(),
+    compute => <>.to_string(),
+    struct => <>.to_string(),
+    WORD => <>.to_string(),
+    QUOTED_STRING => <>.to_string(),
+}
+
+FunctionParameter : FunctionParameter = {
+    <param_type:Word> <name:Word> => FunctionParameter {param_type, name}
+}

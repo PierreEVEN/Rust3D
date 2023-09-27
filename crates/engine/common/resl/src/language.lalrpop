@@ -1,0 +1,25 @@
+use std::str::FromStr;
+use ast::{Value};
+
+grammar;
+
+pub Pragma: (String, Value) = {
+    r"#pragma[ \t]*" <name:Field> r"[ \t]*=[ \t]*" <value:Value> => (name, value)
+}
+
+Value : Value = {
+    r"-?[0-9]+" => Value::Integer(i64::from_str(<>).unwrap())
+}
+
+Field : String = {
+    r"[a-zA-Z0-9_]+" => <>.to_string()
+}
+
+Text : String = {
+    <f:Field> => f,
+    <s:r#"[^"]*"#> => s.to_string()
+}
+
+pub QuoteString: String = {
+    "\"" <s:Text> "\"" => s,
+};

@@ -1,0 +1,11 @@
+[package]
+name = "resl"
+version = "0.1.0"
+edition = "2021"
+test = true
+
+[build-dependencies]
+lalrpop = "0.20.0"
+
+[dependencies]
+lalrpop-util = { version = "0.20.0", features = ["lexer"] }

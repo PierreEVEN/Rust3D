@@ -3,38 +3,29 @@ use crate::ast::{*};
 
 grammar;
 
-match {
-    "(",
-    ")",
-    "[",
-    "]",
-    "{",
-    "}",
-    "=",
-    ",",
-    ":",
-    ";",
-    ".",
-    r"[+\-*\/%]" => operator,
+match { // Skipped items
+    r"[\s\n]*" => { }, // whitespace
+    r"//[^\n\r]*[\n\r]*" => { }, // `// comment`
+    r"/\*([^\*]*\*+[^\*/])*([^\*]*\*+|[^\*])*\*/" => { }, // `/* comment */`
+}
+else { // Reserved names
     "#pragma" => pragma,
-    r"[0-9]+" => INTEGER,
+    r"#define[^\n]+" => define,
     "global" => global,
     "vertex" => vertex,
     "fragment" => fragment,
     "compute" => compute,
-
-    "struct" => struct,
-
-
+    r"(struct|cbuffer)" => struct,
+}
+else { // Other tokens
+    r"[0-9]+" => INTEGER,
     r"[a-zA-Z][a-zA-Z0-9_]*" => WORD,
     r#""[^"]*""# => QUOTED_STRING,
-
-    // Skip whitespace and comments
-    r"[\s\n]*" => { },
-    r"//[^\n\r]*[\n\r]*" => { }, // `// comment`
-    r"/\*([^\*]*\*+[^\*/])*([^\*]*\*+|[^\*])*\*/" => { }, // `/* comment */`
-    "[^;]+;" => ALL_UNTIL_END,
-    "[^{}]*" => ALL_BUT_BLOCKS
+    r";" => SEMICOLON,
+    r"register\([^)]+\)" => register,
+}
+else {
+    _
 }
 
 // SHB PARSER
@@ -85,7 +76,14 @@ HLSL_CODE : ListOf<HlslInstruction> = {
 
 HlslInstruction : HlslInstruction = {
     struct <name:Word> "{" <fields:StructureFieldList> "}" => HlslInstruction::Struct(name, fields),
-    <return_type:Word> <name:Word> "(" <params:FunctionParameterList> ")" "{" <content:FunctionContent> "}" => HlslInstruction::Function(name, Function { return_type, params: vec![], content} ),
+    struct <name:Word> "{" <fields:StructureFieldList> "};" => HlslInstruction::Struct(name, fields),
+    struct <name:Word> ":" register "{" <fields:StructureFieldList> "}" => HlslInstruction::Struct(name, fields),
+    struct <name:Word> ":" register "{" <fields:StructureFieldList> "};" => HlslInstruction::Struct(name, fields),
+    define => HlslInstruction::Define(<>.to_string()),
+    <return_type:Word> <name:Word> "(" <params:FunctionParameterList> ")" "{" <content:FunctionContent> "}" => HlslInstruction::Function(name, Function { return_type, params, content} ),
+    <return_type:Word> <name:Word> "(" <params:FunctionParameterList> ")" ":" Word "{" <content:FunctionContent> "}" => HlslInstruction::Function(name, Function { return_type, params, content} ),
+    <prop_type:Word> <name:Word> SEMICOLON => HlslInstruction::Property(prop_type, name),
+    <prop_type:Word> <name:Word> ":" register SEMICOLON => HlslInstruction::Property(prop_type, name),
 }
 
 StructureFieldList : ListOf<StructureField> = {
@@ -94,9 +92,9 @@ StructureFieldList : ListOf<StructureField> = {
 }
 
 StructureField : StructureField = {
-    <struct_type:Word> <name:Word> ";" => StructureField {struct_type, name, value: None, attribute:None},
-    <struct_type:Word> <name:Word> ":" <attribute:ALL_UNTIL_END> => StructureField {struct_type, name, value: None, attribute: Some(attribute.to_string())},
-    <struct_type:Word> <name:Word> ":" <attribute:Word> ";" => StructureField {struct_type, name, value: None, attribute: Some(attribute)},
+    <struct_type:Word> <name:Word> SEMICOLON => StructureField {struct_type, name, value: None, attribute:None},
+    <struct_type:Word> <name:Word> ":" <attribute:Word> SEMICOLON => StructureField {struct_type, name, value: None, attribute: Some(attribute)},
+    <struct_type:Word> <name:Word> "[" WORD "]" SEMICOLON => StructureField {struct_type, name, value: None, attribute: None},
 }
 
 FunctionParameterList : ListOf<FunctionParameter> = {
@@ -104,36 +102,37 @@ FunctionParameterList : ListOf<FunctionParameter> = {
     <sfl:FunctionParameterList> "," <sf:FunctionParameter> => sfl.push(sf)
 }
 
-FunctionContent : String = {
-    AllButBlocks => <>.to_string(),
-    <a:FunctionContent> <b:AllButBlocks> => a + b.as_str()
-}
-
-AllButBlocks : String = {
-    ALL_BUT_BLOCKS => <>.to_string(),
-    ALL_UNTIL_END => <>.to_string(),
-
-    "(" => <>.to_string(),
-    ")" => <>.to_string(),
-    "[" => <>.to_string(),
-    "]" => <>.to_string(),
-    "=" => <>.to_string(),
-    "," => <>.to_string(),
-    ":" => <>.to_string(),
-    ";" => <>.to_string(),
-    "." => <>.to_string(),
-    operator => <>.to_string(),
-    pragma => <>.to_string(),
-    INTEGER => <>.to_string(),
-    global => <>.to_string(),
-    vertex => <>.to_string(),
-    fragment => <>.to_string(),
-    compute => <>.to_string(),
-    struct => <>.to_string(),
-    WORD => <>.to_string(),
-    QUOTED_STRING => <>.to_string(),
-}
-
 FunctionParameter : FunctionParameter = {
-    <param_type:Word> <name:Word> => FunctionParameter {param_type, name}
+    <param_type:Word> <name:Word> => FunctionParameter {param_type, name},
+    <param_type:Word> <name:Word> ":" Word => FunctionParameter {param_type, name}
+}
+
+FunctionContent : String = {
+    AllUntilSemicolon => {
+        println!("{}", <>);
+        <>.to_string()
+    },
+    <a:FunctionContent> <b:AllUntilSemicolon> => {
+        println!("{}", b);
+        a + b.as_str()
+    },
+    "{" <b:FunctionContent> "}" => {
+        println!("{}", b);
+        "{".to_string() + b.as_str() + "}"
+    }
+}
+
+AllUntilSemicolon : String = {
+    SEMICOLON => <>.to_string(),
+    <a:INTEGER> <b:AllUntilSemicolon> => a.to_string() + b.as_str(),
+    <a:WORD> <b:AllUntilSemicolon> => a.to_string() + b.as_str(),
+    <a:QUOTED_STRING> <b:AllUntilSemicolon> => a.to_string() + b.as_str(),
+    <a:r"."> <b:AllUntilSemicolon> => a.to_string() + b.as_str(),
+    <a:"("> <b:AllUntilSemicolon> => a.to_string() + b.as_str(),
+    <a:")"> <b:AllUntilSemicolon> => a.to_string() + b.as_str(),
+    <a:"."> <b:AllUntilSemicolon> => a.to_string() + b.as_str(),
+    <a:"]"> <b:AllUntilSemicolon> => a.to_string() + b.as_str(),
+    <a:"["> <b:AllUntilSemicolon> => a.to_string() + b.as_str(),
+    <a:","> <b:AllUntilSemicolon> => a.to_string() + b.as_str(),
+    <a:":"> <b:AllUntilSemicolon> => a.to_string() + b.as_str(),
 }

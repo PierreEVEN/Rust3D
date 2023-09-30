@@ -52,7 +52,9 @@ pub enum Value {
 #[derive(Debug)]
 pub enum HlslInstruction {
     Struct(String, ListOf<StructureField>),
+    Define(String),
     Function(String, Function),
+    Property(String, String),
     Pragma(String, Value)
 }
 
@@ -67,7 +69,7 @@ pub struct StructureField {
 #[derive(Debug)]
 pub struct Function {
     pub return_type: String,
-    pub params: Vec<FunctionParameter>,
+    pub params: ListOf<FunctionParameter>,
     pub content: String,
 }
 

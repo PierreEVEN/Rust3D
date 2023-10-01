@@ -142,10 +142,9 @@ pub const WCHAR_MIN: u32 = 0;
 pub const WCHAR_MAX: u32 = 65535;
 pub const WINT_MIN: u32 = 0;
 pub const WINT_MAX: u32 = 65535;
-pub const __GNUC_VA_LIST: u32 = 1;
+pub const __bool_true_false_are_defined: u32 = 1;
 pub const true_: u32 = 1;
 pub const false_: u32 = 0;
-pub const __bool_true_false_are_defined: u32 = 1;
 pub const IMGUI_HAS_DOCK: u32 = 1;
 pub type va_list = *mut ::std::os::raw::c_char;
 extern "C" {

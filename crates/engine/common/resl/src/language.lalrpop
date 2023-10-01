@@ -22,6 +22,8 @@ else { // Other tokens
     r"[a-zA-Z][a-zA-Z0-9_]*" => WORD,
     r#""[^"]*""# => QUOTED_STRING,
     r";" => SEMICOLON,
+    "{" => BRACKET_OPEN,
+    r"(};)|}" => BRACKET_CLOSE,
     r"register\([^)]+\)" => register,
 }
 else {
@@ -37,10 +39,10 @@ pub InstructionList: ListOf<Instruction> = {
 
 Instruction : Instruction = {
     Pragma => <>,
-    global "(" <wl:PassList> ")" "{" <hlsl:HLSL_CODE> "}" => Instruction::Global(wl, hlsl),
-    vertex "(" <wl:PassList> ")" "{" <hlsl:HLSL_CODE> "}" => Instruction::Vertex(wl, hlsl),
-    fragment "(" <wl:PassList> ")" "{" <hlsl:HLSL_CODE> "}" => Instruction::Fragment(wl, hlsl),
-    compute "(" <wl:PassList> ")" "{" <hlsl:HLSL_CODE> "}" => Instruction::Compute(wl, hlsl),
+    global "(" <wl:PassList> ")" BRACKET_OPEN <hlsl:HLSL_CODE> BRACKET_CLOSE => Instruction::Global(wl, hlsl),
+    vertex "(" <wl:PassList> ")" BRACKET_OPEN <hlsl:HLSL_CODE> BRACKET_CLOSE => Instruction::Vertex(wl, hlsl),
+    fragment "(" <wl:PassList> ")" BRACKET_OPEN <hlsl:HLSL_CODE> BRACKET_CLOSE => Instruction::Fragment(wl, hlsl),
+    compute "(" <wl:PassList> ")" BRACKET_OPEN <hlsl:HLSL_CODE> BRACKET_CLOSE => Instruction::Compute(wl, hlsl),
 }
 
 PassList : RenderPassGroup = {
@@ -75,13 +77,11 @@ HLSL_CODE : ListOf<HlslInstruction> = {
 }
 
 HlslInstruction : HlslInstruction = {
-    struct <name:Word> "{" <fields:StructureFieldList> "}" => HlslInstruction::Struct(name, fields),
-    struct <name:Word> "{" <fields:StructureFieldList> "};" => HlslInstruction::Struct(name, fields),
-    struct <name:Word> ":" register "{" <fields:StructureFieldList> "}" => HlslInstruction::Struct(name, fields),
-    struct <name:Word> ":" register "{" <fields:StructureFieldList> "};" => HlslInstruction::Struct(name, fields),
+    struct <name:Word> BRACKET_OPEN <fields:StructureFieldList> BRACKET_CLOSE => HlslInstruction::Struct(name, fields),
+    struct <name:Word> ":" register BRACKET_OPEN <fields:StructureFieldList> BRACKET_CLOSE => HlslInstruction::Struct(name, fields),
     define => HlslInstruction::Define(<>.to_string()),
-    <return_type:Word> <name:Word> "(" <params:FunctionParameterList> ")" "{" <content:FunctionContent> "}" => HlslInstruction::Function(name, Function { return_type, params, content} ),
-    <return_type:Word> <name:Word> "(" <params:FunctionParameterList> ")" ":" Word "{" <content:FunctionContent> "}" => HlslInstruction::Function(name, Function { return_type, params, content} ),
+    <return_type:Word> <name:Word> "(" <params:FunctionParameterList> ")" BRACKET_OPEN <content:FunctionContent> BRACKET_CLOSE => HlslInstruction::Function(name, Function { return_type, params, content} ),
+    <return_type:Word> <name:Word> "(" <params:FunctionParameterList> ")" ":" Word BRACKET_OPEN <content:FunctionContent> BRACKET_CLOSE => HlslInstruction::Function(name, Function { return_type, params, content} ),
     <prop_type:Word> <name:Word> SEMICOLON => HlslInstruction::Property(prop_type, name),
     <prop_type:Word> <name:Word> ":" register SEMICOLON => HlslInstruction::Property(prop_type, name),
 }
@@ -107,32 +107,26 @@ FunctionParameter : FunctionParameter = {
     <param_type:Word> <name:Word> ":" Word => FunctionParameter {param_type, name}
 }
 
-FunctionContent : String = {
-    AllUntilSemicolon => {
-        println!("{}", <>);
-        <>.to_string()
-    },
+FunctionContent : ListOf<HlslCodeBlock> = {
+    AllUntilSemicolon => <>,
     <a:FunctionContent> <b:AllUntilSemicolon> => {
-        println!("{}", b);
-        a + b.as_str()
+        let mut var = b;
+        a.concat(&mut var)
     },
-    "{" <b:FunctionContent> "}" => {
-        println!("{}", b);
-        "{".to_string() + b.as_str() + "}"
-    }
 }
 
-AllUntilSemicolon : String = {
-    SEMICOLON => <>.to_string(),
-    <a:INTEGER> <b:AllUntilSemicolon> => a.to_string() + b.as_str(),
-    <a:WORD> <b:AllUntilSemicolon> => a.to_string() + b.as_str(),
-    <a:QUOTED_STRING> <b:AllUntilSemicolon> => a.to_string() + b.as_str(),
-    <a:r"."> <b:AllUntilSemicolon> => a.to_string() + b.as_str(),
-    <a:"("> <b:AllUntilSemicolon> => a.to_string() + b.as_str(),
-    <a:")"> <b:AllUntilSemicolon> => a.to_string() + b.as_str(),
-    <a:"."> <b:AllUntilSemicolon> => a.to_string() + b.as_str(),
-    <a:"]"> <b:AllUntilSemicolon> => a.to_string() + b.as_str(),
-    <a:"["> <b:AllUntilSemicolon> => a.to_string() + b.as_str(),
-    <a:","> <b:AllUntilSemicolon> => a.to_string() + b.as_str(),
-    <a:":"> <b:AllUntilSemicolon> => a.to_string() + b.as_str(),
+AllUntilSemicolon : ListOf<HlslCodeBlock> = {
+    SEMICOLON => ListOf::<HlslCodeBlock>::new().push(HlslCodeBlock::Semicolon),
+    <a:INTEGER> <b:AllUntilSemicolon> => b.push_front(HlslCodeBlock::Text(a.to_string())),
+    <a:WORD> <b:AllUntilSemicolon> => b.push_front(HlslCodeBlock::Text(a.to_string())),
+    <a:QUOTED_STRING> <b:AllUntilSemicolon> => b.push_front(HlslCodeBlock::Text(a.to_string())),
+    <a:r"[^}{]"> <b:AllUntilSemicolon> => b.push_front(HlslCodeBlock::Token(a.chars().nth(0).unwrap())),
+    <a:"("> <b:AllUntilSemicolon> => b.push_front(HlslCodeBlock::Token(a.chars().nth(0).unwrap())),
+    <a:")"> <b:AllUntilSemicolon> => b.push_front(HlslCodeBlock::Token(a.chars().nth(0).unwrap())),
+    <a:"."> <b:AllUntilSemicolon> => b.push_front(HlslCodeBlock::Token(a.chars().nth(0).unwrap())),
+    <a:"]"> <b:AllUntilSemicolon> => b.push_front(HlslCodeBlock::Token(a.chars().nth(0).unwrap())),
+    <a:"["> <b:AllUntilSemicolon> => b.push_front(HlslCodeBlock::Token(a.chars().nth(0).unwrap())),
+    <a:","> <b:AllUntilSemicolon> => b.push_front(HlslCodeBlock::Token(a.chars().nth(0).unwrap())),
+    <a:":"> <b:AllUntilSemicolon> => b.push_front(HlslCodeBlock::Token(a.chars().nth(0).unwrap())),
+    BRACKET_OPEN <b:FunctionContent> BRACKET_CLOSE => ListOf::<HlslCodeBlock>::new().push(HlslCodeBlock::InnerBlock(b))
 }

@@ -13,6 +13,11 @@ impl<T> ListOf<T> {
         self
     }
 
+    pub fn push_front(mut self, instr: T) -> Self {
+        self.items.insert(0, instr);
+        self
+    }
+
     pub fn concat(mut self, other: &mut Self) -> Self {
         self.items.append(&mut other.items);
         self
@@ -70,11 +75,19 @@ pub struct StructureField {
 pub struct Function {
     pub return_type: String,
     pub params: ListOf<FunctionParameter>,
-    pub content: String,
+    pub content: ListOf<HlslCodeBlock>,
 }
 
 #[derive(Debug)]
 pub struct FunctionParameter {
     pub param_type: String,
     pub name: String,
+}
+
+#[derive(Debug)]
+pub enum HlslCodeBlock {
+    InnerBlock(ListOf<HlslCodeBlock>),
+    Text(String),
+    Token(char),
+    Semicolon,
 }

@@ -1,3 +1,6 @@
+
+#version 1
+#pragma float_v 4.5
 #pragma once twice
 #pragma test two
 #pragma ENABLE_HLSL
@@ -263,3 +266,209 @@ global(a, b) {
       return frag;
     }
 }
+
+#pragma shader_version 		1.0
+#pragma shader_language 	HLSL
+#pragma cull 				BACK
+#pragma front 				COUNTER_CLOCKWISE
+#pragma topology			TRIANGLE
+#pragma polygon 			FILL
+#pragma line_width 			1.0
+#pragma depth_test 			true
+#pragma alpha_mode			OPAQUE
+
+global(gbuffer, g_buffer_resolve)
+{
+	struct toto
+	{
+		float2 machin;
+	};
+
+	struct VsToFsStruct
+	{
+		float4 Pos 			: SV_Position;
+		float3 Normal 	 	: NORMAL0;
+		float2 UV 		 	: TEXCOORD0;
+		float3 Color 	 	: COLOR0;
+		float3 WorldPos 	: POSITION1;
+		float3 Tangent 	 	: TEXCOORD1;
+		toto   machin_test;
+	};
+};
+
+
+
+vertex(test)
+{
+
+	float4 main(uint InstanceIndex : SV_InstanceID) : SV_Position
+	{
+		return float4(1,1,1,1);
+	}
+
+}
+fragment(test)
+{
+	void main(float4 position)
+	{
+	}
+}
+
+
+vertex(gbuffer)
+{
+	struct VSInput
+	{
+		float4 Pos 		: POSITION0;
+		float2 UV 		: TEXCOORD0;
+		float3 Color 	: COLOR0;
+		float3 Normal 	: NORMAL0;
+		float3 Tangent 	: TEXCOORD1;
+	};
+
+	#include "ubo_definition.cg"
+
+	VsToFsStruct main(VSInput input, uint InstanceIndex : SV_InstanceID)
+	{
+		VsToFsStruct output = (VsToFsStruct)0;
+		float4 tmpPos = input.Pos + ubo.instancePos[InstanceIndex];
+
+		output.Pos = mul(ubo.projection, mul(ubo.view, mul(ubo.model, tmpPos)));
+
+		output.UV = input.UV;
+
+		// Vertex position in world space
+		output.WorldPos = mul(ubo.model, tmpPos).xyz;
+
+		// Normal in world space
+		output.Normal = normalize(input.Normal);
+		output.Tangent = normalize(input.Tangent);
+		
+		// Currently just vertex color
+		output.Color = input.Color;
+		return output;
+	}
+
+    VsToFsStruct main2(uint vertex_index : SV_VertexID)
+    {
+        VsToFsStruct output;
+        output.Uv = float2((vertex_index << 1) & 2, vertex_index & 2);
+        output.Pos = float4(output.Uv * 2.0f - 1.0f, 0.0f, 1.0f);
+        output.Uv *= float2(1, -1);
+        return output;
+    }
+
+};
+
+#pragma shader_language HLSL
+#pragma FRONT_FACE 		CLOCKWISE
+#pragma CULL 			NONE
+#pragma ALPHA_MODE		TRANSLUCENT
+
+global(imgui_render_pass)
+{
+	struct VsToFs 
+	{
+		float4 Pos 		: SV_Position;
+		float4 Color 	: COLOR;
+		float2 UV 	 	: TEXCOORD;
+	};
+}
+
+vertex(imgui_render_pass)
+{
+	struct VSInput
+	{
+		float2 aPos 	: POSITION;
+		float2 aUV 		: TEXCOORD;
+		float4 aColor 	: COLOR;
+	};
+	
+	struct PushConsts 
+	{
+		float2 uScale;
+		float2 uTranslate;
+	};
+	ConstantBuffer<PushConsts> pc;
+	
+	VsToFs main(VSInput input)
+	{
+		VsToFs Out;
+		Out.Color	= input.aColor;
+		Out.UV 		= input.aUV;
+		Out.Pos 	= float4(input.aPos * pc.uScale + pc.uTranslate, 0, 1);
+		return Out;
+	}
+}
+
+fragment(imgui_render_pass)
+{
+	Texture2D	 sTexture;
+	SamplerState sSampler;
+
+	float4 main(VsToFs input) : SV_TARGET
+	{
+		return input.Color * sTexture.Sample(sSampler, input.UV);
+	}
+}
+
+#pragma shader_language HLSL
+#pragma CULL            NONE
+
+global(surface_pass, deferred_combine)
+{
+    struct VsToFsStruct
+    {
+        float4 Pos : SV_Position;
+        float2 Uv : TEXCOORD;
+    };
+}
+
+vertex(surface_pass, deferred_combine) 
+{
+    VsToFsStruct main(uint vertex_index : SV_VertexID)
+    {
+        VsToFsStruct output;
+        float2 uv = float2((vertex_index << 1) & 2, vertex_index & 2);
+        output.Pos = float4(uv * 2.0f - 1.0f, 0.0f, 1.0f);
+        output.Uv = uv * float2(1, -1);
+        return output;
+    }
+}
+
+fragment(surface_pass, deferred_combine)
+{
+	struct PushConsts 
+	{
+		float time;
+	};
+	ConstantBuffer<PushConsts> pc;
+}
+
+fragment(surface_pass)
+{
+    SamplerState global_sampler;
+    Texture2D ui_result;
+    Texture2D scene_result;
+    
+    float4 main(VsToFsStruct input) : SV_Target
+    {
+        float4 ui = ui_result.Sample(global_sampler, input.Uv);
+        float4 scene = scene_result.Sample(global_sampler, input.Uv);
+        return lerp(ui, scene, ui.a) + float4(0, 0, 0, pc.time);
+    }
+}
+
+fragment(deferred_combine)
+{
+    SamplerState global_sampler;
+    Texture2D bg_texture;
+    
+    float4 main(VsToFsStruct input) : SV_Target
+    {
+        return bg_texture.Sample(global_sampler, input.Uv) + float4(0, 0, 0, pc.time);
+    }
+}
+
+
+// fragment(gbuffer) => "demo_fragment.shb"

@@ -1,5 +1,6 @@
 use std::str::FromStr;
 use crate::ast::{*};
+use crate::list_of::{*};
 
 grammar;
 
@@ -9,8 +10,10 @@ match { // Skipped items
     r"/\*([^\*]*\*+[^\*/])*([^\*]*\*+|[^\*])*\*/" => { }, // `/* comment */`
 }
 else { // Reserved names
+    "#version" => version,
     "#pragma" => pragma,
     r"#define[^\n]+" => define,
+    r"#include[^\n]+" => include,
     "global" => global,
     "vertex" => vertex,
     "fragment" => fragment,
@@ -18,7 +21,12 @@ else { // Reserved names
     r"(struct|cbuffer)" => struct,
 }
 else { // Other tokens
+    r"[0-9]*\.[0-9]+f?" => FLOAT,
+}
+else {
     r"[0-9]+" => INTEGER,
+}
+else {
     r"[a-zA-Z][a-zA-Z0-9_]*" => WORD,
     r#""[^"]*""# => QUOTED_STRING,
     r";" => SEMICOLON,
@@ -38,11 +46,12 @@ pub InstructionList: ListOf<Instruction> = {
 }
 
 Instruction : Instruction = {
+    <t:@L> version <i:INTEGER> => Instruction::Version(t, u64::from_str(i).unwrap()),
     Pragma => <>,
-    global "(" <wl:PassList> ")" BRACKET_OPEN <hlsl:HLSL_CODE> BRACKET_CLOSE => Instruction::Global(wl, hlsl),
-    vertex "(" <wl:PassList> ")" BRACKET_OPEN <hlsl:HLSL_CODE> BRACKET_CLOSE => Instruction::Vertex(wl, hlsl),
-    fragment "(" <wl:PassList> ")" BRACKET_OPEN <hlsl:HLSL_CODE> BRACKET_CLOSE => Instruction::Fragment(wl, hlsl),
-    compute "(" <wl:PassList> ")" BRACKET_OPEN <hlsl:HLSL_CODE> BRACKET_CLOSE => Instruction::Compute(wl, hlsl),
+    <t:@L> global "(" <wl:PassList> ")" BRACKET_OPEN <hlsl:HLSL_CODE> BRACKET_CLOSE => Instruction::Global(t, wl, hlsl),
+    <t:@L> vertex "(" <wl:PassList> ")" BRACKET_OPEN <hlsl:HLSL_CODE> BRACKET_CLOSE => Instruction::Vertex(t, wl, hlsl),
+    <t:@L> fragment "(" <wl:PassList> ")" BRACKET_OPEN <hlsl:HLSL_CODE> BRACKET_CLOSE => Instruction::Fragment(t, wl, hlsl),
+    <t:@L> compute "(" <wl:PassList> ")" BRACKET_OPEN <hlsl:HLSL_CODE> BRACKET_CLOSE => Instruction::Compute(t, wl, hlsl),
 }
 
 PassList : RenderPassGroup = {
@@ -51,8 +60,8 @@ PassList : RenderPassGroup = {
 }
 
 Pragma: Instruction = {
-    pragma <name:Word> <value:Value> => Instruction::Pragma(name, value),
-    pragma <name:Word> => Instruction::Pragma(name, Value::None)
+    <t:@L> pragma <name:Word> <value:Value> => Instruction::Pragma(t, name, value),
+    <t:@L> pragma <name:Word> => Instruction::Pragma(t, name, Value::None)
 }
 
 Word : String = {
@@ -61,6 +70,7 @@ Word : String = {
 
 Value : Value = {
     INTEGER => Value::Integer(i64::from_str(<>).unwrap()),
+    FLOAT => Value::Float(<>.to_string()),
     String => Value::String(<>),
 }
 
@@ -77,13 +87,38 @@ HLSL_CODE : ListOf<HlslInstruction> = {
 }
 
 HlslInstruction : HlslInstruction = {
-    struct <name:Word> BRACKET_OPEN <fields:StructureFieldList> BRACKET_CLOSE => HlslInstruction::Struct(name, fields),
-    struct <name:Word> ":" register BRACKET_OPEN <fields:StructureFieldList> BRACKET_CLOSE => HlslInstruction::Struct(name, fields),
-    define => HlslInstruction::Define(<>.to_string()),
-    <return_type:Word> <name:Word> "(" <params:FunctionParameterList> ")" BRACKET_OPEN <content:FunctionContent> BRACKET_CLOSE => HlslInstruction::Function(name, Function { return_type, params, content} ),
-    <return_type:Word> <name:Word> "(" <params:FunctionParameterList> ")" ":" Word BRACKET_OPEN <content:FunctionContent> BRACKET_CLOSE => HlslInstruction::Function(name, Function { return_type, params, content} ),
-    <prop_type:Word> <name:Word> SEMICOLON => HlslInstruction::Property(prop_type, name),
-    <prop_type:Word> <name:Word> ":" register SEMICOLON => HlslInstruction::Property(prop_type, name),
+    <t:@L> struct <name:Word> BRACKET_OPEN <fields:StructureFieldList> BRACKET_CLOSE => HlslInstruction::Struct(t, name, None, fields),
+    <t:@L> struct <name:Word> ":" <register:register> BRACKET_OPEN <fields:StructureFieldList> BRACKET_CLOSE => HlslInstruction::Struct(t, name, Some(Register::new(register)), fields),
+    <t:@L> <def:define> => {
+        let mut name = String::new();
+        let mut value = String::new();
+        let mut started_name = false;
+        let mut finished_name = false;
+        let mut was_space = false;
+        for i in 7..def.len() {
+            let char = def.chars().nth(i).unwrap();
+            if (char == ' ' || char == '\t') && !finished_name {
+                if was_space { continue; }
+                if !started_name { started_name = true; } else { finished_name = true }
+                was_space = true;
+            } else {
+                was_space = false;
+                if !finished_name { name.push(char); } else { value.push(char); }
+            }
+        }
+        HlslInstruction::Define(t, name, if value.is_empty() { None } else { Some(value) })
+    },
+    <t:@L> include => HlslInstruction::Include(t, <>.to_string()),
+    <t:@L> <return_type:Word> <name:Word> "(" <params:FunctionParameterList> ")" BRACKET_OPEN <content:FunctionContent> BRACKET_CLOSE => HlslInstruction::Function(t, name, Function { return_type, attribute: None, params, content} ),
+    <t:@L> <return_type:Word> <name:Word> "(" <params:FunctionParameterList> ")" ":" <attribute:Word> BRACKET_OPEN <content:FunctionContent> BRACKET_CLOSE => HlslInstruction::Function(t, name, Function { return_type, attribute: Some(attribute), params, content} ),
+    <t:@L> <return_type:Word> <name:Word> "(" <params:FunctionParameterList> ")" BRACKET_OPEN BRACKET_CLOSE => HlslInstruction::Function(t, name, Function { return_type, attribute: None, params, content: ListOf::<HlslCodeBlock>::new()} ),
+    <t:@L> <return_type:Word> <name:Word> "(" <params:FunctionParameterList> ")" ":" <attribute:Word> BRACKET_OPEN BRACKET_CLOSE => HlslInstruction::Function(t, name, Function { return_type, attribute: Some(attribute), params, content: ListOf::<HlslCodeBlock>::new()} ),
+    
+    <t:@L> <prop_type:Word> <name:Word> SEMICOLON => HlslInstruction::Property(t, prop_type, name, None),
+    <t:@L> <prop_type:Word> <name:Word> ":" <register:register> SEMICOLON => HlslInstruction::Property(t, prop_type, name, Some(Register::new(register))),
+    
+    <t:@L> <prop_type:Word> "<" <inner_type:Word> ">" <name:Word> SEMICOLON => HlslInstruction::Property(t, format!("{}<{}>", prop_type, inner_type), name, None),
+    <t:@L> <prop_type:Word>  "<" <inner_type:Word> ">" <name:Word> ":" <register:register> SEMICOLON => HlslInstruction::Property(t, format!("{}<{}>", prop_type, inner_type), name, Some(Register::new(register))),
 }
 
 StructureFieldList : ListOf<StructureField> = {
@@ -116,17 +151,20 @@ FunctionContent : ListOf<HlslCodeBlock> = {
 }
 
 AllUntilSemicolon : ListOf<HlslCodeBlock> = {
-    SEMICOLON => ListOf::<HlslCodeBlock>::new().push(HlslCodeBlock::Semicolon),
-    <a:INTEGER> <b:AllUntilSemicolon> => b.push_front(HlslCodeBlock::Text(a.to_string())),
-    <a:WORD> <b:AllUntilSemicolon> => b.push_front(HlslCodeBlock::Text(a.to_string())),
-    <a:QUOTED_STRING> <b:AllUntilSemicolon> => b.push_front(HlslCodeBlock::Text(a.to_string())),
-    <a:r"[^}{]"> <b:AllUntilSemicolon> => b.push_front(HlslCodeBlock::Token(a.chars().nth(0).unwrap())),
-    <a:"("> <b:AllUntilSemicolon> => b.push_front(HlslCodeBlock::Token(a.chars().nth(0).unwrap())),
-    <a:")"> <b:AllUntilSemicolon> => b.push_front(HlslCodeBlock::Token(a.chars().nth(0).unwrap())),
-    <a:"."> <b:AllUntilSemicolon> => b.push_front(HlslCodeBlock::Token(a.chars().nth(0).unwrap())),
-    <a:"]"> <b:AllUntilSemicolon> => b.push_front(HlslCodeBlock::Token(a.chars().nth(0).unwrap())),
-    <a:"["> <b:AllUntilSemicolon> => b.push_front(HlslCodeBlock::Token(a.chars().nth(0).unwrap())),
-    <a:","> <b:AllUntilSemicolon> => b.push_front(HlslCodeBlock::Token(a.chars().nth(0).unwrap())),
-    <a:":"> <b:AllUntilSemicolon> => b.push_front(HlslCodeBlock::Token(a.chars().nth(0).unwrap())),
-    BRACKET_OPEN <b:FunctionContent> BRACKET_CLOSE => ListOf::<HlslCodeBlock>::new().push(HlslCodeBlock::InnerBlock(b))
+    <t:@L> SEMICOLON => ListOf::<HlslCodeBlock>::new().push(HlslCodeBlock::Semicolon(t)),
+    <t:@L> <a:INTEGER> <b:AllUntilSemicolon> => b.push_front(HlslCodeBlock::Text(t, a.to_string())),
+    <t:@L> <a:FLOAT> <b:AllUntilSemicolon> => b.push_front(HlslCodeBlock::Text(t, a.to_string())),
+    <t:@L> <a:WORD> <b:AllUntilSemicolon> => b.push_front(HlslCodeBlock::Text(t, a.to_string())),
+    <t:@L> <a:QUOTED_STRING> <b:AllUntilSemicolon> => b.push_front(HlslCodeBlock::Text(t, a.to_string())),
+    <t:@L> <a:r"[^}{]"> <b:AllUntilSemicolon> => b.push_front(HlslCodeBlock::Token(t, a.chars().nth(0).unwrap())),
+    <t:@L> <a:"("> <b:AllUntilSemicolon> => b.push_front(HlslCodeBlock::Token(t, a.chars().nth(0).unwrap())),
+    <t:@L> <a:")"> <b:AllUntilSemicolon> => b.push_front(HlslCodeBlock::Token(t, a.chars().nth(0).unwrap())),
+    <t:@L> <a:"."> <b:AllUntilSemicolon> => b.push_front(HlslCodeBlock::Token(t, a.chars().nth(0).unwrap())),
+    <t:@L> <a:"]"> <b:AllUntilSemicolon> => b.push_front(HlslCodeBlock::Token(t, a.chars().nth(0).unwrap())),
+    <t:@L> <a:"["> <b:AllUntilSemicolon> => b.push_front(HlslCodeBlock::Token(t, a.chars().nth(0).unwrap())),
+    <t:@L> <a:","> <b:AllUntilSemicolon> => b.push_front(HlslCodeBlock::Token(t, a.chars().nth(0).unwrap())),
+    <t:@L> <a:":"> <b:AllUntilSemicolon> => b.push_front(HlslCodeBlock::Token(t, a.chars().nth(0).unwrap())),
+    <t:@L> <a:">"> <b:AllUntilSemicolon> => b.push_front(HlslCodeBlock::Token(t, a.chars().nth(0).unwrap())),
+    <t:@L> <a:"<"> <b:AllUntilSemicolon> => b.push_front(HlslCodeBlock::Token(t, a.chars().nth(0).unwrap())),
+    <t:@L> BRACKET_OPEN <b:FunctionContent> BRACKET_CLOSE => ListOf::<HlslCodeBlock>::new().push(HlslCodeBlock::InnerBlock(t, b))
 }

@@ -1,28 +1,8 @@
 use std::collections::HashSet;
-
-#[derive(Debug)]
-pub struct ListOf<T> {
-    items: Vec<T>,
-}
-
-impl<T> ListOf<T> {
-    pub fn new() -> Self { Self { items: vec![] } }
-
-    pub fn push(mut self, instr: T) -> Self {
-        self.items.push(instr);
-        self
-    }
-
-    pub fn push_front(mut self, instr: T) -> Self {
-        self.items.insert(0, instr);
-        self
-    }
-
-    pub fn concat(mut self, other: &mut Self) -> Self {
-        self.items.append(&mut other.items);
-        self
-    }
-}
+use std::fmt::{Display, Formatter};
+use display_json::DebugAsJsonPretty;
+use serde::Serialize;
+use crate::list_of::ListOf;
 
 #[derive(Debug)]
 pub struct RenderPassGroup {
@@ -35,32 +15,59 @@ impl RenderPassGroup {
         self.render_passes.insert(pass);
         self
     }
+    pub fn iter(&self) -> impl Iterator<Item=&String> {
+        return self.render_passes.iter();
+    }
 }
 
 #[derive(Debug)]
 pub enum Instruction {
-    Pragma(String, Value),
-    Global(RenderPassGroup, ListOf<HlslInstruction>),
-    Vertex(RenderPassGroup, ListOf<HlslInstruction>),
-    Fragment(RenderPassGroup, ListOf<HlslInstruction>),
-    Compute(RenderPassGroup, ListOf<HlslInstruction>),
+    Version(usize, u64),
+    Pragma(usize, String, Value),
+    Global(usize, RenderPassGroup, ListOf<HlslInstruction>),
+    Vertex(usize, RenderPassGroup, ListOf<HlslInstruction>),
+    Fragment(usize, RenderPassGroup, ListOf<HlslInstruction>),
+    Compute(usize, RenderPassGroup, ListOf<HlslInstruction>),
 }
 
 #[derive(Debug)]
 pub enum Value {
     None,
     Integer(i64),
-    Float(f64),
+    Float(String),
     String(String),
+}
+
+impl Display for Value {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Value::None => { f.write_str("") }
+            Value::Integer(i) => { f.write_str(i.to_string().as_str()) }
+            Value::Float(d) => { f.write_str(d.to_string().as_str()) }
+            Value::String(s) => { f.write_str(s.to_string().as_str()) }
+        }
+    }
+}
+
+#[derive(Clone, Serialize, DebugAsJsonPretty)]
+pub struct Register {
+    pub content: String,
+}
+
+impl Register {
+    pub fn new(content: &str) -> Self {
+        Self { content: content.to_string() }
+    }
 }
 
 #[derive(Debug)]
 pub enum HlslInstruction {
-    Struct(String, ListOf<StructureField>),
-    Define(String),
-    Function(String, Function),
-    Property(String, String),
-    Pragma(String, Value)
+    Struct(usize, String, Option<Register>, ListOf<StructureField>),
+    Define(usize, String, Option<String>),
+    Include(usize, String),
+    Function(usize, String, Function),
+    Property(usize, String, String, Option<Register>),
+    Pragma(usize, String, Value),
 }
 
 #[derive(Debug)]
@@ -68,12 +75,13 @@ pub struct StructureField {
     pub struct_type: String,
     pub name: String,
     pub value: Option<String>,
-    pub attribute: Option<String>
+    pub attribute: Option<String>,
 }
 
 #[derive(Debug)]
 pub struct Function {
     pub return_type: String,
+    pub attribute: Option<String>,
     pub params: ListOf<FunctionParameter>,
     pub content: ListOf<HlslCodeBlock>,
 }
@@ -86,8 +94,8 @@ pub struct FunctionParameter {
 
 #[derive(Debug)]
 pub enum HlslCodeBlock {
-    InnerBlock(ListOf<HlslCodeBlock>),
-    Text(String),
-    Token(char),
-    Semicolon,
+    InnerBlock(usize, ListOf<HlslCodeBlock>),
+    Text(usize, String),
+    Token(usize, char),
+    Semicolon(usize),
 }

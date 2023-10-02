@@ -1,4 +1,4 @@
-use windows::Win32::Foundation::{GetLastError, NO_ERROR};
+use windows::Win32::Foundation::{GetLastError};
 
 pub fn utf8_to_utf16(str: &str) -> Vec<u16> {
     str.encode_utf16().chain(Some(0)).collect()
@@ -14,12 +14,13 @@ pub fn hiword(word: isize) -> i32 {
 
 pub fn check_win32_error() -> Result<(), String> {
     unsafe {
-        let last_error = GetLastError();
-        if last_error != NO_ERROR {
-            return Err(format!("Win32 API [{}]", last_error.0));
+        match GetLastError() {
+            Ok(_) => {Ok(())}
+            Err(error) => {
+                Err(format!("Win32 API [{}]", error))
+            }
         }
     }
-    Ok(())
 }
 
 #[macro_export]

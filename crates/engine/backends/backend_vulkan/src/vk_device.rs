@@ -177,6 +177,7 @@ impl Default for VkDevice {
                 ..Default::default()
             },
             buffer_device_address: false,
+            allocation_sizes: Default::default(),
         })
         .expect("failed to create GPU Vulkan memory allocator");
 

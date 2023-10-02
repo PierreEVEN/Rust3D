@@ -61,7 +61,10 @@ impl WindowWin32 {
                 right: geometry.width(),
                 bottom: geometry.height(),
             };
-            AdjustWindowRectEx(&mut initial_rect, style, false, ex_style);
+            match AdjustWindowRectEx(&mut initial_rect, style, false, ex_style) {
+                Ok(_) => {}
+                Err(err) => {logger::fatal!("Failed to adjust window rect : {}", err)}
+            };
             
             let hwnd = CreateWindowExW(
                 ex_style,
@@ -120,8 +123,10 @@ impl Window for WindowWin32 {
 
     fn set_title(&self, _title: &str) {
         unsafe {
-            if SetWindowTextW(self.hwnd, PCWSTR(utf8_to_utf16(_title).as_ptr())).as_bool() {
-                (*self.title.write().unwrap()) = _title.to_string();
+            match SetWindowTextW(self.hwnd, PCWSTR(utf8_to_utf16(_title).as_ptr())) {
+                Ok(_) => {
+                    (*self.title.write().unwrap()) = _title.to_string();}
+                Err(err) => {logger::error!("Failed to set window title : {}", err)}
             }
         }
     }
@@ -145,7 +150,10 @@ impl Window for WindowWin32 {
 
     fn set_background_alpha(&self, alpha: u8) {
         unsafe {
-            SetLayeredWindowAttributes(self.hwnd, COLORREF::default(), alpha, LWA_ALPHA);
+            match SetLayeredWindowAttributes(self.hwnd, COLORREF::default(), alpha, LWA_ALPHA) {
+                Ok(_) => {}
+                Err(err) => {logger::fatal!("Failed to set layered window attributes : {}", err)}
+            };
         }
         (*self.background_alpha.write().unwrap()) = alpha;
     }
@@ -183,12 +191,12 @@ impl Window for WindowWin32 {
                 return WindowStatus::Maximized
             }
         }
-        return WindowStatus::Default
+        WindowStatus::Default
     }
 }
 
 impl Drop for WindowWin32 {
     fn drop(&mut self) {
-        info!("Destroy window '{}'", *self.title.read().unwrap());
+        info!("Destroyed window '{}'", *self.title.read().unwrap());
     }
 }

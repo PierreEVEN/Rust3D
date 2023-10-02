@@ -124,6 +124,10 @@ impl GfxImageBuilder<Arc<BufferContainer>> for RbBuffer {
                 AllocationError::Internal(_string) => {
                     logger::fatal!("failed to create buffer : {_string}")
                 }
+                AllocationError::BarrierLayoutNeedsDevice10 => {                 
+                    logger::fatal!(
+                        "failed to create buffer : barrier layout needs device 10"
+                    )}
             },
         };
 

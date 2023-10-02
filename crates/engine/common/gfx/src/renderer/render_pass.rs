@@ -80,7 +80,7 @@ impl RenderPass {
 
             match camera.world() {
                 None => {}
-                Some(mut ecs) => {
+                Some(ecs) => {
                     match ecs.upgrade().unwrap().write() {
                         Ok(mut ecs) => {
                             self.source_node.draw_content(ecs.deref_mut());

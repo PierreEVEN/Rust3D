@@ -243,6 +243,10 @@ pub struct Camera {}
 impl Drop for Engine {
     fn drop(&mut self) {
         self.app.stopped();
+        
+        // Unload worlds and views
+        self.views.write().unwrap().clear();
+        self.worlds.write().unwrap().clear();
 
         // Started de-initialization
         self.initialized.store(false, Ordering::SeqCst);

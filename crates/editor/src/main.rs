@@ -20,10 +20,10 @@ pub struct TestApp {
 
 #[derive(Default)]
 struct MeshComponent {
-    mesh: Option<Arc<Mesh>>,
-    material: Option<Arc<dyn ShaderInstance>>,
-    val: u32,
-    name: String
+    _mesh: Option<Arc<Mesh>>,
+    _material: Option<Arc<dyn ShaderInstance>>,
+    _val: u32,
+    _name: String,
 }
 
 impl App for TestApp {
@@ -33,10 +33,12 @@ impl App for TestApp {
 
         self.world = Engine::get().new_world();
         self.main_camera = self.world.add_object::<Camera>(Camera {});
-        self.world.add_object::<MeshComponent>(MeshComponent { mesh: None, material: None, val: 5, name: "coucou je suis un mesh".to_string() });
+        self.world.add_object::<MeshComponent>(MeshComponent { _mesh: None, _material: None, _val: 5, _name: "coucou je suis un mesh".to_string() });
+        
         
         // Create main window
         let main_window = Engine::get().platform().create_window(WindowCreateInfos::default_named("Rust3D Editor")).unwrap();
+        
         main_window.upgrade().unwrap().show();
         main_window.upgrade().unwrap().bind_event(
             PlatformEvent::WindowClosed,
@@ -54,14 +56,14 @@ impl App for TestApp {
             None => {}
             Some(g_buffer) => {
                 g_buffer.add_render_function(|ecs| {
-                    Query::<&mut MeshComponent>::new(ecs).for_each(|a| {
-                        logger::warning!("render {} : {}", a.name, a.val)
+                    Query::<&mut MeshComponent>::new(ecs).for_each(|_| {
                     });
                 })
             }
         }
 
         Engine::get().add_renderer(renderer);        
+        
     }
 
     fn new_frame(&mut self, _delta_seconds: f64) {}

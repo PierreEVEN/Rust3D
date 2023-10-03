@@ -59,7 +59,7 @@ impl Renderer {
             .name("g_buffers")
             .add_resource(PassResource {
                 name: "color".to_string(),
-                clear_value: BackgroundColor::Color(Vec4F32::new(0.0, 0.0, 0.0, 1.0)),
+                clear_value: BackgroundColor::Color(Vec4F32::new(1.0, 0.0, 0.0, 1.0)),
                 format: PixelFormat::R8G8B8A8_UNORM,
             })
             .add_resource(PassResource {

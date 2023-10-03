@@ -13,6 +13,7 @@ shader_compiler = { path = "../engine/shader_compiler" }
 maths = { path = "../engine/maths" }
 macros = { path = "../engine/macros" }
 gfx = { path = "../engine/common/gfx" }
+resl = { path = "../engine/common/resl" }
 plateform = { path = "../engine/common/plateform" }
 imgui = { path = "../engine/imgui" }
 backend_launcher = { path = "../engine/backends/backend_launcher" }

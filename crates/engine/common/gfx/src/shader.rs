@@ -6,6 +6,7 @@ use std::fmt;
 use std::fmt::{Debug, Display, Formatter};
 use std::hash::{Hash, Hasher};
 use std::sync::Arc;
+use crate::renderer::render_pass::RenderPassInstance;
 
 use crate::types::PixelFormat;
 

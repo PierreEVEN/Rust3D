@@ -382,6 +382,7 @@ dependencies = [
  "macros",
  "maths",
  "plateform",
+ "resl",
  "shader_compiler",
  "third_party_io",
 ]

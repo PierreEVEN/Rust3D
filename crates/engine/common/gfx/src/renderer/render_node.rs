@@ -4,6 +4,7 @@ use ecs::ecs::Ecs;
 
 use logger::fatal;
 use maths::vec2::Vec2u32;
+use crate::command_buffer::GfxCommandBuffer;
 
 use crate::renderer::renderer_resource::PassResource;
 
@@ -24,7 +25,7 @@ pub struct RenderNode {
     resources: Vec<PassResource>,
     compute_res: Arc<RwLock<dyn FnMut(Vec2u32) -> Vec2u32>>,
     present_pass: bool,
-    render_functions: RwLock<Vec<Box<dyn FnMut(&mut Ecs)>>>,
+    render_functions: RwLock<Vec<Box<dyn FnMut(&mut Ecs, &dyn GfxCommandBuffer)>>>,
 }
 
 impl Default for RenderNode {
@@ -107,17 +108,14 @@ impl RenderNode {
         &self.inputs
     }
     
-    pub fn add_render_function<T: FnMut(&mut Ecs) + 'static>(&self, render_fn: T) {
+    pub fn add_render_function<T: FnMut(&mut Ecs, &dyn GfxCommandBuffer) + 'static>(&self, render_fn: T) {
         self.render_functions.write().unwrap().push(Box::new(render_fn))
     }
-    pub fn draw_content(&self, ecs: &mut Ecs) {
-        match self.render_functions.write() {
-            Ok(mut rf) => {
-                for render_func in &mut *rf {
-                    render_func.as_mut()(ecs);
-                }}
-            Err(_) => {}
-        }
+    pub fn draw_content(&self, ecs: &mut Ecs, command_buffer: &dyn GfxCommandBuffer) {
+        if let Ok(mut rf) = self.render_functions.write() {
+        for render_func in &mut *rf {
+            render_func.as_mut()(ecs, command_buffer);
+        }}
     }
 }
 

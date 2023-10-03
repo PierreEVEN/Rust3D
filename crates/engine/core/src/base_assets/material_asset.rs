@@ -150,7 +150,9 @@ impl MaterialAsset {
                     }
                     Some(pass) => pass,
                 };
-
+                return None;
+                
+                /*
                 let program = crate::engine::Engine::get().gfx().create_shader_program(
                     self.meta_data.get_name(),
                     &render_pass,
@@ -164,6 +166,8 @@ impl MaterialAsset {
                 );
 
                 return Some(program);
+                
+                 */
             }
         }
         None

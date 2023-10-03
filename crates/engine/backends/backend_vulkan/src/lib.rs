@@ -191,16 +191,18 @@ impl GfxInterface for GfxVulkan {
     fn create_shader_program(
         &self,
         name: String,
-        _render_pass: &Arc<dyn RenderPassInstance>,
+        render_pass: &RenderPass,
         create_infos: &ShaderProgramInfos,
     ) -> Arc<dyn ShaderProgram> {
-        VkShaderProgram::new(name, create_infos)
+        VkShaderProgram::new(name, render_pass, create_infos)
     }
 
     fn instantiate_render_pass(
         &self,
         render_pass: &RenderPass
-    ) -> Box<dyn RenderPassInstance> { Box::new(self.render_pass_pool.instantiate(render_pass)) }
+    ) -> Box<dyn RenderPassInstance> {
+        Box::new(self.render_pass_pool.instantiate(render_pass))
+    }
 
     fn create_image(&self, name: String, create_infos: ImageCreateInfos) -> Arc<dyn GfxImage> {
         VkImage::new_ptr(name, create_infos)

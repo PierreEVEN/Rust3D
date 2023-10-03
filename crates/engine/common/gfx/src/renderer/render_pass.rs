@@ -1,4 +1,5 @@
-﻿use std::mem::MaybeUninit;
+﻿use std::collections::HashMap;
+use std::mem::MaybeUninit;
 use std::ops::DerefMut;
 use std::sync::{Arc, RwLock};
 
@@ -9,6 +10,7 @@ use crate::command_buffer::GfxCommandBuffer;
 use crate::Gfx;
 use crate::image::{GfxImage, ImageType};
 use crate::renderer::render_node::RenderNode;
+use crate::shader::PassID;
 use crate::surface::Frame;
 use crate::types::GfxCast;
 
@@ -35,6 +37,8 @@ pub struct RenderPass {
     source_node: Arc<RenderNode>,
     command_buffer: Arc<dyn GfxCommandBuffer>,
 }
+
+static mut RENDER_PASSES_TODO: *mut HashMap<PassID, &RenderPass> = std::ptr::null_mut();
 
 impl RenderPass {
     pub fn new(resources: Vec<Arc<dyn GfxImage>>, render_node: &Arc<RenderNode>, initial_res: Vec2u32) -> Self {
@@ -81,15 +85,11 @@ impl RenderPass {
             match camera.world() {
                 None => {}
                 Some(ecs) => {
-                    match ecs.upgrade().unwrap().write() {
-                        Ok(mut ecs) => {
-                            self.source_node.draw_content(ecs.deref_mut());
-                        }
-                        Err(_) => {}
+                    if let Ok(mut ecs) = ecs.upgrade().unwrap().write() {
+                        self.source_node.draw_content(ecs.deref_mut(), self.command_buffer.as_ref());
                     }
                 }
             }
-
 
             self.instance.assume_init_ref().submit(frame, self, &*self.command_buffer);
         }
@@ -130,5 +130,11 @@ impl RenderPass {
         }
 
         format!("\t- name: {}\n\t- images: {}\n\t- initial res: {}x{}\n\t- dependencies:{}\n", self.source_node.get_name(), images, self.res.x, self.res.y, dependencies)
+    }
+}
+
+impl Drop for RenderPass {
+    fn drop(&mut self) {
+        todo!()
     }
 }

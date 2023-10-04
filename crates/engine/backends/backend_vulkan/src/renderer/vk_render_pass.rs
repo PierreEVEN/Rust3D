@@ -1,15 +1,20 @@
+use std::sync::Arc;
 use ash::vk;
+use gfx::image::GfxImage;
 use gfx::renderer::render_pass::RenderPass;
+use gfx::shader::PassID;
 use gfx::types::{BackgroundColor, PixelFormat};
 use crate::vk_types::VkPixelFormat;
 use crate::{vk_check, GfxVulkan};
 
 pub struct VkRenderPass {
     pub render_pass: vk::RenderPass,
+    pub images: Vec<Arc<dyn GfxImage>>,
+    pub render_pass_id: PassID,
 }
 
 impl VkRenderPass {
-    pub fn new(render_pass: &RenderPass) -> Self {
+    pub fn new(render_pass: &RenderPass, render_pass_id: PassID) -> Self {
         let mut attachment_descriptions = Vec::<vk::AttachmentDescription>::new();
         let mut color_attachment_references = Vec::<vk::AttachmentReference>::new();
         let mut depth_attachment_reference = vk::AttachmentReference::default();
@@ -54,7 +59,7 @@ impl VkRenderPass {
             clear_values.push(image.background_color());
         }
 
-        let mut sub_pass = ash::vk::SubpassDescription::builder()
+        let mut sub_pass = vk::SubpassDescription::builder()
             .pipeline_bind_point(vk::PipelineBindPoint::GRAPHICS)
             .color_attachments(color_attachment_references.as_slice())
             .build();
@@ -108,6 +113,8 @@ impl VkRenderPass {
 
         Self {
             render_pass: vk_render_pass,
+            images: render_pass.images().clone(),
+            render_pass_id
         }
     }
 }

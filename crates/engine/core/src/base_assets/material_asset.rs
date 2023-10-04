@@ -128,7 +128,7 @@ impl MaterialAsset {
                         return None;
                     }
                 };
-                let ci_shader = ShaderProgramInfos {
+                let _ci_shader = ShaderProgramInfos {
                     vertex_stage: ShaderProgramStage {
                         spirv: vertex_sprv.binary,
                         descriptor_bindings: vertex_sprv.bindings,
@@ -144,6 +144,7 @@ impl MaterialAsset {
                     shader_properties: parser.properties.clone(),
                 };
 
+                /*
                 let render_pass = match crate::engine::Engine::get().gfx().find_render_pass(pass) {
                     None => {
                         logger::fatal!("trying to create shader program for render pass [{pass}], but this render pass is not available or registered")
@@ -152,7 +153,6 @@ impl MaterialAsset {
                 };
                 return None;
                 
-                /*
                 let program = crate::engine::Engine::get().gfx().create_shader_program(
                     self.meta_data.get_name(),
                     &render_pass,

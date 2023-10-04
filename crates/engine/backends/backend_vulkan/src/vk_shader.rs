@@ -5,14 +5,13 @@ use std::os::raw::c_char;
 use std::sync::Arc;
 
 use ash::vk;
-use gfx::renderer::render_pass::{RenderPass, RenderPassInstance};
+use gfx::Gfx;
 
-use gfx::shader::{AlphaMode, Culling, DescriptorBinding, FrontFace, PolygonMode, ShaderProgram, ShaderProgramInfos, Topology};
+use gfx::shader::{AlphaMode, Culling, DescriptorBinding, FrontFace, PassID, PolygonMode, ShaderProgram, ShaderProgramInfos, Topology};
 use gfx::shader_instance::{ShaderInstance, ShaderInstanceCreateInfos};
 
 //use crate::vk_types::VkPixelFormat;
 use crate::{GfxVulkan, vk_check, VkShaderInstance};
-use crate::renderer::vk_render_pass_instance::VkRenderPassInstance;
 use crate::vk_dst_set_layout::VkDescriptorSetLayout;
 use crate::vk_types::VkPixelFormat;
 
@@ -96,7 +95,7 @@ impl ShaderProgram for VkShaderProgram {
 impl VkShaderProgram {
     pub fn new(
         name: String,
-        render_pass: &RenderPass,
+        pass_id: PassID,
         create_infos: &ShaderProgramInfos,
     ) -> Arc<Self> {
         let descriptor_set_layout = VkDescriptorSetLayout::new(
@@ -226,8 +225,9 @@ impl VkShaderProgram {
             .build();
 
         let mut color_blend_attachment = Vec::<vk::PipelineColorBlendAttachmentState>::new();
-
-        for _ in render_pass.images() {
+        
+        let render_pass = Gfx::get().cast::<GfxVulkan>().render_pass_pool().find_by_id(&pass_id).unwrap();
+        for _ in &render_pass.images {
             color_blend_attachment.push(
                 vk::PipelineColorBlendAttachmentState::builder()
                     .blend_enable(create_infos.shader_properties.alpha_mode != AlphaMode::Opaque)
@@ -292,7 +292,6 @@ impl VkShaderProgram {
             .dynamic_states(dynamic_states_array.as_slice())
             .build();
 
-        let rp = render_pass.instance().cast::<VkRenderPassInstance>();
         let ci_pipeline = vk::GraphicsPipelineCreateInfo::builder()
             .stages(shader_stages.as_slice())
             .vertex_input_state(&vertex_input_state)
@@ -304,7 +303,7 @@ impl VkShaderProgram {
             .color_blend_state(&color_blending)
             .dynamic_state(&dynamic_states)
             .layout(*pipeline_layout)
-            .render_pass(rp.render_pass.render_pass)
+            .render_pass(render_pass.render_pass)
             .subpass(0)
             .base_pipeline_handle(vk::Pipeline::default())
             .base_pipeline_index(-1)

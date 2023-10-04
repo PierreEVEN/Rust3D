@@ -43,7 +43,7 @@ pub trait GfxInterface: GfxCast {
     fn create_shader_program(
         &self,
         name: String,
-        render_pass: &RenderPass,
+        pass_id: PassID,
         create_infos: &ShaderProgramInfos,
     ) -> Arc<dyn ShaderProgram>;
     fn instantiate_render_pass(
@@ -56,7 +56,6 @@ pub trait GfxInterface: GfxCast {
         name: String,
         create_infos: SamplerCreateInfos,
     ) -> Arc<dyn ImageSampler>;
-    fn find_render_pass(&self, pass_id: &PassID) -> Option<Arc<dyn RenderPassInstance>>;
     fn create_command_buffer(
         &self,
         name: String,

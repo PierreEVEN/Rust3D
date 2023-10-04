@@ -191,10 +191,10 @@ impl GfxInterface for GfxVulkan {
     fn create_shader_program(
         &self,
         name: String,
-        render_pass: &RenderPass,
+        pass_id: PassID,
         create_infos: &ShaderProgramInfos,
     ) -> Arc<dyn ShaderProgram> {
-        VkShaderProgram::new(name, render_pass, create_infos)
+        VkShaderProgram::new(name, pass_id, create_infos)
     }
 
     fn instantiate_render_pass(
@@ -214,10 +214,6 @@ impl GfxInterface for GfxVulkan {
         create_infos: SamplerCreateInfos,
     ) -> Arc<dyn ImageSampler> {
         VkImageSampler::new(name, create_infos)
-    }
-
-    fn find_render_pass(&self, _pass_id: &PassID) -> Option<Arc<dyn RenderPassInstance>> {
-        todo!()
     }
 
     fn create_command_buffer(

@@ -1,5 +1,4 @@
-﻿use std::collections::HashMap;
-use std::mem::MaybeUninit;
+﻿use std::mem::MaybeUninit;
 use std::ops::DerefMut;
 use std::sync::{Arc, RwLock};
 
@@ -36,9 +35,8 @@ pub struct RenderPass {
     compute_res: Arc<RwLock<dyn FnMut(Vec2u32) -> Vec2u32>>,
     source_node: Arc<RenderNode>,
     command_buffer: Arc<dyn GfxCommandBuffer>,
+    pass_id: PassID,
 }
-
-static mut RENDER_PASSES_TODO: *mut HashMap<PassID, &RenderPass> = std::ptr::null_mut();
 
 impl RenderPass {
     pub fn new(resources: Vec<Arc<dyn GfxImage>>, render_node: &Arc<RenderNode>, initial_res: Vec2u32) -> Self {
@@ -50,6 +48,7 @@ impl RenderPass {
             compute_res: render_node.compute_res().clone(),
             source_node: render_node.clone(),
             command_buffer: Gfx::get().create_command_buffer("unnamed".to_string()),
+            pass_id: PassID::new(render_node.get_name().as_str()),
         };
 
         let instance = Gfx::get().instantiate_render_pass(&render_pass);
@@ -58,6 +57,10 @@ impl RenderPass {
         render_pass
     }
 
+    pub fn get_id(&self) -> &PassID {
+        &self.pass_id
+    }
+    
     pub fn source(&self) -> &Arc<RenderNode> {
         &self.source_node
     }
@@ -130,11 +133,5 @@ impl RenderPass {
         }
 
         format!("\t- name: {}\n\t- images: {}\n\t- initial res: {}x{}\n\t- dependencies:{}\n", self.source_node.get_name(), images, self.res.x, self.res.y, dependencies)
-    }
-}
-
-impl Drop for RenderPass {
-    fn drop(&mut self) {
-        todo!()
     }
 }

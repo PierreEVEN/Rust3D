@@ -1,8 +1,6 @@
 use std::alloc::{GlobalAlloc, Layout, System};
 use std::collections::HashMap;
-use std::fmt::Error;
 use std::fs;
-use std::ops::Deref;
 use std::path::PathBuf;
 use std::sync::{Arc, RwLock};
 
@@ -13,7 +11,6 @@ use ecs::entity::GameObject;
 use ecs::query::Query;
 use gfx::Gfx;
 use gfx::mesh::Mesh;
-use gfx::renderer::render_pass::RenderPassInstance;
 use gfx::shader::{PassID, ShaderProgram, ShaderProgramInfos, ShaderProgramStage};
 use gfx::shader_instance::ShaderInstance;
 use gfx::types::BackgroundColor;
@@ -53,7 +50,7 @@ impl Material {
         let mut builder = hlsl_builder::ReslParser::default();
         match builder.parse(resl_code, file_path.clone()) {
             Ok(_) => {
-                for pass in builder.passes() {}
+                //for pass in builder.passes() {}
             }
             Err(err) => {
                 match err.token {
@@ -69,36 +66,30 @@ impl Material {
         };
     }
 
-    pub fn get_program_for_pass(&self, pass_id: &PassID) -> Option<&Arc<dyn ShaderProgram>> {
+    pub fn get_program_for_pass(&self, pass_id: &PassID) -> Option<Arc<dyn ShaderProgram>> {
         match self.programs.read().unwrap().get(pass_id) {
-            None => {
-                match Gfx::get().find_render_pass(pass_id) {
-                    None => {None}
-                    Some(pass) => {
-                        &self.programs.write().unwrap().insert(pass_id.clone(), Gfx::get().create_shader_program(
-                            format!("undefined shader program"),
-                            &pass,
-                            &ShaderProgramInfos {
-                                vertex_stage: ShaderProgramStage {
-                                    spirv: vec![],
-                                    descriptor_bindings: vec![],
-                                    push_constant_size: 0,
-                                    stage_input: vec![],
-                                },
-                                fragment_stage: ShaderProgramStage {
-                                    spirv: vec![],
-                                    descriptor_bindings: vec![],
-                                    push_constant_size: 0,
-                                    stage_input: vec![],
-                                },
-                                shader_properties: Default::default(),
-                            }
-                        )).unwrap()
-                    }
-                }
-            }
-            Some(program) => { Some(program) }
+            None => {}
+            Some(program) => { return Some(program.clone()) }
         }
+        self.programs.write().unwrap().insert(pass_id.clone(), Gfx::get().create_shader_program(
+            "undefined shader program".to_string(),
+            pass_id.clone(),
+            &ShaderProgramInfos {
+                vertex_stage: ShaderProgramStage {
+                    spirv: vec![],
+                    descriptor_bindings: vec![],
+                    push_constant_size: 0,
+                    stage_input: vec![],
+                },
+                fragment_stage: ShaderProgramStage {
+                    spirv: vec![],
+                    descriptor_bindings: vec![],
+                    push_constant_size: 0,
+                    stage_input: vec![],
+                },
+                shader_properties: Default::default(),
+            },
+        ))
     }
 }
 
@@ -127,19 +118,18 @@ impl App for TestApp {
         renderer.set_default_view(&self.main_camera);
 
         let mut material = Material::default();
-        material.set_from_resl(&PathBuf::from("./test.resl"));
-
+        //material.set_from_resl(&PathBuf::from("./test.resl"));
+        let mat = Arc::new(material);
 
         match renderer.present_node().find_node("g_buffers") {
             None => {}
             Some(g_buffer) => {
-                g_buffer.add_render_function(|ecs, command_buffer| {
+                g_buffer.add_render_function(move |ecs, _command_buffer| {
+                    let _mat = mat.clone();
                     Query::<&mut MeshComponent>::new(ecs).for_each(|_| {
                         // Useless because we can speed this up by passing render pass trough render function
-                        let render_pass = Gfx::get().find_render_pass(&command_buffer.get_pass_id()).unwrap();
-
-                        let program = material.get_program_for_pass(&command_buffer.get_pass_id()).unwrap();
-                        command_buffer.bind_program(program);
+                        //let program = _mat.get_program_for_pass(&_command_buffer.get_pass_id()).unwrap();
+                        //_command_buffer.bind_program(&program);
                     });
                 })
             }

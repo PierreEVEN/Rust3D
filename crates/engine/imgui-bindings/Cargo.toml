@@ -9,6 +9,6 @@ links = "cimgui"
 
 [build-dependencies]
 cmake = "0.1.50"
-bindgen = "0.64.0"
+bindgen = "0.68.1"
 cc = "1.0.79"
 cfg-if = "1.0.0"

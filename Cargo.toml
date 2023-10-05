@@ -10,7 +10,6 @@ members = [
     "crates/engine/backends/*",
     "crates/engine/common/*",
     "crates/editor",
-    "crates/engine/scene",
     "crates/engine/job_system",
     "crates/engine/logger"
 ]

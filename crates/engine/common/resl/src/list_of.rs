@@ -1,9 +1,9 @@
-﻿#[derive(Debug)]
-pub struct ListOf<T> {
+﻿#[derive(Debug, Clone)]
+pub struct ListOf<T: Clone> {
     items: Vec<T>
 }
 
-impl<T> ListOf<T> {
+impl<T: Clone> ListOf<T> {
     pub fn new() -> Self { Self { items: vec![] } }
 
     pub fn push(mut self, instr: T) -> Self {

@@ -3,7 +3,9 @@ use crate::pass_id::PassID;
 pub mod pass_id;
 
 pub trait ShaderInterface {
-    fn get_spirv_for(&self, _render_pass: &PassID, _stage: ShaderStage) -> Vec<u8>;
+    fn get_spirv_for(&self, render_pass: &PassID, stage: ShaderStage) -> Vec<u32>;
+
+    fn get_parameters_for(&self, render_pass: &PassID) -> &ShaderParameters;
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
@@ -57,10 +59,12 @@ pub enum AlphaMode {
 }
 
 #[derive(Clone, Debug, Default)]
-pub enum ShaderLanguage {
-    #[default]
-    HLSL,
-    GLSL,
+pub struct ShaderParameters {
+    pub alpha_mode: AlphaMode,
+    pub polygon_mode: PolygonMode,
+    pub topology: Topology,
+    pub front_face: FrontFace,
+    pub culling: Culling
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -76,4 +80,19 @@ pub enum DescriptorType {
     UniformBufferDynamic,
     StorageBufferDynamic,
     InputAttachment,
+}
+
+#[derive(Debug)]
+pub struct CompilationError {
+    pub message: String,
+    pub token: Option<usize>,
+}
+
+impl CompilationError {
+    pub fn throw(message: String, token: Option<usize>) -> Self {
+        Self {
+            message,
+            token,
+        }
+    }
 }

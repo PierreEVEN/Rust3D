@@ -1,11 +1,11 @@
 [workspace]
+resolver = "2"
 members = [
     "crates/engine/core",
     "crates/engine/imgui",
     "crates/engine/imgui-bindings",
     "crates/engine/macros",
     "crates/engine/maths",
-    "crates/engine/shader_compiler",
     "crates/engine/third_party_io",
     "crates/engine/backends/*",
     "crates/engine/common/*",
@@ -14,7 +14,7 @@ members = [
     "crates/engine/common/shader_base",
     "crates/engine/logger"
 ]
-default-members = ["crates/editor/"]
+default-members = ["crates/editor"]
 
 [profile.production]
 inherits = "release"

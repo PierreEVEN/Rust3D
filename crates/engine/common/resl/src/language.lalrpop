@@ -1,6 +1,7 @@
 use std::str::FromStr;
 use crate::ast::{*};
 use crate::list_of::{*};
+use shader_base::ShaderStage;
 
 grammar;
 
@@ -49,9 +50,9 @@ Instruction : Instruction = {
     <t:@L> version <i:INTEGER> => Instruction::Version(t, u64::from_str(i).unwrap()),
     Pragma => <>,
     <t:@L> global "(" <wl:PassList> ")" BRACKET_OPEN <hlsl:HLSL_CODE> BRACKET_CLOSE => Instruction::Global(t, wl, hlsl),
-    <t:@L> vertex "(" <wl:PassList> ")" BRACKET_OPEN <hlsl:HLSL_CODE> BRACKET_CLOSE => Instruction::Vertex(t, wl, hlsl),
-    <t:@L> fragment "(" <wl:PassList> ")" BRACKET_OPEN <hlsl:HLSL_CODE> BRACKET_CLOSE => Instruction::Fragment(t, wl, hlsl),
-    <t:@L> compute "(" <wl:PassList> ")" BRACKET_OPEN <hlsl:HLSL_CODE> BRACKET_CLOSE => Instruction::Compute(t, wl, hlsl),
+    <t:@L> vertex "(" <wl:PassList> ")" BRACKET_OPEN <hlsl:HLSL_CODE> BRACKET_CLOSE => Instruction::Block(t, ShaderStage::Vertex, wl, hlsl),
+    <t:@L> fragment "(" <wl:PassList> ")" BRACKET_OPEN <hlsl:HLSL_CODE> BRACKET_CLOSE => Instruction::Block(t, ShaderStage::Fragment, wl, hlsl),
+    <t:@L> compute "(" <wl:PassList> ")" BRACKET_OPEN <hlsl:HLSL_CODE> BRACKET_CLOSE => Instruction::Block(t, ShaderStage::Compute, wl, hlsl),
 }
 
 PassList : RenderPassGroup = {

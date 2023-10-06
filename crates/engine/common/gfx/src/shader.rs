@@ -1,7 +1,7 @@
 use crate::shader_instance::BindPoint;
 use crate::{GfxCast, ShaderInstance};
 use std::sync::Arc;
-use shader_base::{AlphaMode, Culling, DescriptorType, FrontFace, PolygonMode, ShaderLanguage, Topology};
+use shader_base::{AlphaMode, Culling, DescriptorType, FrontFace, PolygonMode, Topology};
 
 use crate::types::PixelFormat;
 
@@ -32,7 +32,6 @@ pub struct ShaderProgramStage {
 #[derive(Clone)]
 pub struct ShaderProperties {
     pub shader_version: String,
-    pub shader_language: ShaderLanguage,
     pub culling: Culling,
     pub front_face: FrontFace,
     pub topology: Topology,
@@ -46,7 +45,6 @@ impl Default for ShaderProperties {
     fn default() -> Self {
         Self {
             shader_version: "1.0".to_string(),
-            shader_language: Default::default(),
             culling: Default::default(),
             front_face: Default::default(),
             topology: Default::default(),

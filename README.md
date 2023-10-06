@@ -3,28 +3,37 @@
 Heeyyyyy !!! 🙌
 This is my first Rust program (and also another attempt to create a 3D game engine using vulkan... yes, again)
 
-It's quite easy to compile, but there is currently nothing to see because it's still in development ! :))
-
 | Platform | Build Status                                                                                      |
 |----------|---------------------------------------------------------------------------------------------------|
 | Windows  | ![Windows](https://github.com/PierreEVEN/Rust3D/actions/workflows/windows_x64.yml/badge.svg)      |
 
 ## Features
 
-- Nothing much now (only a very basic renderer)
+- Vulkan backend
+- Win32 backend
+- Runtime ecs
+- Job system
+- logger
+- Custom Hlsl based shader language that support specification of render passes and multiple stages
+- Dynamic framegraph with resource recycling
 
 ## Planned features
 
-- improved debugging features
-- bindless descriptors
+- Improve framegraph resource recycling
+- frame profiler & debugger
 - Scene graph
 - Assets / scene serialisation
 - Wayland / XFace / Cocoa backend
+- OpenGL backend for low end devices
 - Metal backend for OSx
-- Audio integration
+- Audio engine
 - Physic engine
-- Improve shader compiler by using a better lexer
 - Add glsl support
+- 3D math library
+- Large world coordinate support
+- Compute shaders
+- Network
+- Internal UI system
 
 And of course !
 - Some nice projects using this game engine

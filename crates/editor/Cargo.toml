@@ -9,7 +9,6 @@ name = "editor"
 [dependencies]
 core = { path = "../engine/core" }
 third_party_io = { path = "../engine/third_party_io" }
-shader_compiler = { path = "../engine/shader_compiler" }
 maths = { path = "../engine/maths" }
 macros = { path = "../engine/macros" }
 gfx = { path = "../engine/common/gfx" }

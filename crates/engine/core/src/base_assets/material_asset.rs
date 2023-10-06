@@ -6,11 +6,7 @@ use gfx::shader::{
     ShaderProgram, ShaderProgramInfos, ShaderProgramStage,
 };
 use shader_base::pass_id::PassID;
-use shader_base::{ShaderLanguage, ShaderStage};
-use shader_compiler::backends::backend_shaderc::{BackendShaderC, ShaderCIncluder};
-use shader_compiler::CompilerBackend;
-use shader_compiler::parser::Parser;
-use shader_compiler::types::InterstageData;
+use shader_base::{ShaderStage};
 
 use crate::asset::{AssetFactory, AssetMetaData, GameAsset};
 use crate::asset_type_id::AssetTypeID;
@@ -23,9 +19,7 @@ pub struct ShaderPermutation {
 pub struct MaterialAsset {
     virtual_path: RwLock<String>,
     meta_data: AssetMetaData,
-    parsed_shader: RwLock<Option<Parser>>,
     permutations: RwLock<HashMap<PassID, ShaderPermutation>>,
-    shader_backend: Box<dyn CompilerBackend>,
 }
 
 impl MaterialAsset {
@@ -33,9 +27,7 @@ impl MaterialAsset {
         Arc::new(Self {
             meta_data: AssetMetaData::new(),
             virtual_path: RwLock::default(),
-            parsed_shader: RwLock::default(),
             permutations: RwLock::default(),
-            shader_backend: Box::new(BackendShaderC::new()),
         })
     }
 
@@ -70,108 +62,107 @@ impl MaterialAsset {
             }
         }
 
-        match &*self.parsed_shader.read().unwrap() {
-            None => {}
-            Some(parser) => {
-                // Vertex shader
-                let vertex_code = match parser.program_data.get_data(pass, &ShaderStage::Vertex) {
-                    Ok(code) => code,
-                    Err(error) => {
-                        logger::error!("failed to get vertex shader data :\n{}", error.to_string());
-                        return None;
-                    }
-                };
-                // Fragment shader
-                let fragment_code = match parser.program_data.get_data(pass, &ShaderStage::Fragment)
-                {
-                    Ok(code) => code,
-                    Err(error) => {
-                        logger::error!(
-                            "failed to get fragment shader data :\n{}",
-                            error.to_string()
-                        );
-                        return None;
-                    }
-                };
+        /*
+match &*self.parsed_shader.read().unwrap() {
+    None => {}
+    Some(parser) => {
 
-                let vertex_sprv = match self.shader_backend.compile_to_spirv(
-                    vertex_code,
-                    Path::new(self.virtual_path.read().unwrap().as_str()),
-                    ShaderLanguage::HLSL,
-                    ShaderStage::Vertex,
-                    InterstageData {
-                        stage_outputs: Default::default(),
-                        binding_index: 0,
-                    },
-                ) {
-                    Ok(sprv) => sprv,
-                    Err(error) => {
-                        logger::error!("Failed to compile vertex shader : \n{}", error.to_string());
-                        return None;
-                    }
-                };
-
-                let fragment_sprv = match self.shader_backend.compile_to_spirv(
-                    fragment_code,
-                    Path::new(self.virtual_path.read().unwrap().as_str()),
-                    ShaderLanguage::HLSL,
-                    ShaderStage::Fragment,
-                    InterstageData {
-                        stage_outputs: Default::default(),
-                        binding_index: 0,
-                    },
-                ) {
-                    Ok(sprv) => sprv,
-                    Err(error) => {
-                        logger::error!(
-                            "Failed to compile fragment shader : \n{}",
-                            error.to_string()
-                        );
-                        return None;
-                    }
-                };
-                let _ci_shader = ShaderProgramInfos {
-                    vertex_stage: ShaderProgramStage {
-                        spirv: vertex_sprv.binary,
-                        descriptor_bindings: vertex_sprv.bindings,
-                        push_constant_size: vertex_sprv.push_constant_size,
-                        stage_input: vec![],
-                    },
-                    fragment_stage: ShaderProgramStage {
-                        spirv: fragment_sprv.binary,
-                        descriptor_bindings: fragment_sprv.bindings,
-                        push_constant_size: fragment_sprv.push_constant_size,
-                        stage_input: vec![],
-                    },
-                    shader_properties: parser.properties.clone(),
-                };
-
-                /*
-                let render_pass = match crate::engine::Engine::get().gfx().find_render_pass(pass) {
-                    None => {
-                        logger::fatal!("trying to create shader program for render pass [{pass}], but this render pass is not available or registered")
-                    }
-                    Some(pass) => pass,
-                };
+        // Vertex shader
+        let vertex_code = match parser.program_data.get_data(pass, &ShaderStage::Vertex) {
+            Ok(code) => code,
+            Err(error) => {
+                logger::error!("failed to get vertex shader data :\n{}", error.to_string());
                 return None;
-                
-                let program = crate::engine::Engine::get().gfx().create_shader_program(
-                    self.meta_data.get_name(),
-                    &render_pass,
-                    &ci_shader,
+            }
+        };
+        // Fragment shader
+        let fragment_code = match parser.program_data.get_data(pass, &ShaderStage::Fragment)
+        {
+            Ok(code) => code,
+            Err(error) => {
+                logger::error!(
+                    "failed to get fragment shader data :\n{}",
+                    error.to_string()
                 );
-                self.permutations.write().unwrap().insert(
-                    pass.clone(),
-                    ShaderPermutation {
-                        shader: program.clone(),
-                    },
-                );
+                return None;
+            }
+        };
 
-                return Some(program);
-                
-                 */
+        let vertex_sprv = match self.shader_backend.compile_to_spirv(
+            vertex_code,
+            Path::new(self.virtual_path.read().unwrap().as_str()),
+            ShaderStage::Vertex,
+            InterstageData {
+                stage_outputs: Default::default(),
+                binding_index: 0,
+            },
+        ) {
+            Ok(sprv) => sprv,
+            Err(error) => {
+                logger::error!("Failed to compile vertex shader : \n{}", error.to_string());
+                return None;
+            }
+        };
+
+        let fragment_sprv = match self.shader_backend.compile_to_spirv(
+            fragment_code,
+            Path::new(self.virtual_path.read().unwrap().as_str()),
+            ShaderStage::Fragment,
+            InterstageData {
+                stage_outputs: Default::default(),
+                binding_index: 0,
+            },
+        ) {
+            Ok(sprv) => sprv,
+            Err(error) => {
+                logger::error!(
+                    "Failed to compile fragment shader : \n{}",
+                    error.to_string()
+                );
+                return None;
+            }
+        };
+        let _ci_shader = ShaderProgramInfos {
+            vertex_stage: ShaderProgramStage {
+                spirv: vertex_sprv.binary,
+                descriptor_bindings: vertex_sprv.bindings,
+                push_constant_size: vertex_sprv.push_constant_size,
+                stage_input: vec![],
+            },
+            fragment_stage: ShaderProgramStage {
+                spirv: fragment_sprv.binary,
+                descriptor_bindings: fragment_sprv.bindings,
+                push_constant_size: fragment_sprv.push_constant_size,
+                stage_input: vec![],
+            },
+            shader_properties: parser.properties.clone(),
+        };
+
+        let render_pass = match crate::engine::Engine::get().gfx().find_render_pass(pass) {
+            None => {
+                logger::fatal!("trying to create shader program for render pass [{pass}], but this render pass is not available or registered")
+            }
+            Some(pass) => pass,
+        };
+        return None;
+
+        let program = crate::engine::Engine::get().gfx().create_shader_program(
+            self.meta_data.get_name(),
+            &render_pass,
+            &ci_shader,
+        );
+        self.permutations.write().unwrap().insert(
+            pass.clone(),
+            ShaderPermutation {
+                shader: program.clone(),
+            },
+        );
+
+        return Some(program);
+
             }
         }
+         */
         None
     }
 }

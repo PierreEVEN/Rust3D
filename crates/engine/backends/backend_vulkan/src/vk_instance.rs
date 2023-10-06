@@ -3,7 +3,6 @@ use std::collections::HashMap;
 use std::ffi::CStr;
 use std::mem::MaybeUninit;
 use std::os::raw::c_char;
-use std::thread;
 
 use ash::{extensions::ext, vk};
 use ash::vk::{DebugUtilsMessageSeverityFlagsEXT};
@@ -306,14 +305,7 @@ unsafe extern "system" fn vulkan_debug_callback(
                     "None"
                 }
             },
-            match message_text {
-                Some(text) => {
-                    text
-                }
-                None => {
-                    message.to_string()
-                }
-            },
+            message_text
         );
         return vk::FALSE;
     }

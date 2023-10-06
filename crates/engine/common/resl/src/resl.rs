@@ -1,31 +1,15 @@
 ﻿use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 
-use display_json::DebugAsJsonPretty;
 use lalrpop_util::lalrpop_mod;
-use serde::Serialize;
+use shader_base::CompilationError;
 
 use crate::ast::{Function, HlslCodeBlock, HlslInstruction, Instruction, Register, RenderPassGroup, StructureField};
 use crate::list_of::ListOf;
 
 lalrpop_mod!(pub language);
 
-#[derive(Serialize, DebugAsJsonPretty)]
-pub struct CompilationError {
-    pub message: String,
-    pub token: Option<usize>,
-}
-
-impl CompilationError {
-    pub fn throw(message: String, token: Option<usize>) -> Self {
-        Self {
-            message,
-            token,
-        }
-    }
-}
-
-#[derive(Default, Serialize, DebugAsJsonPretty)]
+#[derive(Default, Debug)]
 pub struct Parser {
     version: Option<u64>,
     pragmas: HashMap<String, String>,
@@ -34,7 +18,7 @@ pub struct Parser {
     pub hlsl: HashMap<String, HashMap<String, ReslBlock>>,
 }
 
-#[derive(Clone, Serialize, DebugAsJsonPretty)]
+#[derive(Clone, Debug)]
 pub struct Token {
     pub location: usize,
     pub value: String,
@@ -54,7 +38,7 @@ impl From<(usize, &str)> for Token {
     }
 }
 
-#[derive(Default, Serialize, DebugAsJsonPretty)]
+#[derive(Default, Debug)]
 pub struct ReslBlock {
     tokens: Vec<Token>,
     defines: HashMap<String, Option<String>>,
@@ -366,9 +350,7 @@ impl Parser {
                 Instruction::Version(_, _) => {}
                 Instruction::Pragma(_, _, _) => {}
                 Instruction::Global(_, _, _) => {}
-                Instruction::Vertex(_, rpg, _) => { self.pre_alocate_stages("vertex", rpg); }
-                Instruction::Fragment(_, rpg, _) => { self.pre_alocate_stages("fragment", rpg); }
-                Instruction::Compute(_, rpg, _) => { self.pre_alocate_stages("compute", rpg); }
+                Instruction::Block(_, _stage, rpg, _) => { self.pre_alocate_stages("vertex", rpg); }
             }
         }
 
@@ -403,20 +385,8 @@ impl Parser {
                         Err(err) => { return Err(err); }
                     }
                 }
-                Instruction::Vertex(_, rpg, content) => {
+                Instruction::Block(_, _stage, rpg, content) => {
                     match self.internal_analyze_block("vertex", rpg, content) {
-                        Ok(_) => {}
-                        Err(err) => { return Err(err); }
-                    }
-                }
-                Instruction::Fragment(_, rpg, content) => {
-                    match self.internal_analyze_block("fragment", rpg, content) {
-                        Ok(_) => {}
-                        Err(err) => { return Err(err); }
-                    }
-                }
-                Instruction::Compute(_, rpg, content) => {
-                    match self.internal_analyze_block("compute", rpg, content) {
                         Ok(_) => {}
                         Err(err) => { return Err(err); }
                     }

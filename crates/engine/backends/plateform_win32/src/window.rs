@@ -61,11 +61,12 @@ impl WindowWin32 {
                 right: geometry.width(),
                 bottom: geometry.height(),
             };
+
             match AdjustWindowRectEx(&mut initial_rect, style, false, ex_style) {
                 Ok(_) => {}
                 Err(err) => {logger::fatal!("Failed to adjust window rect : {}", err)}
             };
-            
+
             let hwnd = CreateWindowExW(
                 ex_style,
                 PCWSTR(utf8_to_utf16(WIN_CLASS_NAME).as_ptr()),

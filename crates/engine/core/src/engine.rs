@@ -1,4 +1,5 @@
 use std::mem::MaybeUninit;
+use std::ops::{Deref, DerefMut};
 use std::sync::{Arc, RwLock, Weak};
 use std::sync::atomic::{AtomicBool, Ordering};
 
@@ -85,6 +86,7 @@ pub struct Engine {
     gfx: MaybeUninit<Box<dyn GfxInterface>>,
     surface_builder: Box<dyn FnMut(&Weak<dyn Window>) -> Box<dyn GfxSurface>>,
     app: Box<dyn App>,
+    pub engine_number: u64,
 
     pre_initialized: AtomicBool,
     initialized: AtomicBool,
@@ -97,8 +99,44 @@ pub struct Engine {
 
 static mut ENGINE_INSTANCE: *mut Engine = std::ptr::null_mut();
 
+pub struct EngineRef {}
+
+impl EngineRef {
+    pub fn new(engine: Engine) -> Self {
+        unsafe { ENGINE_INSTANCE = Box::leak(Box::new(engine)) as *mut Engine; }
+        Self {}
+    }
+}
+
+impl Drop for EngineRef {
+    fn drop(&mut self) {
+        unsafe {
+            let _boxed = Box::from_raw(ENGINE_INSTANCE);
+            ENGINE_INSTANCE = std::ptr::null_mut()
+        }
+    }
+}
+
+impl Deref for EngineRef {
+    type Target = Engine;
+    fn deref(&self) -> &Self::Target {
+        unsafe { &*(ENGINE_INSTANCE as *const Engine) }
+    }
+}
+
+impl DerefMut for EngineRef {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        unsafe { &mut *(ENGINE_INSTANCE) }
+    }
+}
+
 impl Engine {
-    pub fn new<GamemodeT: App + Default + 'static>() -> Self {
+    pub fn set_ptr(engine: &Engine) {
+        unsafe {
+            ENGINE_INSTANCE = engine as *const Engine as *mut Engine;
+        }
+    }
+    pub fn new<GamemodeT: App + 'static>(app: GamemodeT) -> Box<RwLock<Engine>> {
         logger::init!();
 
         unsafe {
@@ -113,7 +151,8 @@ impl Engine {
             platform: MaybeUninit::uninit(),
             gfx: MaybeUninit::uninit(),
             surface_builder: Box::new(|_| { fatal!("surface builder is not valid") }),
-            app: Box::<GamemodeT>::default(),
+            app: Box::new(app),
+            engine_number: 1234567890,
             pre_initialized: AtomicBool::new(false),
             initialized: AtomicBool::new(false),
             is_stopping: AtomicBool::new(false),
@@ -121,10 +160,7 @@ impl Engine {
             views: Default::default(),
             game_delta: DeltaSeconds::new(None),
         };
-        unsafe {
-            ENGINE_INSTANCE = &engine as *const Engine as *mut Engine;
-        }
-        engine
+        Box::new(RwLock::new(engine))
     }
 
     pub fn start(&mut self) {
@@ -147,7 +183,6 @@ impl Engine {
         // FINISHED PRE-INITIALIZATION
         self.initialized.store(true, Ordering::SeqCst);
         logger::info!("Engine started");
-
         self.app.initialized();
 
         self.engine_loop();
@@ -180,7 +215,7 @@ impl Engine {
             engine
         }
     }
-    
+
     pub fn get_mut() -> &'static mut Self {
         unsafe {
             assert!(
@@ -243,7 +278,7 @@ pub struct Camera {}
 impl Drop for Engine {
     fn drop(&mut self) {
         self.app.stopped();
-        
+
         // Unload worlds and views
         self.views.write().unwrap().clear();
         self.worlds.write().unwrap().clear();

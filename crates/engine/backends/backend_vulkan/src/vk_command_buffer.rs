@@ -309,7 +309,8 @@ impl GfxCommandBuffer for VkCommandBuffer {
                     match stage {
                         ShaderStage::Vertex => vk::ShaderStageFlags::VERTEX,
                         ShaderStage::Fragment => vk::ShaderStageFlags::FRAGMENT,
-                        ShaderStage::Tesselation => {vk::ShaderStageFlags::TESSELLATION_CONTROL}
+                        ShaderStage::TesselationEvaluate => vk::ShaderStageFlags::TESSELLATION_EVALUATION,
+                        ShaderStage::TesselationControl => vk::ShaderStageFlags::TESSELLATION_CONTROL,
                         ShaderStage::Geometry => {vk::ShaderStageFlags::GEOMETRY}
                         ShaderStage::Compute => {vk::ShaderStageFlags::COMPUTE}
                     },

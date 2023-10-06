@@ -1,4 +1,3 @@
-use std::alloc::{GlobalAlloc, Layout, System};
 use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
@@ -117,7 +116,6 @@ impl App for TestApp {
 
         // Create main window
         let main_window = Engine::get().platform().create_window(WindowCreateInfos::default_named("Rust3D Editor")).unwrap();
-
         main_window.upgrade().unwrap().show();
         main_window.upgrade().unwrap().bind_event(
             PlatformEvent::WindowClosed,
@@ -132,7 +130,7 @@ impl App for TestApp {
         renderer.set_default_view(&self.main_camera);
 
         let mut material = Material::default();
-        material.set_shader(ReslShaderInterface::from(PathBuf::from("./test.resl")));
+        //material.set_shader(ReslShaderInterface::from(PathBuf::from("./test.resl")));
         let mat = Arc::new(material);
 
         match renderer.present_node().find_node("g_buffers") {
@@ -141,8 +139,8 @@ impl App for TestApp {
                 g_buffer.add_render_function(move |ecs, command_buffer| {
                     let mat = mat.clone();
                     Query::<&mut MeshComponent>::new(ecs).for_each(|_| {
-                        let program = mat.get_program_for_pass(&command_buffer.get_pass_id()).unwrap();
-                        command_buffer.bind_program(&program);
+                        //let program = mat.get_program_for_pass(&command_buffer.get_pass_id()).unwrap();
+                        //command_buffer.bind_program(&program);
                     });
                 })
             }
@@ -156,20 +154,8 @@ impl App for TestApp {
     fn stopped(&self) {}
 }
 
-
-struct MyAllocator;
-
-unsafe impl GlobalAlloc for MyAllocator {
-    unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
-        System.alloc(layout)
-    }
-
-    unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
-        System.dealloc(ptr, layout)
-    }
-}
-
 fn main() {
-    let mut engine = Engine::new::<TestApp>();
-    engine.start();
+    let mut engine = Engine::new(TestApp::default());
+    Engine::set_ptr(&*engine.read().unwrap());
+    engine.write().unwrap().start();
 }

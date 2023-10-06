@@ -12,7 +12,7 @@ pub mod backend {
     pub fn spawn_platform() -> Box<dyn Platform> {
         #[cfg(windows)]
         {
-            Box::<PlatformWin32>::default()
+            PlatformWin32::new()
         }
     }
 

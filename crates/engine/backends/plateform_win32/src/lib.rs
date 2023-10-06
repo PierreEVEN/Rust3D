@@ -51,12 +51,13 @@ impl From<HWND> for HashableHWND {
 
 pub struct PlatformWin32 {
     windows: RwLock<HashMap<HashableHWND, Arc<WindowWin32>>>,
+    initialized_value: u64,
     monitors: Vec<Monitor>,
     input_manager: InputManager,
 }
 
-impl Default for PlatformWin32 {
-    fn default() -> Self {
+impl PlatformWin32 {
+    pub fn new() -> Box<Self> {
         unsafe {
             // Ensure time precision is the highest
             timeBeginPeriod(1);
@@ -75,11 +76,12 @@ impl Default for PlatformWin32 {
             assert_ne!(RegisterClassExW(&win_class), 0);
         }
 
-        let platform = PlatformWin32 {
+        let platform = Box::new(PlatformWin32 {
             windows: Default::default(),
+            initialized_value: 1234567890,
             monitors: Default::default(),
             input_manager: InputManager::new(),
-        };
+        });
 
         // Set platform pointer into WNDCLASS
         unsafe {
@@ -102,7 +104,7 @@ impl Default for PlatformWin32 {
                 SetClassLongPtrW(
                     window_handle,
                     GET_CLASS_LONG_INDEX(0),
-                    (&platform as *const PlatformWin32) as isize,
+                    (platform.as_ref() as *const PlatformWin32) as isize,
                 );
                 DestroyWindow(window_handle).expect("failed to destroy init window handle");
 
@@ -117,17 +119,14 @@ impl Default for PlatformWin32 {
 
         // Collect monitors
         platform.collect_monitors();
-        logger::info!("Created win32 platform backend");
+        logger::info!("Created win32 platform backend : #{:?} {}", platform.as_ref() as *const PlatformWin32, platform.initialized_value);
         platform
     }
-}
 
-impl PlatformWin32 {
     fn send_window_message(&self, hwnd: HWND, msg: u32, wparam: WPARAM, lparam: LPARAM) {
         let window_map = self.windows.read();
         if let Some(window) = window_map.unwrap().get(&hwnd.into()) {
             win32_input(msg, wparam, lparam, &self.input_manager);
-
             match msg {
                 WM_CLOSE => window.trigger_event(&PlatformEvent::WindowClosed),
                 WM_SIZE => {
@@ -171,12 +170,14 @@ unsafe extern "system" fn wnd_proc(
             return DefWindowProcW(hwnd, msg, wparam, lparam);
         }
 
-        (ptr as *const PlatformWin32).as_ref().unwrap_unchecked()
+        &*(ptr as *const PlatformWin32)
     };
 
     platform.send_window_message(hwnd, msg, wparam, lparam);
-    DefWindowProcW(hwnd, msg, wparam, lparam)
+    let res = DefWindowProcW(hwnd, msg, wparam, lparam);
+    res
 }
+
 
 impl Platform for PlatformWin32 {
     fn create_window(

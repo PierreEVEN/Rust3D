@@ -93,7 +93,8 @@ impl CompilerBackend for BackendShaderC {
             match _shader_stage {
                 ShaderStage::Vertex => shaderc::ShaderKind::Vertex,
                 ShaderStage::Fragment => shaderc::ShaderKind::Fragment,
-                ShaderStage::Tesselation => {shaderc::ShaderKind::TessControl}
+                ShaderStage::TesselationControl => shaderc::ShaderKind::TessControl,
+                ShaderStage::TesselationEvaluate => shaderc::ShaderKind::TessEvaluation,
                 ShaderStage::Geometry => {shaderc::ShaderKind::Geometry}
                 ShaderStage::Compute => {shaderc::ShaderKind::Compute}
             },

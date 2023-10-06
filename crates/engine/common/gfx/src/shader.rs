@@ -1,6 +1,5 @@
 use crate::shader_instance::BindPoint;
 use crate::{GfxCast, ShaderInstance};
-use std::fmt::{Debug};
 use std::sync::Arc;
 use shader_base::{AlphaMode, Culling, DescriptorType, FrontFace, PolygonMode, ShaderLanguage, Topology};
 

@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::fs;
 use std::path::PathBuf;
 use std::sync::{Arc, RwLock};
 
@@ -15,9 +14,9 @@ use gfx::shader_instance::ShaderInstance;
 use gfx::types::BackgroundColor;
 use maths::vec4::Vec4F32;
 use plateform::window::{PlatformEvent, WindowCreateInfos};
-use resl::hlsl_builder;
+use resl::ReslShaderInterface;
 use shader_base::pass_id::PassID;
-use shader_base::{ShaderInterface, ShaderStage};
+use shader_base::{ShaderInterface};
 
 mod gfx_demo;
 
@@ -33,39 +32,6 @@ struct MeshComponent {
     _material: Option<Arc<dyn ShaderInstance>>,
     _val: u32,
     _name: String,
-}
-
-pub struct ReslShaderInterface {}
-
-impl From<PathBuf> for ReslShaderInterface {
-    fn from(file_path: PathBuf) -> Self {
-        let resl_code = fs::read_to_string(file_path.clone()).unwrap();
-
-        let mut builder = hlsl_builder::ReslParser::default();
-        match builder.parse(resl_code, file_path.clone()) {
-            Ok(_) => {
-                //for pass in builder.passes() {}
-            }
-            Err(err) => {
-                match err.token {
-                    None => {
-                        logger::error!("{}\n  --> {}", err.message, file_path.to_str().unwrap());
-                    }
-                    Some(token) => {
-                        let (line, column) = builder.get_error_location(token);
-                        logger::error!("{}\n  --> {}:{}:{}", err.message, file_path.to_str().unwrap(), line, column);
-                    }
-                }
-            }
-        };
-        Self {}
-    }
-}
-
-impl ShaderInterface for ReslShaderInterface {
-    fn get_spirv_for(&self, _render_pass: &PassID, _stage: ShaderStage) -> Vec<u8> {
-        todo!()
-    }
 }
 
 #[derive(Default)]
@@ -130,7 +96,7 @@ impl App for TestApp {
         renderer.set_default_view(&self.main_camera);
 
         let mut material = Material::default();
-        //material.set_shader(ReslShaderInterface::from(PathBuf::from("./test.resl")));
+        material.set_shader(ReslShaderInterface::from(PathBuf::from("data/shaders/demo.resl")));
         let mat = Arc::new(material);
 
         match renderer.present_node().find_node("g_buffers") {
@@ -139,8 +105,8 @@ impl App for TestApp {
                 g_buffer.add_render_function(move |ecs, command_buffer| {
                     let mat = mat.clone();
                     Query::<&mut MeshComponent>::new(ecs).for_each(|_| {
-                        //let program = mat.get_program_for_pass(&command_buffer.get_pass_id()).unwrap();
-                        //command_buffer.bind_program(&program);
+                        let program = mat.get_program_for_pass(&command_buffer.get_pass_id()).unwrap();
+                        command_buffer.bind_program(&program);
                     });
                 })
             }
@@ -156,6 +122,5 @@ impl App for TestApp {
 
 fn main() {
     let mut engine = Engine::new(TestApp::default());
-    Engine::set_ptr(&*engine.read().unwrap());
-    engine.write().unwrap().start();
+    engine.start();
 }

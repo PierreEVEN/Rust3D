@@ -4,17 +4,17 @@
 #pragma ALPHA_MODE		TRANSLUCENT
 
 global(imgui_render_pass)
-[
+{
 	struct VsToFs 
 	{
 		float4 Pos 		: SV_Position;
 		float4 Color 	: COLOR;
 		float2 UV 	 	: TEXCOORD;
 	};
-]
+}
 
 vertex(imgui_render_pass)
-[
+{
 	struct VSInput
 	{
 		float2 aPos 	: POSITION;
@@ -37,10 +37,10 @@ vertex(imgui_render_pass)
 		Out.Pos 	= float4(input.aPos * pc.uScale + pc.uTranslate, 0, 1);
 		return Out;
 	}
-]
+}
 
 fragment(imgui_render_pass)
-[
+{
 	Texture2D	 sTexture;
 	SamplerState sSampler;
 
@@ -48,4 +48,4 @@ fragment(imgui_render_pass)
 	{
 		return input.Color * sTexture.Sample(sSampler, input.UV);
 	}
-]
+}

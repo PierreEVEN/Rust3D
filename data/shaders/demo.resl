@@ -9,7 +9,7 @@
 #pragma alpha_mode			OPAQUE
 
 global(gbuffer, g_buffer_resolve)
-[
+{
 	struct toto
 	{
 		float2 machin;
@@ -25,29 +25,28 @@ global(gbuffer, g_buffer_resolve)
 		float3 Tangent 	 	: TEXCOORD1;
 		toto   machin_test;
 	};
-];
+};
 
 
 
 vertex(test)
-[
-
+{
 	float4 main(uint InstanceIndex : SV_InstanceID) : SV_Position
 	{
 		return float4(1,1,1,1);
 	}
+}
 
-]
 fragment(test)
-[
+{
 	void main(float4 position)
 	{
 	}
-]
+}
 
 
 vertex(gbuffer)
-[
+{
 	struct VSInput
 	{
 		float4 Pos 		: POSITION0;
@@ -79,6 +78,6 @@ vertex(gbuffer)
 		output.Color = input.Color;
 		return output;
 	}
-];
+};
 
 // fragment(gbuffer) => "demo_fragment.shb"

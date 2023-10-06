@@ -26,7 +26,7 @@ impl CompilationError {
 }
 
 #[derive(Default, Serialize, DebugAsJsonPretty)]
-pub struct ReslParser {
+pub struct Parser {
     version: Option<u64>,
     pragmas: HashMap<String, String>,
     file_path: PathBuf,
@@ -263,7 +263,7 @@ impl ReslBlock {
     }
 }
 
-impl ReslParser {
+impl Parser {
     pub fn parse(&mut self, resl_code: String, file_path: PathBuf) -> Result<ListOf<Instruction>, CompilationError> {
         self.resl = resl_code;
         self.file_path = file_path;

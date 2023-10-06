@@ -103,6 +103,11 @@ pub struct EngineRef {}
 
 impl EngineRef {
     pub fn new(engine: Engine) -> Self {
+        unsafe {
+            if !ENGINE_INSTANCE.is_null() {
+                logger::fatal!("Cannot initialize EngineRef : Engine is already instanced");
+            }
+        }
         unsafe { ENGINE_INSTANCE = Box::leak(Box::new(engine)) as *mut Engine; }
         Self {}
     }
@@ -136,7 +141,7 @@ impl Engine {
             ENGINE_INSTANCE = engine as *const Engine as *mut Engine;
         }
     }
-    pub fn new<GamemodeT: App + 'static>(app: GamemodeT) -> Box<RwLock<Engine>> {
+    pub fn new<GamemodeT: App + 'static>(app: GamemodeT) -> EngineRef {
         logger::init!();
 
         unsafe {
@@ -160,7 +165,7 @@ impl Engine {
             views: Default::default(),
             game_delta: DeltaSeconds::new(None),
         };
-        Box::new(RwLock::new(engine))
+        EngineRef::new(engine)
     }
 
     pub fn start(&mut self) {

@@ -2,16 +2,16 @@
 #pragma CULL            NONE
 
 global(surface_pass, deferred_combine)
-[
+{
     struct VsToFsStruct
     {
         float4 Pos : SV_Position;
         float2 Uv : TEXCOORD;
     };
-]
+}
 
 vertex(surface_pass, deferred_combine) 
-[
+{
     VsToFsStruct main(uint vertex_index : SV_VertexID)
     {
         VsToFsStruct output;
@@ -20,19 +20,19 @@ vertex(surface_pass, deferred_combine)
         output.Uv = uv * float2(1, -1);
         return output;
     }
-]
+}
 
 fragment(surface_pass, deferred_combine)
-[
+{
 	struct PushConsts 
 	{
 		float time;
 	};
 	[[vk::push_constant]] ConstantBuffer<PushConsts> pc;
-]
+}
 
 fragment(surface_pass)
-[
+{
     SamplerState global_sampler;
     Texture2D ui_result;
     Texture2D scene_result;
@@ -43,10 +43,10 @@ fragment(surface_pass)
         float4 scene = scene_result.Sample(global_sampler, input.Uv);
         return lerp(ui, scene, ui.a) + float4(0, 0, 0, pc.time);
     }
-]
+}
 
 fragment(deferred_combine)
-[
+{
     SamplerState global_sampler;
     Texture2D bg_texture;
     
@@ -54,4 +54,4 @@ fragment(deferred_combine)
     {
         return bg_texture.Sample(global_sampler, input.Uv) + float4(0, 0, 0, pc.time);
     }
-]
+}

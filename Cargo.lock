@@ -1118,8 +1118,10 @@ dependencies = [
  "display_json",
  "lalrpop",
  "lalrpop-util",
+ "logger",
  "serde",
  "serde_json",
+ "shader_base",
 ]
 
 [[package]]

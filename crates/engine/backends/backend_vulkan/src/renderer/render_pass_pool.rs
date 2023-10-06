@@ -3,7 +3,7 @@ use std::sync::{Arc, RwLock};
 
 use gfx::renderer::render_node::RenderNode;
 use gfx::renderer::render_pass::{RenderPass};
-use gfx::shader::PassID;
+use shader_base::pass_id::PassID;
 
 use crate::renderer::vk_render_pass::VkRenderPass;
 use crate::renderer::vk_render_pass_instance::VkRenderPassInstance;

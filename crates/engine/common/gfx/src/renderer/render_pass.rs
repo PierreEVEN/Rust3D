@@ -4,12 +4,12 @@ use std::sync::{Arc, RwLock};
 
 use ecs::entity::GameObject;
 use maths::vec2::Vec2u32;
+use shader_base::pass_id::PassID;
 
 use crate::command_buffer::GfxCommandBuffer;
 use crate::Gfx;
 use crate::image::{GfxImage, ImageType};
 use crate::renderer::render_node::RenderNode;
-use crate::shader::PassID;
 use crate::surface::Frame;
 use crate::types::GfxCast;
 

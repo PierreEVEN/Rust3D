@@ -4,8 +4,7 @@ use shaderc::{
     CompileOptions, Compiler, EnvVersion, IncludeCallbackResult, IncludeType, SourceLanguage,
     SpirvVersion, TargetEnv,
 };
-
-use gfx::shader::ShaderStage;
+use shader_base::ShaderStage;
 
 use crate::includer::Includer;
 use crate::reflect::SpirvReflector;
@@ -94,6 +93,9 @@ impl CompilerBackend for BackendShaderC {
             match _shader_stage {
                 ShaderStage::Vertex => shaderc::ShaderKind::Vertex,
                 ShaderStage::Fragment => shaderc::ShaderKind::Fragment,
+                ShaderStage::Tesselation => {shaderc::ShaderKind::TessControl}
+                ShaderStage::Geometry => {shaderc::ShaderKind::Geometry}
+                ShaderStage::Compute => {shaderc::ShaderKind::Compute}
             },
             virtual_path.to_str().unwrap(),
             "main",

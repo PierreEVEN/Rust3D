@@ -3,12 +3,14 @@ use std::path::Path;
 use std::sync::{Arc, RwLock};
 
 use gfx::shader::{
-    PassID, ShaderLanguage, ShaderProgram, ShaderProgramInfos, ShaderProgramStage, ShaderStage,
+    ShaderProgram, ShaderProgramInfos, ShaderProgramStage,
 };
+use shader_base::pass_id::PassID;
+use shader_base::{ShaderLanguage, ShaderStage};
 use shader_compiler::backends::backend_shaderc::{BackendShaderC, ShaderCIncluder};
+use shader_compiler::CompilerBackend;
 use shader_compiler::parser::Parser;
 use shader_compiler::types::InterstageData;
-use shader_compiler::CompilerBackend;
 
 use crate::asset::{AssetFactory, AssetMetaData, GameAsset};
 use crate::asset_type_id::AssetTypeID;

@@ -11,12 +11,14 @@ use ecs::entity::GameObject;
 use ecs::query::Query;
 use gfx::Gfx;
 use gfx::mesh::Mesh;
-use gfx::shader::{PassID, ShaderProgram, ShaderProgramInfos, ShaderProgramStage};
+use gfx::shader::{ShaderProgram, ShaderProgramInfos, ShaderProgramStage};
 use gfx::shader_instance::ShaderInstance;
 use gfx::types::BackgroundColor;
 use maths::vec4::Vec4F32;
 use plateform::window::{PlatformEvent, WindowCreateInfos};
 use resl::hlsl_builder;
+use shader_base::pass_id::PassID;
+use shader_base::{ShaderInterface, ShaderStage};
 
 mod gfx_demo;
 
@@ -34,18 +36,11 @@ struct MeshComponent {
     _name: String,
 }
 
-#[derive(Default)]
-struct CompiledSpirv {}
+pub struct ReslShaderInterface {}
 
-#[derive(Default)]
-struct Material {
-    spirv: CompiledSpirv,
-    programs: RwLock<HashMap<PassID, Arc<dyn ShaderProgram>>>,
-}
-
-impl Material {
-    pub fn set_from_resl(&mut self, file_path: &PathBuf) {
-        let resl_code = fs::read_to_string(file_path).unwrap();
+impl From<PathBuf> for ReslShaderInterface {
+    fn from(file_path: PathBuf) -> Self {
+        let resl_code = fs::read_to_string(file_path.clone()).unwrap();
 
         let mut builder = hlsl_builder::ReslParser::default();
         match builder.parse(resl_code, file_path.clone()) {
@@ -64,12 +59,31 @@ impl Material {
                 }
             }
         };
+        Self {}
+    }
+}
+
+impl ShaderInterface for ReslShaderInterface {
+    fn get_spirv_for(&self, _render_pass: &PassID, _stage: ShaderStage) -> Vec<u8> {
+        todo!()
+    }
+}
+
+#[derive(Default)]
+struct Material {
+    programs: RwLock<HashMap<PassID, Arc<dyn ShaderProgram>>>,
+    shader_interface: RwLock<Option<Box<dyn ShaderInterface>>>,
+}
+
+impl Material {
+    pub fn set_shader<T: 'static + ShaderInterface>(&mut self, shader: T) {
+        *self.shader_interface.write().unwrap() = Some(Box::new(shader));
     }
 
     pub fn get_program_for_pass(&self, pass_id: &PassID) -> Option<Arc<dyn ShaderProgram>> {
         match self.programs.read().unwrap().get(pass_id) {
             None => {}
-            Some(program) => { return Some(program.clone()) }
+            Some(program) => { return Some(program.clone()); }
         }
         self.programs.write().unwrap().insert(pass_id.clone(), Gfx::get().create_shader_program(
             "undefined shader program".to_string(),
@@ -99,7 +113,7 @@ impl App for TestApp {
         // Create world
         self.world = Engine::get().new_world();
         self.main_camera = self.world.add_object::<Camera>(Camera {});
-        self.world.add_object::<MeshComponent>(MeshComponent { _mesh: None, _material: None, _val: 5, _name: "coucou je suis un mesh".to_string() });
+        self.world.add_object::<MeshComponent>(MeshComponent { _mesh: None, _material: None, _val: 5, _name: "raw test mesh".to_string() });
 
         // Create main window
         let main_window = Engine::get().platform().create_window(WindowCreateInfos::default_named("Rust3D Editor")).unwrap();
@@ -118,18 +132,17 @@ impl App for TestApp {
         renderer.set_default_view(&self.main_camera);
 
         let mut material = Material::default();
-        //material.set_from_resl(&PathBuf::from("./test.resl"));
+        material.set_shader(ReslShaderInterface::from(PathBuf::from("./test.resl")));
         let mat = Arc::new(material);
 
         match renderer.present_node().find_node("g_buffers") {
             None => {}
             Some(g_buffer) => {
-                g_buffer.add_render_function(move |ecs, _command_buffer| {
-                    let _mat = mat.clone();
+                g_buffer.add_render_function(move |ecs, command_buffer| {
+                    let mat = mat.clone();
                     Query::<&mut MeshComponent>::new(ecs).for_each(|_| {
-                        // Useless because we can speed this up by passing render pass trough render function
-                        //let program = _mat.get_program_for_pass(&_command_buffer.get_pass_id()).unwrap();
-                        //_command_buffer.bind_program(&program);
+                        let program = mat.get_program_for_pass(&command_buffer.get_pass_id()).unwrap();
+                        command_buffer.bind_program(&program);
                     });
                 })
             }

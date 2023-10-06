@@ -2,8 +2,9 @@ use std::slice;
 
 use rspirv_reflect::Reflection;
 
-use gfx::shader::{DescriptorBinding, DescriptorType};
+use gfx::shader::{DescriptorBinding};
 use gfx::shader_instance::BindPoint;
+use shader_base::DescriptorType;
 
 pub struct SpirvReflector {
     pub bindings: Vec<DescriptorBinding>,

@@ -1,11 +1,10 @@
 use crate::file_iterator::FileIterator;
 use crate::includer::Includer;
 use crate::types::ShaderErrorResult;
-use gfx::shader::{
-    AlphaMode, Culling, FrontFace, PassID, PolygonMode, ShaderLanguage, ShaderProperties,
-    ShaderStage, Topology,
-};
+use gfx::shader::{ ShaderProperties };
 use std::collections::HashMap;
+use shader_base::pass_id::PassID;
+use shader_base::{AlphaMode, Culling, FrontFace, PolygonMode, ShaderLanguage, ShaderStage, Topology};
 
 #[derive(Default)]
 pub struct ProgramData {
@@ -53,7 +52,7 @@ impl ProgramData {
                         None,
                         None,
                         "ProgramData::get_data",
-                        format!("failed to find pass {pass} for stage {stage}").as_str(),
+                        format!("failed to find pass {pass} for stage {:?}", stage).as_str(),
                         "",
                     );
                     Err(errors)

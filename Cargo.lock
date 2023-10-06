@@ -87,6 +87,7 @@ dependencies = [
  "logger",
  "macros",
  "maths",
+ "shader_base",
 ]
 
 [[package]]
@@ -260,6 +261,7 @@ dependencies = [
  "logger",
  "maths",
  "plateform",
+ "shader_base",
  "shader_compiler",
  "third_party_io",
 ]
@@ -383,6 +385,7 @@ dependencies = [
  "maths",
  "plateform",
  "resl",
+ "shader_base",
  "shader_compiler",
  "third_party_io",
 ]
@@ -500,6 +503,7 @@ dependencies = [
  "maths",
  "plateform",
  "resl",
+ "shader_base",
 ]
 
 [[package]]
@@ -1227,12 +1231,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "shader_base"
+version = "0.1.0"
+
+[[package]]
 name = "shader_compiler"
 version = "0.1.0"
 dependencies = [
  "gfx",
  "logger",
  "rspirv-reflect",
+ "shader_base",
  "shaderc",
 ]
 

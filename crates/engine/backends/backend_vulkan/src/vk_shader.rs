@@ -7,8 +7,10 @@ use std::sync::Arc;
 use ash::vk;
 use gfx::Gfx;
 
-use gfx::shader::{AlphaMode, Culling, DescriptorBinding, FrontFace, PassID, PolygonMode, ShaderProgram, ShaderProgramInfos, Topology};
+use gfx::shader::{ DescriptorBinding,  ShaderProgram, ShaderProgramInfos};
 use gfx::shader_instance::{ShaderInstance, ShaderInstanceCreateInfos};
+use shader_base::pass_id::PassID;
+use shader_base::{AlphaMode, Culling, FrontFace, PolygonMode, Topology};
 
 //use crate::vk_types::VkPixelFormat;
 use crate::{GfxVulkan, vk_check, VkShaderInstance};

@@ -2,8 +2,8 @@ use std::sync::Arc;
 use ash::vk;
 use gfx::image::GfxImage;
 use gfx::renderer::render_pass::RenderPass;
-use gfx::shader::PassID;
 use gfx::types::{BackgroundColor, PixelFormat};
+use shader_base::pass_id::PassID;
 use crate::vk_types::VkPixelFormat;
 use crate::{vk_check, GfxVulkan};
 

@@ -2,7 +2,8 @@ use std::sync::Arc;
 
 use ash::vk;
 
-use gfx::shader::{DescriptorBinding, DescriptorType};
+use gfx::shader::{DescriptorBinding};
+use shader_base::DescriptorType;
 
 use crate::{vk_check, GfxVulkan};
 

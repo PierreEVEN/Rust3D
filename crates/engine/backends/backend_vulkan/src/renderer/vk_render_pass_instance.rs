@@ -8,10 +8,10 @@ use gfx::gfx_resource::{GfxImageBuilder, GfxResource};
 use gfx::image::{GfxImage};
 use gfx::renderer::render_node::RenderNode;
 use gfx::renderer::render_pass::{RenderPass, RenderPassInstance};
-use gfx::shader::PassID;
 use gfx::surface::Frame;
 use gfx::types::BackgroundColor;
 use maths::vec2::Vec2u32;
+use shader_base::pass_id::PassID;
 
 use crate::{GfxVulkan, vk_check};
 use crate::renderer::vk_render_pass::VkRenderPass;

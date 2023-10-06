@@ -8,3 +8,4 @@ shaderc = "0.8.2"
 gfx = { path = "../common/gfx" }
 rspirv-reflect = "0.7.0"
 logger = {path = "../logger"}
+shader_base = {path = "../common/shader_base"}

@@ -6,10 +6,12 @@ use gfx::buffer::BufferMemory;
 use gfx::command_buffer::GfxCommandBuffer;
 use gfx::gfx_resource::{GfxImageBuilder, GfxResource};
 use gfx::mesh::{IndexBufferType, Mesh};
-use gfx::shader::{PassID, ShaderProgram, ShaderStage};
+use gfx::shader::{ShaderProgram};
 use gfx::shader_instance::ShaderInstance;
 use gfx::surface::Frame;
 use gfx::types::Scissors;
+use shader_base::pass_id::PassID;
+use shader_base::ShaderStage;
 
 use crate::{vk_check, GfxVulkan, VkBuffer, VkShaderInstance, VkShaderProgram};
 
@@ -307,6 +309,9 @@ impl GfxCommandBuffer for VkCommandBuffer {
                     match stage {
                         ShaderStage::Vertex => vk::ShaderStageFlags::VERTEX,
                         ShaderStage::Fragment => vk::ShaderStageFlags::FRAGMENT,
+                        ShaderStage::Tesselation => {vk::ShaderStageFlags::TESSELLATION_CONTROL}
+                        ShaderStage::Geometry => {vk::ShaderStageFlags::GEOMETRY}
+                        ShaderStage::Compute => {vk::ShaderStageFlags::COMPUTE}
                     },
                     0,
                     data.as_slice(),

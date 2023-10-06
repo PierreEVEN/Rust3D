@@ -1,7 +1,8 @@
 use crate::parser::ShaderChunk;
 use crate::types::{InterstageData, ShaderErrorResult};
-use gfx::shader::{DescriptorBinding, ShaderLanguage, ShaderStage};
+use gfx::shader::{DescriptorBinding};
 use std::path::Path;
+use shader_base::{ShaderLanguage, ShaderStage};
 
 mod file_iterator;
 mod includer;

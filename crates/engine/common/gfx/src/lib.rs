@@ -3,6 +3,7 @@ use std::hash::{Hash, Hasher};
 use std::mem::MaybeUninit;
 use std::ops::Deref;
 use std::sync::Arc;
+use shader_base::pass_id::PassID;
 
 use crate::buffer::{BufferCreateInfo, GfxBuffer};
 use crate::command_buffer::GfxCommandBuffer;
@@ -10,7 +11,7 @@ use crate::image::{GfxImage, ImageCreateInfos};
 use crate::image_sampler::{ImageSampler, SamplerCreateInfos};
 use crate::mesh::{Mesh, MeshCreateInfos};
 use crate::renderer::render_pass::{RenderPass, RenderPassInstance};
-use crate::shader::{PassID, ShaderProgram, ShaderProgramInfos};
+use crate::shader::{ShaderProgram, ShaderProgramInfos};
 use crate::shader_instance::ShaderInstance;
 use crate::types::GfxCast;
 

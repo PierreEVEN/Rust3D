@@ -16,8 +16,9 @@ use gfx::command_buffer::GfxCommandBuffer;
 use gfx::image::{GfxImage, ImageCreateInfos};
 use gfx::image_sampler::{ImageSampler, SamplerCreateInfos};
 use gfx::renderer::render_pass::{RenderPass, RenderPassInstance};
-use gfx::shader::{PassID, ShaderProgram, ShaderProgramInfos};
+use gfx::shader::{ShaderProgram, ShaderProgramInfos};
 use logger::fatal;
+use shader_base::pass_id::PassID;
 
 use crate::renderer::render_pass_pool::RenderPassPool;
 use crate::vk_buffer::VkBuffer;

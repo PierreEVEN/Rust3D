@@ -1,8 +1,8 @@
 use crate::buffer::BufferMemory;
-use crate::shader::ShaderStage;
 use crate::types::Scissors;
 use crate::{GfxCast, Mesh, PassID, ShaderInstance, ShaderProgram};
 use std::sync::Arc;
+use shader_base::ShaderStage;
 
 pub trait GfxCommandBuffer: GfxCast {
     fn bind_program(&self, program: &Arc<dyn ShaderProgram>);

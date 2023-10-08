@@ -5,23 +5,26 @@ use std::sync::Arc;
 use lalrpop_util::lalrpop_mod;
 use shader_base::pass_id::PassID;
 use shader_base::{AlphaMode, CompilationError, Culling, FrontFace, PolygonMode, ShaderInterface, ShaderParameters, ShaderStage, Topology};
-use crate::ast::{HlslInstruction, Instruction};
+use crate::ast::{Instruction};
+use crate::hlsl_block::HlslBlock;
+use crate::hlsl_to_spirv::HlslToSpirv;
 use crate::list_of::ListOf;
 
 lalrpop_mod!(language);
 
 mod ast;
 mod list_of;
-pub mod resl;
 mod hlsl_to_spirv;
+mod hlsl_block;
+mod parsed_instructions;
 
 #[derive(Default)]
 pub struct ReslShaderInterface {
     version: Option<u64>,
-    _code: String,
-    blocks: HashMap<ShaderStage, HashMap<PassID, Vec<Arc<ListOf<HlslInstruction>>>>>,
+    blocks: HashMap<ShaderStage, HashMap<PassID, Vec<Arc<HlslBlock>>>>,
     errors: Vec<CompilationError>,
     parameters: ShaderParameters,
+    file_path: PathBuf
 }
 
 impl ReslShaderInterface {
@@ -115,7 +118,7 @@ impl ReslShaderInterface {
         Ok(())
     }
 
-    fn push_block(&mut self, stage: &ShaderStage, pass: PassID, content: Arc<ListOf<HlslInstruction>>) -> Result<(), String> {
+    fn push_block(&mut self, stage: &ShaderStage, pass: PassID, content: Arc<HlslBlock>) -> Result<(), String> {
         match self.blocks.get_mut(stage) {
             None => {
                 self.blocks.insert(stage.clone(), HashMap::from([(pass, vec![content])]));
@@ -154,7 +157,7 @@ impl From<PathBuf> for ReslShaderInterface {
 
         let mut interface = Self {
             version: None,
-            _code: resl_code,
+            file_path: file_path,
             blocks: Default::default(),
             errors: vec![],
             parameters: Default::default(),
@@ -192,7 +195,7 @@ impl From<PathBuf> for ReslShaderInterface {
                     }
                 }
                 Instruction::Global(token, render_pass_group, content) => {
-                    let block = Arc::new((*content).clone());
+                    let block = Arc::new(HlslBlock::new((*content).clone()));
                     let mut keys = vec![];
                     for key in interface.blocks.keys() { keys.push(key.clone()) }
                     for stage in keys {
@@ -205,7 +208,7 @@ impl From<PathBuf> for ReslShaderInterface {
                     }
                 }
                 Instruction::Block(token, stage, render_pass_group, content) => {
-                    let block = Arc::new((*content).clone());
+                    let block = Arc::new(HlslBlock::new(content.clone()));
                     for render_pass in render_pass_group.iter() {
                         match interface.push_block(stage, PassID::new(render_pass), block.clone()) {
                             Ok(_) => {}
@@ -221,8 +224,24 @@ impl From<PathBuf> for ReslShaderInterface {
 }
 
 impl ShaderInterface for ReslShaderInterface {
-    fn get_spirv_for(&self, _: &PassID, _: ShaderStage) -> Vec<u32> {
-        todo!()
+    fn get_spirv_for(&self, pass: &PassID, stage: &ShaderStage) -> Result<Vec<u32>, CompilationError> {
+
+        let code = match self.blocks.get(stage) {
+            None => {return Err(CompilationError::throw(format!("This shader is not available for stage {:?}", stage), None))}
+            Some(stage) => {
+                match stage.get(pass) {
+                    None => {return Err(CompilationError::throw(format!("This shader is not available for pass {pass}"), None))}
+                    Some(pass) => {
+                        let mut code = String::new();
+                        for pass in pass {
+                            code += pass.get_text().as_str()
+                        }
+                        code
+                    }
+                }
+            }
+        };
+        HlslToSpirv::default().transpile(&code, &self.file_path, stage)
     }
     fn get_parameters_for(&self, _: &PassID) -> &ShaderParameters {
         &self.parameters
@@ -233,27 +252,7 @@ impl ShaderInterface for ReslShaderInterface {
 fn parse_resl() {
     let crate_path = "crates/engine/common/resl/";
     let file_path = "src/shader.resl";
-    let absolute_path = std::path::PathBuf::from(crate_path.to_string() + file_path);
+    let _absolute_path = std::path::PathBuf::from(crate_path.to_string() + file_path);
 
-    let code = std::fs::read_to_string(file_path).unwrap();
-
-    let mut builder = resl::Parser::default();
-
-
-    match builder.parse(code, absolute_path.clone()) {
-        Ok(_) => {}
-        Err(err) => {
-            match err.token {
-                None => {
-                    panic!("{}\n  --> {}", err.message, absolute_path.to_str().unwrap());
-                }
-                Some(token) => {
-                    let (line, column) = builder.get_error_location(token);
-                    panic!("{}\n  --> {}:{}:{}", err.message, absolute_path.to_str().unwrap(), line, column);
-                }
-            }
-        }
-    };
-
-    println!("{:?}", builder.hlsl);
+    let _code = std::fs::read_to_string(file_path).unwrap();
 }

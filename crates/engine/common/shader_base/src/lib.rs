@@ -3,7 +3,7 @@ use crate::pass_id::PassID;
 pub mod pass_id;
 
 pub trait ShaderInterface {
-    fn get_spirv_for(&self, render_pass: &PassID, stage: ShaderStage) -> Vec<u32>;
+    fn get_spirv_for(&self, render_pass: &PassID, stage: &ShaderStage) -> Result<Vec<u32>, CompilationError>;
 
     fn get_parameters_for(&self, render_pass: &PassID) -> &ShaderParameters;
 }

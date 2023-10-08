@@ -21,6 +21,9 @@ else { // Reserved names
     "compute" => compute,
     r"(struct|cbuffer)" => struct,
 }
+else { // Hlsl types
+    r"[a-zA-Z][a-zA-Z0-9_]*<([a-zA-Z][a-zA-Z0-9_]|,)*>" => template_type,
+}
 else { // Other tokens
     r"[0-9]*\.[0-9]+f?" => FLOAT,
 }
@@ -110,16 +113,13 @@ HlslInstruction : HlslInstruction = {
         HlslInstruction::Define(t, name, if value.is_empty() { None } else { Some(value) })
     },
     <t:@L> include => HlslInstruction::Include(t, <>.to_string()),
-    <t:@L> <return_type:Word> <name:Word> "(" <params:FunctionParameterList> ")" BRACKET_OPEN <content:FunctionContent> BRACKET_CLOSE => HlslInstruction::Function(t, name, Function { return_type, attribute: None, params, content} ),
-    <t:@L> <return_type:Word> <name:Word> "(" <params:FunctionParameterList> ")" ":" <attribute:Word> BRACKET_OPEN <content:FunctionContent> BRACKET_CLOSE => HlslInstruction::Function(t, name, Function { return_type, attribute: Some(attribute), params, content} ),
-    <t:@L> <return_type:Word> <name:Word> "(" <params:FunctionParameterList> ")" BRACKET_OPEN BRACKET_CLOSE => HlslInstruction::Function(t, name, Function { return_type, attribute: None, params, content: ListOf::<HlslCodeBlock>::new()} ),
-    <t:@L> <return_type:Word> <name:Word> "(" <params:FunctionParameterList> ")" ":" <attribute:Word> BRACKET_OPEN BRACKET_CLOSE => HlslInstruction::Function(t, name, Function { return_type, attribute: Some(attribute), params, content: ListOf::<HlslCodeBlock>::new()} ),
+    <t:@L> <return_type:HlslType> <name:Word> "(" <params:FunctionParameterList> ")" <beg:@L> BRACKET_OPEN <content:FunctionContent> BRACKET_CLOSE <end:@R> => HlslInstruction::Function(t, name, Function { return_type: (t, return_type), attribute: None, params, content: (beg, end, content)} ),
+    <t:@L> <return_type:HlslType> <name:Word> "(" <params:FunctionParameterList> ")" ":" <at_loc:@L> <attribute:Word> <beg:@L> BRACKET_OPEN <content:FunctionContent> BRACKET_CLOSE <end:@R> => HlslInstruction::Function(t, name, Function { return_type: (t, return_type), attribute: Some((at_loc, attribute)), params, content: (beg, end, content)} ),
+    <t:@L> <return_type:HlslType> <name:Word> "(" <params:FunctionParameterList> ")" <beg:@L> BRACKET_OPEN BRACKET_CLOSE <end:@R>  => HlslInstruction::Function(t, name, Function { return_type: (t, return_type), attribute: None, params, content: (beg, end, ListOf::<HlslCodeBlock>::new())} ),
+    <t:@L> <return_type:HlslType> <name:Word> "(" <params:FunctionParameterList> ")" ":" <at_loc:@L> <attribute:Word> <beg:@L> BRACKET_OPEN BRACKET_CLOSE <end:@R> => HlslInstruction::Function(t, name, Function { return_type: (t, return_type), attribute: Some((at_loc, attribute)), params, content:(beg, end, ListOf::<HlslCodeBlock>::new())} ),
     
-    <t:@L> <prop_type:Word> <name:Word> SEMICOLON => HlslInstruction::Property(t, prop_type, name, None),
-    <t:@L> <prop_type:Word> <name:Word> ":" <register:register> SEMICOLON => HlslInstruction::Property(t, prop_type, name, Some(Register::new(register))),
-    
-    <t:@L> <prop_type:Word> "<" <inner_type:Word> ">" <name:Word> SEMICOLON => HlslInstruction::Property(t, format!("{}<{}>", prop_type, inner_type), name, None),
-    <t:@L> <prop_type:Word>  "<" <inner_type:Word> ">" <name:Word> ":" <register:register> SEMICOLON => HlslInstruction::Property(t, format!("{}<{}>", prop_type, inner_type), name, Some(Register::new(register))),
+    <t:@L> <prop_type:HlslType> <name:Word> SEMICOLON => HlslInstruction::Property(t, prop_type, name, None),
+    <t:@L> <prop_type:HlslType> <name:Word> ":" <register:register> SEMICOLON => HlslInstruction::Property(t, prop_type, name, Some(Register::new(register))),
 }
 
 StructureFieldList : ListOf<StructureField> = {
@@ -128,9 +128,9 @@ StructureFieldList : ListOf<StructureField> = {
 }
 
 StructureField : StructureField = {
-    <struct_type:Word> <name:Word> SEMICOLON => StructureField {struct_type, name, value: None, attribute:None},
-    <struct_type:Word> <name:Word> ":" <attribute:Word> SEMICOLON => StructureField {struct_type, name, value: None, attribute: Some(attribute)},
-    <struct_type:Word> <name:Word> "[" WORD "]" SEMICOLON => StructureField {struct_type, name, value: None, attribute: None},
+    <token:@L> <struct_type:HlslType> <name:Word> SEMICOLON => StructureField {token, struct_type, name, value: None, attribute:None},
+    <token:@L> <struct_type:HlslType> <name:Word> ":" <attribute:Word> SEMICOLON => StructureField {token,struct_type, name, value: None, attribute: Some(attribute)},
+    <token:@L> <struct_type:HlslType> <name:Word> "[" WORD "]" SEMICOLON => StructureField {token, struct_type, name, value: None, attribute: None},
 }
 
 FunctionParameterList : ListOf<FunctionParameter> = {
@@ -139,8 +139,8 @@ FunctionParameterList : ListOf<FunctionParameter> = {
 }
 
 FunctionParameter : FunctionParameter = {
-    <param_type:Word> <name:Word> => FunctionParameter {param_type, name},
-    <param_type:Word> <name:Word> ":" Word => FunctionParameter {param_type, name}
+    <a:@L> <param_type:HlslType> <b:@L> <name:Word> => FunctionParameter {param_type:(a, param_type), name:(b, name), attribute:None},
+    <a:@L> <param_type:HlslType> <b:@L> <name:Word> ":" <c:@L> <attribute:Word> => FunctionParameter {param_type:(a, param_type), name:(b, name), attribute:Some((c, attribute))}
 }
 
 FunctionContent : ListOf<HlslCodeBlock> = {
@@ -151,11 +151,17 @@ FunctionContent : ListOf<HlslCodeBlock> = {
     },
 }
 
+HlslType : HlslType = {
+    WORD => HlslType::from(<>),
+    template_type => HlslType::from(<>),
+}
+
 AllUntilSemicolon : ListOf<HlslCodeBlock> = {
     <t:@L> SEMICOLON => ListOf::<HlslCodeBlock>::new().push(HlslCodeBlock::Semicolon(t)),
     <t:@L> <a:INTEGER> <b:AllUntilSemicolon> => b.push_front(HlslCodeBlock::Text(t, a.to_string())),
     <t:@L> <a:FLOAT> <b:AllUntilSemicolon> => b.push_front(HlslCodeBlock::Text(t, a.to_string())),
     <t:@L> <a:WORD> <b:AllUntilSemicolon> => b.push_front(HlslCodeBlock::Text(t, a.to_string())),
+    <t:@L> <a:template_type> <b:AllUntilSemicolon> => b.push_front(HlslCodeBlock::Text(t, a.to_string())),
     <t:@L> <a:QUOTED_STRING> <b:AllUntilSemicolon> => b.push_front(HlslCodeBlock::Text(t, a.to_string())),
     <t:@L> <a:r"[^}{]"> <b:AllUntilSemicolon> => b.push_front(HlslCodeBlock::Token(t, a.chars().nth(0).unwrap())),
     <t:@L> <a:"("> <b:AllUntilSemicolon> => b.push_front(HlslCodeBlock::Token(t, a.chars().nth(0).unwrap())),
@@ -167,5 +173,5 @@ AllUntilSemicolon : ListOf<HlslCodeBlock> = {
     <t:@L> <a:":"> <b:AllUntilSemicolon> => b.push_front(HlslCodeBlock::Token(t, a.chars().nth(0).unwrap())),
     <t:@L> <a:">"> <b:AllUntilSemicolon> => b.push_front(HlslCodeBlock::Token(t, a.chars().nth(0).unwrap())),
     <t:@L> <a:"<"> <b:AllUntilSemicolon> => b.push_front(HlslCodeBlock::Token(t, a.chars().nth(0).unwrap())),
-    <t:@L> BRACKET_OPEN <b:FunctionContent> BRACKET_CLOSE => ListOf::<HlslCodeBlock>::new().push(HlslCodeBlock::InnerBlock(t, b))
+    <t:@L> BRACKET_OPEN <b:FunctionContent> <v:@L> BRACKET_CLOSE => ListOf::<HlslCodeBlock>::new().push(HlslCodeBlock::InnerBlock(t, v, b)),
 }

@@ -1,15 +1,17 @@
 use std::path::PathBuf;
 use shader_base::{CompilationError, ShaderStage};
 
-struct HlslToSpirv {}
+#[derive(Default)]
+pub struct HlslToSpirv {}
 
 impl HlslToSpirv {
     pub fn transpile(
         &self,
         hlsl: &String,
         virtual_path: &PathBuf,
-        shader_stage: ShaderStage,
+        shader_stage: &ShaderStage,
     ) -> Result<Vec<u32>, CompilationError> {
+        logger::info!("shader :\n{hlsl}");
         let compiler = match shaderc::Compiler::new() {
             None => { return Err(CompilationError::throw("failed to create shaderc compiler".to_string(), None)); }
             Some(compiler) => compiler,

@@ -38,7 +38,7 @@ impl MaterialAsset {
     pub fn set_shader_code(&self, virtual_path: &Path, shader_text: String) {
         let virtual_path = virtual_path.to_str().unwrap().to_string();
         *self.virtual_path.write().unwrap() = virtual_path.clone();
-
+        /*
         let parse_result = Parser::new(
             &shader_text,
             &virtual_path,
@@ -52,6 +52,8 @@ impl MaterialAsset {
             }
         };
         self.permutations.write().unwrap().clear();
+
+         */
     }
 
     pub fn get_program(&self, pass: &PassID) -> Option<Arc<dyn ShaderProgram>> {

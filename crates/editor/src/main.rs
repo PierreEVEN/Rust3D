@@ -16,7 +16,7 @@ use maths::vec4::Vec4F32;
 use plateform::window::{PlatformEvent, WindowCreateInfos};
 use resl::ReslShaderInterface;
 use shader_base::pass_id::PassID;
-use shader_base::{ShaderInterface, ShaderStage};
+use shader_base::{CompilationError, ShaderInterface, ShaderStage};
 
 mod gfx_demo;
 
@@ -50,18 +50,31 @@ impl Material {
             None => {}
             Some(program) => { return Some(program.clone()); }
         }
+
+        if let Some(shi) = &*self.shader_interface.read().unwrap() {
+            match &shi.get_spirv_for(&PassID::new("test"), &ShaderStage::Vertex) {
+                Ok(code) => {
+                    logger::warning!("spirv size : {}", code.len())
+                }
+                Err(err) => {
+                    logger::fatal!("{:?}", err)
+                }
+            }
+        }
+
+
         self.programs.write().unwrap().insert(pass_id.clone(), Gfx::get().create_shader_program(
             "undefined shader program".to_string(),
             pass_id.clone(),
             &ShaderProgramInfos {
                 vertex_stage: ShaderProgramStage {
-                    spirv: self.shader_interface.read().unwrap().unwrap().get_spirv_for(pass_id, ShaderStage::Vertex),
+                    spirv: vec![],
                     descriptor_bindings: vec![],
                     push_constant_size: 0,
                     stage_input: vec![],
                 },
                 fragment_stage: ShaderProgramStage {
-                    spirv: self.shader_interface.read().unwrap().unwrap().get_spirv_for(pass_id, ShaderStage::Fragment),
+                    spirv: vec![],
                     descriptor_bindings: vec![],
                     push_constant_size: 0,
                     stage_input: vec![],

@@ -36,7 +36,6 @@ else {
     r";" => SEMICOLON,
     "{" => BRACKET_OPEN,
     r"(};)|}" => BRACKET_CLOSE,
-    r"register\([^)]+\)" => register,
 }
 else {
     _
@@ -91,8 +90,7 @@ HLSL_CODE : ListOf<HlslInstruction> = {
 }
 
 HlslInstruction : HlslInstruction = {
-    <t:@L> struct <name:Word> BRACKET_OPEN <fields:StructureFieldList> BRACKET_CLOSE => HlslInstruction::Struct(t, name, None, fields),
-    <t:@L> struct <name:Word> ":" <register:register> BRACKET_OPEN <fields:StructureFieldList> BRACKET_CLOSE => HlslInstruction::Struct(t, name, Some(Register::new(register)), fields),
+    <t:@L> struct <name:Word> BRACKET_OPEN <fields:StructureFieldList> BRACKET_CLOSE => HlslInstruction::Struct(t, name, fields),
     <t:@L> <def:define> => {
         let mut name = String::new();
         let mut value = String::new();
@@ -118,8 +116,7 @@ HlslInstruction : HlslInstruction = {
     <t:@L> <return_type:HlslType> <name:Word> "(" <params:FunctionParameterList> ")" <beg:@L> BRACKET_OPEN BRACKET_CLOSE <end:@R>  => HlslInstruction::Function(t, name, Function { return_type: (t, return_type), attribute: None, params, content: (beg, end, ListOf::<HlslCodeBlock>::new())} ),
     <t:@L> <return_type:HlslType> <name:Word> "(" <params:FunctionParameterList> ")" ":" <at_loc:@L> <attribute:Word> <beg:@L> BRACKET_OPEN BRACKET_CLOSE <end:@R> => HlslInstruction::Function(t, name, Function { return_type: (t, return_type), attribute: Some((at_loc, attribute)), params, content:(beg, end, ListOf::<HlslCodeBlock>::new())} ),
     
-    <t:@L> <prop_type:HlslType> <name:Word> SEMICOLON => HlslInstruction::Property(t, prop_type, name, None),
-    <t:@L> <prop_type:HlslType> <name:Word> ":" <register:register> SEMICOLON => HlslInstruction::Property(t, prop_type, name, Some(Register::new(register))),
+    <t:@L> <prop_type:HlslType> <name:Word> SEMICOLON => HlslInstruction::Property(t, prop_type, name),
 }
 
 StructureFieldList : ListOf<StructureField> = {

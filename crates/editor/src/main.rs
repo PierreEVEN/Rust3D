@@ -47,41 +47,17 @@ impl Material {
 
     pub fn get_program_for_pass(&self, pass_id: &PassID) -> Option<Arc<dyn ShaderProgram>> {
         match self.programs.read().unwrap().get(pass_id) {
-            None => {}
+            None => {
+                if let Some(shi) = &*self.shader_interface.read().unwrap() {
+                    return self.programs.write().unwrap().insert(pass_id.clone(), Gfx::get().create_shader_program(
+                        "undefined shader program".to_string(),
+                        pass_id.clone(), shi.as_ref(),
+                    ));
+                }
+                return None;
+            }
             Some(program) => { return Some(program.clone()); }
         }
-
-        if let Some(shi) = &*self.shader_interface.read().unwrap() {
-            match &shi.get_spirv_for(&PassID::new("test"), &ShaderStage::Vertex) {
-                Ok(code) => {
-                    logger::warning!("spirv size : {}", code.len())
-                }
-                Err(err) => {
-                    logger::fatal!("{:?}", err)
-                }
-            }
-        }
-
-
-        self.programs.write().unwrap().insert(pass_id.clone(), Gfx::get().create_shader_program(
-            "undefined shader program".to_string(),
-            pass_id.clone(),
-            &ShaderProgramInfos {
-                vertex_stage: ShaderProgramStage {
-                    spirv: vec![],
-                    descriptor_bindings: vec![],
-                    push_constant_size: 0,
-                    stage_input: vec![],
-                },
-                fragment_stage: ShaderProgramStage {
-                    spirv: vec![],
-                    descriptor_bindings: vec![],
-                    push_constant_size: 0,
-                    stage_input: vec![],
-                },
-                shader_properties: Default::default(),
-            },
-        ))
     }
 }
 

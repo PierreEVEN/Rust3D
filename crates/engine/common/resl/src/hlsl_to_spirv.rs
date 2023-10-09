@@ -8,6 +8,7 @@ impl HlslToSpirv {
     pub fn transpile(
         &self,
         hlsl: &String,
+        entry_point: &String,
         virtual_path: &PathBuf,
         shader_stage: &ShaderStage,
     ) -> Result<Vec<u32>, CompilationError> {
@@ -23,7 +24,6 @@ impl HlslToSpirv {
         };
         compile_options.set_hlsl_io_mapping(true);
         compile_options.set_auto_map_locations(true);
-        compile_options.set_auto_bind_uniforms(true);
         compile_options.set_target_env(shaderc::TargetEnv::Vulkan, shaderc::EnvVersion::Vulkan1_2 as u32);
         compile_options.set_target_spirv(shaderc::SpirvVersion::V1_3);
         compile_options.set_source_language(shaderc::SourceLanguage::HLSL);
@@ -39,7 +39,7 @@ impl HlslToSpirv {
                 ShaderStage::Compute => { shaderc::ShaderKind::Compute }
             },
             virtual_path.to_str().unwrap(),
-            "main",
+            entry_point.as_str(),
             Some(&compile_options),
         ) {
             Ok(binary) => binary,

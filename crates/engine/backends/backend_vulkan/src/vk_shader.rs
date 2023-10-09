@@ -10,7 +10,7 @@ use gfx::Gfx;
 use gfx::shader::{ DescriptorBinding,  ShaderProgram, ShaderProgramInfos};
 use gfx::shader_instance::{ShaderInstance, ShaderInstanceCreateInfos};
 use shader_base::pass_id::PassID;
-use shader_base::{AlphaMode, Culling, FrontFace, PolygonMode, Topology};
+use shader_base::{AlphaMode, Culling, FrontFace, PolygonMode, ShaderInterface, ShaderStage, Topology};
 
 //use crate::vk_types::VkPixelFormat;
 use crate::{GfxVulkan, vk_check, VkShaderInstance};
@@ -98,8 +98,9 @@ impl VkShaderProgram {
     pub fn new(
         name: String,
         pass_id: PassID,
-        create_infos: &ShaderProgramInfos,
+        create_infos: &dyn ShaderInterface,
     ) -> Arc<Self> {
+
         let descriptor_set_layout = VkDescriptorSetLayout::new(
             name.clone(),
             &create_infos.vertex_stage.descriptor_bindings,
@@ -109,8 +110,8 @@ impl VkShaderProgram {
         let mut bindings = create_infos.vertex_stage.descriptor_bindings.clone();
         bindings.append(&mut create_infos.fragment_stage.descriptor_bindings.clone());
 
-        let vertex_module = VkShaderModule::new(name.clone(), &create_infos.vertex_stage.spirv);
-        let fragment_module = VkShaderModule::new(name.clone(), &create_infos.fragment_stage.spirv);
+        let vertex_module = VkShaderModule::new(name.clone(), &create_infos.get_spirv_for(&pass_id, &ShaderStage::Vertex).unwrap());
+        let fragment_module = VkShaderModule::new(name.clone(), &create_infos.get_spirv_for(&pass_id, &ShaderStage::Fragment).unwrap());
 
         let mut push_constants = Vec::<vk::PushConstantRange>::new();
 
@@ -152,7 +153,7 @@ impl VkShaderProgram {
 
         let mut vertex_input_size = 0;
 
-        for input_property in &create_infos.vertex_stage.stage_input {
+        for input_property in &create_infos.get_stage_inputs(&pass_id, &ShaderStage::Vertex) {
             if input_property.location < 0 {
                 continue;
             }

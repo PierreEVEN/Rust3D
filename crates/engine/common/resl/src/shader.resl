@@ -11,9 +11,9 @@ global(test, "shader a", shader_b) {
 
     struct VSInput
     {
-        float2 aPos 	: POSITION;
-        float2 aUV 		: TEXCOORD;
-        float4 aColor 	: COLOR;
+        float2 aPos;
+        float2 aUV;
+        float4 aColor;
     }
 
     struct PushConsts
@@ -23,7 +23,7 @@ global(test, "shader a", shader_b) {
     }
 
     // pixel shader function
-    float4 pixelShader(v2p input) : SV_TARGET
+    float4 pixelShader(v2p input)
     {
         float4 color = tex2D(MyTexture, input.uv);
         return color * input.color;
@@ -36,9 +36,9 @@ vertex(example) {
     // data structure : before vertex shader (mesh info)
     struct vertexInfo
     {
-        float3 position : POSITION;
-        float2 uv: TEXCOORD0;
-        float3 color : COLOR;
+        float3 position;
+        float2 uv;
+        float3 color;
     }
 
     // data structure : vertex shader to pixel shader
@@ -47,8 +47,8 @@ vertex(example) {
     struct v2p
     {
         float4 position : SV_POSITION;
-        float3 uv : TEXCOORD0;
-        float3 color : TEXCOORD1;
+        float3 uv;
+        float3 color;
     }
 
     // uniforms : external parameters
@@ -67,7 +67,7 @@ vertex(example) {
     }
 
     // pixel shader function
-    float4 pixelShader(v2p input) : SV_TARGET
+    float4 pixelShader(v2p input)
     {
         float4 color = tex2D(MyTexture, input.uv);
         return color * input.color;
@@ -75,12 +75,12 @@ vertex(example) {
 }
 
 fragment(all, none) {
-    Texture2D shadowMap : register(t0);
-    Texture2D diffuseMap : register(t1);
-    Texture2D normalMap : register(t2);
+    Texture2D shadowMap;
+    Texture2D diffuseMap;
+    Texture2D normalMap;
 
-    SamplerState sampleWrap : register(s0);
-    SamplerState sampleClamp : register(s1);
+    SamplerState sampleWrap;
+    SamplerState sampleClamp;
 
     #define NUM_LIGHTS 3
     #define SHADOW_DEPTH_BIAS 0.00005f
@@ -95,7 +95,7 @@ fragment(all, none) {
         float4x4 projection;
     };
 
-    cbuffer SceneConstantBuffer : register(b0)
+    cbuffer SceneConstantBuffer
     {
         float4x4 model;
         float4x4 view;
@@ -108,10 +108,10 @@ fragment(all, none) {
     struct PSInput
     {
         float4 position : SV_POSITION;
-        float4 worldpos : POSITION;
-        float2 uv : TEXCOORD0;
-        float3 normal : NORMAL;
-        float3 tangent : TANGENT;
+        float4 worldpos;
+        float2 uv;
+        float3 normal;
+        float3 tangent;
     };
 
 
@@ -198,7 +198,7 @@ fragment(all, none) {
         return dot(vBilinearWeights, vShadowTests);
     }
 
-    PSInput VSMain(float3 position : POSITION, float3 normal : NORMAL, float2 uv : TEXCOORD0, float3 tangent : TANGENT)
+    PSInput VSMain(float3 position, float3 normal, float2 uv, float3 tangent)
     {
         PSInput result;
 
@@ -220,7 +220,7 @@ fragment(all, none) {
         return result;
     }
 
-    float4 PSMain(PSInput input) : SV_TARGET
+    float4 PSMain(PSInput input)
     {
         float4 diffuseColor = diffuseMap.Sample(sampleWrap, input.uv);
         float3 pixelNormal = CalcPerPixelNormal(input.uv, input.normal, input.tangent);
@@ -241,17 +241,17 @@ fragment(all, none) {
 }
 
 global(a, b) {
-    Texture2D myTexture : register(t0);
-    SamplerState samLinear : register(s0);
+    Texture2D myTexture;
+    SamplerState samLinear;
 
-    cbuffer cbp : register(b1)
+    cbuffer cbp
     {
       float4 fColor;
       float4 fTexelSize;
       int fRad;
     };
 
-    float4 PShader(float4 position : SV_POSITION, float2 texcoord : TEXCOORD) : SV_TARGET
+    float4 PShader(float4 position, float2 texcoord)
     {
       float4 frag=float4(0,0,0,0);
       int ext=(2*fRad+1);
@@ -286,12 +286,12 @@ global(gbuffer, g_buffer_resolve)
 
 	struct VsToFsStruct
 	{
-		float4 Pos 			: SV_Position;
-		float3 Normal 	 	: NORMAL0;
-		float2 UV 		 	: TEXCOORD0;
-		float3 Color 	 	: COLOR0;
-		float3 WorldPos 	: POSITION1;
-		float3 Tangent 	 	: TEXCOORD1;
+		float4 Pos : SV_Position;
+		float3 Normal;
+		float2 UV;
+		float3 Color;
+		float3 WorldPos;
+		float3 Tangent;
 		toto   machin_test;
 	};
 };
@@ -301,7 +301,7 @@ global(gbuffer, g_buffer_resolve)
 vertex(test)
 {
 
-	float4 main(uint InstanceIndex : SV_InstanceID) : SV_Position
+	float4 main(uint InstanceIndex : SV_InstanceID)
 	{
 		return float4(1,1,1,1);
 	}
@@ -319,14 +319,12 @@ vertex(gbuffer)
 {
 	struct VSInput
 	{
-		float4 Pos 		: POSITION0;
-		float2 UV 		: TEXCOORD0;
-		float3 Color 	: COLOR0;
-		float3 Normal 	: NORMAL0;
-		float3 Tangent 	: TEXCOORD1;
+		float4 Pos;
+		float2 UV;
+		float3 Color;
+		float3 Normal;
+		float3 Tangent;
 	};
-
-	#include "ubo_definition.cg"
 
 	VsToFsStruct main(VSInput input, uint InstanceIndex : SV_InstanceID)
 	{
@@ -370,8 +368,8 @@ global(imgui_render_pass)
 	struct VsToFs 
 	{
 		float4 Pos 		: SV_Position;
-		float4 Color 	: COLOR;
-		float2 UV 	 	: TEXCOORD;
+		float4 Color;
+		float2 UV;
 	};
 }
 
@@ -379,9 +377,9 @@ vertex(imgui_render_pass)
 {
 	struct VSInput
 	{
-		float2 aPos 	: POSITION;
-		float2 aUV 		: TEXCOORD;
-		float4 aColor 	: COLOR;
+		float2 aPos;
+		float2 aUV;
+		float4 aColor;
 	};
 	
 	struct PushConsts 
@@ -412,7 +410,6 @@ fragment(imgui_render_pass)
 	}
 }
 
-#pragma shader_language HLSL
 #pragma CULL            NONE
 
 global(surface_pass, deferred_combine)
@@ -420,7 +417,7 @@ global(surface_pass, deferred_combine)
     struct VsToFsStruct
     {
         float4 Pos : SV_Position;
-        float2 Uv : TEXCOORD;
+        float2 Uv;
     };
 }
 
@@ -469,6 +466,3 @@ fragment(deferred_combine)
         return bg_texture.Sample(global_sampler, input.Uv) + float4(0, 0, 0, pc.time);
     }
 }
-
-
-// fragment(gbuffer) => "demo_fragment.shb"

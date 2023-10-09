@@ -4,8 +4,20 @@ pub mod pass_id;
 
 pub trait ShaderInterface {
     fn get_spirv_for(&self, render_pass: &PassID, stage: &ShaderStage) -> Result<Vec<u32>, CompilationError>;
-
     fn get_parameters_for(&self, render_pass: &PassID) -> &ShaderParameters;
+    fn get_stage_inputs(&self, render_pass: &PassID, stage: &ShaderStage) -> Result<Vec<Property>, CompilationError>;
+    fn get_stage_outputs(&self, render_pass: &PassID, stage: &ShaderStage) -> Result<Vec<Property>, CompilationError>;
+    fn get_push_constants(&self, render_pass: &PassID, stage: &ShaderStage) -> Result<Vec<Property>, CompilationError>;
+    fn get_resources(&self, render_pass: &PassID, stage: &ShaderStage) -> Result<Vec<Resource>, CompilationError>;
+}
+
+pub struct Resource {
+    location: usize,
+}
+
+pub struct Property {
+    pub name: String,
+    pub size: usize,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]

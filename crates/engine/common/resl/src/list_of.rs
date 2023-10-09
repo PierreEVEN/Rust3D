@@ -27,6 +27,10 @@ impl<T: Clone> ListOf<T> {
         self.items.iter()
     }
 
+    pub fn iter_mut(&mut self) -> impl Iterator<Item=&mut T> {
+        self.items.iter_mut()
+    }
+
     pub fn join<V: Default + for<'a> AddAssign<&'a mut U>, U: Clone, Fn: FnMut(&T) -> U>(&self, sep: U, mut f: Fn) -> V {
         let mut sep = sep;
         let mut list = V::default();

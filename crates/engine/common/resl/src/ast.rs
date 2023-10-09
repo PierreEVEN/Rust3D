@@ -47,24 +47,13 @@ impl Display for Value {
     }
 }
 
-#[derive(Clone, Debug)]
-pub struct Register {
-    pub content: String,
-}
-
-impl Register {
-    pub fn new(content: &str) -> Self {
-        Self { content: content.to_string() }
-    }
-}
-
 #[derive(Debug, Clone)]
 pub enum HlslInstruction {
-    Struct(usize, String, Option<Register>, ListOf<StructureField>),
+    Struct(usize, String, ListOf<StructureField>),
     Define(usize, String, Option<String>),
     Include(usize, String),
     Function(usize, String, Function),
-    Property(usize, HlslType, String, Option<Register>),
+    Property(usize, HlslType, String),
     Pragma(usize, String, Value),
 }
 
@@ -100,7 +89,7 @@ pub enum HlslCodeBlock {
     Semicolon(usize),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub enum HlslTypeSimple {
     Void,
     Bool,

@@ -16,9 +16,10 @@ use gfx::command_buffer::GfxCommandBuffer;
 use gfx::image::{GfxImage, ImageCreateInfos};
 use gfx::image_sampler::{ImageSampler, SamplerCreateInfos};
 use gfx::renderer::render_pass::{RenderPass, RenderPassInstance};
-use gfx::shader::{ShaderProgram, ShaderProgramInfos};
+use gfx::shader::{ShaderProgram};
 use logger::fatal;
 use shader_base::pass_id::PassID;
+use shader_base::ShaderInterface;
 
 use crate::renderer::render_pass_pool::RenderPassPool;
 use crate::vk_buffer::VkBuffer;
@@ -193,7 +194,7 @@ impl GfxInterface for GfxVulkan {
         &self,
         name: String,
         pass_id: PassID,
-        create_infos: &ShaderProgramInfos,
+        create_infos: &dyn ShaderInterface,
     ) -> Arc<dyn ShaderProgram> {
         VkShaderProgram::new(name, pass_id, create_infos)
     }

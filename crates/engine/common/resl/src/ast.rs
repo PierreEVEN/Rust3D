@@ -1,5 +1,5 @@
 use std::collections::HashSet;
-use std::fmt::{Display, Formatter};
+use std::fmt::{Display, Formatter, Pointer};
 use regex::Regex;
 use shader_base::ShaderStage;
 use crate::list_of::ListOf;
@@ -107,23 +107,23 @@ pub enum HlslTypeSimple {
     SamplerComparisonState,
 }
 
-impl HlslTypeSimple {
-    pub fn to_string(&self) -> String {
+impl Display for HlslTypeSimple {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            HlslTypeSimple::Void => { "void".to_string() }
-            HlslTypeSimple::Bool => { "bool".to_string() }
-            HlslTypeSimple::Int => { "int".to_string() }
-            HlslTypeSimple::Uint => { "uint".to_string() }
-            HlslTypeSimple::Half => { "half".to_string() }
-            HlslTypeSimple::Float => { "float".to_string() }
-            HlslTypeSimple::Double => { "double".to_string() }
-            HlslTypeSimple::Struct(str) => { str.clone() }
-            HlslTypeSimple::Texture(c) => { format!("Texture{c}D") }
-            HlslTypeSimple::Buffer => { "Buffer".to_string() }
-            HlslTypeSimple::ConstantBuffer => { "ConstantBuffer".to_string() }
-            HlslTypeSimple::PushConstant => { "PushConstant".to_string() }
-            HlslTypeSimple::SamplerState => { "SamplerState".to_string() }
-            HlslTypeSimple::SamplerComparisonState => { "SamplerComparisonState".to_string() }
+            HlslTypeSimple::Void => { f.write_str("void") }
+            HlslTypeSimple::Bool => { f.write_str("bool") }
+            HlslTypeSimple::Int => { f.write_str("int") }
+            HlslTypeSimple::Uint => { f.write_str("uint") }
+            HlslTypeSimple::Half => { f.write_str("half") }
+            HlslTypeSimple::Float => { f.write_str("float") }
+            HlslTypeSimple::Double => { f.write_str("double") }
+            HlslTypeSimple::Struct(str) => { f.write_str(str.as_str()) }
+            HlslTypeSimple::Texture(c) => { f.write_fmt(format_args!("Texture{c}D")) }
+            HlslTypeSimple::Buffer => { f.write_str("Buffer") }
+            HlslTypeSimple::ConstantBuffer => { f.write_str("ConstantBuffer") }
+            HlslTypeSimple::PushConstant => { f.write_str("PushConstant") }
+            HlslTypeSimple::SamplerState => { f.write_str("SamplerState") }
+            HlslTypeSimple::SamplerComparisonState => { f.write_str("SamplerComparisonState") }
         }
     }
 }
@@ -136,22 +136,23 @@ pub enum HlslType {
     Template(HlslTypeSimple, Vec<HlslType>),
 }
 
-impl HlslType {
-    pub fn to_string(&self) -> String {
+impl Display for HlslType {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            HlslType::Simple(s) => {s.to_string()}
-            HlslType::Vec(t, u) => {format!("{}{u}", t.to_string())}
-            HlslType::Mat(t, u, v) => {format!("{}{u}x{v}", t.to_string())}
+            HlslType::Simple(s) => { s.fmt(f) }
+            HlslType::Vec(t, u) => {f.write_fmt(format_args!("{}{u}", t))}
+            HlslType::Mat(t, u, v) => {f.write_fmt(format_args!("{}{u}x{v}", t))}
             HlslType::Template(t, inner) => {
                 let mut types = String::new();
                 for inner in inner.iter() {
-                    types += format!("{},", inner.to_string()).as_str()
+                    types += format!("{},", inner).as_str()
                 }
-                format!("{}<{}>", t.to_string(), types)
+                f.write_fmt(format_args!("{}<{}>", t, types))
             }
         }
     }
 }
+
 impl HlslType {
     fn num_at(hlsl: &str, offset: usize) -> u8 {
         hlsl.chars().nth(offset).unwrap().to_string().parse().unwrap()
@@ -166,16 +167,16 @@ impl HlslType {
     }
 
     fn template_type(hlsl: &str) -> HlslType {
-        let mut base = hlsl.split("<");
+        let mut base = hlsl.split('<');
         let name = base.next().unwrap();
         let name_type = match Self::from(name) {
             HlslType::Simple(s) => { s }
             _ => panic!("Unrecognized template type format : {hlsl}")
         };
-        let types = base.next().unwrap().split(">").nth(0).unwrap();
-        if types.contains(",") {
+        let types = base.next().unwrap().split('>').next().unwrap();
+        if types.contains(',') {
             let mut args = vec![];
-            for arg in types.split(",") {
+            for arg in types.split(',') {
                 args.push(Self::from(arg));
             }
             HlslType::Template(name_type, args)
@@ -187,7 +188,7 @@ impl HlslType {
 
 impl From<&str> for HlslType {
     fn from(value: &str) -> Self {
-        let res = match value {
+        match value {
             "void" => HlslType::Simple(HlslTypeSimple::Void),
             "bool" => HlslType::Simple(HlslTypeSimple::Bool),
             "int" => HlslType::Simple(HlslTypeSimple::Uint),
@@ -239,7 +240,6 @@ impl From<&str> for HlslType {
                     panic!("Unrecognized Hlsl type")
                 }
             }
-        };
-        res
+        }
     }
 }

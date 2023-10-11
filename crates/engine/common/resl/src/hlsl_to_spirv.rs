@@ -24,6 +24,7 @@ impl HlslToSpirv {
         };
         compile_options.set_hlsl_io_mapping(true);
         compile_options.set_auto_map_locations(true);
+        compile_options.set_auto_bind_uniforms(true);
         compile_options.set_target_env(shaderc::TargetEnv::Vulkan, shaderc::EnvVersion::Vulkan1_2 as u32);
         compile_options.set_target_spirv(shaderc::SpirvVersion::V1_3);
         compile_options.set_source_language(shaderc::SourceLanguage::HLSL);

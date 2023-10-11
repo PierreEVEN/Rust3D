@@ -1,9 +1,10 @@
+use std::collections::HashMap;
 use std::sync::Arc;
 
 use ash::vk;
 
-use gfx::shader::{DescriptorBinding};
-use shader_base::DescriptorType;
+use shader_base::{BindPoint, DescriptorType};
+use shader_base::spirv_reflector::DescriptorBinding;
 
 use crate::{vk_check, GfxVulkan};
 
@@ -34,11 +35,11 @@ pub struct VkDescriptorSetLayout {
 impl VkDescriptorSetLayout {
     pub fn new(
         name: String,
-        vertex_bindings: &Vec<DescriptorBinding>,
-        fragment_bindings: &Vec<DescriptorBinding>,
+        vertex_bindings: &HashMap<BindPoint, DescriptorBinding>,
+        fragment_bindings: &HashMap<BindPoint, DescriptorBinding>,
     ) -> Arc<Self> {
         let mut bindings = Vec::<vk::DescriptorSetLayoutBinding>::new();
-        for binding in vertex_bindings {
+        for binding in vertex_bindings.values() {
             bindings.push(
                 vk::DescriptorSetLayoutBinding::builder()
                     .binding(binding.binding)
@@ -49,7 +50,7 @@ impl VkDescriptorSetLayout {
             );
         }
 
-        for binding in fragment_bindings {
+        for binding in fragment_bindings.values() {
             bindings.push(
                 vk::DescriptorSetLayoutBinding::builder()
                     .binding(binding.binding)

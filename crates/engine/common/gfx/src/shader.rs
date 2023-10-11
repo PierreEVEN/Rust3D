@@ -1,7 +1,7 @@
-use crate::shader_instance::BindPoint;
 use crate::{GfxCast, ShaderInstance};
 use std::sync::Arc;
-use shader_base::{AlphaMode, Culling, DescriptorType, FrontFace, PolygonMode, Topology};
+use shader_base::{AlphaMode, Culling, FrontFace, PolygonMode, Topology};
+use shader_base::spirv_reflector::DescriptorBinding;
 
 use crate::types::PixelFormat;
 
@@ -13,13 +13,6 @@ pub struct ShaderStageInput {
     pub location: i32,
     pub offset: u32,
     pub property_type: ShaderPropertyType,
-}
-
-#[derive(Clone)]
-pub struct DescriptorBinding {
-    pub bind_point: BindPoint,
-    pub binding: u32,
-    pub descriptor_type: DescriptorType,
 }
 
 pub struct ShaderProgramStage {

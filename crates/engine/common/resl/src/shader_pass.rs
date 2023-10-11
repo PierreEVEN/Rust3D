@@ -1,5 +1,7 @@
 use std::collections::HashMap;
-use shader_base::{CompilationError, ShaderStage};
+
+use shader_base::{CompilationError, DescriptorType, ShaderStage};
+
 use crate::ast::{Function, FunctionParameter, HlslCodeBlock, HlslInstruction, HlslType, HlslTypeSimple, StructureField, Value};
 use crate::list_of::ListOf;
 use crate::parsed_instructions::ParsedInstructions;
@@ -13,6 +15,7 @@ pub struct ShaderPass {
     structures: HashMap<String, ListOf<StructureField>>,
     properties: HashMap<String, HlslType>,
     entry_point: String,
+    push_constant: Option<HlslType>,
 }
 
 impl ShaderPass {
@@ -21,10 +24,11 @@ impl ShaderPass {
             stage,
             instructions: Default::default(),
             pragmas: Default::default(),
-            functions: Default::default(),
             structures: Default::default(),
+            functions: Default::default(),
             properties: Default::default(),
             entry_point: "main".to_string(),
+            push_constant: None,
         }
     }
 
@@ -33,47 +37,36 @@ impl ShaderPass {
 
         // Store and write pragma declarations first
         for instruction in block.iter() {
-            match instruction {
-                HlslInstruction::Pragma(t, key, value) => {
-                    if self.pragmas.contains_key(key) {
-                        return Err(CompilationError::throw(format!("Pragma redeclaration : '{key}'"), Some(*t)));
-                    }
-                    match key.as_str() {
-                        "entry" => {
-                            match value {
-                                Value::String(s) => { self.entry_point = s.clone(); }
-                                _ => { return Err(CompilationError::throw(format!("#pragma entry should be of type String : found '{}'", value.to_string()), Some(*t))); }
-                            }
-                        }
-                        _ => {}
-                    }
-
-                    self.pragmas.insert(key.clone(), value.clone());
-                    self.instructions += (*t, "\n");
-                    self.instructions += (*t, format!("#pragma {key} {}", value));
-                    self.instructions += (*t, "\n");
+            if let HlslInstruction::Pragma(t, key, value) = instruction {
+                if self.pragmas.contains_key(key) {
+                    return Err(CompilationError::throw(format!("Pragma redeclaration : '{key}'"), Some(*t)));
                 }
-                _ => {}
+                if key.as_str() == "entry" {
+                    match value {
+                        Value::String(s) => { self.entry_point = s.clone(); }
+                        _ => { return Err(CompilationError::throw(format!("#pragma entry should be of type String : found '{}'", value), Some(*t))); }
+                    }
+                }
+
+                self.pragmas.insert(key.clone(), value.clone());
+                self.instructions += (*t, "\n");
+                self.instructions += (*t, format!("#pragma {key} {}", value));
+                self.instructions += (*t, "\n");
             }
         }
 
         // We search for the entry point to fill the missing System Variables in the input and output structures
         let mut struct_with_sv_target: Option<String> = None;
         let mut struct_with_sv_position: Option<String> = None;
-        for instruction in (&mut block).iter_mut() {
+        for instruction in block.iter_mut() {
             if let HlslInstruction::Function(t, name, function) = instruction {
                 if *name == self.entry_point {
                     match self.stage {
                         // Add SV_Target to all fragment outputs
                         ShaderStage::Fragment => {
                             match &function.return_type.1 {
-                                HlslType::Simple(s) => {
-                                    match s {
-                                        HlslTypeSimple::Struct(struct_name) => {
-                                            struct_with_sv_target = Some(struct_name.clone());
-                                        }
-                                        _ => { function.attribute = Some((*t, "SV_Target".to_string())) }
-                                    }
+                                HlslType::Simple(HlslTypeSimple::Struct(struct_name)) => {
+                                    struct_with_sv_target = Some(struct_name.clone())
                                 }
                                 _ => { function.attribute = Some((*t, "SV_Target".to_string())) }
                             }
@@ -90,7 +83,7 @@ impl ShaderPass {
                                 }
                                 HlslType::Vec(s, len) => {
                                     if *s != HlslTypeSimple::Float || *len != 4 {
-                                        return Err(CompilationError::throw(format!("Vertex stage support only float4 output"), Some(*t)));
+                                        return Err(CompilationError::throw("Vertex stage support only float4 output".to_string(), Some(*t)));
                                     }
                                     function.attribute = Some((*t, "SV_POSITION".to_string()))
                                 }
@@ -107,10 +100,8 @@ impl ShaderPass {
             for instr_in in block.iter_mut() {
                 if let HlslInstruction::Struct(_, name, fields) = instr_in {
                     if *name == struct_name {
-                        let mut target_id = 0;
-                        for field in fields.iter_mut() {
+                        for (target_id, field) in fields.iter_mut().enumerate() {
                             field.attribute = Some(format!("SV_Target{target_id}"));
-                            target_id += 1;
                         }
                     }
                 }
@@ -128,7 +119,7 @@ impl ShaderPass {
                             }
                         }
                         if !contains {
-                            return Err(CompilationError::throw(format!("SV_POSITION is not defined for vertex stage output"), Some(*s)));
+                            return Err(CompilationError::throw("SV_POSITION is not defined for vertex stage output".to_string(), Some(*s)));
                         }
                     }
                 }
@@ -179,7 +170,19 @@ impl ShaderPass {
                         return Err(CompilationError::throw(format!("Property redeclaration : '{name}'"), Some(*t)));
                     }
                     self.properties.insert(name.clone(), ty.clone());
-                    self.instructions += (*t, format!("{} {name};", ty.to_string()));
+                    
+                    if let HlslType::Template(HlslTypeSimple::PushConstant, u) = ty {
+                        if u.len() != 1 {
+                            return Err(CompilationError::throw(format!("Push constant has more than one parameter : ${:?}", u), Some(*t)))
+                        }
+                        let ty = u.get(0).unwrap().clone();                
+                        self.instructions += (*t, format!("[[vk::push_constant]] ConstantBuffer<{}> {name};", ty.to_string()));
+                        self.push_constant = Some(ty);
+                    }
+                    else {
+                        self.instructions += (*t, format!("{} {name};", ty.to_string()));
+                    }
+
                 }
                 _ => {}
             }

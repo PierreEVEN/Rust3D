@@ -7,10 +7,11 @@ use std::sync::Arc;
 use ash::vk;
 use gfx::Gfx;
 
-use gfx::shader::{ DescriptorBinding,  ShaderProgram, ShaderProgramInfos};
+use gfx::shader::{ ShaderProgram};
 use gfx::shader_instance::{ShaderInstance, ShaderInstanceCreateInfos};
 use shader_base::pass_id::PassID;
 use shader_base::{AlphaMode, Culling, FrontFace, PolygonMode, ShaderInterface, ShaderStage, Topology};
+use shader_base::spirv_reflector::{DescriptorBinding, SpirvReflector};
 
 //use crate::vk_types::VkPixelFormat;
 use crate::{GfxVulkan, vk_check, VkShaderInstance};
@@ -68,8 +69,8 @@ impl From<&FrontFace> for VkFrontFace {
 }
 
 pub struct VkShaderProgram {
-    _vertex_module: Arc<VkShaderModule>,
-    _fragment_module: Arc<VkShaderModule>,
+    vertex_module: Arc<VkShaderModule>,
+    fragment_module: Arc<VkShaderModule>,
     pub pipeline: vk::Pipeline,
     pub pipeline_layout: Arc<vk::PipelineLayout>,
     pub descriptor_set_layout: Arc<VkDescriptorSetLayout>,
@@ -101,35 +102,42 @@ impl VkShaderProgram {
         create_infos: &dyn ShaderInterface,
     ) -> Arc<Self> {
 
+        let vertex_binary = create_infos.get_spirv_for(&pass_id, &ShaderStage::Vertex).unwrap();
+        let vertex_infos = SpirvReflector::new(&vertex_binary).unwrap();
+        let vertex_stage_input = create_infos.get_stage_inputs(&pass_id, &ShaderStage::Vertex).unwrap();
+        let fragment_binary = create_infos.get_spirv_for(&pass_id, &ShaderStage::Fragment).unwrap();
+        let fragment_infos = SpirvReflector::new(&fragment_binary).unwrap();
+        let parameters = create_infos.get_parameters_for(&pass_id);
+        
         let descriptor_set_layout = VkDescriptorSetLayout::new(
             name.clone(),
-            &create_infos.vertex_stage.descriptor_bindings,
-            &create_infos.fragment_stage.descriptor_bindings,
+            &vertex_infos.bindings,
+            &fragment_infos.bindings,
         );
 
-        let mut bindings = create_infos.vertex_stage.descriptor_bindings.clone();
-        bindings.append(&mut create_infos.fragment_stage.descriptor_bindings.clone());
+        let mut bindings = vertex_infos.bindings.clone();
+        bindings.append(&mut fragment_infos.bindings.clone());
 
         let vertex_module = VkShaderModule::new(name.clone(), &create_infos.get_spirv_for(&pass_id, &ShaderStage::Vertex).unwrap());
         let fragment_module = VkShaderModule::new(name.clone(), &create_infos.get_spirv_for(&pass_id, &ShaderStage::Fragment).unwrap());
 
         let mut push_constants = Vec::<vk::PushConstantRange>::new();
 
-        if create_infos.vertex_stage.push_constant_size > 0 {
+        if let Some(pc_size) = vertex_infos.push_constant_size {
             push_constants.push(
                 vk::PushConstantRange::builder()
                     .stage_flags(vk::ShaderStageFlags::VERTEX)
                     .offset(0)
-                    .size(create_infos.vertex_stage.push_constant_size)
+                    .size(pc_size)
                     .build(),
             );
         }
-        if create_infos.fragment_stage.push_constant_size > 0 {
+        if let Some(pc_size) = fragment_infos.push_constant_size {
             push_constants.push(
                 vk::PushConstantRange::builder()
                     .stage_flags(vk::ShaderStageFlags::FRAGMENT)
                     .offset(0)
-                    .size(create_infos.fragment_stage.push_constant_size)
+                    .size(pc_size)
                     .build(),
             );
         }
@@ -186,7 +194,7 @@ impl VkShaderProgram {
             .build();
 
         let input_assembly = vk::PipelineInputAssemblyStateCreateInfo::builder()
-            .topology(VkTopology::from(&create_infos.shader_properties.topology).0)
+            .topology(VkTopology::from(&parameters.topology).0)
             .primitive_restart_enable(false)
             .build();
 
@@ -198,14 +206,14 @@ impl VkShaderProgram {
         let rasterizer = vk::PipelineRasterizationStateCreateInfo::builder()
             .depth_clamp_enable(false)
             .rasterizer_discard_enable(false)
-            .polygon_mode(VkPolygonMode::from(&create_infos.shader_properties.polygon_mode).0)
-            .cull_mode(VkCullMode::from(&create_infos.shader_properties.culling).0)
-            .front_face(VkFrontFace::from(&create_infos.shader_properties.front_face).0)
+            .polygon_mode(VkPolygonMode::from(&parameters.polygon_mode).0)
+            .cull_mode(VkCullMode::from(&parameters.culling).0)
+            .front_face(VkFrontFace::from(&parameters.front_face).0)
             .depth_bias_enable(false)
             .depth_bias_constant_factor(0.0)
             .depth_bias_clamp(0.0)
             .depth_bias_slope_factor(0.0)
-            .line_width(create_infos.shader_properties.line_width)
+            .line_width(parameters.line_width)
             .build();
 
         let multisampling = vk::PipelineMultisampleStateCreateInfo::builder()
@@ -218,8 +226,8 @@ impl VkShaderProgram {
             .build();
 
         let depth_stencil = vk::PipelineDepthStencilStateCreateInfo::builder()
-            .depth_test_enable(create_infos.shader_properties.depth_test)
-            .depth_write_enable(create_infos.shader_properties.depth_test)
+            .depth_test_enable(parameters.depth_test)
+            .depth_write_enable(parameters.depth_test)
             .depth_compare_op(vk::CompareOp::LESS)
             .depth_bounds_test_enable(false)
             .stencil_test_enable(false)
@@ -233,16 +241,16 @@ impl VkShaderProgram {
         for _ in &render_pass.images {
             color_blend_attachment.push(
                 vk::PipelineColorBlendAttachmentState::builder()
-                    .blend_enable(create_infos.shader_properties.alpha_mode != AlphaMode::Opaque)
+                    .blend_enable(parameters.alpha_mode != AlphaMode::Opaque)
                     .src_color_blend_factor(
-                        if create_infos.shader_properties.alpha_mode == AlphaMode::Opaque {
+                        if parameters.alpha_mode == AlphaMode::Opaque {
                             vk::BlendFactor::ZERO
                         } else {
                             vk::BlendFactor::SRC_ALPHA
                         },
                     )
                     .dst_color_blend_factor(
-                        if create_infos.shader_properties.alpha_mode == AlphaMode::Opaque {
+                        if parameters.alpha_mode == AlphaMode::Opaque {
                             vk::BlendFactor::ZERO
                         } else {
                             vk::BlendFactor::ONE_MINUS_SRC_ALPHA
@@ -250,7 +258,7 @@ impl VkShaderProgram {
                     )
                     .color_blend_op(vk::BlendOp::ADD)
                     .src_alpha_blend_factor(
-                        if create_infos.shader_properties.alpha_mode == AlphaMode::Opaque {
+                        if parameters.alpha_mode == AlphaMode::Opaque {
                             vk::BlendFactor::ONE
                         } else {
                             vk::BlendFactor::ONE_MINUS_SRC_ALPHA
@@ -287,7 +295,7 @@ impl VkShaderProgram {
 
         let mut dynamic_states_array =
             Vec::from([vk::DynamicState::SCISSOR, vk::DynamicState::VIEWPORT]);
-        if create_infos.shader_properties.line_width != 1.0 {
+        if parameters.line_width != 1.0 {
             dynamic_states_array.push(vk::DynamicState::LINE_WIDTH);
         }
 
@@ -328,8 +336,8 @@ impl VkShaderProgram {
             .set_vk_object_name(pipeline, format!("graphic pipeline\t\t: {}", name).as_str());
 
         Arc::new(Self {
-            _vertex_module: vertex_module,
-            _fragment_module: fragment_module,
+            vertex_module,
+            fragment_module,
             pipeline,
             pipeline_layout,
             descriptor_set_layout,

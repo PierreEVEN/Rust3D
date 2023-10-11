@@ -1,10 +1,9 @@
 use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
-use std::sync::Arc;
 use lalrpop_util::lalrpop_mod;
 use shader_base::pass_id::PassID;
-use shader_base::{AlphaMode, CompilationError, Culling, FrontFace, PolygonMode, Property, Resource, ShaderInterface, ShaderParameters, ShaderStage, Topology};
+use shader_base::{AlphaMode, CompilationError, Culling, FrontFace, PolygonMode, Property, ShaderInterface, ShaderParameters, ShaderStage, Topology};
 use crate::ast::{HlslInstruction, Instruction};
 use crate::hlsl_to_spirv::HlslToSpirv;
 use crate::list_of::ListOf;
@@ -28,8 +27,8 @@ pub struct ReslShaderInterface {
 }
 
 impl ReslShaderInterface {
-    fn parse_resl_code(resl_code: &String) -> Result<ListOf<Instruction>, CompilationError> {
-        match language::InstructionListParser::new().parse(resl_code.as_str()) {
+    fn parse_resl_code(resl_code: &str) -> Result<ListOf<Instruction>, CompilationError> {
+        match language::InstructionListParser::new().parse(resl_code) {
             Ok(parsed) => Ok(parsed),
             Err(e) => match e {
                 lalrpop_util::ParseError::UnrecognizedToken { token, expected } => {
@@ -69,7 +68,7 @@ impl ReslShaderInterface {
         }
     }
 
-    fn push_property(&mut self, name: &String, value: &String) -> Result<(), String> {
+    fn push_property(&mut self, name: &str, value: &str) -> Result<(), String> {
         let name = name.to_uppercase();
         let value = value.to_uppercase();
         match name.as_str() {
@@ -118,22 +117,22 @@ impl ReslShaderInterface {
         Ok(())
     }
 
-    fn push_block(&mut self, shader_stage: &ShaderStage, pass: PassID, content: ListOf<HlslInstruction>) -> Result<(), String> {
+    fn push_block(&mut self, shader_stage: &ShaderStage, pass: PassID, content: ListOf<HlslInstruction>) -> Result<(), CompilationError> {
         match self.blocks.get_mut(shader_stage) {
             None => {
                 let mut new_pass = ShaderPass::new(shader_stage.clone());
-                new_pass.push_block(content);
+                new_pass.push_block(content)?;
                 self.blocks.insert(shader_stage.clone(), HashMap::from([(pass, new_pass)]));
             }
             Some(stage) => {
                 match stage.get_mut(&pass) {
                     None => {
                         let mut new_pass = ShaderPass::new(shader_stage.clone());
-                        new_pass.push_block(content);
+                        new_pass.push_block(content)?;
                         stage.insert(pass, new_pass);
                     }
                     Some(pass) => {
-                        pass.push_block(content);
+                        pass.push_block(content)?;
                     }
                 }
             }
@@ -148,7 +147,7 @@ impl From<PathBuf> for ReslShaderInterface {
             Ok(code) => { code }
             Err(error) => {
                 let absolute_path = if file_path.is_absolute() {
-                    file_path.to_path_buf()
+                    file_path
                 } else {
                     std::env::current_dir().unwrap().join(file_path)
                 };
@@ -161,7 +160,7 @@ impl From<PathBuf> for ReslShaderInterface {
 
         let mut interface = Self {
             version: None,
-            file_path: file_path,
+            file_path,
             blocks: Default::default(),
             errors: vec![],
             parameters: Default::default(),
@@ -176,11 +175,8 @@ impl From<PathBuf> for ReslShaderInterface {
         };
 
         for instruction in code.iter() {
-            match instruction {
-                Instruction::Block(_, stage, _, _) => {
-                    interface.blocks.insert(stage.clone(), Default::default());
-                }
-                _ => {}
+            if let Instruction::Block(_, stage, _, _) = instruction {
+                interface.blocks.insert(stage.clone(), Default::default());
             }
         }
 
@@ -205,7 +201,8 @@ impl From<PathBuf> for ReslShaderInterface {
                         for render_pass in render_pass_group.iter() {
                             match &interface.push_block(&stage, PassID::new(render_pass), content.clone()) {
                                 Ok(_) => {}
-                                Err(err) => { interface.errors.push(CompilationError::throw(err.clone(), Some(*token))) }
+                                Err(err) => {
+                                    interface.errors.push(if err.token.is_some() {err.clone()} else {CompilationError::throw(err.message.clone(), Some(*token))}) }
                             }
                         }
                     }
@@ -214,7 +211,7 @@ impl From<PathBuf> for ReslShaderInterface {
                     for render_pass in render_pass_group.iter() {
                         match interface.push_block(stage, PassID::new(render_pass), content.clone()) {
                             Ok(_) => {}
-                            Err(err) => { interface.errors.push(CompilationError::throw(err, Some(*token))) }
+                            Err(err) => { interface.errors.push(if err.token.is_some() {err.clone()} else {CompilationError::throw(err.message.clone(), Some(*token))}) }
                         }
                     }
                 }
@@ -250,14 +247,6 @@ impl ShaderInterface for ReslShaderInterface {
     }
 
     fn get_stage_outputs(&self, render_pass: &PassID, stage: &ShaderStage) -> Result<Vec<Property>, CompilationError> {
-        todo!()
-    }
-
-    fn get_push_constants(&self, render_pass: &PassID, stage: &ShaderStage) -> Result<Vec<Property>, CompilationError> {
-        todo!()
-    }
-
-    fn get_resources(&self, render_pass: &PassID, stage: &ShaderStage) -> Result<Vec<Resource>, CompilationError> {
         todo!()
     }
 }

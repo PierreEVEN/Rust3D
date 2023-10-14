@@ -7,9 +7,10 @@ use ash::vk;
 use gfx::gfx_resource::{GfxImageBuilder, GfxResource};
 use gfx::image::GfxImage;
 use gfx::image_sampler::ImageSampler;
-use gfx::shader::DescriptorBinding;
-use gfx::shader_instance::{BindPoint, ShaderInstance, ShaderInstanceCreateInfos};
+use gfx::shader_instance::{ShaderInstance, ShaderInstanceCreateInfos};
 use gfx::surface::Frame;
+use shader_base::BindPoint;
+use shader_base::spirv_reflector::DescriptorBinding;
 
 use crate::vk_dst_set_layout::VkDescriptorSetLayout;
 use crate::{GfxVulkan, VkImage, VkImageSampler};

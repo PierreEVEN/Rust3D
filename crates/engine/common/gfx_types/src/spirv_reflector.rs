@@ -3,7 +3,7 @@ use crate::{BindPoint, DescriptorType};
 
 use rspirv_reflect::{Reflection};
 
-#[derive(Clone)]
+#[derive(Clone, Hash, PartialEq, Eq)]
 pub struct DescriptorBinding {
     pub binding: u32,
     pub descriptor_type: DescriptorType,

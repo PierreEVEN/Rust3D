@@ -1,10 +1,10 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::PathBuf;
 use std::str::FromStr;
 use lalrpop_util::lalrpop_mod;
 use shader_base::pass_id::PassID;
-use shader_base::{AlphaMode, CompilationError, Culling, FrontFace, PolygonMode, Property, ShaderInterface, ShaderParameters, ShaderStage, Topology};
+use shader_base::{AlphaMode, BindPoint, CompilationError, Culling, DescriptorType, FrontFace, PolygonMode, Property, ShaderInterface, ShaderParameters, ShaderStage, Topology};
 use crate::ast::{HlslInstruction, Instruction};
 use crate::hlsl_to_spirv::HlslToSpirv;
 use crate::list_of::ListOf;
@@ -25,6 +25,7 @@ pub struct ReslShaderInterface {
     errors: Vec<CompilationError>,
     parameters: ShaderParameters,
     file_path: PathBuf,
+    bindings: HashMap<BindPoint, (DescriptorType, u32, HashSet<PassID>)>
 }
 
 impl ReslShaderInterface {
@@ -189,6 +190,7 @@ impl From<PathBuf> for ReslShaderInterface {
             blocks: Default::default(),
             errors: vec![],
             parameters: Default::default(),
+            bindings: Default::default(),
         };
 
         let code = match parse_result {
@@ -297,6 +299,10 @@ impl ShaderInterface for ReslShaderInterface {
 
     fn get_path(&self) -> PathBuf {
         self.file_path.clone()
+    }
+
+    fn get_bindings(&self) -> HashMap<BindPoint, (DescriptorType, u32, HashSet<PassID>)> {
+        
     }
 }
 

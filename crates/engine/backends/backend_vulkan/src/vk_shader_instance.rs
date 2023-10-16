@@ -1,64 +1,27 @@
 use std::collections::HashMap;
 use std::slice;
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, RwLock};
+use std::sync::atomic::{AtomicBool, Ordering};
 
 use ash::vk;
+
 use gfx::gfx_resource::{GfxImageBuilder, GfxResource};
-use gfx::image::GfxImage;
-use gfx::image_sampler::ImageSampler;
+use gfx::material::MaterialResources;
 use gfx::shader_instance::{ShaderInstance, ShaderInstanceCreateInfos};
 use gfx::surface::Frame;
-use shader_base::BindPoint;
-use shader_base::spirv_reflector::DescriptorBinding;
 
-use crate::vk_dst_set_layout::VkDescriptorSetLayout;
 use crate::{GfxVulkan, VkImage, VkImageSampler};
-
-pub enum ShaderInstanceBinding {
-    Sampler(Arc<dyn ImageSampler>),
-    SampledImage(Arc<dyn GfxImage>),
-    /*
-    CombinedImageSampler()
-    StorageImage()
-    UniformTexelBuffer()
-    StorageTexelBuffer()
-    UniformBuffer()
-    StorageBuffer()
-    UniformBufferDynamic()
-    StorageBufferDynamic()
-    InputAttachment()
-     */
-}
+use crate::vk_dst_set_layout::VkDescriptorSetLayout;
 
 pub struct VkShaderInstance {
     _write_descriptor_sets: RwLock<GfxResource<Vec<vk::WriteDescriptorSet>>>,
     pub descriptor_sets: RwLock<GfxResource<vk::DescriptorSet>>,
     pub pipeline_layout: Arc<vk::PipelineLayout>,
     descriptors_dirty: GfxResource<Arc<AtomicBool>>,
-    base_bindings: HashMap<BindPoint, DescriptorBinding>,
-    bindings: RwLock<HashMap<BindPoint, ShaderInstanceBinding>>,
+    resource_bindings: Arc<MaterialResources>
 }
 
-impl ShaderInstance for VkShaderInstance {
-    fn bind_texture(&self, _bind_point: &BindPoint, texture: &Arc<dyn GfxImage>) {
-        let mut bindings = self.bindings.write().unwrap();
-        bindings.insert(
-            _bind_point.clone(),
-            ShaderInstanceBinding::SampledImage(texture.clone()),
-        );
-        self.mark_descriptors_dirty();
-    }
-
-    fn bind_sampler(&self, _bind_point: &BindPoint, sampler: &Arc<dyn ImageSampler>) {
-        let mut bindings = self.bindings.write().unwrap();
-        bindings.insert(
-            _bind_point.clone(),
-            ShaderInstanceBinding::Sampler(sampler.clone()),
-        );
-        self.mark_descriptors_dirty();
-    }
-}
+impl ShaderInstance for VkShaderInstance {}
 
 struct RbDescriptorState {}
 
@@ -99,8 +62,7 @@ impl VkShaderInstance {
                 name,
             })),
             descriptors_dirty: GfxResource::new(RbDescriptorState {}),
-            base_bindings: create_infos.bindings,
-            bindings: RwLock::default(),
+            resource_bindings: Arc::new(todo!("Add resource bindings")),
         })
     }
 
@@ -127,7 +89,7 @@ impl VkShaderInstance {
                             return;
                         }
                         Some(bindings) => match bindings {
-                            ShaderInstanceBinding::Sampler(sampler) => {
+                            MaterialResource::Sampler(sampler) => {
                                 desc_images.push(sampler.cast::<VkImageSampler>().sampler_info);
                                 vk::WriteDescriptorSet::builder()
                                     .descriptor_type(vk::DescriptorType::SAMPLER)
@@ -135,7 +97,7 @@ impl VkShaderInstance {
                                         &desc_images[desc_images.len() - 1],
                                     ))
                             }
-                            ShaderInstanceBinding::SampledImage(sampled_image) => {
+                            MaterialResource::SampledImage(sampled_image) => {
                                 let vk_image = sampled_image.cast::<VkImage>();
                                 desc_images.push(if vk_image.image_params.read_only {
                                     vk_image.view.get_static().1
@@ -150,9 +112,9 @@ impl VkShaderInstance {
                             }
                         },
                     }
-                    .dst_set(self.descriptor_sets.read().unwrap().get(image_id))
-                    .dst_binding(binding.binding)
-                    .build(),
+                        .dst_set(self.descriptor_sets.read().unwrap().get(image_id))
+                        .dst_binding(binding.binding)
+                        .build(),
                 );
             }
 

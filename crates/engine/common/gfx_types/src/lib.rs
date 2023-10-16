@@ -1,4 +1,6 @@
+use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
+use std::sync::RwLock;
 use crate::pass_id::PassID;
 use crate::types::PixelFormat;
 
@@ -32,6 +34,8 @@ pub trait ShaderInterface {
     fn get_errors(&self) -> &Vec<CompilationError>;
     // Each different shader interface should have a different path
     fn get_path(&self) -> PathBuf;
+    // Get shader bindings
+    fn get_bindings(&self) -> HashMap<BindPoint, (DescriptorType, u32, HashSet<PassID>)>;
 }
 
 pub struct Property {
@@ -114,7 +118,7 @@ impl Default for ShaderParameters {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub enum DescriptorType {
     Sampler,
     CombinedImageSampler,

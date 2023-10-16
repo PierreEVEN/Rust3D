@@ -41,8 +41,8 @@ impl App for TestApp {
         // Create material
         let mat = Arc::new(Material::default());
         mat.set_shader(shader);
-        mat.bind_texture(BindPoint::new("sTexture"), texture);
-        mat.bind_sampler(BindPoint::new("sSampler"), sampler);
+        mat.bind_texture(&BindPoint::new("sTexture"), texture);
+        mat.bind_sampler(&BindPoint::new("sSampler"), sampler);
 
         // Create world
         self.world = Engine::get().new_world();

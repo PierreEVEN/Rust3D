@@ -1,8 +1,9 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, RwLock};
-use std::sync::atomic::{AtomicBool, Ordering};
-use shader_base::{BindPoint, ShaderInterface};
+
+use shader_base::{BindPoint, DescriptorType, ShaderInterface};
 use shader_base::pass_id::PassID;
+
 use crate::command_buffer::GfxCommandBuffer;
 use crate::Gfx;
 use crate::image::GfxImage;
@@ -10,14 +11,57 @@ use crate::image_sampler::ImageSampler;
 use crate::shader::ShaderProgram;
 use crate::shader_instance::ShaderInstance;
 
-#[derive(Default, Clone)]
-pub struct MaterialBindings {
-    images: HashMap<BindPoint, Arc<dyn GfxImage>>,
-    samplers: HashMap<BindPoint, Arc<dyn ImageSampler>>,
+#[derive(Clone)]
+pub enum MaterialResourceData {
+    Sampler(Arc<dyn ImageSampler>),
+    SampledImage(Arc<dyn GfxImage>),
+}
+
+#[derive(Default)]
+pub struct MaterialResources {
+    resources: RwLock<HashMap<BindPoint, (DescriptorType, u32, Option<MaterialResourceData>, HashSet<PassID>)>>,
+}
+
+impl Clone for MaterialResources {
+    fn clone(&self) -> Self {
+        Self {
+            resources: RwLock::new((*self.resources.read().unwrap()).clone()),
+        }
+    }
+}
+
+impl MaterialResources {
+    pub fn add_binding(&self, descriptor_type: DescriptorType, bind_point: BindPoint, location: u32, passes: HashSet<PassID>) {
+        let resources = &mut *self.resources.write().unwrap();
+        resources.insert(bind_point, (descriptor_type, location, None, passes));
+    }
+    pub fn clear(&self) {
+        self.resources.write().unwrap().clear();
+    }
+    pub fn bind_resource(&self, bind_point: &BindPoint, resource: MaterialResourceData) {
+        let resources = &mut *self.resources.write().unwrap();
+        match resources.get_mut(bind_point) {
+            None => { logger::warning!("This material have no bind point '{:?}' available", bind_point) }
+            Some((_, _, current, _)) => {
+                *current = Some(resource);
+            }
+        }
+    }
+    pub fn get_bindings_for_pass(&self, pass: &PassID) -> Vec<(u32, MaterialResourceData)> {
+        let mut bindings = vec![];
+
+        for (_, location, resource, passes) in self.resources.read().unwrap().values() {
+            if passes.contains(pass) {
+                if let Some(resource) = resource {
+                    bindings.push((*location, resource.clone()))
+                }
+            }
+        }
+        bindings
+    }
 }
 
 pub struct PassMaterialData {
-    bindings_dirty: AtomicBool,
     instance: Arc<dyn ShaderInstance>,
     master: Arc<dyn ShaderProgram>,
 }
@@ -25,7 +69,6 @@ pub struct PassMaterialData {
 impl Clone for PassMaterialData {
     fn clone(&self) -> Self {
         Self {
-            bindings_dirty: AtomicBool::new(true),
             instance: self.master.instantiate(),
             master: self.master.clone(),
         }
@@ -36,7 +79,7 @@ impl Clone for PassMaterialData {
 pub struct Material {
     passes: RwLock<HashMap<PassID, Option<PassMaterialData>>>,
     shader_interface: RwLock<Option<Arc<dyn ShaderInterface>>>,
-    bindings: Arc<RwLock<MaterialBindings>>,
+    resources: Arc<MaterialResources>,
 }
 
 impl Clone for Material {
@@ -44,19 +87,23 @@ impl Clone for Material {
         Self {
             passes: RwLock::new((&*self.passes.read().unwrap()).clone()),
             shader_interface: RwLock::new(self.shader_interface.read().unwrap().clone()),
-            bindings: Arc::new(RwLock::new((*self.bindings.read().unwrap()).clone())),
+            resources: Arc::new((*self.resources).clone()),
         }
     }
 }
 
 impl Material {
     pub fn set_shader<T: 'static + ShaderInterface>(&self, shader: T) {
-        if shader.get_errors().len() > 0 {
+        if !shader.get_errors().is_empty() {
             for error in shader.get_errors() {
                 logger::error!("{:?}", error);
             }
             return;
-        }
+        }        
+        self.resources.clear();
+        for (bp, (descriptor, location, passes)) in shader.get_bindings() {
+            self.resources.add_binding(descriptor, bp, location, passes)
+        }        
         *self.shader_interface.write().unwrap() = Some(Arc::new(shader));
     }
 
@@ -70,24 +117,12 @@ impl Material {
         }
     }
 
-    pub fn bind_texture(&self, bind_point: BindPoint, texture: Arc<dyn GfxImage>) {
-        let bindings = &mut *self.bindings.write().unwrap();
-        bindings.images.insert(bind_point, texture);
-        self.mark_bindings_dirty();
+    pub fn bind_texture(&self, bind_point: &BindPoint, texture: Arc<dyn GfxImage>) {
+        self.resources.bind_resource(bind_point, MaterialResourceData::SampledImage(texture))
     }
 
-    pub fn bind_sampler(&self, bind_point: BindPoint, sampler: Arc<dyn ImageSampler>) {
-        let bindings = &mut *self.bindings.write().unwrap();
-        bindings.samplers.insert(bind_point, sampler);
-        self.mark_bindings_dirty();
-    }
-
-    fn mark_bindings_dirty(&self) {
-        for pass in self.passes.read().unwrap().values() {
-            if let Some(pass_data) = pass {
-                pass_data.bindings_dirty.store(true, Ordering::SeqCst);
-            }
-        }
+    pub fn bind_sampler(&self, bind_point: &BindPoint, sampler: Arc<dyn ImageSampler>) {
+        self.resources.bind_resource(bind_point, MaterialResourceData::Sampler(sampler))
     }
 
     pub fn get_program(&self, pass_id: &PassID) -> Option<Arc<dyn ShaderProgram>> {
@@ -101,7 +136,7 @@ impl Material {
 
         // Else load it
         match self.shader_interface.read().unwrap().as_ref() {
-            None => {None}
+            None => { None }
             Some(shi) => {
                 return match Gfx::get().get_program_pool().find_or_create_program(pass_id, shi) {
                     None => {
@@ -110,7 +145,6 @@ impl Material {
                     }
                     Some(program) => {
                         self.passes.write().unwrap().insert(pass_id.clone(), Some(PassMaterialData {
-                            bindings_dirty: AtomicBool::new(false),
                             instance: program.instantiate(),
                             master: program.clone(),
                         }));
@@ -126,7 +160,7 @@ impl Material {
             return match pass {
                 None => { None }
                 Some(data) => { Some(data.instance.clone()) }
-            }
+            };
         }
 
         // Try refresh program

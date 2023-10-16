@@ -11,8 +11,6 @@ pub struct ShaderInstanceCreateInfos {
 }
 
 pub trait ShaderInstance: GfxCast {
-    fn bind_texture(&self, bind_point: &BindPoint, texture: &Arc<dyn GfxImage>);
-    fn bind_sampler(&self, bind_point: &BindPoint, texture: &Arc<dyn ImageSampler>);
 }
 
 impl dyn ShaderInstance {

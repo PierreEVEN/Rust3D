@@ -3,8 +3,8 @@ use std::ops::Deref;
 use ash::vk;
 use ash::vk::{ColorSpaceKHR, Extent2D, Format};
 
-use gfx::types::{ColorSpace, PixelFormat};
 use maths::vec2::Vec2u32;
+use shader_base::types::{ColorSpace, PixelFormat};
 
 pub struct VkExtent2D(Extent2D);
 

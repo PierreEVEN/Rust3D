@@ -1,5 +1,5 @@
 use std::collections::HashSet;
-use std::fmt::{Display, Formatter, Pointer};
+use std::fmt::{Display, Formatter};
 use regex::Regex;
 use shader_base::ShaderStage;
 use crate::list_of::ListOf;
@@ -48,6 +48,7 @@ impl Display for Value {
 }
 
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub enum HlslInstruction {
     Struct(usize, String, ListOf<StructureField>),
     Define(usize, String, Option<String>),

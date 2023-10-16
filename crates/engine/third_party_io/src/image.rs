@@ -10,7 +10,7 @@ use stb_image_rust::{stbi_image_free, stbi_load_from_memory};
 use gfx::image::{
     GfxImage, GfxImageUsageFlags, ImageCreateInfos, ImageParams, ImageType, ImageUsage,
 };
-use gfx::types::{BackgroundColor, PixelFormat};
+use shader_base::types::{BackgroundColor, PixelFormat};
 
 #[derive(Copy, Clone)]
 pub enum ImageFormat {

@@ -1,5 +1,5 @@
 ﻿use std::hash::{Hash, Hasher};
-use crate::types::{BackgroundColor, PixelFormat};
+use shader_base::types::{BackgroundColor, PixelFormat};
 
 #[derive(Clone)]
 pub struct PassResource {

@@ -19,7 +19,7 @@ use gfx::renderer::render_pass::{RenderPass, RenderPassInstance};
 use gfx::shader::{ShaderProgram};
 use logger::fatal;
 use shader_base::pass_id::PassID;
-use shader_base::ShaderInterface;
+use shader_base::{CompilationError, ShaderInterface};
 
 use crate::renderer::render_pass_pool::RenderPassPool;
 use crate::vk_buffer::VkBuffer;
@@ -195,13 +195,16 @@ impl GfxInterface for GfxVulkan {
         name: String,
         pass_id: PassID,
         create_infos: &dyn ShaderInterface,
-    ) -> Arc<dyn ShaderProgram> {
-        VkShaderProgram::new(name, pass_id, create_infos)
+    ) -> Result<Arc<dyn ShaderProgram>, CompilationError> {
+        match VkShaderProgram::new(name, pass_id, create_infos) {
+            Ok(sp) => { Ok(sp) }
+            Err(err) => { Err(err) }
+        }
     }
 
     fn instantiate_render_pass(
         &self,
-        render_pass: &RenderPass
+        render_pass: &RenderPass,
     ) -> Box<dyn RenderPassInstance> {
         Box::new(self.render_pass_pool.instantiate(render_pass))
     }
@@ -227,11 +230,10 @@ impl GfxInterface for GfxVulkan {
 }
 
 impl GfxVulkan {
-    
     pub fn render_pass_pool(&self) -> &RenderPassPool {
         &self.render_pass_pool
     }
-    
+
     pub fn device(&self) -> &VkDevice {
         unsafe { self.device.assume_init_ref() }
     }

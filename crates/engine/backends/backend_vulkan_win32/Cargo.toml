@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 gfx = {path = "../../common/gfx"}
+shader_base = {path = "../../common/gfx_types"}
 maths = {path = "../../maths"}
 macros = { path = "../../macros" }
 backend_vulkan = { path = "../backend_vulkan" }

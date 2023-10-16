@@ -1,9 +1,9 @@
-use crate::{GfxCast, ShaderInstance};
+use std::collections::HashMap;
+use crate::{ShaderInstance};
 use std::sync::Arc;
-use shader_base::{AlphaMode, Culling, FrontFace, PolygonMode, Topology};
+use shader_base::{AlphaMode, BindPoint, Culling, FrontFace, PolygonMode, Topology};
 use shader_base::spirv_reflector::DescriptorBinding;
-
-use crate::types::PixelFormat;
+use shader_base::types::{GfxCast, PixelFormat};
 
 pub struct ShaderPropertyType {
     pub format: PixelFormat,
@@ -56,7 +56,7 @@ pub struct ShaderProgramInfos {
 }
 
 pub trait ShaderProgram: GfxCast {
-    fn get_bindings(&self) -> Vec<DescriptorBinding>;
+    fn get_bindings(&self) -> HashMap<BindPoint, DescriptorBinding>;
     fn instantiate(&self) -> Arc<dyn ShaderInstance>;
 }
 

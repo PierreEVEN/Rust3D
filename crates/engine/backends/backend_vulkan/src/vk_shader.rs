@@ -1,16 +1,15 @@
+use std::collections::HashMap;
 use std::ffi::CStr;
 use std::os::raw::c_char;
-//use std::ffi::CStr;
-//use std::os::raw::c_char;
 use std::sync::Arc;
 
 use ash::vk;
 use gfx::Gfx;
 
-use gfx::shader::{ ShaderProgram};
+use gfx::shader::{ShaderProgram};
 use gfx::shader_instance::{ShaderInstance, ShaderInstanceCreateInfos};
 use shader_base::pass_id::PassID;
-use shader_base::{AlphaMode, Culling, FrontFace, PolygonMode, ShaderInterface, ShaderStage, Topology};
+use shader_base::{AlphaMode, BindPoint, CompilationError, Culling, FrontFace, PolygonMode, ShaderInterface, ShaderStage, Topology};
 use shader_base::spirv_reflector::{DescriptorBinding, SpirvReflector};
 
 //use crate::vk_types::VkPixelFormat;
@@ -69,17 +68,17 @@ impl From<&FrontFace> for VkFrontFace {
 }
 
 pub struct VkShaderProgram {
-    vertex_module: Arc<VkShaderModule>,
-    fragment_module: Arc<VkShaderModule>,
+    _vertex_module: Arc<VkShaderModule>,
+    _fragment_module: Arc<VkShaderModule>,
     pub pipeline: vk::Pipeline,
     pub pipeline_layout: Arc<vk::PipelineLayout>,
     pub descriptor_set_layout: Arc<VkDescriptorSetLayout>,
-    bindings: Vec<DescriptorBinding>,
+    bindings: HashMap<BindPoint, DescriptorBinding>,
     name: String,
 }
 
 impl ShaderProgram for VkShaderProgram {
-    fn get_bindings(&self) -> Vec<DescriptorBinding> {
+    fn get_bindings(&self) -> HashMap<BindPoint, DescriptorBinding> {
         self.bindings.clone()
     }
 
@@ -100,15 +99,21 @@ impl VkShaderProgram {
         name: String,
         pass_id: PassID,
         create_infos: &dyn ShaderInterface,
-    ) -> Arc<Self> {
-
-        let vertex_binary = create_infos.get_spirv_for(&pass_id, &ShaderStage::Vertex).unwrap();
+    ) -> Result<Arc<Self>, CompilationError> {
+        let vertex_binary = create_infos.get_spirv_for(&pass_id, &ShaderStage::Vertex)?;
         let vertex_infos = SpirvReflector::new(&vertex_binary).unwrap();
-        let vertex_stage_input = create_infos.get_stage_inputs(&pass_id, &ShaderStage::Vertex).unwrap();
-        let fragment_binary = create_infos.get_spirv_for(&pass_id, &ShaderStage::Fragment).unwrap();
+        let vertex_stage_input = match create_infos.get_stage_inputs(&pass_id, &ShaderStage::Vertex) {
+            Ok(inputs) => { inputs }
+            Err(err) => { return Err(CompilationError::throw(err, None)); }
+        };
+        let fragment_binary = create_infos.get_spirv_for(&pass_id, &ShaderStage::Fragment)?;
         let fragment_infos = SpirvReflector::new(&fragment_binary).unwrap();
+        let fragment_stage_outputs = match create_infos.get_stage_outputs(&pass_id, &ShaderStage::Fragment) {
+            Ok(outputs) => { outputs }
+            Err(err) => { return Err(CompilationError::throw(err, None)); }
+        };
         let parameters = create_infos.get_parameters_for(&pass_id);
-        
+
         let descriptor_set_layout = VkDescriptorSetLayout::new(
             name.clone(),
             &vertex_infos.bindings,
@@ -116,28 +121,34 @@ impl VkShaderProgram {
         );
 
         let mut bindings = vertex_infos.bindings.clone();
-        bindings.append(&mut fragment_infos.bindings.clone());
+        for (key, value) in fragment_infos.bindings {
+            if bindings.contains_key(&key) {
+                logger::warning!("Binding duplication : {:?}", key);
+            } else {
+                bindings.insert(key.clone(), value.clone());
+            }
+        }
 
-        let vertex_module = VkShaderModule::new(name.clone(), &create_infos.get_spirv_for(&pass_id, &ShaderStage::Vertex).unwrap());
-        let fragment_module = VkShaderModule::new(name.clone(), &create_infos.get_spirv_for(&pass_id, &ShaderStage::Fragment).unwrap());
+        let vertex_module = VkShaderModule::new(name.clone(), &vertex_binary);
+        let fragment_module = VkShaderModule::new(name.clone(), &fragment_binary);
 
         let mut push_constants = Vec::<vk::PushConstantRange>::new();
 
-        if let Some(pc_size) = vertex_infos.push_constant_size {
+        if let Some(vertex_pc_size) = vertex_infos.push_constant_size {
             push_constants.push(
                 vk::PushConstantRange::builder()
                     .stage_flags(vk::ShaderStageFlags::VERTEX)
                     .offset(0)
-                    .size(pc_size)
+                    .size(vertex_pc_size)
                     .build(),
             );
         }
-        if let Some(pc_size) = fragment_infos.push_constant_size {
+        if let Some(frag_pc_size) = fragment_infos.push_constant_size {
             push_constants.push(
                 vk::PushConstantRange::builder()
                     .stage_flags(vk::ShaderStageFlags::FRAGMENT)
                     .offset(0)
-                    .size(pc_size)
+                    .size(frag_pc_size)
                     .build(),
             );
         }
@@ -160,21 +171,17 @@ impl VkShaderProgram {
         let mut vertex_attribute_description = Vec::<vk::VertexInputAttributeDescription>::new();
 
         let mut vertex_input_size = 0;
-
-        for input_property in &create_infos.get_stage_inputs(&pass_id, &ShaderStage::Vertex) {
-            if input_property.location < 0 {
-                continue;
-            }
-
+        let mut property_location = 0;
+        for input_property in &vertex_stage_input {
             vertex_attribute_description.push(
                 vk::VertexInputAttributeDescription::builder()
-                    .location(input_property.location as _)
-                    .format(*VkPixelFormat::from(&input_property.property_type.format))
-                    .offset(input_property.offset)
+                    .location(property_location)
+                    .format(*VkPixelFormat::from(&input_property.format))
+                    .offset(vertex_input_size)
                     .build(),
             );
-
-            vertex_input_size += input_property.property_type.format.type_size()
+            property_location += 1;
+            vertex_input_size += input_property.format.type_size()
         }
 
         let mut binding_descriptions = Vec::new();
@@ -236,9 +243,26 @@ impl VkShaderProgram {
             .build();
 
         let mut color_blend_attachment = Vec::<vk::PipelineColorBlendAttachmentState>::new();
-        
+
         let render_pass = Gfx::get().cast::<GfxVulkan>().render_pass_pool().find_by_id(&pass_id).unwrap();
-        for _ in &render_pass.images {
+
+        let mut writable_images = vec![];
+        for image in render_pass.images.iter() {
+            if !image.get_format().is_depth_format() { writable_images.push(image.clone()) }
+        }
+
+        if writable_images.len() != fragment_stage_outputs.len() {
+            return Err(CompilationError::throw(format!("Fragment stage output ({}) does not match with render pass images ({})", fragment_stage_outputs.len(), writable_images.len()), None));
+        }
+
+        for (i, image) in writable_images.iter().enumerate() {
+            if image.get_format().components() != fragment_stage_outputs[i].format.components() {
+                return Err(CompilationError::throw(format!("Fragment stage output #{i} with format '{:?}' does not match color attachment #{i} of render pass {} : {:?}", fragment_stage_outputs[i].format, pass_id, image.get_format()), None));
+            }
+        }
+
+        for image in &render_pass.images {
+            if image.get_format().is_depth_format() { continue; }
             color_blend_attachment.push(
                 vk::PipelineColorBlendAttachmentState::builder()
                     .blend_enable(parameters.alpha_mode != AlphaMode::Opaque)
@@ -335,15 +359,15 @@ impl VkShaderProgram {
         GfxVulkan::get()
             .set_vk_object_name(pipeline, format!("graphic pipeline\t\t: {}", name).as_str());
 
-        Arc::new(Self {
-            vertex_module,
-            fragment_module,
+        Ok(Arc::new(Self {
+            _vertex_module: vertex_module,
+            _fragment_module: fragment_module,
             pipeline,
             pipeline_layout,
             descriptor_set_layout,
             bindings,
             name,
-        })
+        }))
     }
 }
 

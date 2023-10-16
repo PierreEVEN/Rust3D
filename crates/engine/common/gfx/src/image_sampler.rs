@@ -1,4 +1,4 @@
-use crate::GfxCast;
+use shader_base::types::GfxCast;
 
 pub struct SamplerCreateInfos {}
 

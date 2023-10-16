@@ -10,4 +10,4 @@ macros = {path = "../../macros"}
 ash = "0.37.3+1.3.251"
 gpu-allocator =  { version= "0.23.0", default-features = false, features=["vulkan"]}
 logger = { path = "../../logger"}
-shader_base = {path = "../../common/shader_base"}
+shader_base = {path = "../../common/gfx_types" }

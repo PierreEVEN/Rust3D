@@ -4,17 +4,18 @@ use std::mem::MaybeUninit;
 use std::ops::Deref;
 use std::sync::Arc;
 use shader_base::pass_id::PassID;
-use shader_base::ShaderInterface;
+use shader_base::{CompilationError, ShaderInterface};
+use shader_base::types::GfxCast;
 
 use crate::buffer::{BufferCreateInfo, GfxBuffer};
 use crate::command_buffer::GfxCommandBuffer;
 use crate::image::{GfxImage, ImageCreateInfos};
 use crate::image_sampler::{ImageSampler, SamplerCreateInfos};
 use crate::mesh::{Mesh, MeshCreateInfos};
+use crate::program_pool::ProgramPool;
 use crate::renderer::render_pass::{RenderPass, RenderPassInstance};
 use crate::shader::{ShaderProgram};
 use crate::shader_instance::ShaderInstance;
-use crate::types::GfxCast;
 
 pub mod buffer;
 pub mod command_buffer;
@@ -25,7 +26,8 @@ pub mod mesh;
 pub mod shader;
 pub mod shader_instance;
 pub mod surface;
-pub mod types;
+pub mod material;
+pub mod program_pool;
 
 pub mod renderer {
     pub mod frame_graph;
@@ -47,10 +49,10 @@ pub trait GfxInterface: GfxCast {
         name: String,
         pass_id: PassID,
         create_infos: &dyn ShaderInterface,
-    ) -> Arc<dyn ShaderProgram>;
+    ) -> Result<Arc<dyn ShaderProgram>, CompilationError>;
     fn instantiate_render_pass(
         &self,
-        render_pass: &RenderPass
+        render_pass: &RenderPass,
     ) -> Box<dyn RenderPassInstance>;
     fn create_image(&self, name: String, create_infos: ImageCreateInfos) -> Arc<dyn GfxImage>;
     fn create_image_sampler(
@@ -67,6 +69,7 @@ pub trait GfxInterface: GfxCast {
 #[derive(Default)]
 pub struct Gfx {
     instance: Option<*const dyn GfxInterface>,
+    program_pool: ProgramPool,
 }
 
 static mut GFX_INSTANCE: MaybeUninit<Gfx> = MaybeUninit::<Gfx>::uninit();
@@ -75,11 +78,14 @@ impl Gfx {
     fn from(gfx: &dyn GfxInterface) -> Self {
         Self {
             instance: Some(gfx),
+            program_pool: ProgramPool::default(),
         }
     }
     pub fn get() -> &'static Self {
         unsafe { GFX_INSTANCE.assume_init_ref() }
     }
+
+    pub fn get_program_pool(&self) -> &ProgramPool { &self.program_pool }
 }
 
 impl Deref for Gfx {

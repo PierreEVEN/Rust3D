@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
+use std::str::FromStr;
 use lalrpop_util::lalrpop_mod;
 use shader_base::pass_id::PassID;
 use shader_base::{AlphaMode, CompilationError, Culling, FrontFace, PolygonMode, Property, ShaderInterface, ShaderParameters, ShaderStage, Topology};
@@ -17,13 +18,13 @@ mod hlsl_to_spirv;
 mod parsed_instructions;
 mod shader_pass;
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct ReslShaderInterface {
     version: Option<u64>,
     blocks: HashMap<ShaderStage, HashMap<PassID, ShaderPass>>,
     errors: Vec<CompilationError>,
     parameters: ShaderParameters,
-    file_path: PathBuf
+    file_path: PathBuf,
 }
 
 impl ReslShaderInterface {
@@ -72,6 +73,30 @@ impl ReslShaderInterface {
         let name = name.to_uppercase();
         let value = value.to_uppercase();
         match name.as_str() {
+            "DEPTH_TEST" => {
+                self.parameters.depth_test = match bool::from_str(value.to_lowercase().as_str()) {
+                    Ok(i) => { i }
+                    Err(_) => {
+                        return Err(format!("DEPTH_TEST should be a bool : {}", value.to_lowercase()));
+                    }
+                };
+            }
+            "LINE_WIDTH" => {
+                self.parameters.line_width = match f32::from_str(value.as_str()) {
+                    Ok(i) => { i }
+                    Err(_) => {
+                        return Err(format!("LINE_WIDTH should be a float : {}", value));
+                    }
+                };
+            }
+            "SHADER_VERSION" => {
+                self.version = Some(match u64::from_str(value.as_str()) {
+                    Ok(i) => { i }
+                    Err(_) => {
+                        return Err(format!("SHADER_VERSION should be an unsigned int : {}", value));
+                    }
+                });
+            }
             "ALPHA_MODE" => {
                 self.parameters.alpha_mode = match value.as_str() {
                     "OPAQUE" => { AlphaMode::Opaque }
@@ -80,7 +105,7 @@ impl ReslShaderInterface {
                     _ => { return Err(format!("Wrong value : '{}', expected [OPAQUE, TRANSLUCENT, ADDITIVE]", value)); }
                 };
             }
-            "POLYGON_MODE" => {
+            "POLYGON" => {
                 self.parameters.polygon_mode = match value.as_str() {
                     "FILL" => { PolygonMode::Fill }
                     "POINT" => { PolygonMode::Point }
@@ -96,14 +121,14 @@ impl ReslShaderInterface {
                     _ => { return Err(format!("Wrong value : '{}', expected [LINES, POINTS, TRIANGLES]", value)); }
                 };
             }
-            "FRONT_FACE" => {
+            "FRONT" => {
                 self.parameters.front_face = match value.as_str() {
                     "CLOCKWISE" => { FrontFace::Clockwise }
                     "COUNTER_CLOCKWISE" => { FrontFace::Clockwise }
                     _ => { return Err(format!("Wrong value : '{}', expected [CLOCKWISE, COUNTER_CLOCKWISE]", value)); }
                 };
             }
-            "CULLING" => {
+            "CULL" => {
                 self.parameters.culling = match value.as_str() {
                     "NONE" => { Culling::None }
                     "FRONT" => { Culling::Front }
@@ -202,7 +227,8 @@ impl From<PathBuf> for ReslShaderInterface {
                             match &interface.push_block(&stage, PassID::new(render_pass), content.clone()) {
                                 Ok(_) => {}
                                 Err(err) => {
-                                    interface.errors.push(if err.token.is_some() {err.clone()} else {CompilationError::throw(err.message.clone(), Some(*token))}) }
+                                    interface.errors.push(if err.token.is_some() { err.clone() } else { CompilationError::throw(err.message.clone(), Some(*token)) })
+                                }
                             }
                         }
                     }
@@ -211,7 +237,7 @@ impl From<PathBuf> for ReslShaderInterface {
                     for render_pass in render_pass_group.iter() {
                         match interface.push_block(stage, PassID::new(render_pass), content.clone()) {
                             Ok(_) => {}
-                            Err(err) => { interface.errors.push(if err.token.is_some() {err.clone()} else {CompilationError::throw(err.message.clone(), Some(*token))}) }
+                            Err(err) => { interface.errors.push(if err.token.is_some() { err.clone() } else { CompilationError::throw(err.message.clone(), Some(*token)) }) }
                         }
                     }
                 }
@@ -224,14 +250,13 @@ impl From<PathBuf> for ReslShaderInterface {
 
 impl ShaderInterface for ReslShaderInterface {
     fn get_spirv_for(&self, pass: &PassID, stage: &ShaderStage) -> Result<Vec<u32>, CompilationError> {
-
         let spirv = match self.blocks.get(stage) {
-            None => {return Err(CompilationError::throw(format!("This shader is not available for stage {:?}", stage), None))}
+            None => { return Err(CompilationError::throw(format!("This shader is not available for stage {:?}", stage), None)); }
             Some(shader_stage) => {
                 match shader_stage.get(pass) {
-                    None => {return Err(CompilationError::throw(format!("This shader is not available for pass {pass}"), None))}
+                    None => { return Err(CompilationError::throw(format!("This shader is not available for pass {pass}"), None)); }
                     Some(pass) => {
-                        HlslToSpirv::default().transpile(&pass.get_text(),pass.entry_point_name(), &self.file_path, stage)
+                        HlslToSpirv::default().transpile(&pass.get_text(), pass.entry_point_name(), &self.file_path, stage)
                     }
                 }
             }
@@ -242,12 +267,36 @@ impl ShaderInterface for ReslShaderInterface {
         &self.parameters
     }
 
-    fn get_stage_inputs(&self, render_pass: &PassID, stage: &ShaderStage) -> Result<Vec<Property>, CompilationError> {
-        todo!()
+    fn get_stage_inputs(&self, render_pass: &PassID, stage: &ShaderStage) -> Result<Vec<Property>, String> {
+        match self.blocks.get(stage) {
+            None => { return Err(format!("Shader stage ${:?} does not exists in the current shaders", stage)); }
+            Some(stage) => {
+                match stage.get(render_pass) {
+                    None => { return Err(format!("Shader pass ${} does not exists in the current shaders", render_pass)); }
+                    Some(block) => { block.stage_inputs() }
+                }
+            }
+        }
     }
 
-    fn get_stage_outputs(&self, render_pass: &PassID, stage: &ShaderStage) -> Result<Vec<Property>, CompilationError> {
-        todo!()
+    fn get_stage_outputs(&self, render_pass: &PassID, stage: &ShaderStage) -> Result<Vec<Property>, String> {
+        match self.blocks.get(stage) {
+            None => { return Err(format!("Shader stage ${:?} does not exists in the current shaders", stage)); }
+            Some(stage) => {
+                match stage.get(render_pass) {
+                    None => { return Err(format!("Shader pass ${} does not exists in the current shaders", render_pass)); }
+                    Some(block) => { block.stage_output() }
+                }
+            }
+        }
+    }
+
+    fn get_errors(&self) -> &Vec<CompilationError> {
+        &self.errors
+    }
+
+    fn get_path(&self) -> PathBuf {
+        self.file_path.clone()
     }
 }
 

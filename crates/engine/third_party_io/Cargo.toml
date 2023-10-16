@@ -7,4 +7,5 @@ edition = "2021"
 stb_image_rust = "2.27.2"
 stb_image_write_rust = "1.16.1"
 gfx = { path = "../common/gfx" }
+shader_base = { path = "../common/gfx_types" }
 logger = {path = "../logger"}

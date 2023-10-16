@@ -1,12 +1,82 @@
 use std::collections::HashMap;
 
-use shader_base::{CompilationError, DescriptorType, ShaderStage};
+use shader_base::{CompilationError, Property, ShaderStage};
+use shader_base::types::PixelFormat;
 
 use crate::ast::{Function, FunctionParameter, HlslCodeBlock, HlslInstruction, HlslType, HlslTypeSimple, StructureField, Value};
 use crate::list_of::ListOf;
 use crate::parsed_instructions::ParsedInstructions;
 
-#[derive(Debug)]
+impl From<&HlslType> for PixelFormat {
+    fn from(value: &HlslType) -> Self {
+        match value {
+            HlslType::Simple(t) => {
+                match t {
+                    HlslTypeSimple::Int => { PixelFormat::R32_SINT }
+                    HlslTypeSimple::Uint => { PixelFormat::R32_UINT }
+                    HlslTypeSimple::Half => { PixelFormat::R16_SFLOAT }
+                    HlslTypeSimple::Float => { PixelFormat::R32_SFLOAT }
+                    HlslTypeSimple::Double => { PixelFormat::R64_SFLOAT }
+                    _ => { PixelFormat::UNDEFINED }
+                }
+            }
+            HlslType::Vec(t, u) => {
+                match t {
+                    HlslTypeSimple::Uint => {
+                        match u {
+                            1 => PixelFormat::R32_UINT,
+                            2 => PixelFormat::R32G32_UINT,
+                            3 => PixelFormat::R32G32B32_UINT,
+                            4 => PixelFormat::R32G32B32A32_UINT,
+                            _ => { PixelFormat::UNDEFINED }
+                        }
+                    }
+                    HlslTypeSimple::Int => {
+                        match u {
+                            1 => PixelFormat::R32_SINT,
+                            2 => PixelFormat::R32G32_SINT,
+                            3 => PixelFormat::R32G32B32_SINT,
+                            4 => PixelFormat::R32G32B32A32_SINT,
+                            _ => { PixelFormat::UNDEFINED }
+                        }
+                    }
+                    HlslTypeSimple::Half => {
+                        match u {
+                            1 => PixelFormat::R16_SFLOAT,
+                            2 => PixelFormat::R16G16_SFLOAT,
+                            3 => PixelFormat::R16G16B16_SFLOAT,
+                            4 => PixelFormat::R16G16B16A16_SFLOAT,
+                            _ => { PixelFormat::UNDEFINED }
+                        }
+                    }
+                    HlslTypeSimple::Float => {
+                        match u {
+                            1 => PixelFormat::R32_SFLOAT,
+                            2 => PixelFormat::R32G32_SFLOAT,
+                            3 => PixelFormat::R32G32B32_SFLOAT,
+                            4 => PixelFormat::R32G32B32A32_SFLOAT,
+                            _ => { PixelFormat::UNDEFINED }
+                        }
+                    }
+                    HlslTypeSimple::Double => {
+                        match u {
+                            1 => PixelFormat::R64_SFLOAT,
+                            2 => PixelFormat::R64G64_SFLOAT,
+                            3 => PixelFormat::R64G64B64_SFLOAT,
+                            4 => PixelFormat::R64G64B64A64_SFLOAT,
+                            _ => { PixelFormat::UNDEFINED }
+                        }
+                    }
+                    _ => { PixelFormat::UNDEFINED }
+                }
+            }
+            HlslType::Mat(_, _, _) => { PixelFormat::UNDEFINED }
+            HlslType::Template(_, _) => { PixelFormat::UNDEFINED }
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct ShaderPass {
     stage: ShaderStage,
     instructions: ParsedInstructions,
@@ -82,7 +152,7 @@ impl ShaderPass {
                                     }
                                 }
                                 HlslType::Vec(s, len) => {
-                                    if *s != HlslTypeSimple::Float || *len != 4 {
+                                    if *s != HlslTypeSimple::Float || (*len != 4) {
                                         return Err(CompilationError::throw("Vertex stage support only float4 output".to_string(), Some(*t)));
                                     }
                                     function.attribute = Some((*t, "SV_POSITION".to_string()))
@@ -170,19 +240,17 @@ impl ShaderPass {
                         return Err(CompilationError::throw(format!("Property redeclaration : '{name}'"), Some(*t)));
                     }
                     self.properties.insert(name.clone(), ty.clone());
-                    
+
                     if let HlslType::Template(HlslTypeSimple::PushConstant, u) = ty {
                         if u.len() != 1 {
-                            return Err(CompilationError::throw(format!("Push constant has more than one parameter : ${:?}", u), Some(*t)))
+                            return Err(CompilationError::throw(format!("Push constant has more than one parameter : ${:?}", u), Some(*t)));
                         }
-                        let ty = u.get(0).unwrap().clone();                
+                        let ty = u.get(0).unwrap().clone();
                         self.instructions += (*t, format!("[[vk::push_constant]] ConstantBuffer<{}> {name};", ty.to_string()));
                         self.push_constant = Some(ty);
-                    }
-                    else {
+                    } else {
                         self.instructions += (*t, format!("{} {name};", ty.to_string()));
                     }
-
                 }
                 _ => {}
             }
@@ -196,24 +264,48 @@ impl ShaderPass {
         &self.entry_point
     }
 
-    pub fn stage_inputs(&self) -> Result<(), String> {
+    pub fn stage_inputs(&self) -> Result<Vec<Property>, String> {
         let entry_point = self.entry_point_name();
         let entry_func = match self.functions.get(entry_point.as_str()) {
             None => { return Err(format!("No entry point defined : expected '{entry_point}'")); }
             Some(func) => { func }
         };
-        let mut params: String;
-        for param in entry_func.params.iter() {}
-        todo!()
+        let mut properties = vec![];
+        for prop in entry_func.params.iter() {
+            if prop.attribute.is_some() {
+                continue; // Skip special attributes (internal HLSL properties)
+            }
+            let format = PixelFormat::from(&prop.param_type.1);
+            if format == PixelFormat::UNDEFINED {
+                return Err(format!("Cannot deduce pixel format for stage input property {} : {}", prop.name.1, prop.param_type.1));
+            }
+            properties.push(Property {
+                name: prop.name.1.clone(),
+                format: format,
+            })
+        }
+        Ok(properties)
     }
 
-    pub fn stage_output(&self) -> Result<HlslType, String> {
+    pub fn stage_output(&self) -> Result<Vec<Property>, String> {
         let entry_point = self.entry_point_name();
         let entry_func = match self.functions.get(entry_point.as_str()) {
             None => { return Err(format!("No entry point defined : expected '{entry_point}'")); }
             Some(func) => { func }
         };
-        Ok(entry_func.return_type.1.clone())
+
+        let mut properties = vec![];
+        for ty in self.unwrap_struct_type(&entry_func.return_type.1)? {
+            let format = PixelFormat::from(&ty);
+            if format == PixelFormat::UNDEFINED {
+                return Err(format!("Cannot deduce pixel format for stage output property {} : {}", "return".to_string(), &ty));
+            }
+            properties.push(Property {
+                name: "return".to_string(),
+                format,
+            })
+        }
+        Ok(properties)
     }
 
     fn parse_block(block: &ListOf<HlslCodeBlock>) -> ParsedInstructions {
@@ -244,7 +336,6 @@ impl ShaderPass {
 
 
         instructions += (function.return_type.0, function.return_type.1.to_string());
-
         instructions += (*token, format!(" {name}("));
 
         let mut sep = ParsedInstructions::default();
@@ -254,6 +345,9 @@ impl ShaderPass {
             let mut instr = ParsedInstructions::default();
             instr += (param.param_type.0, param.param_type.1.to_string());
             instr += (param.name.0, format!(" {}", param.name.1));
+            if let Some(attr) = &param.attribute {
+                instr += (attr.0, format!(":{}", attr.1))
+            }
             instr
         });
 
@@ -272,7 +366,24 @@ impl ShaderPass {
         self.instructions.get_text()
     }
 
+    #[allow(dead_code)]
     pub fn get_token_from_location(&self, line: usize, column: usize) -> Option<usize> {
         self.instructions.get_token_for(line, column)
+    }
+
+    pub fn unwrap_struct_type(&self, ty: &HlslType) -> Result<Vec<HlslType>, String> {
+        if let HlslType::Simple(HlslTypeSimple::Struct(s)) = ty {
+            let mut types = vec![];
+
+            for field in match self.structures.get(s) {
+                None => { return Err(format!("Failed to find structure {s}")); }
+                Some(str) => { str }
+            }.iter() {
+                types.append(&mut self.unwrap_struct_type(&field.struct_type)?);
+            }
+            Ok(types)
+        } else {
+            Ok(vec![ty.clone()])
+        }
     }
 }

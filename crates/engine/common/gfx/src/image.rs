@@ -1,8 +1,6 @@
 use enumflags2::{bitflags, BitFlags};
 use maths::vec2::Vec2u32;
-
-use crate::types::{BackgroundColor, PixelFormat};
-use crate::GfxCast;
+use shader_base::types::{BackgroundColor, GfxCast, PixelFormat};
 
 #[derive(Copy, Clone)]
 pub enum ImageType {

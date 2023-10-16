@@ -5,13 +5,13 @@ use std::sync::{Arc, RwLock};
 use ecs::entity::GameObject;
 use maths::vec2::Vec2u32;
 use shader_base::pass_id::PassID;
+use shader_base::types::GfxCast;
 
 use crate::command_buffer::GfxCommandBuffer;
 use crate::Gfx;
 use crate::image::{GfxImage, ImageType};
 use crate::renderer::render_node::RenderNode;
 use crate::surface::Frame;
-use crate::types::GfxCast;
 
 pub trait RenderPassInstance: GfxCast {
     fn bind(&self, frame: &Frame, context: &RenderPass, res: Vec2u32, command_buffer: &dyn GfxCommandBuffer);
@@ -84,7 +84,6 @@ impl RenderPass {
         }
         unsafe {
             self.instance.assume_init_ref().bind(frame, self, (*self.compute_res.write().unwrap())(res), &*self.command_buffer);
-
             match camera.world() {
                 None => {}
                 Some(ecs) => {

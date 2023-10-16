@@ -1,6 +1,7 @@
 use std::ops::{AddAssign};
 
 #[derive(Debug, Default, Clone)]
+#[allow(dead_code)]
 pub struct ParsedInstructions {
     instructions: Vec<(usize, String)>,
 }
@@ -13,6 +14,7 @@ impl ParsedInstructions {
         }
         text
     }
+    #[allow(dead_code)]
     pub fn get_token_for(&self, line: usize, column: usize) -> Option<usize> {
         let mut cur_line = 1;
         let mut good_line = false;

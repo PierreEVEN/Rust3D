@@ -15,9 +15,9 @@ use gfx::gfx_resource::{GfxImageBuilder, GfxResource};
 use gfx::image::{GfxImage, GfxImageUsageFlags, ImageParams, ImageType};
 use gfx::renderer::render_pass::RenderPassInstance;
 use gfx::surface::{Frame, GfxSurface, SurfaceAcquireResult};
-use gfx::types::BackgroundColor;
 use logger::{fatal};
 use plateform::window::{Window, WindowStatus};
+use shader_base::types::BackgroundColor;
 
 pub struct VkSurfaceWin32 {
     pub surface: vk::SurfaceKHR,

@@ -36,7 +36,7 @@ pub struct VkShaderInstance {
     pub descriptor_sets: RwLock<GfxResource<vk::DescriptorSet>>,
     pub pipeline_layout: Arc<vk::PipelineLayout>,
     descriptors_dirty: GfxResource<Arc<AtomicBool>>,
-    base_bindings: Vec<DescriptorBinding>,
+    base_bindings: HashMap<BindPoint, DescriptorBinding>,
     bindings: RwLock<HashMap<BindPoint, ShaderInstanceBinding>>,
 }
 
@@ -119,11 +119,12 @@ impl VkShaderInstance {
 
             let mut write_desc_set = Vec::new();
 
-            for binding in &self.base_bindings {
+            for (bp, binding) in &self.base_bindings {
                 write_desc_set.push(
-                    match self.bindings.read().unwrap().get(&binding.bind_point) {
+                    match self.bindings.read().unwrap().get(bp) {
                         None => {
-                            logger::fatal!("binding {} is not specified", binding.bind_point.name)
+                            logger::error!("binding {:?} is not specified", bp);
+                            return;
                         }
                         Some(bindings) => match bindings {
                             ShaderInstanceBinding::Sampler(sampler) => {

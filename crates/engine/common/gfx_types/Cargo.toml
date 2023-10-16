@@ -1,0 +1,9 @@
+[package]
+name = "shader_base"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+rspirv-reflect = "0.8.0"
+maths = { path = "../../maths" }
+logger = { path = "../../logger" }

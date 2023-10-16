@@ -9,9 +9,9 @@ use gfx::image::{GfxImage};
 use gfx::renderer::render_node::RenderNode;
 use gfx::renderer::render_pass::{RenderPass, RenderPassInstance};
 use gfx::surface::Frame;
-use gfx::types::BackgroundColor;
 use maths::vec2::Vec2u32;
 use shader_base::pass_id::PassID;
+use shader_base::types::BackgroundColor;
 
 use crate::{GfxVulkan, vk_check};
 use crate::renderer::vk_render_pass::VkRenderPass;
@@ -52,6 +52,7 @@ impl VkRenderPassInstance {
 impl RenderPassInstance for VkRenderPassInstance {
     fn bind(&self, frame: &Frame, context: &RenderPass, res: Vec2u32, pass_command_buffer: &dyn GfxCommandBuffer) {
         // Begin buffer
+        pass_command_buffer.cast::<VkCommandBuffer>().init_for(context.get_id().clone(), frame.clone());
         let command_buffer = pass_command_buffer.cast::<VkCommandBuffer>().command_buffer.get(frame);
 
         begin_command_buffer(command_buffer, false);

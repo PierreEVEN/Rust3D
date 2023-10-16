@@ -13,4 +13,4 @@ lazy_static = "1.4.0"
 ecs = { path = "../ecs" }
 maths = { path = "../maths" }
 third_party_io = { path = "../third_party_io" }
-shader_base = { path = "../common/shader_base" }
+shader_base = { path = "../common/gfx_types" }

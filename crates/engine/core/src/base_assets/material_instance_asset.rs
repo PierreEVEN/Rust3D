@@ -1,7 +1,7 @@
 use gfx::image::GfxImage;
 use gfx::image_sampler::ImageSampler;
-use gfx::shader_instance::BindPoint;
 use std::sync::Arc;
+use shader_base::BindPoint;
 
 use crate::asset::{AssetMetaData, GameAsset};
 

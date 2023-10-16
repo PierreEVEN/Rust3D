@@ -111,6 +111,8 @@ HlslInstruction : HlslInstruction = {
         HlslInstruction::Define(t, name, if value.is_empty() { None } else { Some(value) })
     },
     <t:@L> include => HlslInstruction::Include(t, <>.to_string()),
+    <t:@L> <return_type:HlslType> <name:Word> "(" ")" <beg:@L> BRACKET_OPEN <content:FunctionContent> BRACKET_CLOSE <end:@R> => HlslInstruction::Function(t, name, Function { return_type: (t, return_type), attribute: None, params: ListOf::new(), content: (beg, end, content)} ),
+    <t:@L> <return_type:HlslType> <name:Word> "(" ")" ":" <at_loc:@L> <attribute:Word> <beg:@L> BRACKET_OPEN <content:FunctionContent> BRACKET_CLOSE <end:@R> => HlslInstruction::Function(t, name, Function { return_type: (t, return_type), attribute: Some((at_loc, attribute)), params: ListOf::new(), content: (beg, end, content)} ),
     <t:@L> <return_type:HlslType> <name:Word> "(" <params:FunctionParameterList> ")" <beg:@L> BRACKET_OPEN <content:FunctionContent> BRACKET_CLOSE <end:@R> => HlslInstruction::Function(t, name, Function { return_type: (t, return_type), attribute: None, params, content: (beg, end, content)} ),
     <t:@L> <return_type:HlslType> <name:Word> "(" <params:FunctionParameterList> ")" ":" <at_loc:@L> <attribute:Word> <beg:@L> BRACKET_OPEN <content:FunctionContent> BRACKET_CLOSE <end:@R> => HlslInstruction::Function(t, name, Function { return_type: (t, return_type), attribute: Some((at_loc, attribute)), params, content: (beg, end, content)} ),
     <t:@L> <return_type:HlslType> <name:Word> "(" <params:FunctionParameterList> ")" <beg:@L> BRACKET_OPEN BRACKET_CLOSE <end:@R>  => HlslInstruction::Function(t, name, Function { return_type: (t, return_type), attribute: None, params, content: (beg, end, ListOf::<HlslCodeBlock>::new())} ),

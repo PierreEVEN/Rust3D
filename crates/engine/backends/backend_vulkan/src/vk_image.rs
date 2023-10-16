@@ -10,8 +10,8 @@ use gfx::image::{
     GfxImage, GfxImageUsageFlags, ImageCreateInfos, ImageParams, ImageType, ImageUsage,
 };
 use gfx::surface::Frame;
-use gfx::types::{BackgroundColor, PixelFormat};
 use gfx::Gfx;
+use shader_base::types::{BackgroundColor, PixelFormat};
 
 use crate::vk_buffer::VkBufferAccess;
 use crate::vk_command_buffer::{
@@ -282,7 +282,7 @@ impl GfxImageBuilder<CombinedImageData> for RbImage {
             });
 
         if allocation.is_err() {
-            logger::fatal!("failed to allocate image memory");
+            logger::fatal!("failed to allocate image memory : {}", allocation.err().unwrap());
         }
 
         let allocation = allocation.unwrap();

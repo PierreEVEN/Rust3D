@@ -4,10 +4,10 @@ use ecs::entity::GameObject;
 use gfx::renderer::frame_graph::FrameGraph;
 use gfx::renderer::render_node::RenderNode;
 use gfx::renderer::renderer_resource::PassResource;
-use gfx::types::{BackgroundColor, PixelFormat};
 use maths::vec2::Vec2f32;
 use maths::vec4::Vec4F32;
 use plateform::window::Window;
+use shader_base::types::{BackgroundColor, PixelFormat};
 
 use crate::engine::Engine;
 

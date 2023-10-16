@@ -1,83 +1,40 @@
-#pragma shader_version 		1.0
-#pragma shader_language 	HLSL
+#pragma shader_version 		1
 #pragma cull 				BACK
-#pragma front 				COUNTER_CLOCKWISE
-#pragma topology			TRIANGLE
+#pragma topology			TRIANGLES
 #pragma polygon 			FILL
-#pragma line_width 			1.0
-#pragma depth_test 			true
+#pragma depth_test 			false
 #pragma alpha_mode			OPAQUE
 
-global(gbuffer, g_buffer_resolve)
+global(PresentPass)
 {
-	struct toto
-	{
-		float2 machin;
-	};
-
 	struct VsToFsStruct
 	{
-		float4 Pos 			: SV_Position;
-		float3 Normal 	 	: NORMAL0;
-		float2 UV 		 	: TEXCOORD0;
-		float3 Color 	 	: COLOR0;
-		float3 WorldPos 	: POSITION1;
-		float3 Tangent 	 	: TEXCOORD1;
-		toto   machin_test;
+		float4 Pos : SV_Position;
+		float2 UV;
 	};
 };
 
-
-
-vertex(test)
+vertex(PresentPass)
 {
-	float4 main(uint InstanceIndex : SV_InstanceID) : SV_Position
+	VsToFsStruct main(uint vertex_id: SV_VertexID)
 	{
-		return float4(1,1,1,1);
+        VsToFsStruct output;
+        output.UV = float2((vertex_id << 1) & 2, vertex_id & 2);
+        output.Pos = float4(output.UV * 2.0f - 1.0f, 0.0f, 1.0f);
+        output.UV *= float2(1, -1);
+        return output;
 	}
 }
 
-fragment(test)
+fragment(PresentPass)
 {
-	void main(float4 position)
+	Texture2D	 sTexture;
+	SamplerState sSampler;
+
+	float4 main(VsToFsStruct input)
 	{
+		return sTexture.Sample(sSampler, input.UV);
 	}
 }
-
-
-vertex(gbuffer)
-{
-	struct VSInput
-	{
-		float4 Pos 		: POSITION0;
-		float2 UV 		: TEXCOORD0;
-		float3 Color 	: COLOR0;
-		float3 Normal 	: NORMAL0;
-		float3 Tangent 	: TEXCOORD1;
-	};
-
-	#include "ubo_definition.cg"
-
-	VsToFsStruct main(VSInput input, uint InstanceIndex : SV_InstanceID)
-	{
-		VsToFsStruct output = (VsToFsStruct)0;
-		float4 tmpPos = input.Pos + ubo.instancePos[InstanceIndex];
-
-		output.Pos = mul(ubo.projection, mul(ubo.view, mul(ubo.model, tmpPos)));
-
-		output.UV = input.UV;
-
-		// Vertex position in world space
-		output.WorldPos = mul(ubo.model, tmpPos).xyz;
-
-		// Normal in world space
-		output.Normal = normalize(input.Normal);
-		output.Tangent = normalize(input.Tangent);
-		
-		// Currently just vertex color
-		output.Color = input.Color;
-		return output;
-	}
-};
 
 // fragment(gbuffer) => "demo_fragment.shb"

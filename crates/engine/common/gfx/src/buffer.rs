@@ -1,5 +1,5 @@
+use shader_base::types::GfxCast;
 use crate::surface::Frame;
-use crate::GfxCast;
 
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub enum BufferType {

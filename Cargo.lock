@@ -104,6 +104,7 @@ dependencies = [
  "plateform",
  "plateform_win32",
  "raw-window-handle",
+ "shader_base",
  "windows 0.51.1",
 ]
 
@@ -380,6 +381,7 @@ dependencies = [
  "gfx",
  "imgui",
  "job_system",
+ "log",
  "logger",
  "macros",
  "maths",
@@ -1237,6 +1239,8 @@ dependencies = [
 name = "shader_base"
 version = "0.1.0"
 dependencies = [
+ "logger",
+ "maths",
  "rspirv-reflect",
 ]
 
@@ -1362,6 +1366,7 @@ version = "0.1.0"
 dependencies = [
  "gfx",
  "logger",
+ "shader_base",
  "stb_image_rust",
  "stb_image_write_rust",
 ]

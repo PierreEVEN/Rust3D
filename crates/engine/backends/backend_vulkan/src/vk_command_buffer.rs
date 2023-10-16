@@ -9,9 +9,9 @@ use gfx::mesh::{IndexBufferType, Mesh};
 use gfx::shader::{ShaderProgram};
 use gfx::shader_instance::ShaderInstance;
 use gfx::surface::Frame;
-use gfx::types::Scissors;
 use shader_base::pass_id::PassID;
 use shader_base::ShaderStage;
+use shader_base::types::Scissors;
 
 use crate::{vk_check, GfxVulkan, VkBuffer, VkShaderInstance, VkShaderProgram};
 

@@ -62,7 +62,7 @@ impl VkShaderInstance {
                 name,
             })),
             descriptors_dirty: GfxResource::new(RbDescriptorState {}),
-            resource_bindings: Arc::new(todo!("Add resource bindings")),
+            resource_bindings: create_infos.bindings,
         })
     }
 
@@ -81,7 +81,7 @@ impl VkShaderInstance {
 
             let mut write_desc_set = Vec::new();
 
-            for (bp, binding) in &self.base_bindings {
+            for (bp, binding) in &self.resource_bindings.get_bindings_for_pass(self) {
                 write_desc_set.push(
                     match self.bindings.read().unwrap().get(bp) {
                         None => {

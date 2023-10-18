@@ -101,13 +101,13 @@ impl VkShaderProgram {
         create_infos: &dyn ShaderInterface,
     ) -> Result<Arc<Self>, CompilationError> {
         let vertex_binary = create_infos.get_spirv_for(&pass_id, &ShaderStage::Vertex)?;
-        let vertex_infos = SpirvReflector::new(&vertex_binary).unwrap();
+        let vertex_entry_point = create_infos.get_entry_point(&pass_id, &ShaderStage::Vertex).unwrap();
         let vertex_stage_input = match create_infos.get_stage_inputs(&pass_id, &ShaderStage::Vertex) {
             Ok(inputs) => { inputs }
             Err(err) => { return Err(CompilationError::throw(err, None)); }
         };
         let fragment_binary = create_infos.get_spirv_for(&pass_id, &ShaderStage::Fragment)?;
-        let fragment_infos = SpirvReflector::new(&fragment_binary).unwrap();
+        let fragment_entry_point = create_infos.get_entry_point(&pass_id, &ShaderStage::Fragment).unwrap();
         let fragment_stage_outputs = match create_infos.get_stage_outputs(&pass_id, &ShaderStage::Fragment) {
             Ok(outputs) => { outputs }
             Err(err) => { return Err(CompilationError::throw(err, None)); }
@@ -304,12 +304,12 @@ impl VkShaderProgram {
             vk::PipelineShaderStageCreateInfo::builder()
                 .stage(vk::ShaderStageFlags::VERTEX)
                 .module(vertex_module.get_module())
-                .name(unsafe { CStr::from_ptr("main\0".as_ptr() as *const c_char) })
+                .name(unsafe { CStr::from_ptr(vertex_entry_point.as_ptr() as *const c_char) })
                 .build(),
             vk::PipelineShaderStageCreateInfo::builder()
                 .stage(vk::ShaderStageFlags::FRAGMENT)
                 .module(fragment_module.get_module())
-                .name(unsafe { CStr::from_ptr("main\0".as_ptr() as *const c_char) })
+                .name(unsafe { CStr::from_ptr(fragment_entry_point.as_ptr() as *const c_char) })
                 .build(),
         ]);
 

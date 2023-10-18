@@ -19,7 +19,7 @@ pub enum MaterialResourceData {
 
 #[derive(Default)]
 pub struct MaterialResources {
-    resources: RwLock<HashMap<BindPoint, (DescriptorType, u32, Option<MaterialResourceData>, HashSet<PassID>)>>,
+    resources: RwLock<HashMap<BindPoint, (DescriptorType, Option<MaterialResourceData>, HashMap<PassID, u32>)>>,
 }
 
 impl Clone for MaterialResources {
@@ -31,9 +31,9 @@ impl Clone for MaterialResources {
 }
 
 impl MaterialResources {
-    pub fn add_binding(&self, descriptor_type: DescriptorType, bind_point: BindPoint, location: u32, passes: HashSet<PassID>) {
+    pub fn add_binding(&self, descriptor_type: DescriptorType, bind_point: BindPoint, passes: HashMap<PassID, u32>) {
         let resources = &mut *self.resources.write().unwrap();
-        resources.insert(bind_point, (descriptor_type, location, None, passes));
+        resources.insert(bind_point, (descriptor_type, None, passes));
     }
     pub fn clear(&self) {
         self.resources.write().unwrap().clear();
@@ -42,7 +42,7 @@ impl MaterialResources {
         let resources = &mut *self.resources.write().unwrap();
         match resources.get_mut(bind_point) {
             None => { logger::warning!("This material have no bind point '{:?}' available", bind_point) }
-            Some((_, _, current, _)) => {
+            Some((_, current, _)) => {
                 *current = Some(resource);
             }
         }
@@ -50,8 +50,8 @@ impl MaterialResources {
     pub fn get_bindings_for_pass(&self, pass: &PassID) -> Vec<(u32, MaterialResourceData)> {
         let mut bindings = vec![];
 
-        for (_, location, resource, passes) in self.resources.read().unwrap().values() {
-            if passes.contains(pass) {
+        for (_, resource, passes) in self.resources.read().unwrap().values() {
+            if let Some(location) = passes.get(pass) {
                 if let Some(resource) = resource {
                     bindings.push((*location, resource.clone()))
                 }
@@ -99,11 +99,11 @@ impl Material {
                 logger::error!("{:?}", error);
             }
             return;
-        }        
+        }
         self.resources.clear();
-        for (bp, (descriptor, location, passes)) in shader.get_bindings() {
-            self.resources.add_binding(descriptor, bp, location, passes)
-        }        
+        for (bp, (descriptor, locations)) in shader.get_bindings() {
+            self.resources.add_binding(descriptor, bp, locations)
+        }
         *self.shader_interface.write().unwrap() = Some(Arc::new(shader));
     }
 

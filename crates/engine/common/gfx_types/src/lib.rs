@@ -35,7 +35,8 @@ pub trait ShaderInterface {
     // Each different shader interface should have a different path
     fn get_path(&self) -> PathBuf;
     // Get shader bindings
-    fn get_bindings(&self) -> HashMap<BindPoint, (DescriptorType, u32, HashSet<PassID>)>;
+    fn get_bindings(&self) -> HashMap<BindPoint, (DescriptorType, HashMap<PassID, u32>)>;
+    fn get_entry_point(&self, render_pass: &PassID, stage: &ShaderStage) -> Result<String, String>;
 }
 
 pub struct Property {

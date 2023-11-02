@@ -172,7 +172,7 @@ impl VkInstance {
     pub fn enumerate_graphic_devices_vk(&self) -> Vec<PhysicalDevice> {
         let mut result = Vec::new();
         for device in self.enumerate_physical_devices() {
-            if let Ok(vk_device) = self.get_vk_device(&device) {
+            if let Some(vk_device) = self.get_vk_device(&device) {
                 if vk_device.suitable_for_graphics() {
                     result.push(device);
                 }
@@ -181,11 +181,8 @@ impl VkInstance {
         result
     }
 
-    pub fn get_vk_device(&self, device: &PhysicalDevice) -> Result<&VkPhysicalDevice, ()> {
-        match self.device_map.get(device) {
-            None => Err(()),
-            Some(elem) => Ok(elem),
-        }
+    pub fn get_vk_device(&self, device: &PhysicalDevice) -> Option<&VkPhysicalDevice> {
+        self.device_map.get(device)
     }
 
     pub fn find_best_suitable_gpu_vk(&self) -> Result<PhysicalDevice, String> {
@@ -208,7 +205,7 @@ impl VkInstance {
 }
 
 unsafe extern "system" fn vulkan_debug_callback(
-    message_severity: vk::DebugUtilsMessageSeverityFlagsEXT,
+    message_severity: DebugUtilsMessageSeverityFlagsEXT,
     message_type: vk::DebugUtilsMessageTypeFlagsEXT,
     p_callback_data: *const vk::DebugUtilsMessengerCallbackDataEXT,
     _user_data: *mut std::os::raw::c_void,

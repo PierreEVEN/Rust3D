@@ -1,5 +1,4 @@
-#pragma shader_language HLSL
-#pragma FRONT_FACE 		CLOCKWISE
+#pragma FRONT 		CLOCKWISE
 #pragma CULL 			NONE
 #pragma ALPHA_MODE		TRANSLUCENT
 
@@ -27,7 +26,7 @@ vertex(imgui_render_pass)
 		float2 uScale;
 		float2 uTranslate;
 	};
-	[[vk::push_constant]] ConstantBuffer<PushConsts> pc;
+	PushConstant<PushConsts> pc;
 	
 	VsToFs main(VSInput input)
 	{

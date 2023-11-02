@@ -1,16 +1,16 @@
-use std::collections::HashMap;
 use std::ffi::CStr;
 use std::os::raw::c_char;
 use std::sync::Arc;
 
 use ash::vk;
 use gfx::Gfx;
+use gfx::material::{MaterialResourcePool};
 
 use gfx::shader::{ShaderProgram};
 use gfx::shader_instance::{ShaderInstance, ShaderInstanceCreateInfos};
 use shader_base::pass_id::PassID;
-use shader_base::{AlphaMode, BindPoint, CompilationError, Culling, FrontFace, PolygonMode, ShaderInterface, ShaderStage, Topology};
-use shader_base::spirv_reflector::{DescriptorBinding, SpirvReflector};
+use shader_base::{AlphaMode, CompilationError, Culling, FrontFace, PolygonMode, ShaderInterface, ShaderStage, Topology};
+
 
 //use crate::vk_types::VkPixelFormat;
 use crate::{GfxVulkan, vk_check, VkShaderInstance};
@@ -73,20 +73,20 @@ pub struct VkShaderProgram {
     pub pipeline: vk::Pipeline,
     pub pipeline_layout: Arc<vk::PipelineLayout>,
     pub descriptor_set_layout: Arc<VkDescriptorSetLayout>,
-    bindings: HashMap<BindPoint, DescriptorBinding>,
+    resources: Arc<MaterialResourcePool>,
     name: String,
 }
 
 impl ShaderProgram for VkShaderProgram {
-    fn get_bindings(&self) -> HashMap<BindPoint, DescriptorBinding> {
-        self.bindings.clone()
+    fn get_resources(&self) -> Arc<MaterialResourcePool> {
+        self.resources.clone()
     }
 
     fn instantiate(&self) -> Arc<dyn ShaderInstance> {
         VkShaderInstance::new(
             format!("{}_instance", self.name),
             ShaderInstanceCreateInfos {
-                bindings: self.bindings.clone(),
+                resources: self.resources.clone(),
             },
             self.pipeline_layout.clone(),
             self.descriptor_set_layout.clone(),
@@ -99,6 +99,7 @@ impl VkShaderProgram {
         name: String,
         pass_id: PassID,
         create_infos: &dyn ShaderInterface,
+        resources: Arc<MaterialResourcePool>
     ) -> Result<Arc<Self>, CompilationError> {
         let vertex_binary = create_infos.get_spirv_for(&pass_id, &ShaderStage::Vertex)?;
         let vertex_entry_point = create_infos.get_entry_point(&pass_id, &ShaderStage::Vertex).unwrap();
@@ -113,28 +114,13 @@ impl VkShaderProgram {
             Err(err) => { return Err(CompilationError::throw(err, None)); }
         };
         let parameters = create_infos.get_parameters_for(&pass_id);
-
-        let descriptor_set_layout = VkDescriptorSetLayout::new(
-            name.clone(),
-            &vertex_infos.bindings,
-            &fragment_infos.bindings,
-        );
-
-        let mut bindings = vertex_infos.bindings.clone();
-        for (key, value) in fragment_infos.bindings {
-            if bindings.contains_key(&key) {
-                logger::warning!("Binding duplication : {:?}", key);
-            } else {
-                bindings.insert(key.clone(), value.clone());
-            }
-        }
-
+        
         let vertex_module = VkShaderModule::new(name.clone(), &vertex_binary);
         let fragment_module = VkShaderModule::new(name.clone(), &fragment_binary);
 
         let mut push_constants = Vec::<vk::PushConstantRange>::new();
-
-        if let Some(vertex_pc_size) = vertex_infos.push_constant_size {
+        
+        if let Some(vertex_pc_size) = create_infos.push_constant_size(&ShaderStage::Vertex, &pass_id) {
             push_constants.push(
                 vk::PushConstantRange::builder()
                     .stage_flags(vk::ShaderStageFlags::VERTEX)
@@ -143,7 +129,7 @@ impl VkShaderProgram {
                     .build(),
             );
         }
-        if let Some(frag_pc_size) = fragment_infos.push_constant_size {
+        if let Some(frag_pc_size) = create_infos.push_constant_size(&ShaderStage::Fragment, &pass_id) {
             push_constants.push(
                 vk::PushConstantRange::builder()
                     .stage_flags(vk::ShaderStageFlags::FRAGMENT)
@@ -153,6 +139,7 @@ impl VkShaderProgram {
             );
         }
 
+        let descriptor_set_layout = VkDescriptorSetLayout::new(name.clone(), &create_infos.resource_pool().get_binding_for_pass(&pass_id));
         let pipeline_layout_infos = vk::PipelineLayoutCreateInfo::builder()
             .set_layouts(&[descriptor_set_layout.descriptor_set_layout])
             .push_constant_ranges(push_constants.as_slice())
@@ -171,16 +158,14 @@ impl VkShaderProgram {
         let mut vertex_attribute_description = Vec::<vk::VertexInputAttributeDescription>::new();
 
         let mut vertex_input_size = 0;
-        let mut property_location = 0;
-        for input_property in &vertex_stage_input {
+        for (property_location, input_property) in vertex_stage_input.iter().enumerate() {
             vertex_attribute_description.push(
                 vk::VertexInputAttributeDescription::builder()
-                    .location(property_location)
+                    .location(property_location as u32)
                     .format(*VkPixelFormat::from(&input_property.format))
                     .offset(vertex_input_size)
                     .build(),
             );
-            property_location += 1;
             vertex_input_size += input_property.format.type_size()
         }
 
@@ -300,16 +285,21 @@ impl VkShaderProgram {
             );
         }
 
+        let mut entry_point_vtx = vertex_entry_point.as_bytes().to_vec();
+        entry_point_vtx.push(0);
+
+        let mut entry_point_frg = fragment_entry_point.as_bytes().to_vec();
+        entry_point_frg.push(0);
         let shader_stages = Vec::<vk::PipelineShaderStageCreateInfo>::from([
             vk::PipelineShaderStageCreateInfo::builder()
                 .stage(vk::ShaderStageFlags::VERTEX)
                 .module(vertex_module.get_module())
-                .name(unsafe { CStr::from_ptr(vertex_entry_point.as_ptr() as *const c_char) })
+                .name(unsafe { CStr::from_ptr(entry_point_vtx.as_ptr() as *const c_char) })
                 .build(),
             vk::PipelineShaderStageCreateInfo::builder()
                 .stage(vk::ShaderStageFlags::FRAGMENT)
                 .module(fragment_module.get_module())
-                .name(unsafe { CStr::from_ptr(fragment_entry_point.as_ptr() as *const c_char) })
+                .name(unsafe { CStr::from_ptr(entry_point_frg.as_ptr() as *const c_char) })
                 .build(),
         ]);
 
@@ -365,7 +355,7 @@ impl VkShaderProgram {
             pipeline,
             pipeline_layout,
             descriptor_set_layout,
-            bindings,
+            resources,
             name,
         }))
     }

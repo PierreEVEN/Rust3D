@@ -18,6 +18,7 @@ imgui = { path = "../engine/imgui" }
 backend_launcher = { path = "../engine/backends/backend_launcher" }
 ecs = { path = "../engine/ecs" }
 job_system = { path = "../engine/job_system" }
-logger = {path = "../engine/logger"}
-shader_base = {path = "../engine/common/gfx_types" }
+logger = { path = "../engine/logger" }
+shader_base = { path = "../engine/common/gfx_types" }
 log = "0.4.17"
+renderers = { path = "../engine/common/renderers" }

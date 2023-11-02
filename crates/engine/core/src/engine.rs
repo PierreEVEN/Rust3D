@@ -51,10 +51,12 @@ pub trait App {
     fn stopped(&self);
 }
 
+pub type SurfaceBuilderFunc = dyn FnMut(&Weak<dyn Window>) -> Box<dyn GfxSurface>;
+
 pub struct Builder {
     pub platform: Box<dyn FnMut() -> Box<dyn Platform>>,
     pub gfx: Box<dyn FnMut() -> Box<dyn GfxInterface>>,
-    pub surface: Box<dyn FnMut(&Weak<dyn Window>) -> Box<dyn GfxSurface>>,
+    pub surface: Box<SurfaceBuilderFunc>,
     pub asset_manager: Box<dyn FnMut() -> AssetManager>,
 }
 
@@ -84,7 +86,7 @@ pub struct Engine {
     asset_manager: MaybeUninit<AssetManager>,
     platform: MaybeUninit<Box<dyn Platform>>,
     gfx: MaybeUninit<Box<dyn GfxInterface>>,
-    surface_builder: Box<dyn FnMut(&Weak<dyn Window>) -> Box<dyn GfxSurface>>,
+    surface_builder: Box<SurfaceBuilderFunc>,
     app: Box<dyn App>,
     pub engine_number: u64,
 
@@ -105,7 +107,7 @@ impl EngineRef {
     pub fn new(engine: Engine) -> Self {
         unsafe {
             if !ENGINE_INSTANCE.is_null() {
-                logger::fatal!("Cannot initialize EngineRef : Engine is already instanced");
+                fatal!("Cannot initialize EngineRef : Engine is already instanced");
             }
         }
         unsafe { ENGINE_INSTANCE = Box::leak(Box::new(engine)) as *mut Engine; }
@@ -141,6 +143,8 @@ impl Engine {
             ENGINE_INSTANCE = engine as *const Engine as *mut Engine;
         }
     }
+    
+    #[allow(clippy::new_ret_no_self)]
     pub fn new<GamemodeT: App + 'static>(app: GamemodeT) -> EngineRef {
         logger::init!();
 
@@ -274,6 +278,10 @@ impl Engine {
                 }
             }
         }
+    }
+    
+    pub fn delta_second(&self) -> f64 {
+        self.game_delta.delta_seconds
     }
 }
 

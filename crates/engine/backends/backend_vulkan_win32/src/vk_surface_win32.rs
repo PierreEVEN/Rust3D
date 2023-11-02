@@ -204,11 +204,8 @@ impl GfxSurface for VkSurfaceWin32 {
     ) -> Result<(), SurfaceAcquireResult> {
         let geometry = self.window.get_geometry();
         
-        match self.window.get_status() {
-            WindowStatus::Minimized => {
-                return Err(SurfaceAcquireResult::Failed("window is minimized".to_string()))
-            }
-            _ => {}
+        if let WindowStatus::Minimized = self.window.get_status() {
+            return Err(SurfaceAcquireResult::Failed("window is minimized".to_string()))
         }
         
         if geometry.width() == 0 || geometry.height() == 0 {

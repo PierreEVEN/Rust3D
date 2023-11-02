@@ -1,6 +1,7 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::path::PathBuf;
-use std::sync::RwLock;
+use std::sync::Arc;
+
 use crate::pass_id::PassID;
 use crate::types::PixelFormat;
 
@@ -21,6 +22,48 @@ impl BindPoint {
     }
 }
 
+#[derive(Clone)]
+pub struct ShaderResource {
+    pub resource_type: DescriptorType,
+    pub locations: HashMap<PassID, HashMap<ShaderStage, u32>>, // location per stage per pass
+}
+
+#[derive(Default, Clone)]
+pub struct ShaderResourcePool {
+    resources: HashMap<BindPoint, ShaderResource>,
+}
+
+impl ShaderResourcePool {
+    pub fn add_resource(&mut self, bp: &BindPoint, resource_type: DescriptorType, stage: &ShaderStage, pass: &PassID, location: u32) -> Result<(), CompilationError> {
+        let binding_type = self.resources.entry(bp.clone()).or_insert(ShaderResource { resource_type: resource_type.clone(), locations: Default::default() });
+        if binding_type.resource_type != resource_type {
+            return Err(CompilationError::throw(format!("Found multiple resources with the same name but different types : {:?} - {:?}", binding_type.resource_type, resource_type), None));
+        }
+
+        binding_type.locations.entry(pass.clone()).or_insert(HashMap::default())
+            .entry(stage.clone()).or_insert(location);
+
+        Ok(())
+    }
+    pub fn get_resources(&self) -> &HashMap<BindPoint, ShaderResource> {
+        &self.resources
+    }
+    pub fn get_binding_for_pass(&self, pass_id: &PassID) -> Vec<(ShaderStage, DescriptorType, u32)>{
+        let mut bindings = vec![];
+        for resource in self.resources.values() {
+            match resource.locations.get(pass_id) {
+                None => {}
+                Some(binding) => {
+                    for (stage, location) in binding {
+                        bindings.push((stage.clone(), resource.resource_type.clone(), *location));
+                    }
+                }
+            }
+        }
+        bindings
+    }
+}
+
 pub trait ShaderInterface {
     // Generate and retrieve spirv code for the given pass and stage if available
     fn get_spirv_for(&self, render_pass: &PassID, stage: &ShaderStage) -> Result<Vec<u32>, CompilationError>;
@@ -35,8 +78,9 @@ pub trait ShaderInterface {
     // Each different shader interface should have a different path
     fn get_path(&self) -> PathBuf;
     // Get shader bindings
-    fn get_bindings(&self) -> HashMap<BindPoint, (DescriptorType, HashMap<PassID, u32>)>;
+    fn resource_pool(&self) -> &Arc<ShaderResourcePool>;
     fn get_entry_point(&self, render_pass: &PassID, stage: &ShaderStage) -> Result<String, String>;
+    fn push_constant_size(&self, stage: &ShaderStage, pass: &PassID) -> Option<u32>;
 }
 
 pub struct Property {

@@ -1,13 +1,10 @@
-use std::collections::HashMap;
 use std::sync::Arc;
-use shader_base::BindPoint;
-use shader_base::spirv_reflector::DescriptorBinding;
 use shader_base::types::GfxCast;
 
-use crate::{GfxImage, ImageSampler};
+use crate::material::MaterialResourcePool;
 
 pub struct ShaderInstanceCreateInfos {
-    pub bindings: HashMap<BindPoint, DescriptorBinding>,
+    pub resources: Arc<MaterialResourcePool>,
 }
 
 pub trait ShaderInstance: GfxCast {

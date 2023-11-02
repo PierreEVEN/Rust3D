@@ -4,6 +4,7 @@ use ash::vk;
 use ash::vk::{ColorSpaceKHR, Extent2D, Format};
 
 use maths::vec2::Vec2u32;
+use shader_base::ShaderStage;
 use shader_base::types::{ColorSpace, PixelFormat};
 
 pub struct VkExtent2D(Extent2D);
@@ -260,7 +261,7 @@ impl From<&PixelFormat> for VkPixelFormat {
     }
 }
 
-impl From<vk::Format> for GfxPixelFormat {
+impl From<Format> for GfxPixelFormat {
     fn from(format: Format) -> Self {
         GfxPixelFormat(match format {
             Format::UNDEFINED => PixelFormat::UNDEFINED,
@@ -482,5 +483,25 @@ impl From<ColorSpace> for VkColorSpace {
             ColorSpace::DISPLAY_NATIVE => ColorSpaceKHR::DISPLAY_NATIVE_AMD,
             ColorSpace::DCI_P3_LINEAR => ColorSpaceKHR::DCI_P3_NONLINEAR_EXT,
         })
+    }
+}
+
+
+pub struct VkShaderStage {
+    pub flags: vk::ShaderStageFlags,
+}
+
+impl From<&ShaderStage> for VkShaderStage {
+    fn from(shader_stage: &ShaderStage) -> Self {
+        Self {
+            flags: match shader_stage {
+                ShaderStage::Vertex => { vk::ShaderStageFlags::VERTEX }
+                ShaderStage::Fragment => { vk::ShaderStageFlags::FRAGMENT }
+                ShaderStage::TesselationControl => { vk::ShaderStageFlags::TESSELLATION_CONTROL }
+                ShaderStage::TesselationEvaluate => { vk::ShaderStageFlags::TESSELLATION_EVALUATION }
+                ShaderStage::Geometry => { vk::ShaderStageFlags::GEOMETRY }
+                ShaderStage::Compute => { vk::ShaderStageFlags::COMPUTE }
+            }
+        }
     }
 }

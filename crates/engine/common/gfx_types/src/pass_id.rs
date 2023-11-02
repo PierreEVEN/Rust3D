@@ -5,7 +5,7 @@ use std::fmt::{Display, Formatter};
 
 use std::hash::{Hash, Hasher};
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct PassID {
     #[cfg(not(debug_assertions))]
     internal_id: u64,

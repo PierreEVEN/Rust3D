@@ -3,6 +3,7 @@ use crate::{Mesh, PassID, ShaderInstance, ShaderProgram};
 use std::sync::Arc;
 use shader_base::ShaderStage;
 use shader_base::types::{GfxCast, Scissors};
+use crate::surface::Frame;
 
 pub trait GfxCommandBuffer: GfxCast {
     fn bind_program(&self, program: &Arc<dyn ShaderProgram>);
@@ -33,6 +34,7 @@ pub trait GfxCommandBuffer: GfxCast {
         stage: ShaderStage,
     );
     fn get_pass_id(&self) -> PassID;
+    fn get_frame_id(&self) -> Frame;
 }
 
 impl dyn GfxCommandBuffer {

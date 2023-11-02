@@ -1,7 +1,6 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 use core::engine::{App, Builder, Camera, Engine};
-use core::renderer::Renderer;
 use core::world::World;
 use ecs::entity::GameObject;
 use ecs::query::Query;
@@ -10,9 +9,10 @@ use gfx::image_sampler::{SamplerCreateInfos};
 use gfx::material::Material;
 use maths::vec4::Vec4F32;
 use plateform::window::{PlatformEvent, WindowCreateInfos};
+use renderers::DeferredRenderer;
 use resl::ReslShaderInterface;
 use shader_base::{BindPoint};
-use shader_base::types::BackgroundColor;
+use shader_base::types::{BackgroundColor};
 
 mod gfx_demo;
 
@@ -64,11 +64,11 @@ impl App for TestApp {
         );
 
         // Create world view and set output to main window
-        let renderer = Renderer::default_deferred();
-        renderer.bind_window_surface(&main_window, &BackgroundColor::Color(Vec4F32::new(0.2, 0.2, 0.0, 1.0)));
-        renderer.set_default_view(&self.main_camera);
+        let renderer = DeferredRenderer::new();
+        renderer.renderer.bind_window_surface(&main_window, &BackgroundColor::Color(Vec4F32::new(0.2, 0.2, 0.0, 1.0)));
+        renderer.renderer.set_default_view(&self.main_camera);
 
-        match renderer.present_node().find_node("g_buffers") {
+        match renderer.renderer.present_node().find_node("g_buffers") {
             None => {}
             Some(g_buffer) => {
                 g_buffer.add_render_function(move |ecs, _command_buffer| {
@@ -78,7 +78,7 @@ impl App for TestApp {
             }
         }
 
-        renderer.present_node().add_render_function(move |ecs, command_buffer| {
+        renderer.renderer.present_node().add_render_function(move |ecs, command_buffer| {
             Query::<&ProceduralDraw>::new(ecs).for_each(|mesh| {
                 if let Some(material) =  &mesh.material {
                     material.bind_to(command_buffer);
@@ -87,7 +87,7 @@ impl App for TestApp {
             });
         });
 
-        Engine::get().add_renderer(renderer);
+        Engine::get().add_renderer(renderer.renderer);
     }
 
     fn new_frame(&mut self, _delta_seconds: f64) {}

@@ -1,7 +1,7 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
-use shader_base::{BindPoint, DescriptorType, ShaderInterface};
+use shader_base::{BindPoint, DescriptorType, ShaderInterface, ShaderStage};
 use shader_base::pass_id::PassID;
 
 use crate::command_buffer::GfxCommandBuffer;
@@ -17,12 +17,14 @@ pub enum MaterialResourceData {
     SampledImage(Arc<dyn GfxImage>),
 }
 
+type MaterialDescriptorResource = (DescriptorType, Option<MaterialResourceData>, HashMap<PassID, HashMap<ShaderStage, u32>>);
+
 #[derive(Default)]
-pub struct MaterialResources {
-    resources: RwLock<HashMap<BindPoint, (DescriptorType, Option<MaterialResourceData>, HashMap<PassID, u32>)>>,
+pub struct MaterialResourcePool {
+    resources: RwLock<HashMap<BindPoint, MaterialDescriptorResource>>,
 }
 
-impl Clone for MaterialResources {
+impl Clone for MaterialResourcePool {
     fn clone(&self) -> Self {
         Self {
             resources: RwLock::new((*self.resources.read().unwrap()).clone()),
@@ -30,11 +32,12 @@ impl Clone for MaterialResources {
     }
 }
 
-impl MaterialResources {
-    pub fn add_binding(&self, descriptor_type: DescriptorType, bind_point: BindPoint, passes: HashMap<PassID, u32>) {
+impl MaterialResourcePool {
+    pub fn add_binding(&self, descriptor_type: DescriptorType, bind_point: BindPoint, passes: HashMap<PassID, HashMap<ShaderStage, u32>>) {
         let resources = &mut *self.resources.write().unwrap();
         resources.insert(bind_point, (descriptor_type, None, passes));
     }
+    
     pub fn clear(&self) {
         self.resources.write().unwrap().clear();
     }
@@ -47,13 +50,13 @@ impl MaterialResources {
             }
         }
     }
-    pub fn get_bindings_for_pass(&self, pass: &PassID) -> Vec<(u32, MaterialResourceData)> {
+    pub fn get_bindings_for_pass(&self, pass: &PassID) -> Vec<(HashMap<ShaderStage, u32>, MaterialResourceData)> {
         let mut bindings = vec![];
 
         for (_, resource, passes) in self.resources.read().unwrap().values() {
             if let Some(location) = passes.get(pass) {
                 if let Some(resource) = resource {
-                    bindings.push((*location, resource.clone()))
+                    bindings.push((location.clone(), resource.clone()))
                 }
             }
         }
@@ -79,13 +82,13 @@ impl Clone for PassMaterialData {
 pub struct Material {
     passes: RwLock<HashMap<PassID, Option<PassMaterialData>>>,
     shader_interface: RwLock<Option<Arc<dyn ShaderInterface>>>,
-    resources: Arc<MaterialResources>,
+    resources: Arc<MaterialResourcePool>,
 }
 
 impl Clone for Material {
     fn clone(&self) -> Self {
         Self {
-            passes: RwLock::new((&*self.passes.read().unwrap()).clone()),
+            passes: RwLock::new((*self.passes.read().unwrap()).clone()),
             shader_interface: RwLock::new(self.shader_interface.read().unwrap().clone()),
             resources: Arc::new((*self.resources).clone()),
         }
@@ -101,8 +104,8 @@ impl Material {
             return;
         }
         self.resources.clear();
-        for (bp, (descriptor, locations)) in shader.get_bindings() {
-            self.resources.add_binding(descriptor, bp, locations)
+        for (bp, resource) in shader.resource_pool().get_resources() {
+            self.resources.add_binding(resource.resource_type.clone(), bp.clone(), resource.locations.clone())
         }
         *self.shader_interface.write().unwrap() = Some(Arc::new(shader));
     }
@@ -119,10 +122,12 @@ impl Material {
 
     pub fn bind_texture(&self, bind_point: &BindPoint, texture: Arc<dyn GfxImage>) {
         self.resources.bind_resource(bind_point, MaterialResourceData::SampledImage(texture))
+        // @TODO : if bind is success : then call shader_instance.mark_descriptor_dirty();
     }
 
     pub fn bind_sampler(&self, bind_point: &BindPoint, sampler: Arc<dyn ImageSampler>) {
         self.resources.bind_resource(bind_point, MaterialResourceData::Sampler(sampler))
+        // @TODO : if bind is success : then call shader_instance.mark_descriptor_dirty();
     }
 
     pub fn get_program(&self, pass_id: &PassID) -> Option<Arc<dyn ShaderProgram>> {
@@ -138,7 +143,7 @@ impl Material {
         match self.shader_interface.read().unwrap().as_ref() {
             None => { None }
             Some(shi) => {
-                return match Gfx::get().get_program_pool().find_or_create_program(pass_id, shi) {
+                return match Gfx::get().get_program_pool().find_or_create_program(pass_id, shi, &self.resources) {
                     None => {
                         self.passes.write().unwrap().insert(pass_id.clone(), None);
                         None
@@ -164,7 +169,7 @@ impl Material {
         }
 
         // Try refresh program
-        match self.get_program(&pass_id) {
+        match self.get_program(pass_id) {
             None => { None }
             Some(_) => { self.get_instance(pass_id) } // Try again
         }

@@ -11,6 +11,7 @@ use crate::buffer::{BufferCreateInfo, GfxBuffer};
 use crate::command_buffer::GfxCommandBuffer;
 use crate::image::{GfxImage, ImageCreateInfos};
 use crate::image_sampler::{ImageSampler, SamplerCreateInfos};
+use crate::material::MaterialResourcePool;
 use crate::mesh::{Mesh, MeshCreateInfos};
 use crate::program_pool::ProgramPool;
 use crate::renderer::render_pass::{RenderPass, RenderPassInstance};
@@ -49,6 +50,7 @@ pub trait GfxInterface: GfxCast {
         name: String,
         pass_id: PassID,
         create_infos: &dyn ShaderInterface,
+        resources: Arc<MaterialResourcePool>
     ) -> Result<Arc<dyn ShaderProgram>, CompilationError>;
     fn instantiate_render_pass(
         &self,

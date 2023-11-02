@@ -168,7 +168,7 @@ impl GfxCommandBuffer for VkCommandBuffer {
     fn bind_shader_instance(&self, instance: &Arc<dyn ShaderInstance>) {
         instance
             .cast::<VkShaderInstance>()
-            .refresh_descriptors(&self.image_id.read().unwrap());
+            .refresh_descriptors(&self.image_id.read().unwrap(), &self.pass_id.read().unwrap());
         unsafe {
             GfxVulkan::get()
                 .device
@@ -322,5 +322,8 @@ impl GfxCommandBuffer for VkCommandBuffer {
 
     fn get_pass_id(&self) -> PassID {
         self.pass_id.read().unwrap().clone()
+    }
+    fn get_frame_id(&self) -> Frame {
+        self.image_id.read().unwrap().clone()
     }
 }

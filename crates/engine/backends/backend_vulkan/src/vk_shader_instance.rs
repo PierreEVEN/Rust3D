@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::slice;
 use std::sync::{Arc, RwLock};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -6,9 +5,10 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use ash::vk;
 
 use gfx::gfx_resource::{GfxImageBuilder, GfxResource};
-use gfx::material::MaterialResources;
+use gfx::material::{MaterialResourceData, MaterialResourcePool};
 use gfx::shader_instance::{ShaderInstance, ShaderInstanceCreateInfos};
 use gfx::surface::Frame;
+use shader_base::pass_id::PassID;
 
 use crate::{GfxVulkan, VkImage, VkImageSampler};
 use crate::vk_dst_set_layout::VkDescriptorSetLayout;
@@ -18,7 +18,7 @@ pub struct VkShaderInstance {
     pub descriptor_sets: RwLock<GfxResource<vk::DescriptorSet>>,
     pub pipeline_layout: Arc<vk::PipelineLayout>,
     descriptors_dirty: GfxResource<Arc<AtomicBool>>,
-    resource_bindings: Arc<MaterialResources>
+    resources: Arc<MaterialResourcePool>,
 }
 
 impl ShaderInstance for VkShaderInstance {}
@@ -62,34 +62,30 @@ impl VkShaderInstance {
                 name,
             })),
             descriptors_dirty: GfxResource::new(RbDescriptorState {}),
-            resource_bindings: create_infos.bindings,
+            resources: create_infos.resources,
         })
     }
 
-    fn mark_descriptors_dirty(&self) {
+    pub fn mark_descriptors_dirty(&self) {
         self.descriptors_dirty.invalidate(RbDescriptorState {});
     }
 
-    pub fn refresh_descriptors(&self, image_id: &Frame) {
+    pub fn refresh_descriptors(&self, image_id: &Frame, render_pass: &PassID) {
         if self
             .descriptors_dirty
             .get(image_id)
-            .compare_exchange(true, false, Ordering::Acquire, Ordering::Acquire)
+            .compare_exchange(true, false, Ordering::SeqCst, Ordering::SeqCst)
             .is_ok()
         {
             let mut desc_images = Vec::new();
 
             let mut write_desc_set = Vec::new();
 
-            for (bp, binding) in &self.resource_bindings.get_bindings_for_pass(self) {
-                write_desc_set.push(
-                    match self.bindings.read().unwrap().get(bp) {
-                        None => {
-                            logger::error!("binding {:?} is not specified", bp);
-                            return;
-                        }
-                        Some(bindings) => match bindings {
-                            MaterialResource::Sampler(sampler) => {
+            for (bp, binding) in &self.resources.get_bindings_for_pass(render_pass) {
+                for location in bp.values() {
+                    write_desc_set.push(
+                        match binding {
+                            MaterialResourceData::Sampler(sampler) => {
                                 desc_images.push(sampler.cast::<VkImageSampler>().sampler_info);
                                 vk::WriteDescriptorSet::builder()
                                     .descriptor_type(vk::DescriptorType::SAMPLER)
@@ -97,7 +93,7 @@ impl VkShaderInstance {
                                         &desc_images[desc_images.len() - 1],
                                     ))
                             }
-                            MaterialResource::SampledImage(sampled_image) => {
+                            MaterialResourceData::SampledImage(sampled_image) => {
                                 let vk_image = sampled_image.cast::<VkImage>();
                                 desc_images.push(if vk_image.image_params.read_only {
                                     vk_image.view.get_static().1
@@ -110,12 +106,12 @@ impl VkShaderInstance {
                                         &desc_images[desc_images.len() - 1],
                                     ))
                             }
-                        },
-                    }
-                        .dst_set(self.descriptor_sets.read().unwrap().get(image_id))
-                        .dst_binding(binding.binding)
-                        .build(),
-                );
+                        }
+                            .dst_set(self.descriptor_sets.read().unwrap().get(image_id))
+                            .dst_binding(*location)
+                            .build()
+                    )
+                }
             }
 
             unsafe {

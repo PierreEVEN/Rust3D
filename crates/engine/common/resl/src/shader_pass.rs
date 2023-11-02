@@ -1,9 +1,13 @@
 use std::collections::HashMap;
+use std::path::PathBuf;
 
-use shader_base::{CompilationError, Property, ShaderStage};
+use shader_base::{CompilationError, Property, ShaderResourcePool, ShaderStage};
+use shader_base::pass_id::PassID;
+use shader_base::spirv_reflector::SpirvReflector;
 use shader_base::types::PixelFormat;
 
 use crate::ast::{Function, FunctionParameter, HlslCodeBlock, HlslInstruction, HlslType, HlslTypeSimple, StructureField, Value};
+use crate::hlsl_to_spirv::HlslToSpirv;
 use crate::list_of::ListOf;
 use crate::parsed_instructions::ParsedInstructions;
 
@@ -79,6 +83,7 @@ impl From<&HlslType> for PixelFormat {
 #[derive(Debug, Clone)]
 pub struct ShaderPass {
     stage: ShaderStage,
+    pass: PassID,
     instructions: ParsedInstructions,
     pragmas: HashMap<String, Value>,
     functions: HashMap<String, Function>,
@@ -86,12 +91,15 @@ pub struct ShaderPass {
     properties: HashMap<String, HlslType>,
     entry_point: String,
     push_constant: Option<HlslType>,
+    push_constant_size: Option<u32>,
+    byte_code: Option<Vec<u32>>,
 }
 
 impl ShaderPass {
-    pub fn new(stage: ShaderStage) -> Self {
+    pub fn new(stage: ShaderStage, pass: PassID) -> Self {
         Self {
             stage,
+            pass,
             instructions: Default::default(),
             pragmas: Default::default(),
             structures: Default::default(),
@@ -99,6 +107,8 @@ impl ShaderPass {
             properties: Default::default(),
             entry_point: "main".to_string(),
             push_constant: None,
+            push_constant_size: None,
+            byte_code: None,
         }
     }
 
@@ -260,6 +270,28 @@ impl ShaderPass {
         Ok(())
     }
 
+    pub fn compile_bytecode(&mut self, resources: &mut ShaderResourcePool, file_path: &PathBuf) -> Result<(), CompilationError> {
+        let compiled = HlslToSpirv::default().transpile(&self.get_text(), self.entry_point_name(), &file_path, &self.stage)?;
+
+        let compilation_result = match SpirvReflector::new(&compiled) {
+            Ok(result) => { result }
+            Err(err) => {
+                return Err(CompilationError::throw(err, None));
+            }
+        };
+
+        for (bp, binding) in &compilation_result.bindings {
+            resources.add_resource(bp, binding.descriptor_type.clone(), &self.stage, &self.pass, binding.binding)?;
+        }
+        self.push_constant_size = compilation_result.push_constant_size;
+        self.byte_code = Some(compiled);
+        Ok(())
+    }
+    
+    pub fn byte_code(&self) -> &Option<Vec<u32>> {
+        &self.byte_code
+    }
+
     pub fn entry_point_name(&self) -> &String {
         &self.entry_point
     }
@@ -281,7 +313,7 @@ impl ShaderPass {
             }
             properties.push(Property {
                 name: prop.name.1.clone(),
-                format: format,
+                format,
             })
         }
         Ok(properties)
@@ -385,5 +417,9 @@ impl ShaderPass {
         } else {
             Ok(vec![ty.clone()])
         }
+    }
+    
+    pub fn push_constant_size(&self) -> &Option<u32> {
+        &self.push_constant_size
     }
 }

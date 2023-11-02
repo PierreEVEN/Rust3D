@@ -15,6 +15,7 @@ use gfx::buffer::{BufferCreateInfo, GfxBuffer};
 use gfx::command_buffer::GfxCommandBuffer;
 use gfx::image::{GfxImage, ImageCreateInfos};
 use gfx::image_sampler::{ImageSampler, SamplerCreateInfos};
+use gfx::material::MaterialResourcePool;
 use gfx::renderer::render_pass::{RenderPass, RenderPassInstance};
 use gfx::shader::{ShaderProgram};
 use logger::fatal;
@@ -195,8 +196,9 @@ impl GfxInterface for GfxVulkan {
         name: String,
         pass_id: PassID,
         create_infos: &dyn ShaderInterface,
+        resources: Arc<MaterialResourcePool>
     ) -> Result<Arc<dyn ShaderProgram>, CompilationError> {
-        match VkShaderProgram::new(name, pass_id, create_infos) {
+        match VkShaderProgram::new(name, pass_id, create_infos, resources) {
             Ok(sp) => { Ok(sp) }
             Err(err) => { Err(err) }
         }

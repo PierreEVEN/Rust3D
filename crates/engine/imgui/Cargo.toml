@@ -14,3 +14,5 @@ memoffset = "0.9.0"
 core = { path = "../core" }
 plateform = { path = "../common/plateform" }
 logger = {path = "../logger"}
+shader_base = {path = "../common/gfx_types"}
+resl = {path = "../common/resl"}

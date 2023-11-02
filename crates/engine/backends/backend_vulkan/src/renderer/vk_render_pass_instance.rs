@@ -129,6 +129,7 @@ impl RenderPassInstance for VkRenderPassInstance {
     }
 
     fn submit(&self, frame: &Frame, context: &RenderPass, pass_command_buffer: &dyn GfxCommandBuffer) {
+        // @TODO : use one time command buffer instead
         pass_command_buffer.cast::<VkCommandBuffer>().init_for(
             PassID::new("null"),
             frame.clone(),

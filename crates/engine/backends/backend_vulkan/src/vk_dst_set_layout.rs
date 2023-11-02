@@ -1,12 +1,11 @@
-use std::collections::HashMap;
 use std::sync::Arc;
 
 use ash::vk;
 
-use shader_base::{BindPoint, DescriptorType};
-use shader_base::spirv_reflector::DescriptorBinding;
+use shader_base::{DescriptorType, ShaderStage};
 
-use crate::{vk_check, GfxVulkan};
+use crate::{GfxVulkan, vk_check};
+use crate::vk_types::VkShaderStage;
 
 pub struct VkDescriptorType(vk::DescriptorType);
 
@@ -35,28 +34,16 @@ pub struct VkDescriptorSetLayout {
 impl VkDescriptorSetLayout {
     pub fn new(
         name: String,
-        vertex_bindings: &HashMap<BindPoint, DescriptorBinding>,
-        fragment_bindings: &HashMap<BindPoint, DescriptorBinding>,
+        resources: &Vec<(ShaderStage, DescriptorType, u32)>,
     ) -> Arc<Self> {
         let mut bindings = Vec::<vk::DescriptorSetLayoutBinding>::new();
-        for binding in vertex_bindings.values() {
+        for (stage, desc_type, location) in resources {
             bindings.push(
                 vk::DescriptorSetLayoutBinding::builder()
-                    .binding(binding.binding)
-                    .descriptor_type(VkDescriptorType::from(&binding.descriptor_type).0)
+                    .binding(*location)
+                    .descriptor_type(VkDescriptorType::from(desc_type).0)
                     .descriptor_count(1)
-                    .stage_flags(vk::ShaderStageFlags::VERTEX)
-                    .build(),
-            );
-        }
-
-        for binding in fragment_bindings.values() {
-            bindings.push(
-                vk::DescriptorSetLayoutBinding::builder()
-                    .binding(binding.binding)
-                    .descriptor_type(VkDescriptorType::from(&binding.descriptor_type).0)
-                    .descriptor_count(1)
-                    .stage_flags(vk::ShaderStageFlags::FRAGMENT)
+                    .stage_flags(VkShaderStage::from(stage).flags)
                     .build(),
             );
         }

@@ -31,11 +31,13 @@ impl<T: Clone> ListOf<T> {
         self.items.iter_mut()
     }
 
-    pub fn join<V: Default + for<'a> AddAssign<&'a mut U>, U: Clone, Fn: FnMut(&T) -> U>(&self, mut sep: U, mut f: Fn) -> V {
+    pub fn join<V: Default + for<'a> AddAssign<&'a mut U>, U: Clone, Fn: FnMut(&T) -> U>(&self, sep: U, mut f: Fn) -> V {
         let mut list = V::default();
         let mut first = true;
         for item in self.iter() {
-            if !first { list += &mut sep }
+            if !first {
+                list += &mut sep.clone();
+            }
             first = false;
             list += &mut f(item);
         }

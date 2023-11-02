@@ -1,6 +1,7 @@
 use crate::buffer::BufferMemory;
 use crate::{Mesh, PassID, ShaderInstance, ShaderProgram};
 use std::sync::Arc;
+use maths::vec2::Vec2u32;
 use shader_base::ShaderStage;
 use shader_base::types::{GfxCast, Scissors};
 use crate::surface::Frame;
@@ -30,11 +31,12 @@ pub trait GfxCommandBuffer: GfxCast {
     fn push_constant(
         &self,
         program: &Arc<dyn ShaderProgram>,
-        data: BufferMemory,
+        data: &BufferMemory,
         stage: ShaderStage,
     );
     fn get_pass_id(&self) -> PassID;
     fn get_frame_id(&self) -> Frame;
+    fn get_display_res(&self) -> Vec2u32;
 }
 
 impl dyn GfxCommandBuffer {

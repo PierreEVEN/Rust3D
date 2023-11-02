@@ -96,6 +96,7 @@ pub enum HlslTypeSimple {
     Bool,
     Int,
     Uint,
+    Byte,
     Half,
     Float,
     Double,
@@ -105,6 +106,7 @@ pub enum HlslTypeSimple {
     ConstantBuffer,
     PushConstant,
     SamplerState,
+    ResourceImage,
     SamplerComparisonState,
 }
 
@@ -115,6 +117,7 @@ impl Display for HlslTypeSimple {
             HlslTypeSimple::Bool => { f.write_str("bool") }
             HlslTypeSimple::Int => { f.write_str("int") }
             HlslTypeSimple::Uint => { f.write_str("uint") }
+            HlslTypeSimple::Byte => { f.write_str("float") }
             HlslTypeSimple::Half => { f.write_str("half") }
             HlslTypeSimple::Float => { f.write_str("float") }
             HlslTypeSimple::Double => { f.write_str("double") }
@@ -125,6 +128,7 @@ impl Display for HlslTypeSimple {
             HlslTypeSimple::PushConstant => { f.write_str("PushConstant") }
             HlslTypeSimple::SamplerState => { f.write_str("SamplerState") }
             HlslTypeSimple::SamplerComparisonState => { f.write_str("SamplerComparisonState") }
+            HlslTypeSimple::ResourceImage => { f.write_str("Texture2D") }
         }
     }
 }
@@ -160,6 +164,9 @@ impl HlslType {
     }
 
     fn vec(base_type: HlslTypeSimple, hlsl: &str) -> HlslType {
+        if let HlslTypeSimple::Byte = base_type {
+            return HlslType::Vec(base_type, Self::num_at(hlsl, 4))
+        }
         HlslType::Vec(base_type.clone(), Self::num_at(hlsl, base_type.to_string().len()))
     }
     fn mat(base_type: HlslTypeSimple, hlsl: &str) -> HlslType {
@@ -194,6 +201,7 @@ impl From<&str> for HlslType {
             "bool" => HlslType::Simple(HlslTypeSimple::Bool),
             "int" => HlslType::Simple(HlslTypeSimple::Uint),
             "uint" => HlslType::Simple(HlslTypeSimple::Int),
+            "byte" => HlslType::Simple(HlslTypeSimple::Byte),
             "half" => HlslType::Simple(HlslTypeSimple::Half),
             "float" => HlslType::Simple(HlslTypeSimple::Float),
             "double" => HlslType::Simple(HlslTypeSimple::Double),
@@ -205,6 +213,7 @@ impl From<&str> for HlslType {
             "Buffer" => HlslType::Simple(HlslTypeSimple::Buffer),
             "ConstantBuffer" => HlslType::Simple(HlslTypeSimple::ConstantBuffer),
             "SamplerState" => HlslType::Simple(HlslTypeSimple::SamplerState),
+            "ResourceImage" => HlslType::Simple(HlslTypeSimple::ResourceImage),
             "SamplerComparisonState" => HlslType::Simple(HlslTypeSimple::SamplerComparisonState),
             _ => {
                 if Regex::new("^bool[1-4]$").unwrap().is_match(value) {
@@ -213,6 +222,8 @@ impl From<&str> for HlslType {
                     Self::vec(HlslTypeSimple::Int, value)
                 } else if Regex::new("^uint[1-4]$").unwrap().is_match(value) {
                     Self::vec(HlslTypeSimple::Uint, value)
+                } else if Regex::new("^byte[1-4]$").unwrap().is_match(value) {
+                    Self::vec(HlslTypeSimple::Byte, value)
                 } else if Regex::new("^half[1-4]$").unwrap().is_match(value) {
                     Self::vec(HlslTypeSimple::Half, value)
                 } else if Regex::new("^float[1-4]$").unwrap().is_match(value) {
@@ -225,6 +236,8 @@ impl From<&str> for HlslType {
                     Self::mat(HlslTypeSimple::Int, value)
                 } else if Regex::new("^uint[1-4]x[1-4]$").unwrap().is_match(value) {
                     Self::mat(HlslTypeSimple::Uint, value)
+                } else if Regex::new("^byte[1-4]x[1-4]$").unwrap().is_match(value) {
+                    Self::mat(HlslTypeSimple::Float, value)
                 } else if Regex::new("^half[1-4]x[1-4]$").unwrap().is_match(value) {
                     Self::mat(HlslTypeSimple::Half, value)
                 } else if Regex::new("^float[1-4]x[1-4]$").unwrap().is_match(value) {

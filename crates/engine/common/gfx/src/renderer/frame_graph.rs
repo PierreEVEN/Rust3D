@@ -27,7 +27,7 @@ impl FrameGraph {
         for input in top_node.inputs() {
             present_pass.add_input(Arc::new(Self::compile_node(input, initial_res)));
         }
-        
+        present_pass.instantiate();        
         Self {
             present_pass,
             surface: None,
@@ -42,7 +42,7 @@ impl FrameGraph {
         for input in top_node.inputs() {
             present_pass.add_input(Arc::new(Self::compile_node(input, initial_res)));
         }
-
+        present_pass.instantiate();
         Self {
             present_pass,
             surface: Some(surface),
@@ -74,6 +74,7 @@ impl FrameGraph {
         for input in node.inputs() {
             pass.add_input(Arc::new(Self::compile_node(input, initial_res)));
         }
+        pass.instantiate();
         pass
     }
 

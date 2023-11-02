@@ -1,4 +1,4 @@
-#pragma FRONT 		CLOCKWISE
+#pragma FRONT 		    CLOCKWISE
 #pragma CULL 			NONE
 #pragma ALPHA_MODE		TRANSLUCENT
 
@@ -6,9 +6,9 @@ global(imgui_render_pass)
 {
 	struct VsToFs 
 	{
-		float4 Pos 		: SV_Position;
-		float4 Color 	: COLOR;
-		float2 UV 	 	: TEXCOORD;
+		float4 Pos : SV_Position;
+		float4 Color;
+		float2 UV;
 	};
 }
 
@@ -16,9 +16,9 @@ vertex(imgui_render_pass)
 {
 	struct VSInput
 	{
-		float2 aPos 	: POSITION;
-		float2 aUV 		: TEXCOORD;
-		float4 aColor 	: COLOR;
+		float2 aPos;
+		float2 aUV;
+		byte4 aColor;
 	};
 	
 	struct PushConsts 

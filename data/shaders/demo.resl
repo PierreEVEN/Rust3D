@@ -28,13 +28,14 @@ vertex(PresentPass)
 
 fragment(PresentPass)
 {
-	Texture2D	 sTexture;
-	SamplerState sSampler;
+	Texture2D	  sTexture;
+	ResourceImage imgui_render_pass_color;
+	SamplerState  sSampler;
 
 	float4 main(VsToFsStruct input)
-	{
-		return sTexture.Sample(sSampler, input.UV);
+    {
+		float4 res_color = sTexture.Sample(sSampler, input.UV);
+        res_color += imgui_render_pass_color.Sample(sSampler, input.UV);
+        return res_color;
 	}
 }
-
-// fragment(gbuffer) => "demo_fragment.shb"

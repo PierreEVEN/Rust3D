@@ -40,7 +40,7 @@ pub struct RenderPass {
 
 impl RenderPass {
     pub fn new(resources: Vec<Arc<dyn GfxImage>>, render_node: &Arc<RenderNode>, initial_res: Vec2u32) -> Self {
-        let mut render_pass = Self {
+        Self {
             images: resources,
             res: initial_res,
             inputs: vec![],
@@ -49,12 +49,12 @@ impl RenderPass {
             source_node: render_node.clone(),
             command_buffer: Gfx::get().create_command_buffer("unnamed".to_string()),
             pass_id: PassID::new(render_node.get_name().as_str()),
-        };
-
-        let instance = Gfx::get().instantiate_render_pass(&render_pass);
-        render_pass.instance = MaybeUninit::new(instance);
-
-        render_pass
+        }
+    }
+    
+    pub fn instantiate(&mut self) {
+        let instance = Gfx::get().instantiate_render_pass(self);
+        self.instance = MaybeUninit::new(instance);
     }
 
     pub fn get_id(&self) -> &PassID {

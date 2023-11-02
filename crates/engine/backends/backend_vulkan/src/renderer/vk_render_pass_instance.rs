@@ -52,7 +52,7 @@ impl VkRenderPassInstance {
 impl RenderPassInstance for VkRenderPassInstance {
     fn bind(&self, frame: &Frame, context: &RenderPass, res: Vec2u32, pass_command_buffer: &dyn GfxCommandBuffer) {
         // Begin buffer
-        pass_command_buffer.cast::<VkCommandBuffer>().init_for(context.get_id().clone(), frame.clone());
+        pass_command_buffer.cast::<VkCommandBuffer>().init_for(context.get_id().clone(), frame.clone(), res.clone());
         let command_buffer = pass_command_buffer.cast::<VkCommandBuffer>().command_buffer.get(frame);
 
         begin_command_buffer(command_buffer, false);
@@ -133,6 +133,7 @@ impl RenderPassInstance for VkRenderPassInstance {
         pass_command_buffer.cast::<VkCommandBuffer>().init_for(
             PassID::new("null"),
             frame.clone(),
+            context.images()[0].res_2d()
         );
 
         let command_buffer = pass_command_buffer.cast::<VkCommandBuffer>().command_buffer.get(frame);

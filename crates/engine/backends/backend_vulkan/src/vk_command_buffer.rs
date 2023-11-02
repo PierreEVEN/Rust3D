@@ -9,6 +9,7 @@ use gfx::mesh::{IndexBufferType, Mesh};
 use gfx::shader::{ShaderProgram};
 use gfx::shader_instance::ShaderInstance;
 use gfx::surface::Frame;
+use maths::vec2::Vec2u32;
 use shader_base::pass_id::PassID;
 use shader_base::ShaderStage;
 use shader_base::types::Scissors;
@@ -123,6 +124,7 @@ pub struct VkCommandBuffer {
     pub command_buffer: GfxResource<vk::CommandBuffer>,
     pass_id: RwLock<PassID>,
     image_id: RwLock<Frame>,
+    display_res: RwLock<Vec2u32>,
 }
 
 pub struct RbCommandBuffer {
@@ -141,12 +143,14 @@ impl VkCommandBuffer {
             command_buffer: GfxResource::new(RbCommandBuffer { name }),
             pass_id: RwLock::new(PassID::new("undefined")),
             image_id: RwLock::new(Frame::null()),
+            display_res: Default::default(),
         })
     }
 
-    pub fn init_for(&self, new_id: PassID, image_id: Frame) {
+    pub fn init_for(&self, new_id: PassID, image_id: Frame, display_res: Vec2u32) {
         *self.pass_id.write().unwrap() = new_id;
         *self.image_id.write().unwrap() = image_id;
+        *self.display_res.write().unwrap() = display_res;
     }
 }
 
@@ -295,7 +299,7 @@ impl GfxCommandBuffer for VkCommandBuffer {
     fn push_constant(
         &self,
         program: &Arc<dyn ShaderProgram>,
-        data: BufferMemory,
+        data: &BufferMemory,
         stage: ShaderStage,
     ) {
         unsafe {
@@ -325,5 +329,9 @@ impl GfxCommandBuffer for VkCommandBuffer {
     }
     fn get_frame_id(&self) -> Frame {
         self.image_id.read().unwrap().clone()
+    }
+
+    fn get_display_res(&self) -> Vec2u32 {
+        self.display_res.read().unwrap().clone()
     }
 }

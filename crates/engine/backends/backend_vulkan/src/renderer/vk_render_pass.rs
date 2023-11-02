@@ -11,6 +11,7 @@ pub struct VkRenderPass {
     pub render_pass: vk::RenderPass,
     pub images: Vec<Arc<dyn GfxImage>>,
     pub render_pass_id: PassID,
+    pub inputs: Vec<Arc<dyn GfxImage>>
 }
 
 impl VkRenderPass {
@@ -20,7 +21,13 @@ impl VkRenderPass {
         let mut depth_attachment_reference = vk::AttachmentReference::default();
         let mut clear_values = Vec::new();
 
-
+        let mut input_images = vec![];
+        for input in render_pass.inputs() {
+            for image in input.images() {
+                input_images.push(image.clone());
+            }
+        }
+            
         for image in render_pass.images() {
             if let PixelFormat::UNDEFINED = image.get_format() {
                 logger::fatal!("wrong pixel format")
@@ -114,7 +121,8 @@ impl VkRenderPass {
         Self {
             render_pass: vk_render_pass,
             images: render_pass.images().clone(),
-            render_pass_id
+            render_pass_id,
+            inputs: input_images,
         }
     }
 }

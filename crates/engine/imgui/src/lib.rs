@@ -6,13 +6,13 @@ use std::ptr::null_mut;
 use std::sync::Arc;
 
 use core::engine::Engine;
-use gfx::buffer::{BufferMemory, BufferType};
+use gfx::buffer::{BufferType};
 use gfx::Gfx;
-use gfx::image::{GfxImage, GfxImageUsageFlags, ImageCreateInfos, ImageParams, ImageUsage};
+use gfx::image::{GfxImageUsageFlags, ImageCreateInfos, ImageParams, ImageUsage};
 use gfx::image::ImageType::Texture2d;
-use gfx::image_sampler::{ImageSampler, SamplerCreateInfos};
+use gfx::image_sampler::{SamplerCreateInfos};
 use gfx::material::Material;
-use gfx::mesh::{IndexBufferType, Mesh, MeshCreateInfos};
+use gfx::mesh::{IndexBufferType, MeshCreateInfos};
 use gfx::renderer::render_node::RenderNode;
 use gfx::renderer::renderer_resource::PassResource;
 use imgui_bindings::{
@@ -34,16 +34,12 @@ use shader_base::{BindPoint, ShaderStage};
 use shader_base::types::{BackgroundColor, PixelFormat, Scissors};
 
 pub struct ImGUiContext {
-    pub font_texture: Arc<dyn GfxImage>,
-    pub material: Arc<Material>,
-    pub image_sampler: Arc<dyn ImageSampler>,
     pub context: *mut ImGuiContext,
-    pub mesh: Arc<Mesh>,
     pub render_node: Arc<RenderNode>,
 }
 
 impl ImGUiContext {
-    pub fn new() -> Self {
+    pub fn new(platform_name: String) -> Self {
         let imgui_context = unsafe { igCreateContext(null_mut()) };
 
         let io = unsafe { &mut *igGetIO() };
@@ -53,7 +49,7 @@ impl ImGUiContext {
         io.ConfigFlags |= ImGuiConfigFlags__ImGuiConfigFlags_ViewportsEnable;
 
         io.BackendPlatformUserData = null_mut();
-        io.BackendPlatformName = "imgui backend".as_ptr() as *const c_char;
+        io.BackendPlatformName = platform_name.as_ptr() as *const c_char;
         io.BackendFlags |= ImGuiBackendFlags__ImGuiBackendFlags_HasMouseCursors;
         io.BackendFlags |= ImGuiBackendFlags__ImGuiBackendFlags_HasSetMousePos;
         io.BackendFlags |= ImGuiBackendFlags__ImGuiBackendFlags_PlatformHasViewports;
@@ -127,7 +123,7 @@ impl ImGUiContext {
             });
 
         let material = Material::default();
-        material.set_shader(ReslShaderInterface::from(PathBuf::from("data/shaders/imgui_material.shb")));
+        material.set_shader(ReslShaderInterface::from(PathBuf::from("data/shaders/imgui_material.resl")));
 
         let image_sampler = Gfx::get()
             .create_image_sampler("imgui_default_sampler".to_string(), SamplerCreateInfos {});
@@ -148,14 +144,14 @@ impl ImGUiContext {
             },
         );
 
-        render_node.add_render_function(move |world, command_buffer| {
-            /*
+        render_node.add_render_function(move |_, command_buffer| {
+  
             let frame = command_buffer.get_frame_id();
-            
+            let display_res = command_buffer.get_display_res();
             let io = unsafe { &mut *igGetIO() };
             io.DisplaySize = ImVec2 {
-                x: command_buffer.get_surface().get_extent().x as f32,
-                y: command_buffer.get_surface().get_extent().y as f32,
+                x: display_res.x as f32,
+                y: display_res.y as f32,
             };
             io.DisplayFramebufferScale = ImVec2 { x: 1.0, y: 1.0 };
             io.DeltaTime = Engine::get().delta_second() as f32;
@@ -211,7 +207,7 @@ impl ImGUiContext {
 
                 for n in 0..draw_data.CmdListsCount {
                     let cmd_list = &**draw_data.CmdLists.offset(n as isize);
-
+                    
                     mesh.set_data(
                         &frame,
                         vertex_start,
@@ -245,17 +241,13 @@ impl ImGUiContext {
                 translate_y: f32,
             }
 
-            command_buffer.push_constant(
-                &material.get_program(&command_buffer.get_pass_id()).unwrap(),
-                BufferMemory::from_struct(&ImGuiPushConstants {
-                    scale_x,
-                    scale_y,
-                    translate_x: -1.0 - draw_data.DisplayPos.x * scale_x,
-                    translate_y: 1.0 - draw_data.DisplayPos.y * scale_y,
-                }),
-                ShaderStage::Vertex,
-            );
-
+            material.set_push_constants(&ShaderStage::Vertex, &ImGuiPushConstants {
+                scale_x,
+                scale_y,
+                translate_x: -1.0 - draw_data.DisplayPos.x * scale_x,
+                translate_y: 1.0 - draw_data.DisplayPos.y * scale_y,
+            });
+            
             material.bind_texture(&BindPoint::new("sTexture"), font_texture.clone());
 
             // Will project scissor/clipping rectangles into framebuffer space
@@ -284,8 +276,8 @@ impl ImGUiContext {
                                 w: (pcmd.ClipRect.w - clip_off.y) * clip_scale.y,
                             };
 
-                            if clip_rect.x < command_buffer.get_surface().get_extent().x as f32
-                                && clip_rect.y < command_buffer.get_surface().get_extent().y as f32
+                            if clip_rect.x < display_res.x as f32
+                                && clip_rect.y < display_res.y as f32
                                 && clip_rect.z >= 0.0
                                 && clip_rect.w >= 0.0
                             {
@@ -327,16 +319,11 @@ impl ImGUiContext {
                 global_idx_offset += cmd.IdxBuffer.Size as u32;
                 global_vtx_offset += cmd.VtxBuffer.Size as u32;
             }
-             */
         });
 
         logger::info!("initialized imgui context");
         Self {
-            font_texture,
             context: imgui_context,
-            material: Arc::new(material),
-            image_sampler,
-            mesh,
             render_node: Arc::new(render_node),
         }
     }

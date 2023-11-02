@@ -3,6 +3,7 @@ use std::sync::{Arc, RwLock};
 
 use shader_base::{BindPoint, DescriptorType, ShaderInterface, ShaderStage};
 use shader_base::pass_id::PassID;
+use crate::buffer::BufferMemory;
 
 use crate::command_buffer::GfxCommandBuffer;
 use crate::Gfx;
@@ -83,6 +84,7 @@ pub struct Material {
     passes: RwLock<HashMap<PassID, Option<PassMaterialData>>>,
     shader_interface: RwLock<Option<Arc<dyn ShaderInterface>>>,
     resources: Arc<MaterialResourcePool>,
+    push_constants: RwLock<HashMap<ShaderStage, BufferMemory>>
 }
 
 impl Clone for Material {
@@ -91,23 +93,29 @@ impl Clone for Material {
             passes: RwLock::new((*self.passes.read().unwrap()).clone()),
             shader_interface: RwLock::new(self.shader_interface.read().unwrap().clone()),
             resources: Arc::new((*self.resources).clone()),
+            push_constants: Default::default(),
         }
     }
 }
 
 impl Material {
-    pub fn set_shader<T: 'static + ShaderInterface>(&self, shader: T) {
+    pub fn set_shader<T: 'static + ShaderInterface>(&self, shader: T) -> bool{
         if !shader.get_errors().is_empty() {
             for error in shader.get_errors() {
                 logger::error!("{:?}", error);
             }
-            return;
+            return false;
         }
         self.resources.clear();
         for (bp, resource) in shader.resource_pool().get_resources() {
             self.resources.add_binding(resource.resource_type.clone(), bp.clone(), resource.locations.clone())
         }
         *self.shader_interface.write().unwrap() = Some(Arc::new(shader));
+        true
+    }
+    
+    pub fn set_push_constants<T>(&self, shader_stage: &ShaderStage, pc: &T) {
+        self.push_constants.write().unwrap().insert(shader_stage.clone(), BufferMemory::from_struct(pc));
     }
 
     pub fn bind_to(&self, command_buffer: &dyn GfxCommandBuffer) {
@@ -116,6 +124,10 @@ impl Material {
             command_buffer.bind_program(&program);
             if let Some(instance) = self.get_instance(&pass) {
                 command_buffer.bind_shader_instance(&instance);
+                
+                for (stage, memory) in &*self.push_constants.read().unwrap() {
+                    command_buffer.push_constant(&program, memory, stage.clone());
+                }                
             }
         }
     }

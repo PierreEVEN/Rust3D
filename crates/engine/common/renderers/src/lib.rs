@@ -9,11 +9,11 @@ use shader_base::types::{BackgroundColor, PixelFormat};
 
 pub struct DeferredRenderer {
     pub renderer: Renderer,
-    imgui_context: ImGUiContext,
+    pub imgui_context: ImGUiContext,
 }
 
-impl DeferredRenderer {
-    pub fn new() -> DeferredRenderer {
+impl Default for DeferredRenderer {
+    fn default() -> Self {
         // Create G-Buffers
         let g_buffers = RenderNode::default()
             .name("g_buffers")
@@ -28,7 +28,7 @@ impl DeferredRenderer {
                 format: PixelFormat::D32_SFLOAT,
             });
 
-        let imgui_context = ImGUiContext::new();
+        let imgui_context = ImGUiContext::new("imgui backend".to_string());
 
         // Create present pass
         let mut present_node = RenderNode::present();
@@ -37,7 +37,7 @@ impl DeferredRenderer {
         
         Self {
             renderer : Renderer::new(present_node),
-            imgui_context
+            imgui_context: imgui_context
         }
     }
 }

@@ -4,12 +4,12 @@ use std::sync::Arc;
 
 use ash::vk;
 use gfx::Gfx;
-use gfx::material::{MaterialResourcePool};
+use gfx::material::{MaterialResourceData, MaterialResourcePool};
 
 use gfx::shader::{ShaderProgram};
 use gfx::shader_instance::{ShaderInstance, ShaderInstanceCreateInfos};
 use shader_base::pass_id::PassID;
-use shader_base::{AlphaMode, CompilationError, Culling, FrontFace, PolygonMode, ShaderInterface, ShaderStage, Topology};
+use shader_base::{AlphaMode, BindPoint, CompilationError, Culling, FrontFace, PolygonMode, ShaderInterface, ShaderStage, Topology};
 
 
 //use crate::vk_types::VkPixelFormat;
@@ -231,6 +231,10 @@ impl VkShaderProgram {
 
         let render_pass = Gfx::get().cast::<GfxVulkan>().render_pass_pool().find_by_id(&pass_id).unwrap();
 
+        for input in &render_pass.inputs {
+            resources.bind_resource(&BindPoint::new(format!("{}{}", render_pass.render_pass_id.to_string(), input.get_name()).as_str()), MaterialResourceData::SampledImage(input.clone()))
+        }
+            
         let mut writable_images = vec![];
         for image in render_pass.images.iter() {
             if !image.get_format().is_depth_format() { writable_images.push(image.clone()) }

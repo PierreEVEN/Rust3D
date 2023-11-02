@@ -64,7 +64,7 @@ impl App for TestApp {
         );
 
         // Create world view and set output to main window
-        let renderer = DeferredRenderer::new();
+        let renderer = DeferredRenderer::default();
         renderer.renderer.bind_window_surface(&main_window, &BackgroundColor::Color(Vec4F32::new(0.2, 0.2, 0.0, 1.0)));
         renderer.renderer.set_default_view(&self.main_camera);
 

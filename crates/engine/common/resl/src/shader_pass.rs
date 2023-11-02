@@ -16,6 +16,7 @@ impl From<&HlslType> for PixelFormat {
         match value {
             HlslType::Simple(t) => {
                 match t {
+                    HlslTypeSimple::Byte => { PixelFormat::R8_UNORM }
                     HlslTypeSimple::Int => { PixelFormat::R32_SINT }
                     HlslTypeSimple::Uint => { PixelFormat::R32_UINT }
                     HlslTypeSimple::Half => { PixelFormat::R16_SFLOAT }
@@ -26,6 +27,15 @@ impl From<&HlslType> for PixelFormat {
             }
             HlslType::Vec(t, u) => {
                 match t {
+                    HlslTypeSimple::Byte => {
+                        match u {
+                            1 => PixelFormat::R8_UNORM,
+                            2 => PixelFormat::R8G8_UNORM,
+                            3 => PixelFormat::R8G8B8_UNORM,
+                            4 => PixelFormat::R8G8B8A8_UNORM,
+                            _ => { PixelFormat::UNDEFINED }
+                        }
+                    }
                     HlslTypeSimple::Uint => {
                         match u {
                             1 => PixelFormat::R32_UINT,
@@ -89,6 +99,7 @@ pub struct ShaderPass {
     functions: HashMap<String, Function>,
     structures: HashMap<String, ListOf<StructureField>>,
     properties: HashMap<String, HlslType>,
+    auto_bound_resources: Vec<String>,
     entry_point: String,
     push_constant: Option<HlslType>,
     push_constant_size: Option<u32>,
@@ -105,6 +116,7 @@ impl ShaderPass {
             structures: Default::default(),
             functions: Default::default(),
             properties: Default::default(),
+            auto_bound_resources: vec![],
             entry_point: "main".to_string(),
             push_constant: None,
             push_constant_size: None,
@@ -251,15 +263,19 @@ impl ShaderPass {
                     }
                     self.properties.insert(name.clone(), ty.clone());
 
+                    if let HlslType::Simple(HlslTypeSimple::ResourceImage) = ty {
+                        self.auto_bound_resources.push(name.clone());
+                    }
+
                     if let HlslType::Template(HlslTypeSimple::PushConstant, u) = ty {
                         if u.len() != 1 {
                             return Err(CompilationError::throw(format!("Push constant has more than one parameter : ${:?}", u), Some(*t)));
                         }
                         let ty = u.get(0).unwrap().clone();
-                        self.instructions += (*t, format!("[[vk::push_constant]] ConstantBuffer<{}> {name};", ty.to_string()));
+                        self.instructions += (*t, format!("[[vk::push_constant]] ConstantBuffer<{}> {name};", ty));
                         self.push_constant = Some(ty);
                     } else {
-                        self.instructions += (*t, format!("{} {name};", ty.to_string()));
+                        self.instructions += (*t, format!("{} {name};", ty));
                     }
                 }
                 _ => {}
@@ -287,7 +303,7 @@ impl ShaderPass {
         self.byte_code = Some(compiled);
         Ok(())
     }
-    
+
     pub fn byte_code(&self) -> &Option<Vec<u32>> {
         &self.byte_code
     }
@@ -307,14 +323,32 @@ impl ShaderPass {
             if prop.attribute.is_some() {
                 continue; // Skip special attributes (internal HLSL properties)
             }
-            let format = PixelFormat::from(&prop.param_type.1);
-            if format == PixelFormat::UNDEFINED {
-                return Err(format!("Cannot deduce pixel format for stage input property {} : {}", prop.name.1, prop.param_type.1));
+
+            if let HlslType::Simple(HlslTypeSimple::Struct(str_name)) = &prop.param_type.1 {
+                if let Some(str) = self.structures.get(str_name) {
+                    for field in str.iter() {
+                        let format = PixelFormat::from(&field.struct_type);
+                        if format == PixelFormat::UNDEFINED {
+                            return Err(format!("Cannot deduce pixel format for stage input property '{}' : {}", field.name, field.struct_type));
+                        }
+                        properties.push(Property {
+                            name: field.name.clone(),
+                            format,
+                        })
+                    }
+                } else {
+                    return Err(format!("Unknown structure '{}'", str_name));
+                }
+            } else {
+                let format = PixelFormat::from(&prop.param_type.1);
+                if format == PixelFormat::UNDEFINED {
+                    return Err(format!("Cannot deduce pixel format for stage input property '{}' : {}", prop.name.1, prop.param_type.1));
+                }
+                properties.push(Property {
+                    name: prop.name.1.clone(),
+                    format,
+                })
             }
-            properties.push(Property {
-                name: prop.name.1.clone(),
-                format,
-            })
         }
         Ok(properties)
     }
@@ -418,7 +452,7 @@ impl ShaderPass {
             Ok(vec![ty.clone()])
         }
     }
-    
+
     pub fn push_constant_size(&self) -> &Option<u32> {
         &self.push_constant_size
     }

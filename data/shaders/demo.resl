@@ -34,8 +34,7 @@ fragment(PresentPass)
 
 	float4 main(VsToFsStruct input)
     {
-		float4 res_color = sTexture.Sample(sSampler, input.UV);
-        res_color += imgui_render_pass_color.Sample(sSampler, input.UV);
-        return res_color;
+        float4 imgui_result = imgui_render_pass_color.Sample(sSampler, input.UV)b;
+        return float4(lerp(imgui_result.rgb, sTexture.Sample(sSampler, input.UV).rgb, imgui_result.a), 1);
 	}
 }

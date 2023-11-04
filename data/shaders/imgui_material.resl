@@ -1,6 +1,7 @@
 #pragma FRONT 		    CLOCKWISE
 #pragma CULL 			NONE
 #pragma ALPHA_MODE		TRANSLUCENT
+#pragma DEPTH_TEST      false
 
 global(imgui_render_pass)
 {

@@ -94,6 +94,8 @@ pub trait GfxImage: GfxCast {
     fn get_data_size(&self) -> u32;
     fn resize(&self, new_type: ImageType);
     fn __static_view_handle(&self) -> u64;
+
+    fn get_name(&self) -> &String;
 }
 
 impl dyn GfxImage {

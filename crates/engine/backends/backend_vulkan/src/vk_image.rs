@@ -181,6 +181,10 @@ impl GfxImage for VkImage {
     fn __static_view_handle(&self) -> u64 {
         self.view.get_static().0.as_raw()
     }
+
+    fn get_name(&self) -> &String {
+        &self.name
+    }
 }
 
 pub struct VkImageUsage(vk::ImageUsageFlags);

@@ -56,7 +56,7 @@ impl FrameGraph {
         for resource in node.resources() {
             images.push(
                 Gfx::get().create_image(
-                    resource.name.clone(),
+                    format!("{}_{}", node.get_name(), resource.name),
                     ImageCreateInfos {
                         params: ImageParams {
                             pixel_format: resource.format,

@@ -37,7 +37,7 @@ impl Default for DeferredRenderer {
         
         Self {
             renderer : Renderer::new(present_node),
-            imgui_context: imgui_context
+            imgui_context
         }
     }
 }

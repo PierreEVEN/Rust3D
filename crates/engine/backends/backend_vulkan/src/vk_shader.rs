@@ -232,7 +232,7 @@ impl VkShaderProgram {
         let render_pass = Gfx::get().cast::<GfxVulkan>().render_pass_pool().find_by_id(&pass_id).unwrap();
 
         for input in &render_pass.inputs {
-            resources.bind_resource(&BindPoint::new(format!("{}{}", render_pass.render_pass_id.to_string(), input.get_name()).as_str()), MaterialResourceData::SampledImage(input.clone()))
+            resources.bind_resource(&BindPoint::new(format!("{}", input.get_name()).as_str()), MaterialResourceData::SampledImage(input.clone()))
         }
             
         let mut writable_images = vec![];

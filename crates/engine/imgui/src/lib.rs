@@ -26,7 +26,6 @@ use imgui_bindings::{
     ImGuiConfigFlags__ImGuiConfigFlags_NavEnableKeyboard,
     ImGuiConfigFlags__ImGuiConfigFlags_ViewportsEnable, ImGuiContext, ImTextureID, ImVec2, ImVec4,
 };
-use maths::vec2::Vec2f32;
 use maths::vec4::Vec4F32;
 use plateform::input_system::{InputMapping, MouseButton};
 use resl::ReslShaderInterface;
@@ -77,7 +76,7 @@ impl ImGUiContext {
         let mut pixels = null_mut();
         let mut width: i32 = 0;
         let mut height: i32 = 0;
-        assert_ne!(io.Fonts as usize, 0, "ImGui font is not valid");
+        assert!(!io.Fonts.is_null(), "ImGui font is not valid");
         unsafe {
             ImFontAtlas_GetTexDataAsRGBA32(
                 io.Fonts,
@@ -85,7 +84,7 @@ impl ImGUiContext {
                 &mut width,
                 &mut height,
                 null_mut(),
-            )
+            );
         }
         let data_size = width * height * PixelFormat::R8G8B8A8_UNORM.type_size() as i32;
 
@@ -115,11 +114,6 @@ impl ImGUiContext {
                 name: "color".to_string(),
                 clear_value: BackgroundColor::Color(Vec4F32::new(0.0, 0.0, 0.0, 1.0)),
                 format: PixelFormat::R8G8B8A8_UNORM,
-            })
-            .add_resource(PassResource {
-                name: "depth".to_string(),
-                clear_value: BackgroundColor::DepthStencil(Vec2f32::new(1.0, 0.0)),
-                format: PixelFormat::D24_UNORM_S8_UINT,
             });
 
         let material = Material::default();
@@ -144,10 +138,151 @@ impl ImGUiContext {
             },
         );
 
+        let io = unsafe { &mut *igGetIO() };
+        io.DisplaySize = ImVec2 { x: 1f32, y: 1f32 };
+        io.DisplayFramebufferScale = ImVec2 { x: 1.0, y: 1.0 };
+        io.DeltaTime = 0.16f32;
+        unsafe { igNewFrame(); }
+
         render_node.add_render_function(move |_, command_buffer| {
-  
             let frame = command_buffer.get_frame_id();
             let display_res = command_buffer.get_display_res();
+
+            unsafe { igShowDemoWindow(null_mut()); }
+
+            unsafe {
+                igEndFrame();
+                igRender();
+            }
+            let draw_data = unsafe { &*igGetDrawData() };
+            let width = draw_data.DisplaySize.x * draw_data.FramebufferScale.x;
+            let height = draw_data.DisplaySize.x * draw_data.FramebufferScale.x;
+            if width > 0.0 && height > 0.0 && draw_data.TotalVtxCount != 0 {
+                /*
+                 * BUILD VERTEX BUFFERS
+                 */
+                unsafe {
+                    let mut vertex_start = 0;
+                    let mut index_start = 0;
+
+                    mesh.resize(&frame, draw_data.TotalVtxCount as u32, draw_data.TotalIdxCount as u32);
+
+                    for n in 0..draw_data.CmdListsCount {
+                        let cmd_list = &**draw_data.CmdLists.Data.offset(n as isize);
+
+                        mesh.set_data(
+                            &frame,
+                            vertex_start,
+                            slice::from_raw_parts(
+                                cmd_list.VtxBuffer.Data as *const u8,
+                                cmd_list.VtxBuffer.Size as usize * size_of::<ImDrawVert>(),
+                            ),
+                            index_start,
+                            slice::from_raw_parts(
+                                cmd_list.IdxBuffer.Data as *const u8,
+                                cmd_list.IdxBuffer.Size as usize * size_of::<ImDrawIdx>(),
+                            ),
+                        );
+
+                        vertex_start += cmd_list.VtxBuffer.Size as u32;
+                        index_start += cmd_list.IdxBuffer.Size as u32;
+                    }
+                }
+
+                /*
+                 * PREPARE MATERIALS
+                 */
+                let scale_x = 2.0 / draw_data.DisplaySize.x;
+                let scale_y = -2.0 / draw_data.DisplaySize.y;
+
+                #[repr(C, align(4))]
+                struct ImGuiPushConstants {
+                    scale_x: f32,
+                    scale_y: f32,
+                    translate_x: f32,
+                    translate_y: f32,
+                }
+
+                material.set_push_constants(&ShaderStage::Vertex, &ImGuiPushConstants {
+                    scale_x,
+                    scale_y,
+                    translate_x: -1.0 - draw_data.DisplayPos.x * scale_x,
+                    translate_y: 1.0 - draw_data.DisplayPos.y * scale_y,
+                });
+
+                material.bind_texture(&BindPoint::new("sTexture"), font_texture.clone());
+
+                // Will project scissor/clipping rectangles into framebuffer space
+                let clip_off = draw_data.DisplayPos; // (0,0) unless using multi-viewports
+                let clip_scale = draw_data.FramebufferScale; // (1,1) unless using retina display which are often (2,2)
+
+                // Render command lists
+                // (Because we merged all buffers into a single one, we maintain our own offset into them)
+                let mut global_idx_offset = 0;
+                let mut global_vtx_offset = 0;
+
+                for n in 0..draw_data.CmdListsCount {
+                    let cmd = unsafe { &**draw_data.CmdLists.Data.offset(n as isize) };
+                    for cmd_i in 0..cmd.CmdBuffer.Size {
+                        let pcmd = unsafe { &*cmd.CmdBuffer.Data.offset(cmd_i as isize) };
+                        match pcmd.UserCallback {
+                            Some(callback) => unsafe {
+                                callback(cmd, pcmd);
+                            },
+                            None => {
+                                // Project scissor/clipping rectangles into framebuffer space
+                                let mut clip_rect = ImVec4 {
+                                    x: (pcmd.ClipRect.x - clip_off.x) * clip_scale.x,
+                                    y: (pcmd.ClipRect.y - clip_off.y) * clip_scale.y,
+                                    z: (pcmd.ClipRect.z - clip_off.x) * clip_scale.x,
+                                    w: (pcmd.ClipRect.w - clip_off.y) * clip_scale.y,
+                                };
+
+                                if clip_rect.x < display_res.x as f32
+                                    && clip_rect.y < display_res.y as f32
+                                    && clip_rect.z >= 0.0
+                                    && clip_rect.w >= 0.0
+                                {
+                                    // Negative offsets are illegal for vkCmdSetScissor
+                                    if clip_rect.x < 0.0 {
+                                        clip_rect.x = 0.0;
+                                    }
+                                    if clip_rect.y < 0.0 {
+                                        clip_rect.y = 0.0;
+                                    }
+
+                                    // Apply scissor/clipping rectangle
+                                    command_buffer.set_scissor(Scissors {
+                                        min_x: clip_rect.x as i32,
+                                        min_y: clip_rect.y as i32,
+                                        width: (clip_rect.z - clip_rect.x) as u32,
+                                        height: (clip_rect.w - clip_rect.y) as u32,
+                                    });
+
+                                    // Bind descriptor set with font or user texture
+                                    if !pcmd.TextureId.is_null() {
+                                        //material.bind_texture(&BindPoint::new("sTexture"), nullptr); // TODO handle textures
+                                    }
+
+                                    material.bind_to(command_buffer);
+
+                                    command_buffer.draw_mesh_advanced(
+                                        &mesh,
+                                        pcmd.IdxOffset + global_idx_offset,
+                                        (pcmd.VtxOffset + global_vtx_offset) as i32,
+                                        pcmd.ElemCount,
+                                        1,
+                                        0,
+                                    );
+                                }
+                            }
+                        }
+                    }
+                    global_idx_offset += cmd.IdxBuffer.Size as u32;
+                    global_vtx_offset += cmd.VtxBuffer.Size as u32;
+                }
+            }
+
             let io = unsafe { &mut *igGetIO() };
             io.DisplaySize = ImVec2 {
                 x: display_res.x as f32,
@@ -155,170 +290,18 @@ impl ImGUiContext {
             };
             io.DisplayFramebufferScale = ImVec2 { x: 1.0, y: 1.0 };
             io.DeltaTime = Engine::get().delta_second() as f32;
-            
+
             // Update mouse
             let input_manager = Engine::get().platform().input_manager();
-            io.MouseDown[0] =
-                input_manager.is_input_pressed(InputMapping::MouseButton(MouseButton::Left));
-            io.MouseDown[1] =
-                input_manager.is_input_pressed(InputMapping::MouseButton(MouseButton::Right));
-            io.MouseDown[2] =
-                input_manager.is_input_pressed(InputMapping::MouseButton(MouseButton::Middle));
-            io.MouseDown[3] =
-                input_manager.is_input_pressed(InputMapping::MouseButton(MouseButton::Button1));
-            io.MouseDown[4] =
-                input_manager.is_input_pressed(InputMapping::MouseButton(MouseButton::Button2));
+            io.MouseDown[0] = input_manager.is_input_pressed(InputMapping::MouseButton(MouseButton::Left));
+            io.MouseDown[1] = input_manager.is_input_pressed(InputMapping::MouseButton(MouseButton::Right));
+            io.MouseDown[2] = input_manager.is_input_pressed(InputMapping::MouseButton(MouseButton::Middle));
+            io.MouseDown[3] = input_manager.is_input_pressed(InputMapping::MouseButton(MouseButton::Button1));
+            io.MouseDown[4] = input_manager.is_input_pressed(InputMapping::MouseButton(MouseButton::Button2));
             io.MouseHoveredViewport = 0;
-            io.MousePos = ImVec2 {
-                x: input_manager.get_mouse_position().x,
-                y: input_manager.get_mouse_position().y,
-            };
+            io.MousePos = ImVec2 { x: input_manager.get_mouse_position().x, y: input_manager.get_mouse_position().y };
 
-            unsafe {
-                igNewFrame();
-            }
-            unsafe {
-                igShowDemoWindow(null_mut());
-            }
-            unsafe {
-                igEndFrame();
-            }
-            unsafe {
-                igRender();
-            }
-            let draw_data = unsafe { &*igGetDrawData() };
-            let width = draw_data.DisplaySize.x * draw_data.FramebufferScale.x;
-            let height = draw_data.DisplaySize.x * draw_data.FramebufferScale.x;
-            if width <= 0.0 || height <= 0.0 || draw_data.TotalVtxCount == 0 {
-                return;
-            }
-            /*
-             * BUILD VERTEX BUFFERS
-             */
-            unsafe {
-                let mut vertex_start = 0;
-                let mut index_start = 0;
-
-                mesh.resize(
-                    &frame,
-                    draw_data.TotalVtxCount as u32,
-                    draw_data.TotalIdxCount as u32,
-                );
-
-                for n in 0..draw_data.CmdListsCount {
-                    let cmd_list = &**draw_data.CmdLists.offset(n as isize);
-                    
-                    mesh.set_data(
-                        &frame,
-                        vertex_start,
-                        slice::from_raw_parts(
-                            cmd_list.VtxBuffer.Data as *const u8,
-                            cmd_list.VtxBuffer.Size as usize * size_of::<ImDrawVert>(),
-                        ),
-                        index_start,
-                        slice::from_raw_parts(
-                            cmd_list.IdxBuffer.Data as *const u8,
-                            cmd_list.IdxBuffer.Size as usize * size_of::<ImDrawIdx>(),
-                        ),
-                    );
-
-                    vertex_start += cmd_list.VtxBuffer.Size as u32;
-                    index_start += cmd_list.IdxBuffer.Size as u32;
-                }
-            }
-
-            /*
-             * PREPARE MATERIALS
-             */
-            let scale_x = 2.0 / draw_data.DisplaySize.x;
-            let scale_y = -2.0 / draw_data.DisplaySize.y;
-
-            #[repr(C, align(4))]
-            pub struct ImGuiPushConstants {
-                scale_x: f32,
-                scale_y: f32,
-                translate_x: f32,
-                translate_y: f32,
-            }
-
-            material.set_push_constants(&ShaderStage::Vertex, &ImGuiPushConstants {
-                scale_x,
-                scale_y,
-                translate_x: -1.0 - draw_data.DisplayPos.x * scale_x,
-                translate_y: 1.0 - draw_data.DisplayPos.y * scale_y,
-            });
-            
-            material.bind_texture(&BindPoint::new("sTexture"), font_texture.clone());
-
-            // Will project scissor/clipping rectangles into framebuffer space
-            let clip_off = draw_data.DisplayPos; // (0,0) unless using multi-viewports
-            let clip_scale = draw_data.FramebufferScale; // (1,1) unless using retina display which are often (2,2)
-
-            // Render command lists
-            // (Because we merged all buffers into a single one, we maintain our own offset into them)
-            let mut global_idx_offset = 0;
-            let mut global_vtx_offset = 0;
-
-            for n in 0..draw_data.CmdListsCount {
-                let cmd = unsafe { &**draw_data.CmdLists.offset(n as isize) };
-                for cmd_i in 0..cmd.CmdBuffer.Size {
-                    let pcmd = unsafe { &*cmd.CmdBuffer.Data.offset(cmd_i as isize) };
-                    match pcmd.UserCallback {
-                        Some(callback) => unsafe {
-                            callback(cmd, pcmd);
-                        },
-                        None => {
-                            // Project scissor/clipping rectangles into framebuffer space
-                            let mut clip_rect = ImVec4 {
-                                x: (pcmd.ClipRect.x - clip_off.x) * clip_scale.x,
-                                y: (pcmd.ClipRect.y - clip_off.y) * clip_scale.y,
-                                z: (pcmd.ClipRect.z - clip_off.x) * clip_scale.x,
-                                w: (pcmd.ClipRect.w - clip_off.y) * clip_scale.y,
-                            };
-
-                            if clip_rect.x < display_res.x as f32
-                                && clip_rect.y < display_res.y as f32
-                                && clip_rect.z >= 0.0
-                                && clip_rect.w >= 0.0
-                            {
-                                // Negative offsets are illegal for vkCmdSetScissor
-                                if clip_rect.x < 0.0 {
-                                    clip_rect.x = 0.0;
-                                }
-                                if clip_rect.y < 0.0 {
-                                    clip_rect.y = 0.0;
-                                }
-
-                                // Apply scissor/clipping rectangle
-                                command_buffer.set_scissor(Scissors {
-                                    min_x: clip_rect.x as i32,
-                                    min_y: clip_rect.y as i32,
-                                    width: (clip_rect.z - clip_rect.x) as u32,
-                                    height: (clip_rect.w - clip_rect.y) as u32,
-                                });
-
-                                // Bind descriptor set with font or user texture
-                                if !pcmd.TextureId.is_null() {
-                                    //material.bind_texture(&BindPoint::new("sTexture"), nullptr); // TODO handle textures
-                                }
-
-                                material.bind_to(command_buffer);
-
-                                command_buffer.draw_mesh_advanced(
-                                    &mesh,
-                                    pcmd.IdxOffset + global_idx_offset,
-                                    (pcmd.VtxOffset + global_vtx_offset) as i32,
-                                    pcmd.ElemCount,
-                                    1,
-                                    0,
-                                );
-                            }
-                        }
-                    }
-                }
-                global_idx_offset += cmd.IdxBuffer.Size as u32;
-                global_vtx_offset += cmd.VtxBuffer.Size as u32;
-            }
+            unsafe { igNewFrame(); }
         });
 
         logger::info!("initialized imgui context");

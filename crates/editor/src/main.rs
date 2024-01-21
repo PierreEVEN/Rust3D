@@ -1,5 +1,6 @@
 use std::path::PathBuf;
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
+use std::sync::atomic::{AtomicBool, Ordering};
 use core::engine::{App, Builder, Camera, Engine};
 use core::world::World;
 use ecs::entity::GameObject;
@@ -7,14 +8,13 @@ use ecs::query::Query;
 use gfx::Gfx;
 use gfx::image_sampler::{SamplerCreateInfos};
 use gfx::material::Material;
+use job_system::JobSystem;
 use maths::vec4::Vec4F32;
 use plateform::window::{PlatformEvent, WindowCreateInfos};
 use renderers::DeferredRenderer;
 use resl::ReslShaderInterface;
 use shader_base::{BindPoint};
 use shader_base::types::{BackgroundColor};
-
-mod gfx_demo;
 
 #[derive(Default)]
 pub struct TestApp {
@@ -72,15 +72,14 @@ impl App for TestApp {
             None => {}
             Some(g_buffer) => {
                 g_buffer.add_render_function(move |ecs, _command_buffer| {
-                    Query::<&ProceduralDraw>::new(ecs).for_each(|_| {
-                    });
+                    Query::<&ProceduralDraw>::new(ecs).for_each(|_| {});
                 })
             }
         }
 
         renderer.renderer.present_node().add_render_function(move |ecs, command_buffer| {
             Query::<&ProceduralDraw>::new(ecs).for_each(|mesh| {
-                if let Some(material) =  &mesh.material {
+                if let Some(material) = &mesh.material {
                     material.bind_to(command_buffer);
                     command_buffer.draw_procedural(mesh.vertices, 0, mesh.instances, 0);
                 }

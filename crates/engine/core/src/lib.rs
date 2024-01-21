@@ -5,6 +5,8 @@ pub mod asset_type_id;
 pub mod engine;
 pub mod world;
 pub mod renderer;
+mod resource;
+mod engine_test_tools;
 
 pub mod base_assets {
     pub mod material_asset;

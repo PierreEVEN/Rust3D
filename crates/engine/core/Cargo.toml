@@ -14,3 +14,4 @@ ecs = { path = "../ecs" }
 maths = { path = "../maths" }
 third_party_io = { path = "../third_party_io" }
 shader_base = { path = "../common/gfx_types" }
+log = "0.4.17"

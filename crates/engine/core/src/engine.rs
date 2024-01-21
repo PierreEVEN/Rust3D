@@ -1,16 +1,17 @@
 use std::mem::MaybeUninit;
 use std::ops::{Deref, DerefMut};
-use std::sync::{Arc, RwLock, Weak};
+use std::sync::{Arc, Condvar, Mutex, RwLock, Weak};
 use std::sync::atomic::{AtomicBool, Ordering};
 
 use gfx::GfxInterface;
 use gfx::surface::GfxSurface;
-use logger::fatal;
+use logger::{fatal, info, warning};
 use plateform::Platform;
 use plateform::window::Window;
 
 use crate::asset_manager::AssetManager;
 use crate::renderer::Renderer;
+use crate::resource::ResourceAllocator;
 use crate::world::World;
 
 pub struct DeltaSeconds {
@@ -84,6 +85,7 @@ impl Default for Builder {
 
 pub struct Engine {
     asset_manager: MaybeUninit<AssetManager>,
+    resource_allocator: ResourceAllocator,
     platform: MaybeUninit<Box<dyn Platform>>,
     gfx: MaybeUninit<Box<dyn GfxInterface>>,
     surface_builder: Box<SurfaceBuilderFunc>,
@@ -91,7 +93,8 @@ pub struct Engine {
     pub engine_number: u64,
 
     pre_initialized: AtomicBool,
-    initialized: AtomicBool,
+    initialized_lock: Mutex<bool>,
+    initialized_ready: Condvar,
     is_stopping: AtomicBool,
 
     worlds: RwLock<Vec<Arc<World>>>,
@@ -110,7 +113,7 @@ impl EngineRef {
                 fatal!("Cannot initialize EngineRef : Engine is already instanced");
             }
         }
-        unsafe { ENGINE_INSTANCE = Box::leak(Box::new(engine)) as *mut Engine; }
+        unsafe { ENGINE_INSTANCE = Box::into_raw(Box::new(engine)); }
         Self {}
     }
 }
@@ -157,19 +160,25 @@ impl Engine {
 
         let engine = Self {
             asset_manager: MaybeUninit::uninit(),
+            resource_allocator: ResourceAllocator::default(),
             platform: MaybeUninit::uninit(),
             gfx: MaybeUninit::uninit(),
             surface_builder: Box::new(|_| { fatal!("surface builder is not valid") }),
             app: Box::new(app),
             engine_number: 1234567890,
             pre_initialized: AtomicBool::new(false),
-            initialized: AtomicBool::new(false),
+            initialized_lock: Mutex::new(false),
+            initialized_ready: Default::default(),
             is_stopping: AtomicBool::new(false),
             worlds: Default::default(),
             views: Default::default(),
             game_delta: DeltaSeconds::new(None),
         };
         EngineRef::new(engine)
+    }
+
+    pub fn app(&self) -> &dyn App {
+        self.app.as_ref()
     }
 
     pub fn start(&mut self) {
@@ -190,7 +199,9 @@ impl Engine {
         self.surface_builder = builder.surface;
 
         // FINISHED PRE-INITIALIZATION
-        self.initialized.store(true, Ordering::SeqCst);
+
+        *self.initialized_lock.lock().unwrap() = true;
+        self.initialized_ready.notify_all();
         logger::info!("Engine started");
         self.app.initialized();
 
@@ -203,12 +214,19 @@ impl Engine {
         self.is_stopping.store(true, Ordering::Release);
     }
 
+    pub fn wait_initialization(&self) {
+        let mut initialized = self.initialized_lock.lock().unwrap();
+        while !*initialized {
+            initialized = self.initialized_ready.wait(initialized).unwrap();
+        }
+    }
+
     pub fn check_validity(&self) {
         assert!(
             self.pre_initialized.load(Ordering::SeqCst),
             "Engine is not initialized ! Please call Engine.start() before"
         );
-        assert!(self.initialized.load(Ordering::SeqCst), "Engine is not fully initialized ! Please wait full engine initialization before using Engine::get()");
+        assert!(*self.initialized_lock.lock().unwrap(), "Engine is not fully initialized ! Please wait full engine initialization before using Engine::get()");
     }
 
     pub fn get() -> &'static Self {
@@ -239,6 +257,9 @@ impl Engine {
         }
     }
 
+    pub fn resource_allocator(&self) -> &ResourceAllocator {
+        &self.resource_allocator
+    }
     pub fn gfx(&self) -> &dyn GfxInterface {
         self.check_validity();
         unsafe { self.gfx.assume_init_ref().as_ref() }
@@ -297,7 +318,8 @@ impl Drop for Engine {
         self.worlds.write().unwrap().clear();
 
         // Started de-initialization
-        self.initialized.store(false, Ordering::SeqCst);
+        info!("Start deinitialization");
+        *self.initialized_lock.lock().unwrap() = false;
         unsafe {
             self.asset_manager.assume_init_drop();
             self.gfx.assume_init_drop();

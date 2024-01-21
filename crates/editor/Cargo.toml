@@ -22,3 +22,4 @@ logger = { path = "../engine/logger" }
 shader_base = { path = "../engine/common/gfx_types" }
 log = "0.4.17"
 renderers = { path = "../engine/common/renderers" }
+imgui-bindings = {path = "../engine/imgui-bindings"}

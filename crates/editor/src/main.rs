@@ -4,15 +4,15 @@ use core::engine::{App, Builder, Camera, Engine};
 use core::world::World;
 use ecs::entity::GameObject;
 use ecs::query::Query;
-use gfx::Gfx;
-use gfx::image_sampler::{SamplerCreateInfos};
-use gfx::material::Material;
 use maths::vec4::Vec4F32;
 use plateform::window::{PlatformEvent, WindowCreateInfos};
 use renderers::DeferredRenderer;
 use resl::ReslShaderInterface;
 use shader_base::{BindPoint};
 use shader_base::types::{BackgroundColor};
+use core::gfx::material::Material;
+use core::gfx::Gfx;
+use core::gfx::image_sampler::SamplerCreateInfos;
 
 #[derive(Default)]
 pub struct TestApp {
@@ -28,7 +28,22 @@ struct ProceduralDraw {
 }
 
 impl App for TestApp {
-    fn pre_initialize(&mut self, _: &mut Builder) {}
+    fn pre_initialize(&mut self, builder: &mut Builder) {
+        builder.platform = Box::new(|| { backend_launcher::backend::spawn_platform() });
+        builder.gfx = Box::new(|| {
+            let mut gfx = backend_launcher::backend::spawn_gfx();
+            gfx.pre_init();
+            gfx.init();
+            gfx.set_physical_device(
+                gfx.find_best_suitable_physical_device()
+                    .expect("there is no suitable GPU available"),
+            );
+            gfx
+        });
+        builder.surface = Box::new(|window| {
+            backend_launcher::backend::spawn_surface(window)
+        });
+    }
     fn initialized(&mut self) {
 
         // Load data

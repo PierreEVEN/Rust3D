@@ -1,9 +1,9 @@
 use std::path::Path;
 use std::sync::{Arc, RwLock};
+use crate::base_assets::asset::{AssetFactory, AssetMetaData, GameAsset};
+use crate::base_assets::asset_manager::AssetManager;
+use crate::base_assets::asset_type_id::AssetTypeID;
 
-use crate::asset::{AssetFactory, AssetMetaData, GameAsset};
-use crate::asset_manager::AssetManager;
-use crate::asset_type_id::AssetTypeID;
 use crate::base_assets::material_asset::MaterialAsset;
 
 pub struct MeshAsset {

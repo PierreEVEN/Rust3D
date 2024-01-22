@@ -6,12 +6,12 @@ use ecs::entity::GameObject;
 use maths::vec2::Vec2u32;
 use shader_base::pass_id::PassID;
 use shader_base::types::GfxCast;
+use crate::gfx::command_buffer::GfxCommandBuffer;
+use crate::gfx::Gfx;
+use crate::gfx::image::{GfxImage, ImageType};
+use crate::gfx::renderer::render_node::RenderNode;
+use crate::gfx::surface::Frame;
 
-use crate::command_buffer::GfxCommandBuffer;
-use crate::Gfx;
-use crate::image::{GfxImage, ImageType};
-use crate::renderer::render_node::RenderNode;
-use crate::surface::Frame;
 
 pub trait RenderPassInstance: GfxCast {
     fn bind(&self, frame: &Frame, context: &RenderPass, res: Vec2u32, command_buffer: &dyn GfxCommandBuffer);

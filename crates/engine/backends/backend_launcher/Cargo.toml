@@ -7,8 +7,8 @@ edition = "2021"
 
 [dependencies]
 plateform = { path = "../../common/plateform" }
-gfx = { path = "../../common/gfx" }
 backend_vulkan = { path = "../backend_vulkan" }
 backend_vulkan_win32 = { path = "../backend_vulkan_win32" }
 plateform_win32 = { path = "../plateform_win32" }
-logger = {path = "../../logger"}
+logger = { path = "../../logger" }
+core = { path = "../../core" }

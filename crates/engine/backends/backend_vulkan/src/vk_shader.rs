@@ -3,14 +3,13 @@ use std::os::raw::c_char;
 use std::sync::Arc;
 
 use ash::vk;
-use gfx::Gfx;
-use gfx::material::{MaterialResourceData, MaterialResourcePool};
-
-use gfx::shader::{ShaderProgram};
-use gfx::shader_instance::{ShaderInstance, ShaderInstanceCreateInfos};
 use shader_base::pass_id::PassID;
 use shader_base::{AlphaMode, BindPoint, CompilationError, Culling, FrontFace, PolygonMode, ShaderInterface, ShaderStage, Topology};
 
+use core::gfx::Gfx;
+use core::gfx::shader::{ShaderProgram};
+use core::gfx::shader_instance::{ShaderInstance, ShaderInstanceCreateInfos};
+use core::gfx::material::{MaterialResourcePool, MaterialResourceData};
 
 //use crate::vk_types::VkPixelFormat;
 use crate::{GfxVulkan, vk_check, VkShaderInstance};

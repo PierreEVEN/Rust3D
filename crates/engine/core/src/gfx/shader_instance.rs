@@ -1,7 +1,6 @@
 use std::sync::Arc;
 use shader_base::types::GfxCast;
-
-use crate::material::MaterialResourcePool;
+use crate::gfx::material::MaterialResourcePool;
 
 pub struct ShaderInstanceCreateInfos {
     pub resources: Arc<MaterialResourcePool>,

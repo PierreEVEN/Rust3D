@@ -1,15 +1,14 @@
 use std::ops::Deref;
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::{Arc, RwLock};
-
 use ash::vk;
 use ash::vk::Handle;
 use gpu_allocator::vulkan;
 use gpu_allocator::{AllocationError, MemoryLocation};
 
-use gfx::buffer::{BufferAccess, BufferCreateInfo, BufferType, BufferUsage, GfxBuffer};
-use gfx::gfx_resource::{GfxImageBuilder, GfxResource};
-use gfx::surface::Frame;
+use core::gfx::surface::{Frame};
+use core::gfx::buffer::{GfxBuffer, BufferCreateInfo, BufferType, BufferAccess, BufferUsage};
+use core::gfx::gfx_resource::{GfxResource, GfxImageBuilder};
 
 use crate::{vk_check, GfxVulkan};
 

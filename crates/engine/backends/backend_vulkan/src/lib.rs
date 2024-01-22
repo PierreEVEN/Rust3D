@@ -8,16 +8,10 @@ use std::os::raw::c_char;
 use std::sync::{Arc, Weak};
 use std::sync::atomic::{AtomicBool, Ordering};
 
+use core::gfx::GfxInterface;
+
 use ash::vk;
 
-use gfx::{Gfx, GfxInterface, PhysicalDevice};
-use gfx::buffer::{BufferCreateInfo, GfxBuffer};
-use gfx::command_buffer::GfxCommandBuffer;
-use gfx::image::{GfxImage, ImageCreateInfos};
-use gfx::image_sampler::{ImageSampler, SamplerCreateInfos};
-use gfx::material::MaterialResourcePool;
-use gfx::renderer::render_pass::{RenderPass, RenderPassInstance};
-use gfx::shader::{ShaderProgram};
 use logger::fatal;
 use shader_base::pass_id::PassID;
 use shader_base::{CompilationError, ShaderInterface};
@@ -30,9 +24,19 @@ use crate::vk_device::VkDevice;
 use crate::vk_image::VkImage;
 use crate::vk_image_sampler::VkImageSampler;
 use crate::vk_instance::{InstanceCreateInfos, VkInstance};
-use crate::vk_physical_device::VkPhysicalDevice;
 use crate::vk_shader::VkShaderProgram;
 use crate::vk_shader_instance::VkShaderInstance;
+
+use core::gfx::Gfx;
+use core::gfx::image_sampler::{SamplerCreateInfos, ImageSampler};
+use core::gfx::image::{GfxImage, ImageCreateInfos};
+use core::gfx::renderer::render_pass::{RenderPassInstance, RenderPass};
+use core::gfx::command_buffer::{GfxCommandBuffer};
+use core::gfx::shader::{ShaderProgram};
+use core::gfx::buffer::{GfxBuffer, BufferCreateInfo};
+use core::gfx::material::{MaterialResourcePool};
+use core::gfx::PhysicalDevice;
+use crate::vk_physical_device::VkPhysicalDevice;
 
 pub mod vk_buffer;
 pub mod vk_command_buffer;

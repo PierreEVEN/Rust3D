@@ -5,10 +5,10 @@ use std::mem::MaybeUninit;
 use std::os::raw::c_char;
 use std::thread;
 
+use core::gfx::PhysicalDevice;
 use ash::{extensions::ext, vk};
 use ash::vk::{DebugUtilsMessageSeverityFlagsEXT};
 
-use gfx::PhysicalDevice;
 use logger::LogSeverity;
 
 use crate::vk_physical_device::VkPhysicalDevice;

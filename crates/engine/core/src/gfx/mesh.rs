@@ -1,7 +1,7 @@
-use crate::buffer::{BufferAccess, BufferType, BufferUsage};
-use crate::surface::Frame;
-use crate::{BufferCreateInfo, Gfx, GfxBuffer};
 use std::sync::Arc;
+use crate::gfx::buffer::{BufferAccess, BufferCreateInfo, BufferType, BufferUsage, GfxBuffer};
+use crate::gfx::Gfx;
+use crate::gfx::surface::Frame;
 
 pub struct Mesh {
     index_buffer: Arc<dyn GfxBuffer>,

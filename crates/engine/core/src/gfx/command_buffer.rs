@@ -1,10 +1,14 @@
-use crate::buffer::BufferMemory;
-use crate::{Mesh, PassID, ShaderInstance, ShaderProgram};
+
 use std::sync::Arc;
 use maths::vec2::Vec2u32;
+use shader_base::pass_id::PassID;
 use shader_base::ShaderStage;
 use shader_base::types::{GfxCast, Scissors};
-use crate::surface::Frame;
+use crate::gfx::buffer::BufferMemory;
+use crate::gfx::mesh::Mesh;
+use crate::gfx::shader::ShaderProgram;
+use crate::gfx::shader_instance::ShaderInstance;
+use crate::gfx::surface::Frame;
 
 pub trait GfxCommandBuffer: GfxCast {
     fn bind_program(&self, program: &Arc<dyn ShaderProgram>);

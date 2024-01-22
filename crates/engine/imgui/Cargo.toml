@@ -7,7 +7,6 @@ edition = "2021"
 
 [dependencies]
 imgui-bindings = {path = "../imgui-bindings" }
-gfx = { path = "../common/gfx" }
 macros = { path = "../macros" }
 maths = { path = "../maths" }
 memoffset = "0.9.0"

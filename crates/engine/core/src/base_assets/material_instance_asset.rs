@@ -1,9 +1,8 @@
-use gfx::image::GfxImage;
-use gfx::image_sampler::ImageSampler;
 use std::sync::Arc;
 use shader_base::BindPoint;
-
-use crate::asset::{AssetMetaData, GameAsset};
+use crate::base_assets::asset::{AssetMetaData, GameAsset};
+use crate::gfx::image::GfxImage;
+use crate::gfx::image_sampler::ImageSampler;
 
 pub struct MaterialInstanceAsset {
     meta_data: AssetMetaData,

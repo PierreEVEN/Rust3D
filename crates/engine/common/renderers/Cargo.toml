@@ -8,6 +8,5 @@ edition = "2021"
 [dependencies]
 imgui = { path = "../../imgui" }
 core = { path = "../../core" }
-gfx = { path = "../gfx" }
 shader_base = { path = "../gfx_types" }
 maths = { path = "../../maths" }

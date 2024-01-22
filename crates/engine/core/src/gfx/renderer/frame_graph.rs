@@ -3,13 +3,12 @@
 use ecs::entity::GameObject;
 use logger::error;
 use maths::vec2::Vec2u32;
-use crate::Gfx;
-
-use crate::image::{GfxImage, ImageCreateInfos, ImageParams, ImageType};
-use crate::image::ImageUsage::{GpuWriteDestination, Sampling};
-use crate::renderer::render_node::RenderNode;
-use crate::renderer::render_pass::RenderPass;
-use crate::surface::{Frame, GfxSurface, SurfaceAcquireResult};
+use crate::gfx::Gfx;
+use crate::gfx::image::{GfxImage, ImageCreateInfos, ImageParams, ImageType};
+use crate::gfx::image::ImageUsage::{GpuWriteDestination, Sampling};
+use crate::gfx::renderer::render_node::RenderNode;
+use crate::gfx::renderer::render_pass::RenderPass;
+use crate::gfx::surface::{Frame, GfxSurface, SurfaceAcquireResult};
 
 /// This is the standard representation of a frame graph.
 /// Then it will be compiled to a representation that fits the running graphic backend.

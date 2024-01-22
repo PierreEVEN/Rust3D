@@ -1,10 +1,11 @@
-use crate::asset::{AssetFactory, GameAsset};
-use crate::asset_id::AssetID;
-use crate::asset_type_id::AssetTypeID;
+
 use crate::base_assets::material_asset::MaterialAssetFactory;
 use crate::base_assets::mesh_asset::MeshAssetFactory;
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
+use crate::base_assets::asset::{AssetFactory, GameAsset};
+use crate::base_assets::asset_id::AssetID;
+use crate::base_assets::asset_type_id::AssetTypeID;
 
 pub struct AssetManager {
     factories: RwLock<HashMap<AssetTypeID, Arc<dyn AssetFactory>>>,

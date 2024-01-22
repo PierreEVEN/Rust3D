@@ -3,14 +3,13 @@ use std::sync::{Arc, RwLock};
 
 use shader_base::{BindPoint, DescriptorType, ShaderInterface, ShaderStage};
 use shader_base::pass_id::PassID;
-use crate::buffer::BufferMemory;
-
-use crate::command_buffer::GfxCommandBuffer;
-use crate::Gfx;
-use crate::image::GfxImage;
-use crate::image_sampler::ImageSampler;
-use crate::shader::ShaderProgram;
-use crate::shader_instance::ShaderInstance;
+use crate::gfx::buffer::BufferMemory;
+use crate::gfx::command_buffer::GfxCommandBuffer;
+use crate::gfx::Gfx;
+use crate::gfx::image::GfxImage;
+use crate::gfx::image_sampler::ImageSampler;
+use crate::gfx::shader::ShaderProgram;
+use crate::gfx::shader_instance::ShaderInstance;
 
 #[derive(Clone)]
 pub enum MaterialResourceData {

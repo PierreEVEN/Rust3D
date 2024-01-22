@@ -1,11 +1,11 @@
 use std::sync::Arc;
 use ash::vk;
-use gfx::image::GfxImage;
-use gfx::renderer::render_pass::RenderPass;
 use shader_base::pass_id::PassID;
 use shader_base::types::{BackgroundColor, PixelFormat};
 use crate::vk_types::VkPixelFormat;
 use crate::{vk_check, GfxVulkan};
+use core::gfx::image::{GfxImage};
+use core::gfx::renderer::render_pass::{RenderPass};
 
 pub struct VkRenderPass {
     pub render_pass: vk::RenderPass,

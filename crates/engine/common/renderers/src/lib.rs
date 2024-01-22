@@ -1,7 +1,7 @@
 use std::sync::Arc;
-use gfx::renderer::render_node::RenderNode;
-use gfx::renderer::renderer_resource::PassResource;
-use core::renderer::Renderer;
+use core::gfx::renderer::render_node::RenderNode;
+use core::gfx::renderer::renderer_resource::PassResource;
+use core::gfx::renderer::renderer::Renderer;
 use imgui::ImGUiContext;
 use maths::vec2::Vec2f32;
 use maths::vec4::Vec4F32;

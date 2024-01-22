@@ -3,9 +3,9 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use shader_base::pass_id::PassID;
 use shader_base::{ShaderInterface};
-use crate::Gfx;
-use crate::material::MaterialResourcePool;
-use crate::shader::ShaderProgram;
+use crate::gfx::Gfx;
+use crate::gfx::material::MaterialResourcePool;
+use crate::gfx::shader::ShaderProgram;
 
 #[derive(Hash, Eq, PartialEq)]
 struct ProgramUID {

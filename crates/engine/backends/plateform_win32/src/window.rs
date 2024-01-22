@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::num::NonZeroIsize;
 use std::sync::{Arc, RwLock};
 
 use raw_window_handle::{RawWindowHandle, Win32WindowHandle};
@@ -164,9 +165,7 @@ impl Window for WindowWin32 {
     }
 
     fn get_handle(&self) -> RawWindowHandle {
-        let mut handle = Win32WindowHandle::empty();
-        handle.hwnd = self.hwnd.0 as *mut std::ffi::c_void;
-        RawWindowHandle::Win32(handle)
+        RawWindowHandle::Win32(Win32WindowHandle::new(NonZeroIsize::new(self.hwnd.0).unwrap()))
     }
 
     fn bind_event(&self, event_type: PlatformEvent, delegate: WindowEventDelegate) {

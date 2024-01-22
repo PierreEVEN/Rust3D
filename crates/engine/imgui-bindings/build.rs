@@ -16,7 +16,7 @@ fn main() -> io::Result<()> {
 
     let bindings = bindgen::Builder::default()
         .header(manifest_dir.join("cimgui-bindgen.h").to_string_lossy())
-        .parse_callbacks(Box::new(bindgen::CargoCallbacks))
+        .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
         .generate()
         .expect("Failed to generate bindings");
 

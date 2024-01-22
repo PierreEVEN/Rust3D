@@ -43,7 +43,7 @@ mod resources_tests {
 
     #[test]
     fn create() {
-        crate::engine_test_tools::run_with_test_engine(|| {
+        crate::test_tools::engine_test_tools::run_with_test_engine(|| {
             for _i in 0..10000 {
                 let allocation_status = Arc::new(AtomicI64::new(0));
                 let storage = ResourceStorage::default();
@@ -56,7 +56,7 @@ mod resources_tests {
 
     #[test]
     fn destroy() {
-        crate::engine_test_tools::run_with_test_engine(|| {
+        crate::test_tools::engine_test_tools::run_with_test_engine(|| {
             for _i in 0..10000 {
                 let allocation_status = Arc::new(AtomicI64::new(0));
                 let storage = ResourceStorage::default();
@@ -71,7 +71,7 @@ mod resources_tests {
 
     #[test]
     fn replace() {
-        crate::engine_test_tools::run_with_test_engine(|| {
+        crate::test_tools::engine_test_tools::run_with_test_engine(|| {
             for _i in 0..10000 {
                 let allocation_status = Arc::new(AtomicI64::new(0));
                 let storage = ResourceStorage::default();
@@ -91,7 +91,7 @@ mod resources_tests {
 
     #[test]
     fn accumulate() {
-        crate::engine_test_tools::run_with_test_engine(|| {
+        crate::test_tools::engine_test_tools::run_with_test_engine(|| {
             for _i in 0..100 {
                 let allocation_status = Arc::new(AtomicI64::new(0));
                 let mut storages = vec![];

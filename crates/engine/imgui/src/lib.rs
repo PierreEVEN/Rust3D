@@ -4,17 +4,16 @@ use std::os::raw::c_char;
 use std::path::PathBuf;
 use std::ptr::null_mut;
 use std::sync::Arc;
+use core::gfx::Gfx;
+use core::gfx::renderer::render_node::{RenderNode};
+use core::gfx::renderer::renderer_resource::{PassResource};
+use core::gfx::buffer::{BufferType};
+use core::gfx::mesh::{MeshCreateInfos, IndexBufferType};
+use core::gfx::material::{Material};
+use core::gfx::image::{ImageCreateInfos, ImageParams, ImageUsage, GfxImageUsageFlags, ImageType};
+use core::gfx::image_sampler::{SamplerCreateInfos};
 
 use core::engine::Engine;
-use gfx::buffer::{BufferType};
-use gfx::Gfx;
-use gfx::image::{GfxImageUsageFlags, ImageCreateInfos, ImageParams, ImageUsage};
-use gfx::image::ImageType::Texture2d;
-use gfx::image_sampler::{SamplerCreateInfos};
-use gfx::material::Material;
-use gfx::mesh::{IndexBufferType, MeshCreateInfos};
-use gfx::renderer::render_node::RenderNode;
-use gfx::renderer::renderer_resource::PassResource;
 use imgui_bindings::{
     igCreateContext, igEndFrame, igGetDrawData, igGetIO, igGetMainViewport, igGetStyle, igNewFrame,
     igRender, igShowDemoWindow, igStyleColorsDark, ImDrawIdx, ImDrawVert,
@@ -93,7 +92,7 @@ impl ImGUiContext {
             ImageCreateInfos {
                 params: ImageParams {
                     pixel_format: PixelFormat::R8G8B8A8_UNORM,
-                    image_type: Texture2d(width as u32, height as u32),
+                    image_type: ImageType::Texture2d(width as u32, height as u32),
                     read_only: true,
                     mip_levels: None,
                     usage: GfxImageUsageFlags::from_flag(ImageUsage::Sampling),
@@ -168,7 +167,7 @@ impl ImGUiContext {
                     mesh.resize(&frame, draw_data.TotalVtxCount as u32, draw_data.TotalIdxCount as u32);
 
                     for n in 0..draw_data.CmdListsCount {
-                        let cmd_list = &**draw_data.CmdLists.Data.offset(n as isize);
+                        let cmd_list = &**draw_data.CmdLists.offset(n as isize);
 
                         mesh.set_data(
                             &frame,
@@ -222,7 +221,7 @@ impl ImGUiContext {
                 let mut global_vtx_offset = 0;
 
                 for n in 0..draw_data.CmdListsCount {
-                    let cmd = unsafe { &**draw_data.CmdLists.Data.offset(n as isize) };
+                    let cmd = unsafe { &**draw_data.CmdLists.offset(n as isize) };
                     for cmd_i in 0..cmd.CmdBuffer.Size {
                         let pcmd = unsafe { &*cmd.CmdBuffer.Data.offset(cmd_i as isize) };
                         match pcmd.UserCallback {

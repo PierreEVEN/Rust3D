@@ -4,9 +4,9 @@ use std::sync::atomic::{AtomicU16, Ordering};
 use std::sync::Arc;
 use plateform::window::Window;
 use shader_base::types::GfxCast;
+use crate::gfx::image::GfxImage;
+use crate::gfx::renderer::render_pass::RenderPassInstance;
 
-use crate::image::GfxImage;
-use crate::renderer::render_pass::RenderPassInstance;
 
 pub struct Frame {
     reference: AtomicU16,

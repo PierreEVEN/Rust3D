@@ -1,8 +1,7 @@
 ﻿use std::sync::Arc;
 
-use gfx::Gfx;
 use shader_base::pass_id::PassID;
-
+use core::gfx::Gfx;
 use crate::GfxVulkan;
 use crate::renderer::vk_render_pass::VkRenderPass;
 

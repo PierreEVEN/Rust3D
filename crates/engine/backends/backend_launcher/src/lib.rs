@@ -2,7 +2,7 @@ pub mod backend {
     use std::sync::{Weak};
     use backend_vulkan::GfxVulkan;
     use backend_vulkan_win32::vk_surface_win32::VkSurfaceWin32;
-    use gfx::surface::GfxSurface;
+    use core::gfx::surface::GfxSurface;
 
     #[cfg(windows)]
     use plateform::Platform;
@@ -16,7 +16,7 @@ pub mod backend {
         }
     }
 
-    pub fn spawn_gfx() -> Box<dyn gfx::GfxInterface> {
+    pub fn spawn_gfx() -> Box<dyn core::gfx::GfxInterface> {
         #[cfg(windows)]
         {
             Box::<GfxVulkan>::default()

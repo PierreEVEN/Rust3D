@@ -4,14 +4,15 @@ use std::sync::atomic::{AtomicBool, Ordering};
 
 use ash::vk;
 
-use gfx::gfx_resource::{GfxImageBuilder, GfxResource};
-use gfx::material::{MaterialResourceData, MaterialResourcePool};
-use gfx::shader_instance::{ShaderInstance, ShaderInstanceCreateInfos};
-use gfx::surface::Frame;
 use shader_base::pass_id::PassID;
 
 use crate::{GfxVulkan, VkImage, VkImageSampler};
 use crate::vk_dst_set_layout::VkDescriptorSetLayout;
+
+use core::gfx::surface::Frame;
+use core::gfx::shader_instance::{ShaderInstance, ShaderInstanceCreateInfos};
+use core::gfx::gfx_resource::{GfxResource, GfxImageBuilder};
+use core::gfx::material::{MaterialResourcePool, MaterialResourceData};
 
 pub struct VkShaderInstance {
     _write_descriptor_sets: RwLock<GfxResource<Vec<vk::WriteDescriptorSet>>>,

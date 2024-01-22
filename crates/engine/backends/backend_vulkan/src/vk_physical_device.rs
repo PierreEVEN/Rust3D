@@ -1,7 +1,8 @@
 use crate::GfxVulkan;
 use ash::vk;
-use gfx::{PhysicalDevice, PhysicalDeviceType};
 use std::ffi::CStr;
+
+use core::gfx::{PhysicalDeviceType, PhysicalDevice};
 
 #[derive(Default, Clone)]
 pub struct DeviceQueueProperties {

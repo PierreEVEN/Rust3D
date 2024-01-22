@@ -2,17 +2,17 @@ use std::sync::{Arc, RwLock};
 
 use ash::vk;
 
-use gfx::buffer::BufferMemory;
-use gfx::command_buffer::GfxCommandBuffer;
-use gfx::gfx_resource::{GfxImageBuilder, GfxResource};
-use gfx::mesh::{IndexBufferType, Mesh};
-use gfx::shader::{ShaderProgram};
-use gfx::shader_instance::ShaderInstance;
-use gfx::surface::Frame;
 use maths::vec2::Vec2u32;
 use shader_base::pass_id::PassID;
 use shader_base::ShaderStage;
 use shader_base::types::Scissors;
+use core::gfx::gfx_resource::{GfxImageBuilder, GfxResource};
+use core::gfx::surface::{Frame};
+use core::gfx::mesh::{Mesh, IndexBufferType};
+use core::gfx::command_buffer::{GfxCommandBuffer};
+use core::gfx::shader::{ShaderProgram};
+use core::gfx::shader_instance::{ShaderInstance};
+use core::gfx::buffer::BufferMemory;
 
 use crate::{vk_check, GfxVulkan, VkBuffer, VkShaderInstance, VkShaderProgram};
 

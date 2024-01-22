@@ -1,21 +1,23 @@
+use std::ptr::null;
 use std::sync::{Arc, RwLock};
 
 use ash::extensions::khr;
 use ash::extensions::khr::{Surface, Swapchain};
 use ash::vk;
+use ash::vk::{HINSTANCE, HWND};
 use gpu_allocator::vulkan;
 use raw_window_handle::RawWindowHandle;
 
+use backend_vulkan::{GfxVulkan, vk_check};
+use backend_vulkan::renderer::vk_render_pass_instance::{RbSemaphore, VkRenderPassInstance};
 use backend_vulkan::vk_device::VkQueue;
 use backend_vulkan::vk_image::VkImage;
 use backend_vulkan::vk_types::GfxPixelFormat;
-use backend_vulkan::{vk_check, GfxVulkan};
-use backend_vulkan::renderer::vk_render_pass_instance::{RbSemaphore, VkRenderPassInstance};
-use gfx::gfx_resource::{GfxImageBuilder, GfxResource};
-use gfx::image::{GfxImage, GfxImageUsageFlags, ImageParams, ImageType};
-use gfx::renderer::render_pass::RenderPassInstance;
-use gfx::surface::{Frame, GfxSurface, SurfaceAcquireResult};
-use logger::{fatal};
+use core::gfx::gfx_resource::{GfxImageBuilder, GfxResource};
+use core::gfx::image::{GfxImage, GfxImageUsageFlags, ImageParams, ImageType};
+use core::gfx::renderer::render_pass::RenderPassInstance;
+use core::gfx::surface::{Frame, GfxSurface, SurfaceAcquireResult};
+use logger::fatal;
 use plateform::window::{Window, WindowStatus};
 use shader_base::types::BackgroundColor;
 
@@ -203,11 +205,11 @@ impl GfxSurface for VkSurfaceWin32 {
         render_pass: &dyn RenderPassInstance,
     ) -> Result<(), SurfaceAcquireResult> {
         let geometry = self.window.get_geometry();
-        
+
         if let WindowStatus::Minimized = self.window.get_status() {
-            return Err(SurfaceAcquireResult::Failed("window is minimized".to_string()))
+            return Err(SurfaceAcquireResult::Failed("window is minimized".to_string()));
         }
-        
+
         if geometry.width() == 0 || geometry.height() == 0 {
             return Err(SurfaceAcquireResult::Failed(
                 "invalid resolution".to_string(),
@@ -285,8 +287,11 @@ impl VkSurfaceWin32 {
         };
 
         let ci_surface = vk::Win32SurfaceCreateInfoKHR::builder()
-            .hinstance(handle.hinstance)
-            .hwnd(handle.hwnd)
+            .hinstance(match handle.hinstance {
+                None => { null() }
+                Some(hi) => { hi.get() as HINSTANCE }
+            })
+            .hwnd(handle.hwnd.get() as HWND)
             .build();
 
         let surface_fn = khr::Win32Surface::new(GfxVulkan::get().entry(), unsafe {

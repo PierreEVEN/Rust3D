@@ -1,7 +1,6 @@
 use std::path::Path;
 use std::sync::{Arc, RwLock};
-
-use crate::asset_type_id::AssetTypeID;
+use crate::base_assets::asset_type_id::AssetTypeID;
 
 pub trait GameAsset {
     fn save(&self) -> Result<(), String>;

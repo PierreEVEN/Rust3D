@@ -1,8 +1,9 @@
 use ash::vk;
 use std::sync::Arc;
 
+use core::gfx::image_sampler::{ImageSampler, SamplerCreateInfos};
+
 use crate::{vk_check, GfxVulkan};
-use gfx::image_sampler::{ImageSampler, SamplerCreateInfos};
 
 pub struct VkImageSampler {
     pub sampler: vk::Sampler,

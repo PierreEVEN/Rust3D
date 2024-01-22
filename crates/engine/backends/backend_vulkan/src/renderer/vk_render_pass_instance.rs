@@ -1,14 +1,14 @@
 use std::sync::{Arc, RwLock};
 
+use core::gfx::Gfx;
+use core::gfx::image::{GfxImage};
+use core::gfx::renderer::render_pass::{RenderPassInstance, RenderPass};
+use core::gfx::renderer::render_node::RenderNode;
+use core::gfx::surface::{Frame};
+use core::gfx::command_buffer::{GfxCommandBuffer};
+use core::gfx::gfx_resource::{GfxResource, GfxImageBuilder};
 use ash::vk;
 
-use gfx::command_buffer::GfxCommandBuffer;
-use gfx::Gfx;
-use gfx::gfx_resource::{GfxImageBuilder, GfxResource};
-use gfx::image::{GfxImage};
-use gfx::renderer::render_node::RenderNode;
-use gfx::renderer::render_pass::{RenderPass, RenderPassInstance};
-use gfx::surface::Frame;
 use maths::vec2::Vec2u32;
 use shader_base::pass_id::PassID;
 use shader_base::types::BackgroundColor;

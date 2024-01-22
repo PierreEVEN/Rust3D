@@ -1,9 +1,9 @@
 ﻿use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
-use gfx::renderer::render_node::RenderNode;
-use gfx::renderer::render_pass::{RenderPass};
 use shader_base::pass_id::PassID;
+use core::gfx::renderer::render_pass::RenderPass;
+use core::gfx::renderer::render_node::RenderNode;
 
 use crate::renderer::vk_render_pass::VkRenderPass;
 use crate::renderer::vk_render_pass_instance::VkRenderPassInstance;

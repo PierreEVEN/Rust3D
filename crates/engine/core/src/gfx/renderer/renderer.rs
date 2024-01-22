@@ -1,12 +1,12 @@
 ﻿use std::sync::{Arc, RwLock, Weak};
 
 use ecs::entity::GameObject;
-use gfx::renderer::frame_graph::FrameGraph;
-use gfx::renderer::render_node::RenderNode;
 use plateform::window::Window;
 use shader_base::types::{BackgroundColor};
 
 use crate::engine::Engine;
+use crate::gfx::renderer::frame_graph::FrameGraph;
+use crate::gfx::renderer::render_node::RenderNode;
 
 pub struct Renderer {
     frame_graphs: RwLock<Vec<FrameGraph>>,

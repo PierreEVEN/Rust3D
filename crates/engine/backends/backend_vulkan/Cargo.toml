@@ -4,10 +4,10 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-gfx = {path = "../../common/gfx"}
+core = {path = "../../core" }
 maths = {path = "../../maths"}
 macros = {path = "../../macros"}
 ash = "0.37.3+1.3.251"
-gpu-allocator =  { version= "0.23.0", default-features = false, features=["vulkan"]}
+gpu-allocator =  { version= "0.25.0", default-features = false, features=["vulkan"]}
 logger = { path = "../../logger"}
 shader_base = {path = "../../common/gfx_types" }

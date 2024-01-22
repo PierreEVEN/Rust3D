@@ -11,7 +11,6 @@ core = { path = "../engine/core" }
 third_party_io = { path = "../engine/third_party_io" }
 maths = { path = "../engine/maths" }
 macros = { path = "../engine/macros" }
-gfx = { path = "../engine/common/gfx" }
 resl = { path = "../engine/common/resl" }
 plateform = { path = "../engine/common/plateform" }
 imgui = { path = "../engine/imgui" }

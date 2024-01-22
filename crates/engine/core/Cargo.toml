@@ -4,14 +4,12 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-gfx = { path = "../common/gfx" }
 plateform = { path = "../common/plateform" }
-backend_launcher = { path = "../backends/backend_launcher" }
 gfx-maths = "0.2.8"
 logger = { path = "../logger" }
 lazy_static = "1.4.0"
 ecs = { path = "../ecs" }
 maths = { path = "../maths" }
-third_party_io = { path = "../third_party_io" }
 shader_base = { path = "../common/gfx_types" }
 log = "0.4.17"
+enumflags2 = "0.7.8"

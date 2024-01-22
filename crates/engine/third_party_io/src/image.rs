@@ -3,13 +3,11 @@ use std::os::raw::c_int;
 use std::path::Path;
 use std::sync::Arc;
 use std::{fs, slice};
+use core::gfx::Gfx;
+use core::gfx::image::{GfxImage, ImageCreateInfos, ImageParams, ImageUsage, GfxImageUsageFlags, ImageType};
 
-use gfx::Gfx;
 use stb_image_rust::{stbi_image_free, stbi_load_from_memory};
 
-use gfx::image::{
-    GfxImage, GfxImageUsageFlags, ImageCreateInfos, ImageParams, ImageType, ImageUsage,
-};
 use shader_base::types::{BackgroundColor, PixelFormat};
 
 #[derive(Copy, Clone)]

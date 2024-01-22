@@ -3,14 +3,14 @@ use std::ops::{Deref, DerefMut};
 use std::sync::{Arc, Condvar, Mutex, RwLock, Weak};
 use std::sync::atomic::{AtomicBool, Ordering};
 
-use gfx::GfxInterface;
-use gfx::surface::GfxSurface;
 use logger::{fatal, info};
 use plateform::Platform;
 use plateform::window::Window;
+use crate::base_assets::asset_manager::AssetManager;
+use crate::gfx::GfxInterface;
+use crate::gfx::renderer::renderer::Renderer;
+use crate::gfx::surface::GfxSurface;
 
-use crate::asset_manager::AssetManager;
-use crate::renderer::Renderer;
 use crate::resource::allocator::ResourceAllocator;
 use crate::world::World;
 
@@ -64,20 +64,9 @@ pub struct Builder {
 impl Default for Builder {
     fn default() -> Self {
         Self {
-            platform: Box::new(|| backend_launcher::backend::spawn_platform()),
-            gfx: Box::new(|| {
-                let mut gfx = backend_launcher::backend::spawn_gfx();
-                gfx.pre_init();
-                gfx.init();
-                gfx.set_physical_device(
-                    gfx.find_best_suitable_physical_device()
-                        .expect("there is no suitable GPU available"),
-                );
-                gfx
-            }),
-            surface: Box::new(|window| {
-                backend_launcher::backend::spawn_surface(window)
-            }),
+            platform: Box::new(|| { panic!("Platform has not been defined") }),
+            gfx: Box::new(|| { panic!("Gfx backend has not been defined") }),
+            surface: Box::new(|_| { panic!("Surface backend have not been defined") }),
             asset_manager: Box::new(AssetManager::default),
         }
     }
@@ -146,7 +135,7 @@ impl Engine {
             ENGINE_INSTANCE = engine as *const Engine as *mut Engine;
         }
     }
-    
+
     #[allow(clippy::new_ret_no_self)]
     pub fn new<GamemodeT: App + 'static>(app: GamemodeT) -> EngineRef {
         logger::init!();
@@ -300,7 +289,7 @@ impl Engine {
             }
         }
     }
-    
+
     pub fn delta_second(&self) -> f64 {
         self.game_delta.delta_seconds
     }

@@ -4,13 +4,12 @@ use ash::vk;
 use ash::vk::Handle;
 use gpu_allocator::vulkan;
 
-use gfx::buffer::{BufferAccess, BufferCreateInfo, BufferType, BufferUsage};
-use gfx::gfx_resource::{GfxImageBuilder, GfxResource};
-use gfx::image::{
-    GfxImage, GfxImageUsageFlags, ImageCreateInfos, ImageParams, ImageType, ImageUsage,
-};
-use gfx::surface::Frame;
-use gfx::Gfx;
+use core::gfx::Gfx;
+use core::gfx::image::{GfxImage, GfxImageUsageFlags, ImageParams, ImageType, ImageUsage, ImageCreateInfos};
+use core::gfx::surface::Frame;
+use core::gfx::buffer::{BufferCreateInfo, BufferType, BufferAccess, BufferUsage};
+use core::gfx::gfx_resource::{GfxResource, GfxImageBuilder};
+
 use shader_base::types::{BackgroundColor, PixelFormat};
 
 use crate::vk_buffer::VkBufferAccess;

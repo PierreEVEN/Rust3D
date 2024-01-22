@@ -2,11 +2,11 @@ use std::collections::HashMap;
 use std::path::Path;
 use std::sync::{Arc, RwLock};
 
-use gfx::shader::ShaderProgram;
 use shader_base::pass_id::PassID;
-use crate::asset::{AssetFactory, AssetMetaData, GameAsset};
-use crate::asset_type_id::AssetTypeID;
+use crate::base_assets::asset::{AssetFactory, AssetMetaData, GameAsset};
+use crate::base_assets::asset_type_id::AssetTypeID;
 use crate::base_assets::material_instance_asset::MaterialInstanceAsset;
+use crate::gfx::shader::ShaderProgram;
 
 pub struct ShaderPermutation {
     pub shader: Arc<dyn ShaderProgram>,

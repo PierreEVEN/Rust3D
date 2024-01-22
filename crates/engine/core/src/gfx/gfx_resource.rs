@@ -2,8 +2,8 @@ use std::collections::HashMap;
 use std::default::Default;
 use std::ops::Deref;
 use std::sync::RwLock;
+use crate::gfx::surface::Frame;
 
-use crate::surface::Frame;
 
 pub trait GfxImageBuilder<T: Clone> {
     fn build(&self, swapchain_ref: &Frame) -> T;

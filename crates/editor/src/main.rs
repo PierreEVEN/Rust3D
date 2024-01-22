@@ -1,6 +1,5 @@
 use std::path::PathBuf;
-use std::sync::{Arc, RwLock};
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc};
 use core::engine::{App, Builder, Camera, Engine};
 use core::world::World;
 use ecs::entity::GameObject;
@@ -8,7 +7,6 @@ use ecs::query::Query;
 use gfx::Gfx;
 use gfx::image_sampler::{SamplerCreateInfos};
 use gfx::material::Material;
-use job_system::JobSystem;
 use maths::vec4::Vec4F32;
 use plateform::window::{PlatformEvent, WindowCreateInfos};
 use renderers::DeferredRenderer;

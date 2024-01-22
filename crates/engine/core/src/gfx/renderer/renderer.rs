@@ -26,8 +26,8 @@ impl Renderer {
 
     pub fn new_frame(&self) {
         if let Ok(camera) = self.camera.read() {
-            for _frame_graph in &*self.frame_graphs.read().unwrap() {
-                _frame_graph.execute(&camera);
+            for frame_graph in &*self.frame_graphs.read().unwrap() {
+                frame_graph.execute(&camera);
             }
         }
     }

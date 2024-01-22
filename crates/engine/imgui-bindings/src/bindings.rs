@@ -142,10 +142,9 @@ pub const WCHAR_MIN: u32 = 0;
 pub const WCHAR_MAX: u32 = 65535;
 pub const WINT_MIN: u32 = 0;
 pub const WINT_MAX: u32 = 65535;
-pub const __GNUC_VA_LIST: u32 = 1;
+pub const __bool_true_false_are_defined: u32 = 1;
 pub const true_: u32 = 1;
 pub const false_: u32 = 0;
-pub const __bool_true_false_are_defined: u32 = 1;
 pub const IMGUI_HAS_DOCK: u32 = 1;
 pub type va_list = *mut ::std::os::raw::c_char;
 extern "C" {
@@ -1065,6 +1064,11 @@ pub struct ImGuiDockNodeSettings {
 }
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
+pub struct ImGuiInputTextDeactivateData {
+    _unused: [u8; 0],
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
 pub struct ImGuiTableColumnsSettings {
     _unused: [u8; 0],
 }
@@ -1315,7 +1319,7 @@ pub type ImGuiInputTextFlags_ = ::std::os::raw::c_int;
 pub const ImGuiTreeNodeFlags__ImGuiTreeNodeFlags_None: ImGuiTreeNodeFlags_ = 0;
 pub const ImGuiTreeNodeFlags__ImGuiTreeNodeFlags_Selected: ImGuiTreeNodeFlags_ = 1;
 pub const ImGuiTreeNodeFlags__ImGuiTreeNodeFlags_Framed: ImGuiTreeNodeFlags_ = 2;
-pub const ImGuiTreeNodeFlags__ImGuiTreeNodeFlags_AllowItemOverlap: ImGuiTreeNodeFlags_ = 4;
+pub const ImGuiTreeNodeFlags__ImGuiTreeNodeFlags_AllowOverlap: ImGuiTreeNodeFlags_ = 4;
 pub const ImGuiTreeNodeFlags__ImGuiTreeNodeFlags_NoTreePushOnOpen: ImGuiTreeNodeFlags_ = 8;
 pub const ImGuiTreeNodeFlags__ImGuiTreeNodeFlags_NoAutoOpenOnLog: ImGuiTreeNodeFlags_ = 16;
 pub const ImGuiTreeNodeFlags__ImGuiTreeNodeFlags_DefaultOpen: ImGuiTreeNodeFlags_ = 32;
@@ -1346,7 +1350,7 @@ pub const ImGuiSelectableFlags__ImGuiSelectableFlags_DontClosePopups: ImGuiSelec
 pub const ImGuiSelectableFlags__ImGuiSelectableFlags_SpanAllColumns: ImGuiSelectableFlags_ = 2;
 pub const ImGuiSelectableFlags__ImGuiSelectableFlags_AllowDoubleClick: ImGuiSelectableFlags_ = 4;
 pub const ImGuiSelectableFlags__ImGuiSelectableFlags_Disabled: ImGuiSelectableFlags_ = 8;
-pub const ImGuiSelectableFlags__ImGuiSelectableFlags_AllowItemOverlap: ImGuiSelectableFlags_ = 16;
+pub const ImGuiSelectableFlags__ImGuiSelectableFlags_AllowOverlap: ImGuiSelectableFlags_ = 16;
 pub type ImGuiSelectableFlags_ = ::std::os::raw::c_int;
 pub const ImGuiComboFlags__ImGuiComboFlags_None: ImGuiComboFlags_ = 0;
 pub const ImGuiComboFlags__ImGuiComboFlags_PopupAlignLeft: ImGuiComboFlags_ = 1;
@@ -1478,14 +1482,20 @@ pub const ImGuiHoveredFlags__ImGuiHoveredFlags_DockHierarchy: ImGuiHoveredFlags_
 pub const ImGuiHoveredFlags__ImGuiHoveredFlags_AllowWhenBlockedByPopup: ImGuiHoveredFlags_ = 32;
 pub const ImGuiHoveredFlags__ImGuiHoveredFlags_AllowWhenBlockedByActiveItem: ImGuiHoveredFlags_ =
     128;
-pub const ImGuiHoveredFlags__ImGuiHoveredFlags_AllowWhenOverlapped: ImGuiHoveredFlags_ = 256;
-pub const ImGuiHoveredFlags__ImGuiHoveredFlags_AllowWhenDisabled: ImGuiHoveredFlags_ = 512;
-pub const ImGuiHoveredFlags__ImGuiHoveredFlags_NoNavOverride: ImGuiHoveredFlags_ = 1024;
-pub const ImGuiHoveredFlags__ImGuiHoveredFlags_RectOnly: ImGuiHoveredFlags_ = 416;
+pub const ImGuiHoveredFlags__ImGuiHoveredFlags_AllowWhenOverlappedByItem: ImGuiHoveredFlags_ = 256;
+pub const ImGuiHoveredFlags__ImGuiHoveredFlags_AllowWhenOverlappedByWindow: ImGuiHoveredFlags_ =
+    512;
+pub const ImGuiHoveredFlags__ImGuiHoveredFlags_AllowWhenDisabled: ImGuiHoveredFlags_ = 1024;
+pub const ImGuiHoveredFlags__ImGuiHoveredFlags_NoNavOverride: ImGuiHoveredFlags_ = 2048;
+pub const ImGuiHoveredFlags__ImGuiHoveredFlags_AllowWhenOverlapped: ImGuiHoveredFlags_ = 768;
+pub const ImGuiHoveredFlags__ImGuiHoveredFlags_RectOnly: ImGuiHoveredFlags_ = 928;
 pub const ImGuiHoveredFlags__ImGuiHoveredFlags_RootAndChildWindows: ImGuiHoveredFlags_ = 3;
-pub const ImGuiHoveredFlags__ImGuiHoveredFlags_DelayNormal: ImGuiHoveredFlags_ = 2048;
-pub const ImGuiHoveredFlags__ImGuiHoveredFlags_DelayShort: ImGuiHoveredFlags_ = 4096;
-pub const ImGuiHoveredFlags__ImGuiHoveredFlags_NoSharedDelay: ImGuiHoveredFlags_ = 8192;
+pub const ImGuiHoveredFlags__ImGuiHoveredFlags_ForTooltip: ImGuiHoveredFlags_ = 4096;
+pub const ImGuiHoveredFlags__ImGuiHoveredFlags_Stationary: ImGuiHoveredFlags_ = 8192;
+pub const ImGuiHoveredFlags__ImGuiHoveredFlags_DelayNone: ImGuiHoveredFlags_ = 16384;
+pub const ImGuiHoveredFlags__ImGuiHoveredFlags_DelayShort: ImGuiHoveredFlags_ = 32768;
+pub const ImGuiHoveredFlags__ImGuiHoveredFlags_DelayNormal: ImGuiHoveredFlags_ = 65536;
+pub const ImGuiHoveredFlags__ImGuiHoveredFlags_NoSharedDelay: ImGuiHoveredFlags_ = 131072;
 pub type ImGuiHoveredFlags_ = ::std::os::raw::c_int;
 pub const ImGuiDockNodeFlags__ImGuiDockNodeFlags_None: ImGuiDockNodeFlags_ = 0;
 pub const ImGuiDockNodeFlags__ImGuiDockNodeFlags_KeepAliveOnly: ImGuiDockNodeFlags_ = 1;
@@ -1812,7 +1822,8 @@ pub const ImGuiStyleVar__ImGuiStyleVar_SelectableTextAlign: ImGuiStyleVar_ = 24;
 pub const ImGuiStyleVar__ImGuiStyleVar_SeparatorTextBorderSize: ImGuiStyleVar_ = 25;
 pub const ImGuiStyleVar__ImGuiStyleVar_SeparatorTextAlign: ImGuiStyleVar_ = 26;
 pub const ImGuiStyleVar__ImGuiStyleVar_SeparatorTextPadding: ImGuiStyleVar_ = 27;
-pub const ImGuiStyleVar__ImGuiStyleVar_COUNT: ImGuiStyleVar_ = 28;
+pub const ImGuiStyleVar__ImGuiStyleVar_DockingSeparatorSize: ImGuiStyleVar_ = 28;
+pub const ImGuiStyleVar__ImGuiStyleVar_COUNT: ImGuiStyleVar_ = 29;
 pub type ImGuiStyleVar_ = ::std::os::raw::c_int;
 pub const ImGuiButtonFlags__ImGuiButtonFlags_None: ImGuiButtonFlags_ = 0;
 pub const ImGuiButtonFlags__ImGuiButtonFlags_MouseButtonLeft: ImGuiButtonFlags_ = 1;
@@ -1876,6 +1887,11 @@ pub const ImGuiMouseCursor__ImGuiMouseCursor_Hand: ImGuiMouseCursor_ = 7;
 pub const ImGuiMouseCursor__ImGuiMouseCursor_NotAllowed: ImGuiMouseCursor_ = 8;
 pub const ImGuiMouseCursor__ImGuiMouseCursor_COUNT: ImGuiMouseCursor_ = 9;
 pub type ImGuiMouseCursor_ = ::std::os::raw::c_int;
+pub const ImGuiMouseSource_ImGuiMouseSource_Mouse: ImGuiMouseSource = 0;
+pub const ImGuiMouseSource_ImGuiMouseSource_TouchScreen: ImGuiMouseSource = 1;
+pub const ImGuiMouseSource_ImGuiMouseSource_Pen: ImGuiMouseSource = 2;
+pub const ImGuiMouseSource_ImGuiMouseSource_COUNT: ImGuiMouseSource = 3;
+pub type ImGuiMouseSource = ::std::os::raw::c_int;
 pub const ImGuiCond__ImGuiCond_None: ImGuiCond_ = 0;
 pub const ImGuiCond__ImGuiCond_Always: ImGuiCond_ = 1;
 pub const ImGuiCond__ImGuiCond_Once: ImGuiCond_ = 2;
@@ -1922,6 +1938,7 @@ pub struct ImGuiStyle {
     pub SeparatorTextPadding: ImVec2,
     pub DisplayWindowPadding: ImVec2,
     pub DisplaySafeAreaPadding: ImVec2,
+    pub DockingSeparatorSize: f32,
     pub MouseCursorScale: f32,
     pub AntiAliasedLines: bool,
     pub AntiAliasedLinesUseTex: bool,
@@ -1929,6 +1946,11 @@ pub struct ImGuiStyle {
     pub CurveTessellationTol: f32,
     pub CircleTessellationMaxError: f32,
     pub Colors: [ImVec4; 55usize],
+    pub HoverStationaryDelay: f32,
+    pub HoverDelayShort: f32,
+    pub HoverDelayNormal: f32,
+    pub HoverFlagsForTooltipMouse: ImGuiHoveredFlags,
+    pub HoverFlagsForTooltipNav: ImGuiHoveredFlags,
 }
 #[test]
 fn bindgen_test_layout_ImGuiStyle() {
@@ -1936,7 +1958,7 @@ fn bindgen_test_layout_ImGuiStyle() {
     let ptr = UNINIT.as_ptr();
     assert_eq!(
         ::std::mem::size_of::<ImGuiStyle>(),
-        1100usize,
+        1124usize,
         concat!("Size of: ", stringify!(ImGuiStyle))
     );
     assert_eq!(
@@ -2315,8 +2337,18 @@ fn bindgen_test_layout_ImGuiStyle() {
         )
     );
     assert_eq!(
-        unsafe { ::std::ptr::addr_of!((*ptr).MouseCursorScale) as usize - ptr as usize },
+        unsafe { ::std::ptr::addr_of!((*ptr).DockingSeparatorSize) as usize - ptr as usize },
         204usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ImGuiStyle),
+            "::",
+            stringify!(DockingSeparatorSize)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).MouseCursorScale) as usize - ptr as usize },
+        208usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiStyle),
@@ -2326,7 +2358,7 @@ fn bindgen_test_layout_ImGuiStyle() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).AntiAliasedLines) as usize - ptr as usize },
-        208usize,
+        212usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiStyle),
@@ -2336,7 +2368,7 @@ fn bindgen_test_layout_ImGuiStyle() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).AntiAliasedLinesUseTex) as usize - ptr as usize },
-        209usize,
+        213usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiStyle),
@@ -2346,7 +2378,7 @@ fn bindgen_test_layout_ImGuiStyle() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).AntiAliasedFill) as usize - ptr as usize },
-        210usize,
+        214usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiStyle),
@@ -2356,7 +2388,7 @@ fn bindgen_test_layout_ImGuiStyle() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).CurveTessellationTol) as usize - ptr as usize },
-        212usize,
+        216usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiStyle),
@@ -2366,7 +2398,7 @@ fn bindgen_test_layout_ImGuiStyle() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).CircleTessellationMaxError) as usize - ptr as usize },
-        216usize,
+        220usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiStyle),
@@ -2376,12 +2408,62 @@ fn bindgen_test_layout_ImGuiStyle() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).Colors) as usize - ptr as usize },
-        220usize,
+        224usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiStyle),
             "::",
             stringify!(Colors)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).HoverStationaryDelay) as usize - ptr as usize },
+        1104usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ImGuiStyle),
+            "::",
+            stringify!(HoverStationaryDelay)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).HoverDelayShort) as usize - ptr as usize },
+        1108usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ImGuiStyle),
+            "::",
+            stringify!(HoverDelayShort)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).HoverDelayNormal) as usize - ptr as usize },
+        1112usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ImGuiStyle),
+            "::",
+            stringify!(HoverDelayNormal)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).HoverFlagsForTooltipMouse) as usize - ptr as usize },
+        1116usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ImGuiStyle),
+            "::",
+            stringify!(HoverFlagsForTooltipMouse)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).HoverFlagsForTooltipNav) as usize - ptr as usize },
+        1120usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ImGuiStyle),
+            "::",
+            stringify!(HoverFlagsForTooltipNav)
         )
     );
 }
@@ -2510,13 +2592,6 @@ pub struct ImGuiIO {
     pub IniSavingRate: f32,
     pub IniFilename: *const ::std::os::raw::c_char,
     pub LogFilename: *const ::std::os::raw::c_char,
-    pub MouseDoubleClickTime: f32,
-    pub MouseDoubleClickMaxDist: f32,
-    pub MouseDragThreshold: f32,
-    pub KeyRepeatDelay: f32,
-    pub KeyRepeatRate: f32,
-    pub HoverDelayNormal: f32,
-    pub HoverDelayShort: f32,
     pub UserData: *mut ::std::os::raw::c_void,
     pub Fonts: *mut ImFontAtlas,
     pub FontGlobalScale: f32,
@@ -2540,8 +2615,15 @@ pub struct ImGuiIO {
     pub ConfigWindowsResizeFromEdges: bool,
     pub ConfigWindowsMoveFromTitleBarOnly: bool,
     pub ConfigMemoryCompactTimer: f32,
+    pub MouseDoubleClickTime: f32,
+    pub MouseDoubleClickMaxDist: f32,
+    pub MouseDragThreshold: f32,
+    pub KeyRepeatDelay: f32,
+    pub KeyRepeatRate: f32,
     pub ConfigDebugBeginReturnValueOnce: bool,
     pub ConfigDebugBeginReturnValueLoop: bool,
+    pub ConfigDebugIgnoreFocusLoss: bool,
+    pub ConfigDebugIniSettings: bool,
     pub BackendPlatformName: *const ::std::os::raw::c_char,
     pub BackendRendererName: *const ::std::os::raw::c_char,
     pub BackendPlatformUserData: *mut ::std::os::raw::c_void,
@@ -2563,6 +2645,7 @@ pub struct ImGuiIO {
         unsafe extern "C" fn(viewport: *mut ImGuiViewport, data: *mut ImGuiPlatformImeData),
     >,
     pub _UnusedPadding: *mut ::std::os::raw::c_void,
+    pub PlatformLocaleDecimalPoint: ImWchar,
     pub WantCaptureMouse: bool,
     pub WantCaptureKeyboard: bool,
     pub WantTextInput: bool,
@@ -2585,6 +2668,7 @@ pub struct ImGuiIO {
     pub MouseDown: [bool; 5usize],
     pub MouseWheel: f32,
     pub MouseWheelH: f32,
+    pub MouseSource: ImGuiMouseSource,
     pub MouseHoveredViewport: ImGuiID,
     pub KeyCtrl: bool,
     pub KeyShift: bool,
@@ -2603,6 +2687,7 @@ pub struct ImGuiIO {
     pub MouseReleased: [bool; 5usize],
     pub MouseDownOwned: [bool; 5usize],
     pub MouseDownOwnedUnlessPopupClose: [bool; 5usize],
+    pub MouseWheelRequestAxisSwap: bool,
     pub MouseDownDuration: [f32; 5usize],
     pub MouseDownDurationPrev: [f32; 5usize],
     pub MouseDragMaxDistanceAbs: [ImVec2; 5usize],
@@ -2700,78 +2785,8 @@ fn bindgen_test_layout_ImGuiIO() {
         )
     );
     assert_eq!(
-        unsafe { ::std::ptr::addr_of!((*ptr).MouseDoubleClickTime) as usize - ptr as usize },
-        40usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(ImGuiIO),
-            "::",
-            stringify!(MouseDoubleClickTime)
-        )
-    );
-    assert_eq!(
-        unsafe { ::std::ptr::addr_of!((*ptr).MouseDoubleClickMaxDist) as usize - ptr as usize },
-        44usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(ImGuiIO),
-            "::",
-            stringify!(MouseDoubleClickMaxDist)
-        )
-    );
-    assert_eq!(
-        unsafe { ::std::ptr::addr_of!((*ptr).MouseDragThreshold) as usize - ptr as usize },
-        48usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(ImGuiIO),
-            "::",
-            stringify!(MouseDragThreshold)
-        )
-    );
-    assert_eq!(
-        unsafe { ::std::ptr::addr_of!((*ptr).KeyRepeatDelay) as usize - ptr as usize },
-        52usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(ImGuiIO),
-            "::",
-            stringify!(KeyRepeatDelay)
-        )
-    );
-    assert_eq!(
-        unsafe { ::std::ptr::addr_of!((*ptr).KeyRepeatRate) as usize - ptr as usize },
-        56usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(ImGuiIO),
-            "::",
-            stringify!(KeyRepeatRate)
-        )
-    );
-    assert_eq!(
-        unsafe { ::std::ptr::addr_of!((*ptr).HoverDelayNormal) as usize - ptr as usize },
-        60usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(ImGuiIO),
-            "::",
-            stringify!(HoverDelayNormal)
-        )
-    );
-    assert_eq!(
-        unsafe { ::std::ptr::addr_of!((*ptr).HoverDelayShort) as usize - ptr as usize },
-        64usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(ImGuiIO),
-            "::",
-            stringify!(HoverDelayShort)
-        )
-    );
-    assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).UserData) as usize - ptr as usize },
-        72usize,
+        40usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiIO),
@@ -2781,7 +2796,7 @@ fn bindgen_test_layout_ImGuiIO() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).Fonts) as usize - ptr as usize },
-        80usize,
+        48usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiIO),
@@ -2791,7 +2806,7 @@ fn bindgen_test_layout_ImGuiIO() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).FontGlobalScale) as usize - ptr as usize },
-        88usize,
+        56usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiIO),
@@ -2801,7 +2816,7 @@ fn bindgen_test_layout_ImGuiIO() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).FontAllowUserScaling) as usize - ptr as usize },
-        92usize,
+        60usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiIO),
@@ -2811,7 +2826,7 @@ fn bindgen_test_layout_ImGuiIO() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).FontDefault) as usize - ptr as usize },
-        96usize,
+        64usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiIO),
@@ -2821,7 +2836,7 @@ fn bindgen_test_layout_ImGuiIO() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).DisplayFramebufferScale) as usize - ptr as usize },
-        104usize,
+        72usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiIO),
@@ -2831,7 +2846,7 @@ fn bindgen_test_layout_ImGuiIO() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).ConfigDockingNoSplit) as usize - ptr as usize },
-        112usize,
+        80usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiIO),
@@ -2841,7 +2856,7 @@ fn bindgen_test_layout_ImGuiIO() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).ConfigDockingWithShift) as usize - ptr as usize },
-        113usize,
+        81usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiIO),
@@ -2851,7 +2866,7 @@ fn bindgen_test_layout_ImGuiIO() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).ConfigDockingAlwaysTabBar) as usize - ptr as usize },
-        114usize,
+        82usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiIO),
@@ -2863,7 +2878,7 @@ fn bindgen_test_layout_ImGuiIO() {
         unsafe {
             ::std::ptr::addr_of!((*ptr).ConfigDockingTransparentPayload) as usize - ptr as usize
         },
-        115usize,
+        83usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiIO),
@@ -2873,7 +2888,7 @@ fn bindgen_test_layout_ImGuiIO() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).ConfigViewportsNoAutoMerge) as usize - ptr as usize },
-        116usize,
+        84usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiIO),
@@ -2885,7 +2900,7 @@ fn bindgen_test_layout_ImGuiIO() {
         unsafe {
             ::std::ptr::addr_of!((*ptr).ConfigViewportsNoTaskBarIcon) as usize - ptr as usize
         },
-        117usize,
+        85usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiIO),
@@ -2895,7 +2910,7 @@ fn bindgen_test_layout_ImGuiIO() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).ConfigViewportsNoDecoration) as usize - ptr as usize },
-        118usize,
+        86usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiIO),
@@ -2907,7 +2922,7 @@ fn bindgen_test_layout_ImGuiIO() {
         unsafe {
             ::std::ptr::addr_of!((*ptr).ConfigViewportsNoDefaultParent) as usize - ptr as usize
         },
-        119usize,
+        87usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiIO),
@@ -2917,7 +2932,7 @@ fn bindgen_test_layout_ImGuiIO() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).MouseDrawCursor) as usize - ptr as usize },
-        120usize,
+        88usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiIO),
@@ -2927,7 +2942,7 @@ fn bindgen_test_layout_ImGuiIO() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).ConfigMacOSXBehaviors) as usize - ptr as usize },
-        121usize,
+        89usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiIO),
@@ -2939,7 +2954,7 @@ fn bindgen_test_layout_ImGuiIO() {
         unsafe {
             ::std::ptr::addr_of!((*ptr).ConfigInputTrickleEventQueue) as usize - ptr as usize
         },
-        122usize,
+        90usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiIO),
@@ -2949,7 +2964,7 @@ fn bindgen_test_layout_ImGuiIO() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).ConfigInputTextCursorBlink) as usize - ptr as usize },
-        123usize,
+        91usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiIO),
@@ -2961,7 +2976,7 @@ fn bindgen_test_layout_ImGuiIO() {
         unsafe {
             ::std::ptr::addr_of!((*ptr).ConfigInputTextEnterKeepActive) as usize - ptr as usize
         },
-        124usize,
+        92usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiIO),
@@ -2971,7 +2986,7 @@ fn bindgen_test_layout_ImGuiIO() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).ConfigDragClickToInputText) as usize - ptr as usize },
-        125usize,
+        93usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiIO),
@@ -2983,7 +2998,7 @@ fn bindgen_test_layout_ImGuiIO() {
         unsafe {
             ::std::ptr::addr_of!((*ptr).ConfigWindowsResizeFromEdges) as usize - ptr as usize
         },
-        126usize,
+        94usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiIO),
@@ -2995,7 +3010,7 @@ fn bindgen_test_layout_ImGuiIO() {
         unsafe {
             ::std::ptr::addr_of!((*ptr).ConfigWindowsMoveFromTitleBarOnly) as usize - ptr as usize
         },
-        127usize,
+        95usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiIO),
@@ -3005,7 +3020,7 @@ fn bindgen_test_layout_ImGuiIO() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).ConfigMemoryCompactTimer) as usize - ptr as usize },
-        128usize,
+        96usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiIO),
@@ -3014,10 +3029,60 @@ fn bindgen_test_layout_ImGuiIO() {
         )
     );
     assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).MouseDoubleClickTime) as usize - ptr as usize },
+        100usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ImGuiIO),
+            "::",
+            stringify!(MouseDoubleClickTime)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).MouseDoubleClickMaxDist) as usize - ptr as usize },
+        104usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ImGuiIO),
+            "::",
+            stringify!(MouseDoubleClickMaxDist)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).MouseDragThreshold) as usize - ptr as usize },
+        108usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ImGuiIO),
+            "::",
+            stringify!(MouseDragThreshold)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).KeyRepeatDelay) as usize - ptr as usize },
+        112usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ImGuiIO),
+            "::",
+            stringify!(KeyRepeatDelay)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).KeyRepeatRate) as usize - ptr as usize },
+        116usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ImGuiIO),
+            "::",
+            stringify!(KeyRepeatRate)
+        )
+    );
+    assert_eq!(
         unsafe {
             ::std::ptr::addr_of!((*ptr).ConfigDebugBeginReturnValueOnce) as usize - ptr as usize
         },
-        132usize,
+        120usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiIO),
@@ -3029,7 +3094,7 @@ fn bindgen_test_layout_ImGuiIO() {
         unsafe {
             ::std::ptr::addr_of!((*ptr).ConfigDebugBeginReturnValueLoop) as usize - ptr as usize
         },
-        133usize,
+        121usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiIO),
@@ -3038,8 +3103,28 @@ fn bindgen_test_layout_ImGuiIO() {
         )
     );
     assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).ConfigDebugIgnoreFocusLoss) as usize - ptr as usize },
+        122usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ImGuiIO),
+            "::",
+            stringify!(ConfigDebugIgnoreFocusLoss)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).ConfigDebugIniSettings) as usize - ptr as usize },
+        123usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ImGuiIO),
+            "::",
+            stringify!(ConfigDebugIniSettings)
+        )
+    );
+    assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).BackendPlatformName) as usize - ptr as usize },
-        136usize,
+        128usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiIO),
@@ -3049,7 +3134,7 @@ fn bindgen_test_layout_ImGuiIO() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).BackendRendererName) as usize - ptr as usize },
-        144usize,
+        136usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiIO),
@@ -3059,7 +3144,7 @@ fn bindgen_test_layout_ImGuiIO() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).BackendPlatformUserData) as usize - ptr as usize },
-        152usize,
+        144usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiIO),
@@ -3069,7 +3154,7 @@ fn bindgen_test_layout_ImGuiIO() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).BackendRendererUserData) as usize - ptr as usize },
-        160usize,
+        152usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiIO),
@@ -3079,7 +3164,7 @@ fn bindgen_test_layout_ImGuiIO() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).BackendLanguageUserData) as usize - ptr as usize },
-        168usize,
+        160usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiIO),
@@ -3089,7 +3174,7 @@ fn bindgen_test_layout_ImGuiIO() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).GetClipboardTextFn) as usize - ptr as usize },
-        176usize,
+        168usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiIO),
@@ -3099,7 +3184,7 @@ fn bindgen_test_layout_ImGuiIO() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).SetClipboardTextFn) as usize - ptr as usize },
-        184usize,
+        176usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiIO),
@@ -3109,7 +3194,7 @@ fn bindgen_test_layout_ImGuiIO() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).ClipboardUserData) as usize - ptr as usize },
-        192usize,
+        184usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiIO),
@@ -3119,7 +3204,7 @@ fn bindgen_test_layout_ImGuiIO() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).SetPlatformImeDataFn) as usize - ptr as usize },
-        200usize,
+        192usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiIO),
@@ -3129,7 +3214,7 @@ fn bindgen_test_layout_ImGuiIO() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr)._UnusedPadding) as usize - ptr as usize },
-        208usize,
+        200usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiIO),
@@ -3138,8 +3223,18 @@ fn bindgen_test_layout_ImGuiIO() {
         )
     );
     assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).PlatformLocaleDecimalPoint) as usize - ptr as usize },
+        208usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ImGuiIO),
+            "::",
+            stringify!(PlatformLocaleDecimalPoint)
+        )
+    );
+    assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).WantCaptureMouse) as usize - ptr as usize },
-        216usize,
+        210usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiIO),
@@ -3149,7 +3244,7 @@ fn bindgen_test_layout_ImGuiIO() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).WantCaptureKeyboard) as usize - ptr as usize },
-        217usize,
+        211usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiIO),
@@ -3159,7 +3254,7 @@ fn bindgen_test_layout_ImGuiIO() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).WantTextInput) as usize - ptr as usize },
-        218usize,
+        212usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiIO),
@@ -3169,7 +3264,7 @@ fn bindgen_test_layout_ImGuiIO() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).WantSetMousePos) as usize - ptr as usize },
-        219usize,
+        213usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiIO),
@@ -3179,7 +3274,7 @@ fn bindgen_test_layout_ImGuiIO() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).WantSaveIniSettings) as usize - ptr as usize },
-        220usize,
+        214usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiIO),
@@ -3189,7 +3284,7 @@ fn bindgen_test_layout_ImGuiIO() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).NavActive) as usize - ptr as usize },
-        221usize,
+        215usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiIO),
@@ -3199,7 +3294,7 @@ fn bindgen_test_layout_ImGuiIO() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).NavVisible) as usize - ptr as usize },
-        222usize,
+        216usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiIO),
@@ -3209,7 +3304,7 @@ fn bindgen_test_layout_ImGuiIO() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).Framerate) as usize - ptr as usize },
-        224usize,
+        220usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiIO),
@@ -3219,7 +3314,7 @@ fn bindgen_test_layout_ImGuiIO() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).MetricsRenderVertices) as usize - ptr as usize },
-        228usize,
+        224usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiIO),
@@ -3229,7 +3324,7 @@ fn bindgen_test_layout_ImGuiIO() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).MetricsRenderIndices) as usize - ptr as usize },
-        232usize,
+        228usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiIO),
@@ -3239,7 +3334,7 @@ fn bindgen_test_layout_ImGuiIO() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).MetricsRenderWindows) as usize - ptr as usize },
-        236usize,
+        232usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiIO),
@@ -3249,7 +3344,7 @@ fn bindgen_test_layout_ImGuiIO() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).MetricsActiveWindows) as usize - ptr as usize },
-        240usize,
+        236usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiIO),
@@ -3259,7 +3354,7 @@ fn bindgen_test_layout_ImGuiIO() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).MetricsActiveAllocations) as usize - ptr as usize },
-        244usize,
+        240usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiIO),
@@ -3269,7 +3364,7 @@ fn bindgen_test_layout_ImGuiIO() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).MouseDelta) as usize - ptr as usize },
-        248usize,
+        244usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiIO),
@@ -3279,7 +3374,7 @@ fn bindgen_test_layout_ImGuiIO() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).KeyMap) as usize - ptr as usize },
-        256usize,
+        252usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiIO),
@@ -3289,7 +3384,7 @@ fn bindgen_test_layout_ImGuiIO() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).KeysDown) as usize - ptr as usize },
-        2864usize,
+        2860usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiIO),
@@ -3299,7 +3394,7 @@ fn bindgen_test_layout_ImGuiIO() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).NavInputs) as usize - ptr as usize },
-        3516usize,
+        3512usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiIO),
@@ -3309,7 +3404,7 @@ fn bindgen_test_layout_ImGuiIO() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).Ctx) as usize - ptr as usize },
-        3584usize,
+        3576usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiIO),
@@ -3319,7 +3414,7 @@ fn bindgen_test_layout_ImGuiIO() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).MousePos) as usize - ptr as usize },
-        3592usize,
+        3584usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiIO),
@@ -3329,7 +3424,7 @@ fn bindgen_test_layout_ImGuiIO() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).MouseDown) as usize - ptr as usize },
-        3600usize,
+        3592usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiIO),
@@ -3339,7 +3434,7 @@ fn bindgen_test_layout_ImGuiIO() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).MouseWheel) as usize - ptr as usize },
-        3608usize,
+        3600usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiIO),
@@ -3349,7 +3444,7 @@ fn bindgen_test_layout_ImGuiIO() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).MouseWheelH) as usize - ptr as usize },
-        3612usize,
+        3604usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiIO),
@@ -3358,8 +3453,18 @@ fn bindgen_test_layout_ImGuiIO() {
         )
     );
     assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).MouseSource) as usize - ptr as usize },
+        3608usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ImGuiIO),
+            "::",
+            stringify!(MouseSource)
+        )
+    );
+    assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).MouseHoveredViewport) as usize - ptr as usize },
-        3616usize,
+        3612usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiIO),
@@ -3369,7 +3474,7 @@ fn bindgen_test_layout_ImGuiIO() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).KeyCtrl) as usize - ptr as usize },
-        3620usize,
+        3616usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiIO),
@@ -3379,7 +3484,7 @@ fn bindgen_test_layout_ImGuiIO() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).KeyShift) as usize - ptr as usize },
-        3621usize,
+        3617usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiIO),
@@ -3389,7 +3494,7 @@ fn bindgen_test_layout_ImGuiIO() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).KeyAlt) as usize - ptr as usize },
-        3622usize,
+        3618usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiIO),
@@ -3399,7 +3504,7 @@ fn bindgen_test_layout_ImGuiIO() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).KeySuper) as usize - ptr as usize },
-        3623usize,
+        3619usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiIO),
@@ -3409,7 +3514,7 @@ fn bindgen_test_layout_ImGuiIO() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).KeyMods) as usize - ptr as usize },
-        3624usize,
+        3620usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiIO),
@@ -3419,7 +3524,7 @@ fn bindgen_test_layout_ImGuiIO() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).KeysData) as usize - ptr as usize },
-        3628usize,
+        3624usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiIO),
@@ -3431,7 +3536,7 @@ fn bindgen_test_layout_ImGuiIO() {
         unsafe {
             ::std::ptr::addr_of!((*ptr).WantCaptureMouseUnlessPopupClose) as usize - ptr as usize
         },
-        14060usize,
+        14056usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiIO),
@@ -3441,7 +3546,7 @@ fn bindgen_test_layout_ImGuiIO() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).MousePosPrev) as usize - ptr as usize },
-        14064usize,
+        14060usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiIO),
@@ -3451,7 +3556,7 @@ fn bindgen_test_layout_ImGuiIO() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).MouseClickedPos) as usize - ptr as usize },
-        14072usize,
+        14068usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiIO),
@@ -3539,6 +3644,16 @@ fn bindgen_test_layout_ImGuiIO() {
             stringify!(ImGuiIO),
             "::",
             stringify!(MouseDownOwnedUnlessPopupClose)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).MouseWheelRequestAxisSwap) as usize - ptr as usize },
+        14197usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ImGuiIO),
+            "::",
+            stringify!(MouseWheelRequestAxisSwap)
         )
     );
     assert_eq!(
@@ -5646,12 +5761,65 @@ fn bindgen_test_layout_ImDrawList() {
 }
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
+pub struct ImVector_ImDrawListPtr {
+    pub Size: ::std::os::raw::c_int,
+    pub Capacity: ::std::os::raw::c_int,
+    pub Data: *mut *mut ImDrawList,
+}
+#[test]
+fn bindgen_test_layout_ImVector_ImDrawListPtr() {
+    const UNINIT: ::std::mem::MaybeUninit<ImVector_ImDrawListPtr> =
+        ::std::mem::MaybeUninit::uninit();
+    let ptr = UNINIT.as_ptr();
+    assert_eq!(
+        ::std::mem::size_of::<ImVector_ImDrawListPtr>(),
+        16usize,
+        concat!("Size of: ", stringify!(ImVector_ImDrawListPtr))
+    );
+    assert_eq!(
+        ::std::mem::align_of::<ImVector_ImDrawListPtr>(),
+        8usize,
+        concat!("Alignment of ", stringify!(ImVector_ImDrawListPtr))
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).Size) as usize - ptr as usize },
+        0usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ImVector_ImDrawListPtr),
+            "::",
+            stringify!(Size)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).Capacity) as usize - ptr as usize },
+        4usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ImVector_ImDrawListPtr),
+            "::",
+            stringify!(Capacity)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).Data) as usize - ptr as usize },
+        8usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ImVector_ImDrawListPtr),
+            "::",
+            stringify!(Data)
+        )
+    );
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
 pub struct ImDrawData {
     pub Valid: bool,
     pub CmdListsCount: ::std::os::raw::c_int,
     pub TotalIdxCount: ::std::os::raw::c_int,
     pub TotalVtxCount: ::std::os::raw::c_int,
-    pub CmdLists: *mut *mut ImDrawList,
+    pub CmdLists: ImVector_ImDrawListPtr,
     pub DisplayPos: ImVec2,
     pub DisplaySize: ImVec2,
     pub FramebufferScale: ImVec2,
@@ -5663,7 +5831,7 @@ fn bindgen_test_layout_ImDrawData() {
     let ptr = UNINIT.as_ptr();
     assert_eq!(
         ::std::mem::size_of::<ImDrawData>(),
-        56usize,
+        64usize,
         concat!("Size of: ", stringify!(ImDrawData))
     );
     assert_eq!(
@@ -5723,7 +5891,7 @@ fn bindgen_test_layout_ImDrawData() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).DisplayPos) as usize - ptr as usize },
-        24usize,
+        32usize,
         concat!(
             "Offset of field: ",
             stringify!(ImDrawData),
@@ -5733,7 +5901,7 @@ fn bindgen_test_layout_ImDrawData() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).DisplaySize) as usize - ptr as usize },
-        32usize,
+        40usize,
         concat!(
             "Offset of field: ",
             stringify!(ImDrawData),
@@ -5743,7 +5911,7 @@ fn bindgen_test_layout_ImDrawData() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).FramebufferScale) as usize - ptr as usize },
-        40usize,
+        48usize,
         concat!(
             "Offset of field: ",
             stringify!(ImDrawData),
@@ -5753,7 +5921,7 @@ fn bindgen_test_layout_ImDrawData() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).OwnerViewport) as usize - ptr as usize },
-        48usize,
+        56usize,
         concat!(
             "Offset of field: ",
             stringify!(ImDrawData),
@@ -7134,10 +7302,11 @@ pub const ImGuiViewportFlags__ImGuiViewportFlags_NoFocusOnAppearing: ImGuiViewpo
 pub const ImGuiViewportFlags__ImGuiViewportFlags_NoFocusOnClick: ImGuiViewportFlags_ = 64;
 pub const ImGuiViewportFlags__ImGuiViewportFlags_NoInputs: ImGuiViewportFlags_ = 128;
 pub const ImGuiViewportFlags__ImGuiViewportFlags_NoRendererClear: ImGuiViewportFlags_ = 256;
-pub const ImGuiViewportFlags__ImGuiViewportFlags_TopMost: ImGuiViewportFlags_ = 512;
-pub const ImGuiViewportFlags__ImGuiViewportFlags_Minimized: ImGuiViewportFlags_ = 1024;
-pub const ImGuiViewportFlags__ImGuiViewportFlags_NoAutoMerge: ImGuiViewportFlags_ = 2048;
-pub const ImGuiViewportFlags__ImGuiViewportFlags_CanHostOtherWindows: ImGuiViewportFlags_ = 4096;
+pub const ImGuiViewportFlags__ImGuiViewportFlags_NoAutoMerge: ImGuiViewportFlags_ = 512;
+pub const ImGuiViewportFlags__ImGuiViewportFlags_TopMost: ImGuiViewportFlags_ = 1024;
+pub const ImGuiViewportFlags__ImGuiViewportFlags_CanHostOtherWindows: ImGuiViewportFlags_ = 2048;
+pub const ImGuiViewportFlags__ImGuiViewportFlags_IsMinimized: ImGuiViewportFlags_ = 4096;
+pub const ImGuiViewportFlags__ImGuiViewportFlags_IsFocused: ImGuiViewportFlags_ = 8192;
 pub type ImGuiViewportFlags_ = ::std::os::raw::c_int;
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
@@ -7781,6 +7950,7 @@ pub struct ImGuiPlatformMonitor {
     pub WorkPos: ImVec2,
     pub WorkSize: ImVec2,
     pub DpiScale: f32,
+    pub PlatformHandle: *mut ::std::os::raw::c_void,
 }
 #[test]
 fn bindgen_test_layout_ImGuiPlatformMonitor() {
@@ -7788,12 +7958,12 @@ fn bindgen_test_layout_ImGuiPlatformMonitor() {
     let ptr = UNINIT.as_ptr();
     assert_eq!(
         ::std::mem::size_of::<ImGuiPlatformMonitor>(),
-        36usize,
+        48usize,
         concat!("Size of: ", stringify!(ImGuiPlatformMonitor))
     );
     assert_eq!(
         ::std::mem::align_of::<ImGuiPlatformMonitor>(),
-        4usize,
+        8usize,
         concat!("Alignment of ", stringify!(ImGuiPlatformMonitor))
     );
     assert_eq!(
@@ -7844,6 +8014,16 @@ fn bindgen_test_layout_ImGuiPlatformMonitor() {
             stringify!(ImGuiPlatformMonitor),
             "::",
             stringify!(DpiScale)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).PlatformHandle) as usize - ptr as usize },
+        40usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ImGuiPlatformMonitor),
+            "::",
+            stringify!(PlatformHandle)
         )
     );
 }
@@ -7903,6 +8083,7 @@ pub type ImGuiDataAuthority = ::std::os::raw::c_int;
 pub type ImGuiLayoutType = ::std::os::raw::c_int;
 pub type ImGuiActivateFlags = ::std::os::raw::c_int;
 pub type ImGuiDebugLogFlags = ::std::os::raw::c_int;
+pub type ImGuiFocusRequestFlags = ::std::os::raw::c_int;
 pub type ImGuiInputFlags = ::std::os::raw::c_int;
 pub type ImGuiItemFlags = ::std::os::raw::c_int;
 pub type ImGuiItemStatusFlags = ::std::os::raw::c_int;
@@ -8717,61 +8898,9 @@ fn bindgen_test_layout_ImDrawListSharedData() {
 }
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
-pub struct ImVector_ImDrawListPtr {
-    pub Size: ::std::os::raw::c_int,
-    pub Capacity: ::std::os::raw::c_int,
-    pub Data: *mut *mut ImDrawList,
-}
-#[test]
-fn bindgen_test_layout_ImVector_ImDrawListPtr() {
-    const UNINIT: ::std::mem::MaybeUninit<ImVector_ImDrawListPtr> =
-        ::std::mem::MaybeUninit::uninit();
-    let ptr = UNINIT.as_ptr();
-    assert_eq!(
-        ::std::mem::size_of::<ImVector_ImDrawListPtr>(),
-        16usize,
-        concat!("Size of: ", stringify!(ImVector_ImDrawListPtr))
-    );
-    assert_eq!(
-        ::std::mem::align_of::<ImVector_ImDrawListPtr>(),
-        8usize,
-        concat!("Alignment of ", stringify!(ImVector_ImDrawListPtr))
-    );
-    assert_eq!(
-        unsafe { ::std::ptr::addr_of!((*ptr).Size) as usize - ptr as usize },
-        0usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(ImVector_ImDrawListPtr),
-            "::",
-            stringify!(Size)
-        )
-    );
-    assert_eq!(
-        unsafe { ::std::ptr::addr_of!((*ptr).Capacity) as usize - ptr as usize },
-        4usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(ImVector_ImDrawListPtr),
-            "::",
-            stringify!(Capacity)
-        )
-    );
-    assert_eq!(
-        unsafe { ::std::ptr::addr_of!((*ptr).Data) as usize - ptr as usize },
-        8usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(ImVector_ImDrawListPtr),
-            "::",
-            stringify!(Data)
-        )
-    );
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
 pub struct ImDrawDataBuilder {
-    pub Layers: [ImVector_ImDrawListPtr; 2usize],
+    pub Layers: [*mut ImVector_ImDrawListPtr; 2usize],
+    pub LayerData1: ImVector_ImDrawListPtr,
 }
 #[test]
 fn bindgen_test_layout_ImDrawDataBuilder() {
@@ -8797,6 +8926,16 @@ fn bindgen_test_layout_ImDrawDataBuilder() {
             stringify!(Layers)
         )
     );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).LayerData1) as usize - ptr as usize },
+        16usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ImDrawDataBuilder),
+            "::",
+            stringify!(LayerData1)
+        )
+    );
 }
 pub const ImGuiItemFlags__ImGuiItemFlags_None: ImGuiItemFlags_ = 0;
 pub const ImGuiItemFlags__ImGuiItemFlags_NoTabStop: ImGuiItemFlags_ = 1;
@@ -8808,6 +8947,7 @@ pub const ImGuiItemFlags__ImGuiItemFlags_SelectableDontClosePopup: ImGuiItemFlag
 pub const ImGuiItemFlags__ImGuiItemFlags_MixedValue: ImGuiItemFlags_ = 64;
 pub const ImGuiItemFlags__ImGuiItemFlags_ReadOnly: ImGuiItemFlags_ = 128;
 pub const ImGuiItemFlags__ImGuiItemFlags_NoWindowHoverableCheck: ImGuiItemFlags_ = 256;
+pub const ImGuiItemFlags__ImGuiItemFlags_AllowOverlap: ImGuiItemFlags_ = 512;
 pub const ImGuiItemFlags__ImGuiItemFlags_Inputable: ImGuiItemFlags_ = 1024;
 pub type ImGuiItemFlags_ = ::std::os::raw::c_int;
 pub const ImGuiItemStatusFlags__ImGuiItemStatusFlags_None: ImGuiItemStatusFlags_ = 0;
@@ -8822,6 +8962,13 @@ pub const ImGuiItemStatusFlags__ImGuiItemStatusFlags_HoveredWindow: ImGuiItemSta
 pub const ImGuiItemStatusFlags__ImGuiItemStatusFlags_FocusedByTabbing: ImGuiItemStatusFlags_ = 256;
 pub const ImGuiItemStatusFlags__ImGuiItemStatusFlags_Visible: ImGuiItemStatusFlags_ = 512;
 pub type ImGuiItemStatusFlags_ = ::std::os::raw::c_int;
+pub const ImGuiHoveredFlagsPrivate__ImGuiHoveredFlags_DelayMask_: ImGuiHoveredFlagsPrivate_ =
+    245760;
+pub const ImGuiHoveredFlagsPrivate__ImGuiHoveredFlags_AllowedMaskForIsWindowHovered:
+    ImGuiHoveredFlagsPrivate_ = 12479;
+pub const ImGuiHoveredFlagsPrivate__ImGuiHoveredFlags_AllowedMaskForIsItemHovered:
+    ImGuiHoveredFlagsPrivate_ = 262048;
+pub type ImGuiHoveredFlagsPrivate_ = ::std::os::raw::c_int;
 pub const ImGuiInputTextFlagsPrivate__ImGuiInputTextFlags_Multiline: ImGuiInputTextFlagsPrivate_ =
     67108864;
 pub const ImGuiInputTextFlagsPrivate__ImGuiInputTextFlags_NoMarkEdited:
@@ -8843,8 +8990,7 @@ pub const ImGuiButtonFlagsPrivate__ImGuiButtonFlags_PressedOnDragDropHold:
 pub const ImGuiButtonFlagsPrivate__ImGuiButtonFlags_Repeat: ImGuiButtonFlagsPrivate_ = 1024;
 pub const ImGuiButtonFlagsPrivate__ImGuiButtonFlags_FlattenChildren: ImGuiButtonFlagsPrivate_ =
     2048;
-pub const ImGuiButtonFlagsPrivate__ImGuiButtonFlags_AllowItemOverlap: ImGuiButtonFlagsPrivate_ =
-    4096;
+pub const ImGuiButtonFlagsPrivate__ImGuiButtonFlags_AllowOverlap: ImGuiButtonFlagsPrivate_ = 4096;
 pub const ImGuiButtonFlagsPrivate__ImGuiButtonFlags_DontClosePopups: ImGuiButtonFlagsPrivate_ =
     8192;
 pub const ImGuiButtonFlagsPrivate__ImGuiButtonFlags_AlignTextBaseLine: ImGuiButtonFlagsPrivate_ =
@@ -8888,17 +9034,25 @@ pub const ImGuiSelectableFlagsPrivate__ImGuiSelectableFlags_NoSetKeyOwner:
 pub type ImGuiSelectableFlagsPrivate_ = ::std::os::raw::c_int;
 pub const ImGuiTreeNodeFlagsPrivate__ImGuiTreeNodeFlags_ClipLabelForTrailingButton:
     ImGuiTreeNodeFlagsPrivate_ = 1048576;
+pub const ImGuiTreeNodeFlagsPrivate__ImGuiTreeNodeFlags_UpsideDownArrow:
+    ImGuiTreeNodeFlagsPrivate_ = 2097152;
 pub type ImGuiTreeNodeFlagsPrivate_ = ::std::os::raw::c_int;
 pub const ImGuiSeparatorFlags__ImGuiSeparatorFlags_None: ImGuiSeparatorFlags_ = 0;
 pub const ImGuiSeparatorFlags__ImGuiSeparatorFlags_Horizontal: ImGuiSeparatorFlags_ = 1;
 pub const ImGuiSeparatorFlags__ImGuiSeparatorFlags_Vertical: ImGuiSeparatorFlags_ = 2;
 pub const ImGuiSeparatorFlags__ImGuiSeparatorFlags_SpanAllColumns: ImGuiSeparatorFlags_ = 4;
 pub type ImGuiSeparatorFlags_ = ::std::os::raw::c_int;
+pub const ImGuiFocusRequestFlags__ImGuiFocusRequestFlags_None: ImGuiFocusRequestFlags_ = 0;
+pub const ImGuiFocusRequestFlags__ImGuiFocusRequestFlags_RestoreFocusedChild:
+    ImGuiFocusRequestFlags_ = 1;
+pub const ImGuiFocusRequestFlags__ImGuiFocusRequestFlags_UnlessBelowModal: ImGuiFocusRequestFlags_ =
+    2;
+pub type ImGuiFocusRequestFlags_ = ::std::os::raw::c_int;
 pub const ImGuiTextFlags__ImGuiTextFlags_None: ImGuiTextFlags_ = 0;
 pub const ImGuiTextFlags__ImGuiTextFlags_NoWidthForLargeClippedText: ImGuiTextFlags_ = 1;
 pub type ImGuiTextFlags_ = ::std::os::raw::c_int;
 pub const ImGuiTooltipFlags__ImGuiTooltipFlags_None: ImGuiTooltipFlags_ = 0;
-pub const ImGuiTooltipFlags__ImGuiTooltipFlags_OverridePreviousTooltip: ImGuiTooltipFlags_ = 1;
+pub const ImGuiTooltipFlags__ImGuiTooltipFlags_OverridePrevious: ImGuiTooltipFlags_ = 2;
 pub type ImGuiTooltipFlags_ = ::std::os::raw::c_int;
 pub const ImGuiLayoutType__ImGuiLayoutType_Horizontal: ImGuiLayoutType_ = 0;
 pub const ImGuiLayoutType__ImGuiLayoutType_Vertical: ImGuiLayoutType_ = 1;
@@ -9525,6 +9679,48 @@ fn bindgen_test_layout_ImGuiMenuColumns() {
 }
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
+pub struct ImGuiInputTextDeactivatedState {
+    pub ID: ImGuiID,
+    pub TextA: ImVector_char,
+}
+#[test]
+fn bindgen_test_layout_ImGuiInputTextDeactivatedState() {
+    const UNINIT: ::std::mem::MaybeUninit<ImGuiInputTextDeactivatedState> =
+        ::std::mem::MaybeUninit::uninit();
+    let ptr = UNINIT.as_ptr();
+    assert_eq!(
+        ::std::mem::size_of::<ImGuiInputTextDeactivatedState>(),
+        24usize,
+        concat!("Size of: ", stringify!(ImGuiInputTextDeactivatedState))
+    );
+    assert_eq!(
+        ::std::mem::align_of::<ImGuiInputTextDeactivatedState>(),
+        8usize,
+        concat!("Alignment of ", stringify!(ImGuiInputTextDeactivatedState))
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).ID) as usize - ptr as usize },
+        0usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ImGuiInputTextDeactivatedState),
+            "::",
+            stringify!(ID)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).TextA) as usize - ptr as usize },
+        8usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ImGuiInputTextDeactivatedState),
+            "::",
+            stringify!(TextA)
+        )
+    );
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
 pub struct ImGuiInputTextState {
     pub Ctx: *mut ImGuiContext,
     pub ID: ImGuiID,
@@ -10094,6 +10290,7 @@ pub type ImGuiNextItemDataFlags_ = ::std::os::raw::c_int;
 #[derive(Debug, Copy, Clone)]
 pub struct ImGuiNextItemData {
     pub Flags: ImGuiNextItemDataFlags,
+    pub ItemFlags: ImGuiItemFlags,
     pub Width: f32,
     pub FocusScopeId: ImGuiID,
     pub OpenCond: ImGuiCond,
@@ -10105,7 +10302,7 @@ fn bindgen_test_layout_ImGuiNextItemData() {
     let ptr = UNINIT.as_ptr();
     assert_eq!(
         ::std::mem::size_of::<ImGuiNextItemData>(),
-        20usize,
+        24usize,
         concat!("Size of: ", stringify!(ImGuiNextItemData))
     );
     assert_eq!(
@@ -10124,8 +10321,18 @@ fn bindgen_test_layout_ImGuiNextItemData() {
         )
     );
     assert_eq!(
-        unsafe { ::std::ptr::addr_of!((*ptr).Width) as usize - ptr as usize },
+        unsafe { ::std::ptr::addr_of!((*ptr).ItemFlags) as usize - ptr as usize },
         4usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ImGuiNextItemData),
+            "::",
+            stringify!(ItemFlags)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).Width) as usize - ptr as usize },
+        8usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiNextItemData),
@@ -10135,7 +10342,7 @@ fn bindgen_test_layout_ImGuiNextItemData() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).FocusScopeId) as usize - ptr as usize },
-        8usize,
+        12usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiNextItemData),
@@ -10145,7 +10352,7 @@ fn bindgen_test_layout_ImGuiNextItemData() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).OpenCond) as usize - ptr as usize },
-        12usize,
+        16usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiNextItemData),
@@ -10155,7 +10362,7 @@ fn bindgen_test_layout_ImGuiNextItemData() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).OpenVal) as usize - ptr as usize },
-        16usize,
+        20usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiNextItemData),
@@ -10246,6 +10453,58 @@ fn bindgen_test_layout_ImGuiLastItemData() {
             stringify!(ImGuiLastItemData),
             "::",
             stringify!(DisplayRect)
+        )
+    );
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct ImGuiNavTreeNodeData {
+    pub ID: ImGuiID,
+    pub InFlags: ImGuiItemFlags,
+    pub NavRect: ImRect,
+}
+#[test]
+fn bindgen_test_layout_ImGuiNavTreeNodeData() {
+    const UNINIT: ::std::mem::MaybeUninit<ImGuiNavTreeNodeData> = ::std::mem::MaybeUninit::uninit();
+    let ptr = UNINIT.as_ptr();
+    assert_eq!(
+        ::std::mem::size_of::<ImGuiNavTreeNodeData>(),
+        24usize,
+        concat!("Size of: ", stringify!(ImGuiNavTreeNodeData))
+    );
+    assert_eq!(
+        ::std::mem::align_of::<ImGuiNavTreeNodeData>(),
+        4usize,
+        concat!("Alignment of ", stringify!(ImGuiNavTreeNodeData))
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).ID) as usize - ptr as usize },
+        0usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ImGuiNavTreeNodeData),
+            "::",
+            stringify!(ID)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).InFlags) as usize - ptr as usize },
+        4usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ImGuiNavTreeNodeData),
+            "::",
+            stringify!(InFlags)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).NavRect) as usize - ptr as usize },
+        8usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ImGuiNavTreeNodeData),
+            "::",
+            stringify!(NavRect)
         )
     );
 }
@@ -10566,14 +10825,14 @@ pub const ImGuiInputSource_ImGuiInputSource_Mouse: ImGuiInputSource = 1;
 pub const ImGuiInputSource_ImGuiInputSource_Keyboard: ImGuiInputSource = 2;
 pub const ImGuiInputSource_ImGuiInputSource_Gamepad: ImGuiInputSource = 3;
 pub const ImGuiInputSource_ImGuiInputSource_Clipboard: ImGuiInputSource = 4;
-pub const ImGuiInputSource_ImGuiInputSource_Nav: ImGuiInputSource = 5;
-pub const ImGuiInputSource_ImGuiInputSource_COUNT: ImGuiInputSource = 6;
+pub const ImGuiInputSource_ImGuiInputSource_COUNT: ImGuiInputSource = 5;
 pub type ImGuiInputSource = ::std::os::raw::c_int;
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct ImGuiInputEventMousePos {
     pub PosX: f32,
     pub PosY: f32,
+    pub MouseSource: ImGuiMouseSource,
 }
 #[test]
 fn bindgen_test_layout_ImGuiInputEventMousePos() {
@@ -10582,7 +10841,7 @@ fn bindgen_test_layout_ImGuiInputEventMousePos() {
     let ptr = UNINIT.as_ptr();
     assert_eq!(
         ::std::mem::size_of::<ImGuiInputEventMousePos>(),
-        8usize,
+        12usize,
         concat!("Size of: ", stringify!(ImGuiInputEventMousePos))
     );
     assert_eq!(
@@ -10610,12 +10869,23 @@ fn bindgen_test_layout_ImGuiInputEventMousePos() {
             stringify!(PosY)
         )
     );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).MouseSource) as usize - ptr as usize },
+        8usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ImGuiInputEventMousePos),
+            "::",
+            stringify!(MouseSource)
+        )
+    );
 }
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct ImGuiInputEventMouseWheel {
     pub WheelX: f32,
     pub WheelY: f32,
+    pub MouseSource: ImGuiMouseSource,
 }
 #[test]
 fn bindgen_test_layout_ImGuiInputEventMouseWheel() {
@@ -10624,7 +10894,7 @@ fn bindgen_test_layout_ImGuiInputEventMouseWheel() {
     let ptr = UNINIT.as_ptr();
     assert_eq!(
         ::std::mem::size_of::<ImGuiInputEventMouseWheel>(),
-        8usize,
+        12usize,
         concat!("Size of: ", stringify!(ImGuiInputEventMouseWheel))
     );
     assert_eq!(
@@ -10652,12 +10922,23 @@ fn bindgen_test_layout_ImGuiInputEventMouseWheel() {
             stringify!(WheelY)
         )
     );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).MouseSource) as usize - ptr as usize },
+        8usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ImGuiInputEventMouseWheel),
+            "::",
+            stringify!(MouseSource)
+        )
+    );
 }
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct ImGuiInputEventMouseButton {
     pub Button: ::std::os::raw::c_int,
     pub Down: bool,
+    pub MouseSource: ImGuiMouseSource,
 }
 #[test]
 fn bindgen_test_layout_ImGuiInputEventMouseButton() {
@@ -10666,7 +10947,7 @@ fn bindgen_test_layout_ImGuiInputEventMouseButton() {
     let ptr = UNINIT.as_ptr();
     assert_eq!(
         ::std::mem::size_of::<ImGuiInputEventMouseButton>(),
-        8usize,
+        12usize,
         concat!("Size of: ", stringify!(ImGuiInputEventMouseButton))
     );
     assert_eq!(
@@ -10692,6 +10973,16 @@ fn bindgen_test_layout_ImGuiInputEventMouseButton() {
             stringify!(ImGuiInputEventMouseButton),
             "::",
             stringify!(Down)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).MouseSource) as usize - ptr as usize },
+        8usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ImGuiInputEventMouseButton),
+            "::",
+            stringify!(MouseSource)
         )
     );
 }
@@ -10844,6 +11135,7 @@ fn bindgen_test_layout_ImGuiInputEventAppFocused() {
 pub struct ImGuiInputEvent {
     pub Type: ImGuiInputEventType,
     pub Source: ImGuiInputSource,
+    pub EventId: ImU32,
     pub __bindgen_anon_1: ImGuiInputEvent__bindgen_ty_1,
     pub AddedByTestEngine: bool,
 }
@@ -10950,7 +11242,7 @@ fn bindgen_test_layout_ImGuiInputEvent() {
     let ptr = UNINIT.as_ptr();
     assert_eq!(
         ::std::mem::size_of::<ImGuiInputEvent>(),
-        24usize,
+        28usize,
         concat!("Size of: ", stringify!(ImGuiInputEvent))
     );
     assert_eq!(
@@ -10979,8 +11271,18 @@ fn bindgen_test_layout_ImGuiInputEvent() {
         )
     );
     assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).EventId) as usize - ptr as usize },
+        8usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ImGuiInputEvent),
+            "::",
+            stringify!(EventId)
+        )
+    );
+    assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).AddedByTestEngine) as usize - ptr as usize },
-        20usize,
+        24usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiInputEvent),
@@ -11486,15 +11788,18 @@ pub const ImGuiNavMoveFlags__ImGuiNavMoveFlags_LoopX: ImGuiNavMoveFlags_ = 1;
 pub const ImGuiNavMoveFlags__ImGuiNavMoveFlags_LoopY: ImGuiNavMoveFlags_ = 2;
 pub const ImGuiNavMoveFlags__ImGuiNavMoveFlags_WrapX: ImGuiNavMoveFlags_ = 4;
 pub const ImGuiNavMoveFlags__ImGuiNavMoveFlags_WrapY: ImGuiNavMoveFlags_ = 8;
+pub const ImGuiNavMoveFlags__ImGuiNavMoveFlags_WrapMask_: ImGuiNavMoveFlags_ = 15;
 pub const ImGuiNavMoveFlags__ImGuiNavMoveFlags_AllowCurrentNavId: ImGuiNavMoveFlags_ = 16;
 pub const ImGuiNavMoveFlags__ImGuiNavMoveFlags_AlsoScoreVisibleSet: ImGuiNavMoveFlags_ = 32;
 pub const ImGuiNavMoveFlags__ImGuiNavMoveFlags_ScrollToEdgeY: ImGuiNavMoveFlags_ = 64;
 pub const ImGuiNavMoveFlags__ImGuiNavMoveFlags_Forwarded: ImGuiNavMoveFlags_ = 128;
 pub const ImGuiNavMoveFlags__ImGuiNavMoveFlags_DebugNoResult: ImGuiNavMoveFlags_ = 256;
 pub const ImGuiNavMoveFlags__ImGuiNavMoveFlags_FocusApi: ImGuiNavMoveFlags_ = 512;
-pub const ImGuiNavMoveFlags__ImGuiNavMoveFlags_Tabbing: ImGuiNavMoveFlags_ = 1024;
-pub const ImGuiNavMoveFlags__ImGuiNavMoveFlags_Activate: ImGuiNavMoveFlags_ = 2048;
-pub const ImGuiNavMoveFlags__ImGuiNavMoveFlags_DontSetNavHighlight: ImGuiNavMoveFlags_ = 4096;
+pub const ImGuiNavMoveFlags__ImGuiNavMoveFlags_IsTabbing: ImGuiNavMoveFlags_ = 1024;
+pub const ImGuiNavMoveFlags__ImGuiNavMoveFlags_IsPageMove: ImGuiNavMoveFlags_ = 2048;
+pub const ImGuiNavMoveFlags__ImGuiNavMoveFlags_Activate: ImGuiNavMoveFlags_ = 4096;
+pub const ImGuiNavMoveFlags__ImGuiNavMoveFlags_NoSelect: ImGuiNavMoveFlags_ = 8192;
+pub const ImGuiNavMoveFlags__ImGuiNavMoveFlags_NoSetNavHighlight: ImGuiNavMoveFlags_ = 16384;
 pub type ImGuiNavMoveFlags_ = ::std::os::raw::c_int;
 pub const ImGuiNavLayer_ImGuiNavLayer_Main: ImGuiNavLayer = 0;
 pub const ImGuiNavLayer_ImGuiNavLayer_Menu: ImGuiNavLayer = 1;
@@ -12069,9 +12374,10 @@ pub struct ImGuiDockNode {
     pub LastFocusedNodeId: ImGuiID,
     pub SelectedTabId: ImGuiID,
     pub WantCloseTabId: ImGuiID,
+    pub RefViewportId: ImGuiID,
     pub _bitfield_align_1: [u8; 0],
     pub _bitfield_1: __BindgenBitfieldUnit<[u8; 3usize]>,
-    pub __bindgen_padding_0: [u8; 9usize],
+    pub __bindgen_padding_0: [u8; 5usize],
 }
 #[test]
 fn bindgen_test_layout_ImGuiDockNode() {
@@ -12355,6 +12661,16 @@ fn bindgen_test_layout_ImGuiDockNode() {
             stringify!(ImGuiDockNode),
             "::",
             stringify!(WantCloseTabId)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).RefViewportId) as usize - ptr as usize },
+        196usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ImGuiDockNode),
+            "::",
+            stringify!(RefViewportId)
         )
     );
 }
@@ -12804,17 +13120,18 @@ fn bindgen_test_layout_ImGuiDockContext() {
 #[derive(Debug, Copy, Clone)]
 pub struct ImGuiViewportP {
     pub _ImGuiViewport: ImGuiViewport,
+    pub Window: *mut ImGuiWindow,
     pub Idx: ::std::os::raw::c_int,
     pub LastFrameActive: ::std::os::raw::c_int,
-    pub LastFrontMostStampCount: ::std::os::raw::c_int,
+    pub LastFocusedStampCount: ::std::os::raw::c_int,
     pub LastNameHash: ImGuiID,
     pub LastPos: ImVec2,
     pub Alpha: f32,
     pub LastAlpha: f32,
+    pub LastFocusedHadNavWindow: bool,
     pub PlatformMonitor: ::std::os::raw::c_short,
-    pub Window: *mut ImGuiWindow,
-    pub DrawListsLastFrame: [::std::os::raw::c_int; 2usize],
-    pub DrawLists: [*mut ImDrawList; 2usize],
+    pub BgFgDrawListsLastFrame: [::std::os::raw::c_int; 2usize],
+    pub BgFgDrawLists: [*mut ImDrawList; 2usize],
     pub DrawDataP: ImDrawData,
     pub DrawDataBuilder: ImDrawDataBuilder,
     pub LastPlatformPos: ImVec2,
@@ -12831,7 +13148,7 @@ fn bindgen_test_layout_ImGuiViewportP() {
     let ptr = UNINIT.as_ptr();
     assert_eq!(
         ::std::mem::size_of::<ImGuiViewportP>(),
-        312usize,
+        320usize,
         concat!("Size of: ", stringify!(ImGuiViewportP))
     );
     assert_eq!(
@@ -12850,8 +13167,18 @@ fn bindgen_test_layout_ImGuiViewportP() {
         )
     );
     assert_eq!(
-        unsafe { ::std::ptr::addr_of!((*ptr).Idx) as usize - ptr as usize },
+        unsafe { ::std::ptr::addr_of!((*ptr).Window) as usize - ptr as usize },
         96usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ImGuiViewportP),
+            "::",
+            stringify!(Window)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).Idx) as usize - ptr as usize },
+        104usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiViewportP),
@@ -12861,7 +13188,7 @@ fn bindgen_test_layout_ImGuiViewportP() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).LastFrameActive) as usize - ptr as usize },
-        100usize,
+        108usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiViewportP),
@@ -12870,18 +13197,18 @@ fn bindgen_test_layout_ImGuiViewportP() {
         )
     );
     assert_eq!(
-        unsafe { ::std::ptr::addr_of!((*ptr).LastFrontMostStampCount) as usize - ptr as usize },
-        104usize,
+        unsafe { ::std::ptr::addr_of!((*ptr).LastFocusedStampCount) as usize - ptr as usize },
+        112usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiViewportP),
             "::",
-            stringify!(LastFrontMostStampCount)
+            stringify!(LastFocusedStampCount)
         )
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).LastNameHash) as usize - ptr as usize },
-        108usize,
+        116usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiViewportP),
@@ -12891,7 +13218,7 @@ fn bindgen_test_layout_ImGuiViewportP() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).LastPos) as usize - ptr as usize },
-        112usize,
+        120usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiViewportP),
@@ -12901,7 +13228,7 @@ fn bindgen_test_layout_ImGuiViewportP() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).Alpha) as usize - ptr as usize },
-        120usize,
+        128usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiViewportP),
@@ -12911,7 +13238,7 @@ fn bindgen_test_layout_ImGuiViewportP() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).LastAlpha) as usize - ptr as usize },
-        124usize,
+        132usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiViewportP),
@@ -12920,8 +13247,18 @@ fn bindgen_test_layout_ImGuiViewportP() {
         )
     );
     assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).LastFocusedHadNavWindow) as usize - ptr as usize },
+        136usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ImGuiViewportP),
+            "::",
+            stringify!(LastFocusedHadNavWindow)
+        )
+    );
+    assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).PlatformMonitor) as usize - ptr as usize },
-        128usize,
+        138usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiViewportP),
@@ -12930,33 +13267,23 @@ fn bindgen_test_layout_ImGuiViewportP() {
         )
     );
     assert_eq!(
-        unsafe { ::std::ptr::addr_of!((*ptr).Window) as usize - ptr as usize },
-        136usize,
+        unsafe { ::std::ptr::addr_of!((*ptr).BgFgDrawListsLastFrame) as usize - ptr as usize },
+        140usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiViewportP),
             "::",
-            stringify!(Window)
+            stringify!(BgFgDrawListsLastFrame)
         )
     );
     assert_eq!(
-        unsafe { ::std::ptr::addr_of!((*ptr).DrawListsLastFrame) as usize - ptr as usize },
-        144usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(ImGuiViewportP),
-            "::",
-            stringify!(DrawListsLastFrame)
-        )
-    );
-    assert_eq!(
-        unsafe { ::std::ptr::addr_of!((*ptr).DrawLists) as usize - ptr as usize },
+        unsafe { ::std::ptr::addr_of!((*ptr).BgFgDrawLists) as usize - ptr as usize },
         152usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiViewportP),
             "::",
-            stringify!(DrawLists)
+            stringify!(BgFgDrawLists)
         )
     );
     assert_eq!(
@@ -12971,7 +13298,7 @@ fn bindgen_test_layout_ImGuiViewportP() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).DrawDataBuilder) as usize - ptr as usize },
-        224usize,
+        232usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiViewportP),
@@ -12981,7 +13308,7 @@ fn bindgen_test_layout_ImGuiViewportP() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).LastPlatformPos) as usize - ptr as usize },
-        256usize,
+        264usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiViewportP),
@@ -12991,7 +13318,7 @@ fn bindgen_test_layout_ImGuiViewportP() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).LastPlatformSize) as usize - ptr as usize },
-        264usize,
+        272usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiViewportP),
@@ -13001,7 +13328,7 @@ fn bindgen_test_layout_ImGuiViewportP() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).LastRendererSize) as usize - ptr as usize },
-        272usize,
+        280usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiViewportP),
@@ -13011,7 +13338,7 @@ fn bindgen_test_layout_ImGuiViewportP() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).WorkOffsetMin) as usize - ptr as usize },
-        280usize,
+        288usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiViewportP),
@@ -13021,7 +13348,7 @@ fn bindgen_test_layout_ImGuiViewportP() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).WorkOffsetMax) as usize - ptr as usize },
-        288usize,
+        296usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiViewportP),
@@ -13031,7 +13358,7 @@ fn bindgen_test_layout_ImGuiViewportP() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).BuildWorkOffsetMin) as usize - ptr as usize },
-        296usize,
+        304usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiViewportP),
@@ -13041,7 +13368,7 @@ fn bindgen_test_layout_ImGuiViewportP() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).BuildWorkOffsetMax) as usize - ptr as usize },
-        304usize,
+        312usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiViewportP),
@@ -13333,15 +13660,17 @@ fn bindgen_test_layout_ImGuiSettingsHandler() {
         )
     );
 }
-pub const ImGuiLocKey_ImGuiLocKey_TableSizeOne: ImGuiLocKey = 0;
-pub const ImGuiLocKey_ImGuiLocKey_TableSizeAllFit: ImGuiLocKey = 1;
-pub const ImGuiLocKey_ImGuiLocKey_TableSizeAllDefault: ImGuiLocKey = 2;
-pub const ImGuiLocKey_ImGuiLocKey_TableResetOrder: ImGuiLocKey = 3;
-pub const ImGuiLocKey_ImGuiLocKey_WindowingMainMenuBar: ImGuiLocKey = 4;
-pub const ImGuiLocKey_ImGuiLocKey_WindowingPopup: ImGuiLocKey = 5;
-pub const ImGuiLocKey_ImGuiLocKey_WindowingUntitled: ImGuiLocKey = 6;
-pub const ImGuiLocKey_ImGuiLocKey_DockingHideTabBar: ImGuiLocKey = 7;
-pub const ImGuiLocKey_ImGuiLocKey_COUNT: ImGuiLocKey = 8;
+pub const ImGuiLocKey_ImGuiLocKey_VersionStr: ImGuiLocKey = 0;
+pub const ImGuiLocKey_ImGuiLocKey_TableSizeOne: ImGuiLocKey = 1;
+pub const ImGuiLocKey_ImGuiLocKey_TableSizeAllFit: ImGuiLocKey = 2;
+pub const ImGuiLocKey_ImGuiLocKey_TableSizeAllDefault: ImGuiLocKey = 3;
+pub const ImGuiLocKey_ImGuiLocKey_TableResetOrder: ImGuiLocKey = 4;
+pub const ImGuiLocKey_ImGuiLocKey_WindowingMainMenuBar: ImGuiLocKey = 5;
+pub const ImGuiLocKey_ImGuiLocKey_WindowingPopup: ImGuiLocKey = 6;
+pub const ImGuiLocKey_ImGuiLocKey_WindowingUntitled: ImGuiLocKey = 7;
+pub const ImGuiLocKey_ImGuiLocKey_DockingHideTabBar: ImGuiLocKey = 8;
+pub const ImGuiLocKey_ImGuiLocKey_DockingHoldShiftToDock: ImGuiLocKey = 9;
+pub const ImGuiLocKey_ImGuiLocKey_COUNT: ImGuiLocKey = 10;
 pub type ImGuiLocKey = ::std::os::raw::c_int;
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
@@ -13390,10 +13719,11 @@ pub const ImGuiDebugLogFlags__ImGuiDebugLogFlags_EventFocus: ImGuiDebugLogFlags_
 pub const ImGuiDebugLogFlags__ImGuiDebugLogFlags_EventPopup: ImGuiDebugLogFlags_ = 4;
 pub const ImGuiDebugLogFlags__ImGuiDebugLogFlags_EventNav: ImGuiDebugLogFlags_ = 8;
 pub const ImGuiDebugLogFlags__ImGuiDebugLogFlags_EventClipper: ImGuiDebugLogFlags_ = 16;
-pub const ImGuiDebugLogFlags__ImGuiDebugLogFlags_EventIO: ImGuiDebugLogFlags_ = 32;
-pub const ImGuiDebugLogFlags__ImGuiDebugLogFlags_EventDocking: ImGuiDebugLogFlags_ = 64;
-pub const ImGuiDebugLogFlags__ImGuiDebugLogFlags_EventViewport: ImGuiDebugLogFlags_ = 128;
-pub const ImGuiDebugLogFlags__ImGuiDebugLogFlags_EventMask_: ImGuiDebugLogFlags_ = 255;
+pub const ImGuiDebugLogFlags__ImGuiDebugLogFlags_EventSelection: ImGuiDebugLogFlags_ = 32;
+pub const ImGuiDebugLogFlags__ImGuiDebugLogFlags_EventIO: ImGuiDebugLogFlags_ = 64;
+pub const ImGuiDebugLogFlags__ImGuiDebugLogFlags_EventDocking: ImGuiDebugLogFlags_ = 128;
+pub const ImGuiDebugLogFlags__ImGuiDebugLogFlags_EventViewport: ImGuiDebugLogFlags_ = 256;
+pub const ImGuiDebugLogFlags__ImGuiDebugLogFlags_EventMask_: ImGuiDebugLogFlags_ = 511;
 pub const ImGuiDebugLogFlags__ImGuiDebugLogFlags_OutputToTTY: ImGuiDebugLogFlags_ = 1024;
 pub type ImGuiDebugLogFlags_ = ::std::os::raw::c_int;
 #[repr(C)]
@@ -14275,6 +14605,59 @@ fn bindgen_test_layout_ImVector_ImGuiPopupData() {
 }
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
+pub struct ImVector_ImGuiNavTreeNodeData {
+    pub Size: ::std::os::raw::c_int,
+    pub Capacity: ::std::os::raw::c_int,
+    pub Data: *mut ImGuiNavTreeNodeData,
+}
+#[test]
+fn bindgen_test_layout_ImVector_ImGuiNavTreeNodeData() {
+    const UNINIT: ::std::mem::MaybeUninit<ImVector_ImGuiNavTreeNodeData> =
+        ::std::mem::MaybeUninit::uninit();
+    let ptr = UNINIT.as_ptr();
+    assert_eq!(
+        ::std::mem::size_of::<ImVector_ImGuiNavTreeNodeData>(),
+        16usize,
+        concat!("Size of: ", stringify!(ImVector_ImGuiNavTreeNodeData))
+    );
+    assert_eq!(
+        ::std::mem::align_of::<ImVector_ImGuiNavTreeNodeData>(),
+        8usize,
+        concat!("Alignment of ", stringify!(ImVector_ImGuiNavTreeNodeData))
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).Size) as usize - ptr as usize },
+        0usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ImVector_ImGuiNavTreeNodeData),
+            "::",
+            stringify!(Size)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).Capacity) as usize - ptr as usize },
+        4usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ImVector_ImGuiNavTreeNodeData),
+            "::",
+            stringify!(Capacity)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).Data) as usize - ptr as usize },
+        8usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ImVector_ImGuiNavTreeNodeData),
+            "::",
+            stringify!(Data)
+        )
+    );
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
 pub struct ImVector_ImGuiViewportPPtr {
     pub Size: ::std::os::raw::c_int,
     pub Capacity: ::std::os::raw::c_int,
@@ -15002,8 +15385,6 @@ pub struct ImGuiContext {
     pub FontAtlasOwnedByContext: bool,
     pub IO: ImGuiIO,
     pub PlatformIO: ImGuiPlatformIO,
-    pub InputEventsQueue: ImVector_ImGuiInputEvent,
-    pub InputEventsTrail: ImVector_ImGuiInputEvent,
     pub Style: ImGuiStyle,
     pub ConfigFlagsCurrFrame: ImGuiConfigFlags,
     pub ConfigFlagsLastFrame: ImGuiConfigFlags,
@@ -15022,6 +15403,10 @@ pub struct ImGuiContext {
     pub GcCompactAll: bool,
     pub TestEngineHookItems: bool,
     pub TestEngine: *mut ::std::os::raw::c_void,
+    pub InputEventsQueue: ImVector_ImGuiInputEvent,
+    pub InputEventsTrail: ImVector_ImGuiInputEvent,
+    pub InputEventsNextMouseSource: ImGuiMouseSource,
+    pub InputEventsNextEventId: ImU32,
     pub Windows: ImVector_ImGuiWindowPtr,
     pub WindowsFocusOrder: ImVector_ImGuiWindowPtr,
     pub WindowsTempSortBuffer: ImVector_ImGuiWindowPtr,
@@ -15084,6 +15469,7 @@ pub struct ImGuiContext {
     pub GroupStack: ImVector_ImGuiGroupData,
     pub OpenPopupStack: ImVector_ImGuiPopupData,
     pub BeginPopupStack: ImVector_ImGuiPopupData,
+    pub NavTreeNodeStack: ImVector_ImGuiNavTreeNodeData,
     pub BeginMenuCount: ::std::os::raw::c_int,
     pub Viewports: ImVector_ImGuiViewportPPtr,
     pub CurrentDpiScale: f32,
@@ -15092,7 +15478,9 @@ pub struct ImGuiContext {
     pub MouseLastHoveredViewport: *mut ImGuiViewportP,
     pub PlatformLastFocusedViewportId: ImGuiID,
     pub FallbackMonitor: ImGuiPlatformMonitor,
-    pub ViewportFrontMostStampCount: ::std::os::raw::c_int,
+    pub ViewportCreatedCount: ::std::os::raw::c_int,
+    pub PlatformWindowsCreatedCount: ::std::os::raw::c_int,
+    pub ViewportFocusedStampCount: ::std::os::raw::c_int,
     pub NavWindow: *mut ImGuiWindow,
     pub NavId: ImGuiID,
     pub NavFocusScopeId: ImGuiID,
@@ -15114,8 +15502,7 @@ pub struct ImGuiContext {
     pub NavAnyRequest: bool,
     pub NavInitRequest: bool,
     pub NavInitRequestFromMove: bool,
-    pub NavInitResultId: ImGuiID,
-    pub NavInitResultRectRel: ImRect,
+    pub NavInitResult: ImGuiNavItemData,
     pub NavMoveSubmitted: bool,
     pub NavMoveScoringItems: bool,
     pub NavMoveForwardToNextFrame: bool,
@@ -15145,7 +15532,6 @@ pub struct ImGuiContext {
     pub NavWindowingAccumDeltaPos: ImVec2,
     pub NavWindowingAccumDeltaSize: ImVec2,
     pub DimBgRatio: f32,
-    pub MouseCursor: ImGuiMouseCursor,
     pub DragDropActive: bool,
     pub DragDropWithinSource: bool,
     pub DragDropWithinTarget: bool,
@@ -15175,12 +15561,17 @@ pub struct ImGuiContext {
     pub TabBars: ImPool_ImGuiTabBar,
     pub CurrentTabBarStack: ImVector_ImGuiPtrOrIndex,
     pub ShrinkWidthBuffer: ImVector_ImGuiShrinkWidthItem,
-    pub HoverDelayId: ImGuiID,
-    pub HoverDelayIdPreviousFrame: ImGuiID,
-    pub HoverDelayTimer: f32,
-    pub HoverDelayClearTimer: f32,
+    pub HoverItemDelayId: ImGuiID,
+    pub HoverItemDelayIdPreviousFrame: ImGuiID,
+    pub HoverItemDelayTimer: f32,
+    pub HoverItemDelayClearTimer: f32,
+    pub HoverItemUnlockedStationaryId: ImGuiID,
+    pub HoverWindowUnlockedStationaryId: ImGuiID,
+    pub MouseCursor: ImGuiMouseCursor,
+    pub MouseStationaryTimer: f32,
     pub MouseLastValidPos: ImVec2,
     pub InputTextState: ImGuiInputTextState,
+    pub InputTextDeactivatedState: ImGuiInputTextDeactivatedState,
     pub InputTextPasswordFont: ImFont,
     pub TempInputId: ImGuiID,
     pub ColorEditOptions: ImGuiColorEditFlags,
@@ -15200,13 +15591,13 @@ pub struct ImGuiContext {
     pub ScrollbarClickDeltaToGrabCenter: f32,
     pub DisabledAlphaBackup: f32,
     pub DisabledStackSize: ::std::os::raw::c_short,
+    pub LockMarkEdited: ::std::os::raw::c_short,
     pub TooltipOverrideCount: ::std::os::raw::c_short,
     pub ClipboardHandlerData: ImVector_char,
     pub MenusIdSubmittedThisFrame: ImVector_ImGuiID,
     pub PlatformImeData: ImGuiPlatformImeData,
     pub PlatformImeDataPrev: ImGuiPlatformImeData,
     pub PlatformImeViewport: ImGuiID,
-    pub PlatformLocaleDecimalPoint: ::std::os::raw::c_char,
     pub DockContext: ImGuiDockContext,
     pub DockNodeWindowMenuHandler: ::std::option::Option<
         unsafe extern "C" fn(
@@ -15223,7 +15614,7 @@ pub struct ImGuiContext {
     pub SettingsTables: ImChunkStream_ImGuiTableSettings,
     pub Hooks: ImVector_ImGuiContextHook,
     pub HookIdNext: ImGuiID,
-    pub LocalizationTable: [*const ::std::os::raw::c_char; 8usize],
+    pub LocalizationTable: [*const ::std::os::raw::c_char; 10usize],
     pub LogEnabled: bool,
     pub LogType: ImGuiLogType,
     pub LogFile: ImFileHandle,
@@ -15262,7 +15653,7 @@ fn bindgen_test_layout_ImGuiContext() {
     let ptr = UNINIT.as_ptr();
     assert_eq!(
         ::std::mem::size_of::<ImGuiContext>(),
-        24576usize,
+        24736usize,
         concat!("Size of: ", stringify!(ImGuiContext))
     );
     assert_eq!(
@@ -15311,28 +15702,8 @@ fn bindgen_test_layout_ImGuiContext() {
         )
     );
     assert_eq!(
-        unsafe { ::std::ptr::addr_of!((*ptr).InputEventsQueue) as usize - ptr as usize },
-        14552usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(ImGuiContext),
-            "::",
-            stringify!(InputEventsQueue)
-        )
-    );
-    assert_eq!(
-        unsafe { ::std::ptr::addr_of!((*ptr).InputEventsTrail) as usize - ptr as usize },
-        14568usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(ImGuiContext),
-            "::",
-            stringify!(InputEventsTrail)
-        )
-    );
-    assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).Style) as usize - ptr as usize },
-        14584usize,
+        14552usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -15342,7 +15713,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).ConfigFlagsCurrFrame) as usize - ptr as usize },
-        15684usize,
+        15676usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -15352,7 +15723,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).ConfigFlagsLastFrame) as usize - ptr as usize },
-        15688usize,
+        15680usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -15362,7 +15733,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).Font) as usize - ptr as usize },
-        15696usize,
+        15688usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -15372,7 +15743,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).FontSize) as usize - ptr as usize },
-        15704usize,
+        15696usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -15382,7 +15753,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).FontBaseSize) as usize - ptr as usize },
-        15708usize,
+        15700usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -15392,7 +15763,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).DrawListSharedData) as usize - ptr as usize },
-        15712usize,
+        15704usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -15402,7 +15773,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).Time) as usize - ptr as usize },
-        16240usize,
+        16232usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -15412,7 +15783,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).FrameCount) as usize - ptr as usize },
-        16248usize,
+        16240usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -15422,7 +15793,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).FrameCountEnded) as usize - ptr as usize },
-        16252usize,
+        16244usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -15432,7 +15803,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).FrameCountPlatformEnded) as usize - ptr as usize },
-        16256usize,
+        16248usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -15442,7 +15813,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).FrameCountRendered) as usize - ptr as usize },
-        16260usize,
+        16252usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -15452,7 +15823,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).WithinFrameScope) as usize - ptr as usize },
-        16264usize,
+        16256usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -15464,7 +15835,7 @@ fn bindgen_test_layout_ImGuiContext() {
         unsafe {
             ::std::ptr::addr_of!((*ptr).WithinFrameScopeWithImplicitWindow) as usize - ptr as usize
         },
-        16265usize,
+        16257usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -15474,7 +15845,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).WithinEndChild) as usize - ptr as usize },
-        16266usize,
+        16258usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -15484,7 +15855,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).GcCompactAll) as usize - ptr as usize },
-        16267usize,
+        16259usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -15494,7 +15865,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).TestEngineHookItems) as usize - ptr as usize },
-        16268usize,
+        16260usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -15504,7 +15875,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).TestEngine) as usize - ptr as usize },
-        16272usize,
+        16264usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -15513,8 +15884,48 @@ fn bindgen_test_layout_ImGuiContext() {
         )
     );
     assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).InputEventsQueue) as usize - ptr as usize },
+        16272usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ImGuiContext),
+            "::",
+            stringify!(InputEventsQueue)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).InputEventsTrail) as usize - ptr as usize },
+        16288usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ImGuiContext),
+            "::",
+            stringify!(InputEventsTrail)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).InputEventsNextMouseSource) as usize - ptr as usize },
+        16304usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ImGuiContext),
+            "::",
+            stringify!(InputEventsNextMouseSource)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).InputEventsNextEventId) as usize - ptr as usize },
+        16308usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ImGuiContext),
+            "::",
+            stringify!(InputEventsNextEventId)
+        )
+    );
+    assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).Windows) as usize - ptr as usize },
-        16280usize,
+        16312usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -15524,7 +15935,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).WindowsFocusOrder) as usize - ptr as usize },
-        16296usize,
+        16328usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -15534,7 +15945,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).WindowsTempSortBuffer) as usize - ptr as usize },
-        16312usize,
+        16344usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -15544,7 +15955,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).CurrentWindowStack) as usize - ptr as usize },
-        16328usize,
+        16360usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -15554,7 +15965,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).WindowsById) as usize - ptr as usize },
-        16344usize,
+        16376usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -15564,7 +15975,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).WindowsActiveCount) as usize - ptr as usize },
-        16360usize,
+        16392usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -15574,7 +15985,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).WindowsHoverPadding) as usize - ptr as usize },
-        16364usize,
+        16396usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -15584,7 +15995,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).CurrentWindow) as usize - ptr as usize },
-        16376usize,
+        16408usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -15594,7 +16005,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).HoveredWindow) as usize - ptr as usize },
-        16384usize,
+        16416usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -15606,7 +16017,7 @@ fn bindgen_test_layout_ImGuiContext() {
         unsafe {
             ::std::ptr::addr_of!((*ptr).HoveredWindowUnderMovingWindow) as usize - ptr as usize
         },
-        16392usize,
+        16424usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -15616,7 +16027,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).MovingWindow) as usize - ptr as usize },
-        16400usize,
+        16432usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -15626,7 +16037,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).WheelingWindow) as usize - ptr as usize },
-        16408usize,
+        16440usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -15636,7 +16047,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).WheelingWindowRefMousePos) as usize - ptr as usize },
-        16416usize,
+        16448usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -15646,7 +16057,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).WheelingWindowStartFrame) as usize - ptr as usize },
-        16424usize,
+        16456usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -15656,7 +16067,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).WheelingWindowReleaseTimer) as usize - ptr as usize },
-        16428usize,
+        16460usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -15668,7 +16079,7 @@ fn bindgen_test_layout_ImGuiContext() {
         unsafe {
             ::std::ptr::addr_of!((*ptr).WheelingWindowWheelRemainder) as usize - ptr as usize
         },
-        16432usize,
+        16464usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -15678,7 +16089,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).WheelingAxisAvg) as usize - ptr as usize },
-        16440usize,
+        16472usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -15688,7 +16099,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).DebugHookIdInfo) as usize - ptr as usize },
-        16448usize,
+        16480usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -15698,7 +16109,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).HoveredId) as usize - ptr as usize },
-        16452usize,
+        16484usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -15708,7 +16119,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).HoveredIdPreviousFrame) as usize - ptr as usize },
-        16456usize,
+        16488usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -15718,7 +16129,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).HoveredIdAllowOverlap) as usize - ptr as usize },
-        16460usize,
+        16492usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -15728,7 +16139,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).HoveredIdDisabled) as usize - ptr as usize },
-        16461usize,
+        16493usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -15738,7 +16149,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).HoveredIdTimer) as usize - ptr as usize },
-        16464usize,
+        16496usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -15748,7 +16159,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).HoveredIdNotActiveTimer) as usize - ptr as usize },
-        16468usize,
+        16500usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -15758,7 +16169,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).ActiveId) as usize - ptr as usize },
-        16472usize,
+        16504usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -15768,7 +16179,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).ActiveIdIsAlive) as usize - ptr as usize },
-        16476usize,
+        16508usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -15778,7 +16189,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).ActiveIdTimer) as usize - ptr as usize },
-        16480usize,
+        16512usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -15788,7 +16199,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).ActiveIdIsJustActivated) as usize - ptr as usize },
-        16484usize,
+        16516usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -15798,7 +16209,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).ActiveIdAllowOverlap) as usize - ptr as usize },
-        16485usize,
+        16517usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -15808,7 +16219,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).ActiveIdNoClearOnFocusLoss) as usize - ptr as usize },
-        16486usize,
+        16518usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -15820,7 +16231,7 @@ fn bindgen_test_layout_ImGuiContext() {
         unsafe {
             ::std::ptr::addr_of!((*ptr).ActiveIdHasBeenPressedBefore) as usize - ptr as usize
         },
-        16487usize,
+        16519usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -15830,7 +16241,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).ActiveIdHasBeenEditedBefore) as usize - ptr as usize },
-        16488usize,
+        16520usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -15842,7 +16253,7 @@ fn bindgen_test_layout_ImGuiContext() {
         unsafe {
             ::std::ptr::addr_of!((*ptr).ActiveIdHasBeenEditedThisFrame) as usize - ptr as usize
         },
-        16489usize,
+        16521usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -15852,7 +16263,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).ActiveIdClickOffset) as usize - ptr as usize },
-        16492usize,
+        16524usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -15862,7 +16273,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).ActiveIdWindow) as usize - ptr as usize },
-        16504usize,
+        16536usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -15872,7 +16283,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).ActiveIdSource) as usize - ptr as usize },
-        16512usize,
+        16544usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -15882,7 +16293,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).ActiveIdMouseButton) as usize - ptr as usize },
-        16516usize,
+        16548usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -15892,7 +16303,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).ActiveIdPreviousFrame) as usize - ptr as usize },
-        16520usize,
+        16552usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -15904,7 +16315,7 @@ fn bindgen_test_layout_ImGuiContext() {
         unsafe {
             ::std::ptr::addr_of!((*ptr).ActiveIdPreviousFrameIsAlive) as usize - ptr as usize
         },
-        16524usize,
+        16556usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -15917,7 +16328,7 @@ fn bindgen_test_layout_ImGuiContext() {
             ::std::ptr::addr_of!((*ptr).ActiveIdPreviousFrameHasBeenEditedBefore) as usize
                 - ptr as usize
         },
-        16525usize,
+        16557usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -15927,7 +16338,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).ActiveIdPreviousFrameWindow) as usize - ptr as usize },
-        16528usize,
+        16560usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -15937,7 +16348,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).LastActiveId) as usize - ptr as usize },
-        16536usize,
+        16568usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -15947,7 +16358,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).LastActiveIdTimer) as usize - ptr as usize },
-        16540usize,
+        16572usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -15957,7 +16368,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).KeysOwnerData) as usize - ptr as usize },
-        16544usize,
+        16576usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -15967,7 +16378,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).KeysRoutingTable) as usize - ptr as usize },
-        18224usize,
+        18256usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -15977,7 +16388,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).ActiveIdUsingNavDirMask) as usize - ptr as usize },
-        18536usize,
+        18568usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -15989,7 +16400,7 @@ fn bindgen_test_layout_ImGuiContext() {
         unsafe {
             ::std::ptr::addr_of!((*ptr).ActiveIdUsingAllKeyboardKeys) as usize - ptr as usize
         },
-        18540usize,
+        18572usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -15999,7 +16410,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).ActiveIdUsingNavInputMask) as usize - ptr as usize },
-        18544usize,
+        18576usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16009,7 +16420,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).CurrentFocusScopeId) as usize - ptr as usize },
-        18548usize,
+        18580usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16019,7 +16430,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).CurrentItemFlags) as usize - ptr as usize },
-        18552usize,
+        18584usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16029,7 +16440,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).DebugLocateId) as usize - ptr as usize },
-        18556usize,
+        18588usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16039,7 +16450,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).NextItemData) as usize - ptr as usize },
-        18560usize,
+        18592usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16049,7 +16460,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).LastItemData) as usize - ptr as usize },
-        18580usize,
+        18616usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16059,7 +16470,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).NextWindowData) as usize - ptr as usize },
-        18640usize,
+        18680usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16069,7 +16480,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).ColorStack) as usize - ptr as usize },
-        18784usize,
+        18824usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16079,7 +16490,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).StyleVarStack) as usize - ptr as usize },
-        18800usize,
+        18840usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16089,7 +16500,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).FontStack) as usize - ptr as usize },
-        18816usize,
+        18856usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16099,7 +16510,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).FocusScopeStack) as usize - ptr as usize },
-        18832usize,
+        18872usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16109,7 +16520,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).ItemFlagsStack) as usize - ptr as usize },
-        18848usize,
+        18888usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16119,7 +16530,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).GroupStack) as usize - ptr as usize },
-        18864usize,
+        18904usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16129,7 +16540,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).OpenPopupStack) as usize - ptr as usize },
-        18880usize,
+        18920usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16139,7 +16550,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).BeginPopupStack) as usize - ptr as usize },
-        18896usize,
+        18936usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16148,8 +16559,18 @@ fn bindgen_test_layout_ImGuiContext() {
         )
     );
     assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).NavTreeNodeStack) as usize - ptr as usize },
+        18952usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ImGuiContext),
+            "::",
+            stringify!(NavTreeNodeStack)
+        )
+    );
+    assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).BeginMenuCount) as usize - ptr as usize },
-        18912usize,
+        18968usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16159,7 +16580,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).Viewports) as usize - ptr as usize },
-        18920usize,
+        18976usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16169,7 +16590,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).CurrentDpiScale) as usize - ptr as usize },
-        18936usize,
+        18992usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16179,7 +16600,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).CurrentViewport) as usize - ptr as usize },
-        18944usize,
+        19000usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16189,7 +16610,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).MouseViewport) as usize - ptr as usize },
-        18952usize,
+        19008usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16199,7 +16620,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).MouseLastHoveredViewport) as usize - ptr as usize },
-        18960usize,
+        19016usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16211,7 +16632,7 @@ fn bindgen_test_layout_ImGuiContext() {
         unsafe {
             ::std::ptr::addr_of!((*ptr).PlatformLastFocusedViewportId) as usize - ptr as usize
         },
-        18968usize,
+        19024usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16221,7 +16642,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).FallbackMonitor) as usize - ptr as usize },
-        18972usize,
+        19032usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16230,18 +16651,38 @@ fn bindgen_test_layout_ImGuiContext() {
         )
     );
     assert_eq!(
-        unsafe { ::std::ptr::addr_of!((*ptr).ViewportFrontMostStampCount) as usize - ptr as usize },
-        19008usize,
+        unsafe { ::std::ptr::addr_of!((*ptr).ViewportCreatedCount) as usize - ptr as usize },
+        19080usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
             "::",
-            stringify!(ViewportFrontMostStampCount)
+            stringify!(ViewportCreatedCount)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).PlatformWindowsCreatedCount) as usize - ptr as usize },
+        19084usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ImGuiContext),
+            "::",
+            stringify!(PlatformWindowsCreatedCount)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).ViewportFocusedStampCount) as usize - ptr as usize },
+        19088usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ImGuiContext),
+            "::",
+            stringify!(ViewportFocusedStampCount)
         )
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).NavWindow) as usize - ptr as usize },
-        19016usize,
+        19096usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16251,7 +16692,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).NavId) as usize - ptr as usize },
-        19024usize,
+        19104usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16261,7 +16702,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).NavFocusScopeId) as usize - ptr as usize },
-        19028usize,
+        19108usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16271,7 +16712,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).NavActivateId) as usize - ptr as usize },
-        19032usize,
+        19112usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16281,7 +16722,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).NavActivateDownId) as usize - ptr as usize },
-        19036usize,
+        19116usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16291,7 +16732,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).NavActivatePressedId) as usize - ptr as usize },
-        19040usize,
+        19120usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16301,7 +16742,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).NavActivateFlags) as usize - ptr as usize },
-        19044usize,
+        19124usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16311,7 +16752,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).NavJustMovedToId) as usize - ptr as usize },
-        19048usize,
+        19128usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16321,7 +16762,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).NavJustMovedToFocusScopeId) as usize - ptr as usize },
-        19052usize,
+        19132usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16331,7 +16772,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).NavJustMovedToKeyMods) as usize - ptr as usize },
-        19056usize,
+        19136usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16341,7 +16782,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).NavNextActivateId) as usize - ptr as usize },
-        19060usize,
+        19140usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16351,7 +16792,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).NavNextActivateFlags) as usize - ptr as usize },
-        19064usize,
+        19144usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16361,7 +16802,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).NavInputSource) as usize - ptr as usize },
-        19068usize,
+        19148usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16371,7 +16812,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).NavLayer) as usize - ptr as usize },
-        19072usize,
+        19152usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16381,7 +16822,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).NavIdIsAlive) as usize - ptr as usize },
-        19076usize,
+        19156usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16391,7 +16832,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).NavMousePosDirty) as usize - ptr as usize },
-        19077usize,
+        19157usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16401,7 +16842,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).NavDisableHighlight) as usize - ptr as usize },
-        19078usize,
+        19158usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16411,7 +16852,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).NavDisableMouseHover) as usize - ptr as usize },
-        19079usize,
+        19159usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16421,7 +16862,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).NavAnyRequest) as usize - ptr as usize },
-        19080usize,
+        19160usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16431,7 +16872,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).NavInitRequest) as usize - ptr as usize },
-        19081usize,
+        19161usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16441,7 +16882,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).NavInitRequestFromMove) as usize - ptr as usize },
-        19082usize,
+        19162usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16450,28 +16891,18 @@ fn bindgen_test_layout_ImGuiContext() {
         )
     );
     assert_eq!(
-        unsafe { ::std::ptr::addr_of!((*ptr).NavInitResultId) as usize - ptr as usize },
-        19084usize,
+        unsafe { ::std::ptr::addr_of!((*ptr).NavInitResult) as usize - ptr as usize },
+        19168usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
             "::",
-            stringify!(NavInitResultId)
-        )
-    );
-    assert_eq!(
-        unsafe { ::std::ptr::addr_of!((*ptr).NavInitResultRectRel) as usize - ptr as usize },
-        19088usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(ImGuiContext),
-            "::",
-            stringify!(NavInitResultRectRel)
+            stringify!(NavInitResult)
         )
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).NavMoveSubmitted) as usize - ptr as usize },
-        19104usize,
+        19216usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16481,7 +16912,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).NavMoveScoringItems) as usize - ptr as usize },
-        19105usize,
+        19217usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16491,7 +16922,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).NavMoveForwardToNextFrame) as usize - ptr as usize },
-        19106usize,
+        19218usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16501,7 +16932,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).NavMoveFlags) as usize - ptr as usize },
-        19108usize,
+        19220usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16511,7 +16942,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).NavMoveScrollFlags) as usize - ptr as usize },
-        19112usize,
+        19224usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16521,7 +16952,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).NavMoveKeyMods) as usize - ptr as usize },
-        19116usize,
+        19228usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16531,7 +16962,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).NavMoveDir) as usize - ptr as usize },
-        19120usize,
+        19232usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16541,7 +16972,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).NavMoveDirForDebug) as usize - ptr as usize },
-        19124usize,
+        19236usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16551,7 +16982,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).NavMoveClipDir) as usize - ptr as usize },
-        19128usize,
+        19240usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16561,7 +16992,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).NavScoringRect) as usize - ptr as usize },
-        19132usize,
+        19244usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16571,7 +17002,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).NavScoringNoClipRect) as usize - ptr as usize },
-        19148usize,
+        19260usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16581,7 +17012,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).NavScoringDebugCount) as usize - ptr as usize },
-        19164usize,
+        19276usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16591,7 +17022,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).NavTabbingDir) as usize - ptr as usize },
-        19168usize,
+        19280usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16601,7 +17032,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).NavTabbingCounter) as usize - ptr as usize },
-        19172usize,
+        19284usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16611,7 +17042,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).NavMoveResultLocal) as usize - ptr as usize },
-        19176usize,
+        19288usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16621,7 +17052,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).NavMoveResultLocalVisible) as usize - ptr as usize },
-        19224usize,
+        19336usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16631,7 +17062,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).NavMoveResultOther) as usize - ptr as usize },
-        19272usize,
+        19384usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16641,7 +17072,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).NavTabbingResultFirst) as usize - ptr as usize },
-        19320usize,
+        19432usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16651,7 +17082,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).ConfigNavWindowingKeyNext) as usize - ptr as usize },
-        19368usize,
+        19480usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16661,7 +17092,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).ConfigNavWindowingKeyPrev) as usize - ptr as usize },
-        19372usize,
+        19484usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16671,7 +17102,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).NavWindowingTarget) as usize - ptr as usize },
-        19376usize,
+        19488usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16681,7 +17112,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).NavWindowingTargetAnim) as usize - ptr as usize },
-        19384usize,
+        19496usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16691,7 +17122,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).NavWindowingListWindow) as usize - ptr as usize },
-        19392usize,
+        19504usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16701,7 +17132,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).NavWindowingTimer) as usize - ptr as usize },
-        19400usize,
+        19512usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16711,7 +17142,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).NavWindowingHighlightAlpha) as usize - ptr as usize },
-        19404usize,
+        19516usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16721,7 +17152,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).NavWindowingToggleLayer) as usize - ptr as usize },
-        19408usize,
+        19520usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16731,7 +17162,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).NavWindowingAccumDeltaPos) as usize - ptr as usize },
-        19412usize,
+        19524usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16741,7 +17172,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).NavWindowingAccumDeltaSize) as usize - ptr as usize },
-        19420usize,
+        19532usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16751,7 +17182,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).DimBgRatio) as usize - ptr as usize },
-        19428usize,
+        19540usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16760,18 +17191,8 @@ fn bindgen_test_layout_ImGuiContext() {
         )
     );
     assert_eq!(
-        unsafe { ::std::ptr::addr_of!((*ptr).MouseCursor) as usize - ptr as usize },
-        19432usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(ImGuiContext),
-            "::",
-            stringify!(MouseCursor)
-        )
-    );
-    assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).DragDropActive) as usize - ptr as usize },
-        19436usize,
+        19544usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16781,7 +17202,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).DragDropWithinSource) as usize - ptr as usize },
-        19437usize,
+        19545usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16791,7 +17212,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).DragDropWithinTarget) as usize - ptr as usize },
-        19438usize,
+        19546usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16801,7 +17222,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).DragDropSourceFlags) as usize - ptr as usize },
-        19440usize,
+        19548usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16811,7 +17232,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).DragDropSourceFrameCount) as usize - ptr as usize },
-        19444usize,
+        19552usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16821,7 +17242,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).DragDropMouseButton) as usize - ptr as usize },
-        19448usize,
+        19556usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16831,7 +17252,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).DragDropPayload) as usize - ptr as usize },
-        19456usize,
+        19560usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16841,7 +17262,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).DragDropTargetRect) as usize - ptr as usize },
-        19520usize,
+        19624usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16851,7 +17272,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).DragDropTargetId) as usize - ptr as usize },
-        19536usize,
+        19640usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16861,7 +17282,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).DragDropAcceptFlags) as usize - ptr as usize },
-        19540usize,
+        19644usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16873,7 +17294,7 @@ fn bindgen_test_layout_ImGuiContext() {
         unsafe {
             ::std::ptr::addr_of!((*ptr).DragDropAcceptIdCurrRectSurface) as usize - ptr as usize
         },
-        19544usize,
+        19648usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16883,7 +17304,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).DragDropAcceptIdCurr) as usize - ptr as usize },
-        19548usize,
+        19652usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16893,7 +17314,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).DragDropAcceptIdPrev) as usize - ptr as usize },
-        19552usize,
+        19656usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16903,7 +17324,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).DragDropAcceptFrameCount) as usize - ptr as usize },
-        19556usize,
+        19660usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16913,7 +17334,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).DragDropHoldJustPressedId) as usize - ptr as usize },
-        19560usize,
+        19664usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16923,7 +17344,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).DragDropPayloadBufHeap) as usize - ptr as usize },
-        19568usize,
+        19672usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16933,7 +17354,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).DragDropPayloadBufLocal) as usize - ptr as usize },
-        19584usize,
+        19688usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16943,7 +17364,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).ClipperTempDataStacked) as usize - ptr as usize },
-        19600usize,
+        19704usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16953,7 +17374,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).ClipperTempData) as usize - ptr as usize },
-        19608usize,
+        19712usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16963,7 +17384,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).CurrentTable) as usize - ptr as usize },
-        19624usize,
+        19728usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16973,7 +17394,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).TablesTempDataStacked) as usize - ptr as usize },
-        19632usize,
+        19736usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16983,7 +17404,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).TablesTempData) as usize - ptr as usize },
-        19640usize,
+        19744usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -16993,7 +17414,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).Tables) as usize - ptr as usize },
-        19656usize,
+        19760usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17003,7 +17424,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).TablesLastTimeActive) as usize - ptr as usize },
-        19696usize,
+        19800usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17013,7 +17434,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).DrawChannelsTempMergeBuffer) as usize - ptr as usize },
-        19712usize,
+        19816usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17023,7 +17444,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).CurrentTabBar) as usize - ptr as usize },
-        19728usize,
+        19832usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17033,7 +17454,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).TabBars) as usize - ptr as usize },
-        19736usize,
+        19840usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17043,7 +17464,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).CurrentTabBarStack) as usize - ptr as usize },
-        19776usize,
+        19880usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17053,7 +17474,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).ShrinkWidthBuffer) as usize - ptr as usize },
-        19792usize,
+        19896usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17062,48 +17483,94 @@ fn bindgen_test_layout_ImGuiContext() {
         )
     );
     assert_eq!(
-        unsafe { ::std::ptr::addr_of!((*ptr).HoverDelayId) as usize - ptr as usize },
-        19808usize,
+        unsafe { ::std::ptr::addr_of!((*ptr).HoverItemDelayId) as usize - ptr as usize },
+        19912usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
             "::",
-            stringify!(HoverDelayId)
+            stringify!(HoverItemDelayId)
         )
     );
     assert_eq!(
-        unsafe { ::std::ptr::addr_of!((*ptr).HoverDelayIdPreviousFrame) as usize - ptr as usize },
-        19812usize,
+        unsafe {
+            ::std::ptr::addr_of!((*ptr).HoverItemDelayIdPreviousFrame) as usize - ptr as usize
+        },
+        19916usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
             "::",
-            stringify!(HoverDelayIdPreviousFrame)
+            stringify!(HoverItemDelayIdPreviousFrame)
         )
     );
     assert_eq!(
-        unsafe { ::std::ptr::addr_of!((*ptr).HoverDelayTimer) as usize - ptr as usize },
-        19816usize,
+        unsafe { ::std::ptr::addr_of!((*ptr).HoverItemDelayTimer) as usize - ptr as usize },
+        19920usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
             "::",
-            stringify!(HoverDelayTimer)
+            stringify!(HoverItemDelayTimer)
         )
     );
     assert_eq!(
-        unsafe { ::std::ptr::addr_of!((*ptr).HoverDelayClearTimer) as usize - ptr as usize },
-        19820usize,
+        unsafe { ::std::ptr::addr_of!((*ptr).HoverItemDelayClearTimer) as usize - ptr as usize },
+        19924usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
             "::",
-            stringify!(HoverDelayClearTimer)
+            stringify!(HoverItemDelayClearTimer)
+        )
+    );
+    assert_eq!(
+        unsafe {
+            ::std::ptr::addr_of!((*ptr).HoverItemUnlockedStationaryId) as usize - ptr as usize
+        },
+        19928usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ImGuiContext),
+            "::",
+            stringify!(HoverItemUnlockedStationaryId)
+        )
+    );
+    assert_eq!(
+        unsafe {
+            ::std::ptr::addr_of!((*ptr).HoverWindowUnlockedStationaryId) as usize - ptr as usize
+        },
+        19932usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ImGuiContext),
+            "::",
+            stringify!(HoverWindowUnlockedStationaryId)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).MouseCursor) as usize - ptr as usize },
+        19936usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ImGuiContext),
+            "::",
+            stringify!(MouseCursor)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).MouseStationaryTimer) as usize - ptr as usize },
+        19940usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ImGuiContext),
+            "::",
+            stringify!(MouseStationaryTimer)
         )
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).MouseLastValidPos) as usize - ptr as usize },
-        19824usize,
+        19944usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17113,7 +17580,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).InputTextState) as usize - ptr as usize },
-        19832usize,
+        19952usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17122,8 +17589,18 @@ fn bindgen_test_layout_ImGuiContext() {
         )
     );
     assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).InputTextDeactivatedState) as usize - ptr as usize },
+        23680usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ImGuiContext),
+            "::",
+            stringify!(InputTextDeactivatedState)
+        )
+    );
+    assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).InputTextPasswordFont) as usize - ptr as usize },
-        23560usize,
+        23704usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17133,7 +17610,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).TempInputId) as usize - ptr as usize },
-        23680usize,
+        23824usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17143,7 +17620,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).ColorEditOptions) as usize - ptr as usize },
-        23684usize,
+        23828usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17153,7 +17630,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).ColorEditCurrentID) as usize - ptr as usize },
-        23688usize,
+        23832usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17163,7 +17640,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).ColorEditSavedID) as usize - ptr as usize },
-        23692usize,
+        23836usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17173,7 +17650,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).ColorEditSavedHue) as usize - ptr as usize },
-        23696usize,
+        23840usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17183,7 +17660,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).ColorEditSavedSat) as usize - ptr as usize },
-        23700usize,
+        23844usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17193,7 +17670,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).ColorEditSavedColor) as usize - ptr as usize },
-        23704usize,
+        23848usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17203,7 +17680,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).ColorPickerRef) as usize - ptr as usize },
-        23708usize,
+        23852usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17213,7 +17690,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).ComboPreviewData) as usize - ptr as usize },
-        23724usize,
+        23868usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17223,7 +17700,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).SliderGrabClickOffset) as usize - ptr as usize },
-        23772usize,
+        23916usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17233,7 +17710,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).SliderCurrentAccum) as usize - ptr as usize },
-        23776usize,
+        23920usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17243,7 +17720,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).SliderCurrentAccumDirty) as usize - ptr as usize },
-        23780usize,
+        23924usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17253,7 +17730,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).DragCurrentAccumDirty) as usize - ptr as usize },
-        23781usize,
+        23925usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17263,7 +17740,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).DragCurrentAccum) as usize - ptr as usize },
-        23784usize,
+        23928usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17273,7 +17750,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).DragSpeedDefaultRatio) as usize - ptr as usize },
-        23788usize,
+        23932usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17285,7 +17762,7 @@ fn bindgen_test_layout_ImGuiContext() {
         unsafe {
             ::std::ptr::addr_of!((*ptr).ScrollbarClickDeltaToGrabCenter) as usize - ptr as usize
         },
-        23792usize,
+        23936usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17295,7 +17772,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).DisabledAlphaBackup) as usize - ptr as usize },
-        23796usize,
+        23940usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17305,7 +17782,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).DisabledStackSize) as usize - ptr as usize },
-        23800usize,
+        23944usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17314,8 +17791,18 @@ fn bindgen_test_layout_ImGuiContext() {
         )
     );
     assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).LockMarkEdited) as usize - ptr as usize },
+        23946usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ImGuiContext),
+            "::",
+            stringify!(LockMarkEdited)
+        )
+    );
+    assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).TooltipOverrideCount) as usize - ptr as usize },
-        23802usize,
+        23948usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17325,7 +17812,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).ClipboardHandlerData) as usize - ptr as usize },
-        23808usize,
+        23952usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17335,7 +17822,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).MenusIdSubmittedThisFrame) as usize - ptr as usize },
-        23824usize,
+        23968usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17345,7 +17832,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).PlatformImeData) as usize - ptr as usize },
-        23840usize,
+        23984usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17355,7 +17842,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).PlatformImeDataPrev) as usize - ptr as usize },
-        23856usize,
+        24000usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17365,7 +17852,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).PlatformImeViewport) as usize - ptr as usize },
-        23872usize,
+        24016usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17374,18 +17861,8 @@ fn bindgen_test_layout_ImGuiContext() {
         )
     );
     assert_eq!(
-        unsafe { ::std::ptr::addr_of!((*ptr).PlatformLocaleDecimalPoint) as usize - ptr as usize },
-        23876usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(ImGuiContext),
-            "::",
-            stringify!(PlatformLocaleDecimalPoint)
-        )
-    );
-    assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).DockContext) as usize - ptr as usize },
-        23880usize,
+        24024usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17395,7 +17872,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).DockNodeWindowMenuHandler) as usize - ptr as usize },
-        23936usize,
+        24080usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17405,7 +17882,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).SettingsLoaded) as usize - ptr as usize },
-        23944usize,
+        24088usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17415,7 +17892,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).SettingsDirtyTimer) as usize - ptr as usize },
-        23948usize,
+        24092usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17425,7 +17902,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).SettingsIniData) as usize - ptr as usize },
-        23952usize,
+        24096usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17435,7 +17912,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).SettingsHandlers) as usize - ptr as usize },
-        23968usize,
+        24112usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17445,7 +17922,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).SettingsWindows) as usize - ptr as usize },
-        23984usize,
+        24128usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17455,7 +17932,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).SettingsTables) as usize - ptr as usize },
-        24000usize,
+        24144usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17465,7 +17942,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).Hooks) as usize - ptr as usize },
-        24016usize,
+        24160usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17475,7 +17952,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).HookIdNext) as usize - ptr as usize },
-        24032usize,
+        24176usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17485,7 +17962,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).LocalizationTable) as usize - ptr as usize },
-        24040usize,
+        24184usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17495,7 +17972,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).LogEnabled) as usize - ptr as usize },
-        24104usize,
+        24264usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17505,7 +17982,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).LogType) as usize - ptr as usize },
-        24108usize,
+        24268usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17515,7 +17992,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).LogFile) as usize - ptr as usize },
-        24112usize,
+        24272usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17525,7 +18002,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).LogBuffer) as usize - ptr as usize },
-        24120usize,
+        24280usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17535,7 +18012,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).LogNextPrefix) as usize - ptr as usize },
-        24136usize,
+        24296usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17545,7 +18022,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).LogNextSuffix) as usize - ptr as usize },
-        24144usize,
+        24304usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17555,7 +18032,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).LogLinePosY) as usize - ptr as usize },
-        24152usize,
+        24312usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17565,7 +18042,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).LogLineFirstItem) as usize - ptr as usize },
-        24156usize,
+        24316usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17575,7 +18052,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).LogDepthRef) as usize - ptr as usize },
-        24160usize,
+        24320usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17585,7 +18062,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).LogDepthToExpand) as usize - ptr as usize },
-        24164usize,
+        24324usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17595,7 +18072,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).LogDepthToExpandDefault) as usize - ptr as usize },
-        24168usize,
+        24328usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17605,7 +18082,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).DebugLogFlags) as usize - ptr as usize },
-        24172usize,
+        24332usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17615,7 +18092,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).DebugLogBuf) as usize - ptr as usize },
-        24176usize,
+        24336usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17625,7 +18102,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).DebugLogIndex) as usize - ptr as usize },
-        24192usize,
+        24352usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17637,7 +18114,7 @@ fn bindgen_test_layout_ImGuiContext() {
         unsafe {
             ::std::ptr::addr_of!((*ptr).DebugLogClipperAutoDisableFrames) as usize - ptr as usize
         },
-        24216usize,
+        24376usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17647,7 +18124,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).DebugLocateFrames) as usize - ptr as usize },
-        24217usize,
+        24377usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17659,7 +18136,7 @@ fn bindgen_test_layout_ImGuiContext() {
         unsafe {
             ::std::ptr::addr_of!((*ptr).DebugBeginReturnValueCullDepth) as usize - ptr as usize
         },
-        24218usize,
+        24378usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17669,7 +18146,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).DebugItemPickerActive) as usize - ptr as usize },
-        24219usize,
+        24379usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17679,7 +18156,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).DebugItemPickerMouseButton) as usize - ptr as usize },
-        24220usize,
+        24380usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17689,7 +18166,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).DebugItemPickerBreakId) as usize - ptr as usize },
-        24224usize,
+        24384usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17699,7 +18176,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).DebugMetricsConfig) as usize - ptr as usize },
-        24228usize,
+        24388usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17709,7 +18186,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).DebugStackTool) as usize - ptr as usize },
-        24248usize,
+        24408usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17719,7 +18196,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).DebugHoveredDockNode) as usize - ptr as usize },
-        24288usize,
+        24448usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17729,7 +18206,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).FramerateSecPerFrame) as usize - ptr as usize },
-        24296usize,
+        24456usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17739,7 +18216,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).FramerateSecPerFrameIdx) as usize - ptr as usize },
-        24536usize,
+        24696usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17749,7 +18226,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).FramerateSecPerFrameCount) as usize - ptr as usize },
-        24540usize,
+        24700usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17759,7 +18236,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).FramerateSecPerFrameAccum) as usize - ptr as usize },
-        24544usize,
+        24704usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17769,7 +18246,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).WantCaptureMouseNextFrame) as usize - ptr as usize },
-        24548usize,
+        24708usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17781,7 +18258,7 @@ fn bindgen_test_layout_ImGuiContext() {
         unsafe {
             ::std::ptr::addr_of!((*ptr).WantCaptureKeyboardNextFrame) as usize - ptr as usize
         },
-        24552usize,
+        24712usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17791,7 +18268,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).WantTextInputNextFrame) as usize - ptr as usize },
-        24556usize,
+        24716usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17801,7 +18278,7 @@ fn bindgen_test_layout_ImGuiContext() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).TempBuffer) as usize - ptr as usize },
-        24560usize,
+        24720usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiContext),
@@ -17831,8 +18308,9 @@ pub struct ImGuiWindowTempData {
     pub NavLayerCurrent: ImGuiNavLayer,
     pub NavLayersActiveMask: ::std::os::raw::c_short,
     pub NavLayersActiveMaskNext: ::std::os::raw::c_short,
+    pub NavIsScrollPushableX: bool,
     pub NavHideHighlightOneFrame: bool,
-    pub NavHasScroll: bool,
+    pub NavWindowHasScrollY: bool,
     pub MenuBarAppending: bool,
     pub MenuBarOffset: ImVec2,
     pub MenuColumns: ImGuiMenuColumns,
@@ -18044,8 +18522,18 @@ fn bindgen_test_layout_ImGuiWindowTempData() {
         )
     );
     assert_eq!(
-        unsafe { ::std::ptr::addr_of!((*ptr).NavHideHighlightOneFrame) as usize - ptr as usize },
+        unsafe { ::std::ptr::addr_of!((*ptr).NavIsScrollPushableX) as usize - ptr as usize },
         96usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ImGuiWindowTempData),
+            "::",
+            stringify!(NavIsScrollPushableX)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).NavHideHighlightOneFrame) as usize - ptr as usize },
+        97usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiWindowTempData),
@@ -18054,18 +18542,18 @@ fn bindgen_test_layout_ImGuiWindowTempData() {
         )
     );
     assert_eq!(
-        unsafe { ::std::ptr::addr_of!((*ptr).NavHasScroll) as usize - ptr as usize },
-        97usize,
+        unsafe { ::std::ptr::addr_of!((*ptr).NavWindowHasScrollY) as usize - ptr as usize },
+        98usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiWindowTempData),
             "::",
-            stringify!(NavHasScroll)
+            stringify!(NavWindowHasScrollY)
         )
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).MenuBarAppending) as usize - ptr as usize },
-        98usize,
+        99usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiWindowTempData),
@@ -18371,6 +18859,7 @@ pub struct ImGuiWindow {
     pub NavLastChildNavWindow: *mut ImGuiWindow,
     pub NavLastIds: [ImGuiID; 2usize],
     pub NavRectRel: [ImRect; 2usize],
+    pub NavPreferredScoringPosRel: [ImVec2; 2usize],
     pub NavRootFocusScopeId: ImGuiID,
     pub MemoryDrawListIdxCapacity: ::std::os::raw::c_int,
     pub MemoryDrawListVtxCapacity: ::std::os::raw::c_int,
@@ -18391,7 +18880,7 @@ fn bindgen_test_layout_ImGuiWindow() {
     let ptr = UNINIT.as_ptr();
     assert_eq!(
         ::std::mem::size_of::<ImGuiWindow>(),
-        1120usize,
+        1136usize,
         concat!("Size of: ", stringify!(ImGuiWindow))
     );
     assert_eq!(
@@ -19394,8 +19883,18 @@ fn bindgen_test_layout_ImGuiWindow() {
         )
     );
     assert_eq!(
-        unsafe { ::std::ptr::addr_of!((*ptr).NavRootFocusScopeId) as usize - ptr as usize },
+        unsafe { ::std::ptr::addr_of!((*ptr).NavPreferredScoringPosRel) as usize - ptr as usize },
         1040usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ImGuiWindow),
+            "::",
+            stringify!(NavPreferredScoringPosRel)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).NavRootFocusScopeId) as usize - ptr as usize },
+        1056usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiWindow),
@@ -19405,7 +19904,7 @@ fn bindgen_test_layout_ImGuiWindow() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).MemoryDrawListIdxCapacity) as usize - ptr as usize },
-        1044usize,
+        1060usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiWindow),
@@ -19415,7 +19914,7 @@ fn bindgen_test_layout_ImGuiWindow() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).MemoryDrawListVtxCapacity) as usize - ptr as usize },
-        1048usize,
+        1064usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiWindow),
@@ -19425,7 +19924,7 @@ fn bindgen_test_layout_ImGuiWindow() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).MemoryCompacted) as usize - ptr as usize },
-        1052usize,
+        1068usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiWindow),
@@ -19435,7 +19934,7 @@ fn bindgen_test_layout_ImGuiWindow() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).DockOrder) as usize - ptr as usize },
-        1054usize,
+        1070usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiWindow),
@@ -19445,7 +19944,7 @@ fn bindgen_test_layout_ImGuiWindow() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).DockStyle) as usize - ptr as usize },
-        1056usize,
+        1072usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiWindow),
@@ -19455,7 +19954,7 @@ fn bindgen_test_layout_ImGuiWindow() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).DockNode) as usize - ptr as usize },
-        1080usize,
+        1096usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiWindow),
@@ -19465,7 +19964,7 @@ fn bindgen_test_layout_ImGuiWindow() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).DockNodeAsHost) as usize - ptr as usize },
-        1088usize,
+        1104usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiWindow),
@@ -19475,7 +19974,7 @@ fn bindgen_test_layout_ImGuiWindow() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).DockId) as usize - ptr as usize },
-        1096usize,
+        1112usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiWindow),
@@ -19485,7 +19984,7 @@ fn bindgen_test_layout_ImGuiWindow() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).DockTabItemStatusFlags) as usize - ptr as usize },
-        1100usize,
+        1116usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiWindow),
@@ -19495,7 +19994,7 @@ fn bindgen_test_layout_ImGuiWindow() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).DockTabItemRect) as usize - ptr as usize },
-        1104usize,
+        1120usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiWindow),
@@ -20786,6 +21285,8 @@ pub struct ImGuiTableInstanceData {
     pub LastOuterHeight: f32,
     pub LastFirstRowHeight: f32,
     pub LastFrozenHeight: f32,
+    pub HoveredRowLast: ::std::os::raw::c_int,
+    pub HoveredRowNext: ::std::os::raw::c_int,
 }
 #[test]
 fn bindgen_test_layout_ImGuiTableInstanceData() {
@@ -20794,7 +21295,7 @@ fn bindgen_test_layout_ImGuiTableInstanceData() {
     let ptr = UNINIT.as_ptr();
     assert_eq!(
         ::std::mem::size_of::<ImGuiTableInstanceData>(),
-        16usize,
+        24usize,
         concat!("Size of: ", stringify!(ImGuiTableInstanceData))
     );
     assert_eq!(
@@ -20840,6 +21341,26 @@ fn bindgen_test_layout_ImGuiTableInstanceData() {
             stringify!(ImGuiTableInstanceData),
             "::",
             stringify!(LastFrozenHeight)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).HoveredRowLast) as usize - ptr as usize },
+        16usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ImGuiTableInstanceData),
+            "::",
+            stringify!(HoveredRowLast)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).HoveredRowNext) as usize - ptr as usize },
+        20usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ImGuiTableInstanceData),
+            "::",
+            stringify!(HoveredRowNext)
         )
     );
 }
@@ -21102,6 +21623,7 @@ pub struct ImGuiTable {
     pub RowPosY1: f32,
     pub RowPosY2: f32,
     pub RowMinHeight: f32,
+    pub RowCellPaddingY: f32,
     pub RowTextBaseline: f32,
     pub RowIndentOffsetX: f32,
     pub _bitfield_align_1: [u16; 0],
@@ -21116,7 +21638,6 @@ pub struct ImGuiTable {
     pub MinColumnWidth: f32,
     pub OuterPaddingX: f32,
     pub CellPaddingX: f32,
-    pub CellPaddingY: f32,
     pub CellSpacingX1: f32,
     pub CellSpacingX2: f32,
     pub InnerWidth: f32,
@@ -21193,7 +21714,7 @@ fn bindgen_test_layout_ImGuiTable() {
     let ptr = UNINIT.as_ptr();
     assert_eq!(
         ::std::mem::size_of::<ImGuiTable>(),
-        568usize,
+        576usize,
         concat!("Size of: ", stringify!(ImGuiTable))
     );
     assert_eq!(
@@ -21412,8 +21933,18 @@ fn bindgen_test_layout_ImGuiTable() {
         )
     );
     assert_eq!(
-        unsafe { ::std::ptr::addr_of!((*ptr).RowTextBaseline) as usize - ptr as usize },
+        unsafe { ::std::ptr::addr_of!((*ptr).RowCellPaddingY) as usize - ptr as usize },
         136usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(ImGuiTable),
+            "::",
+            stringify!(RowCellPaddingY)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).RowTextBaseline) as usize - ptr as usize },
+        140usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiTable),
@@ -21423,7 +21954,7 @@ fn bindgen_test_layout_ImGuiTable() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).RowIndentOffsetX) as usize - ptr as usize },
-        140usize,
+        144usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiTable),
@@ -21433,7 +21964,7 @@ fn bindgen_test_layout_ImGuiTable() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).RowBgColorCounter) as usize - ptr as usize },
-        148usize,
+        152usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiTable),
@@ -21443,7 +21974,7 @@ fn bindgen_test_layout_ImGuiTable() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).RowBgColor) as usize - ptr as usize },
-        152usize,
+        156usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiTable),
@@ -21453,7 +21984,7 @@ fn bindgen_test_layout_ImGuiTable() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).BorderColorStrong) as usize - ptr as usize },
-        160usize,
+        164usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiTable),
@@ -21463,7 +21994,7 @@ fn bindgen_test_layout_ImGuiTable() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).BorderColorLight) as usize - ptr as usize },
-        164usize,
+        168usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiTable),
@@ -21473,7 +22004,7 @@ fn bindgen_test_layout_ImGuiTable() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).BorderX1) as usize - ptr as usize },
-        168usize,
+        172usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiTable),
@@ -21483,7 +22014,7 @@ fn bindgen_test_layout_ImGuiTable() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).BorderX2) as usize - ptr as usize },
-        172usize,
+        176usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiTable),
@@ -21493,7 +22024,7 @@ fn bindgen_test_layout_ImGuiTable() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).HostIndentX) as usize - ptr as usize },
-        176usize,
+        180usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiTable),
@@ -21503,7 +22034,7 @@ fn bindgen_test_layout_ImGuiTable() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).MinColumnWidth) as usize - ptr as usize },
-        180usize,
+        184usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiTable),
@@ -21513,7 +22044,7 @@ fn bindgen_test_layout_ImGuiTable() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).OuterPaddingX) as usize - ptr as usize },
-        184usize,
+        188usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiTable),
@@ -21523,22 +22054,12 @@ fn bindgen_test_layout_ImGuiTable() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).CellPaddingX) as usize - ptr as usize },
-        188usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(ImGuiTable),
-            "::",
-            stringify!(CellPaddingX)
-        )
-    );
-    assert_eq!(
-        unsafe { ::std::ptr::addr_of!((*ptr).CellPaddingY) as usize - ptr as usize },
         192usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiTable),
             "::",
-            stringify!(CellPaddingY)
+            stringify!(CellPaddingX)
         )
     );
     assert_eq!(
@@ -21773,7 +22294,7 @@ fn bindgen_test_layout_ImGuiTable() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).InstanceDataExtra) as usize - ptr as usize },
-        432usize,
+        440usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiTable),
@@ -21783,7 +22304,7 @@ fn bindgen_test_layout_ImGuiTable() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).SortSpecsSingle) as usize - ptr as usize },
-        448usize,
+        456usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiTable),
@@ -21793,7 +22314,7 @@ fn bindgen_test_layout_ImGuiTable() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).SortSpecsMulti) as usize - ptr as usize },
-        464usize,
+        472usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiTable),
@@ -21803,7 +22324,7 @@ fn bindgen_test_layout_ImGuiTable() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).SortSpecs) as usize - ptr as usize },
-        480usize,
+        488usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiTable),
@@ -21813,7 +22334,7 @@ fn bindgen_test_layout_ImGuiTable() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).SortSpecsCount) as usize - ptr as usize },
-        496usize,
+        504usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiTable),
@@ -21823,7 +22344,7 @@ fn bindgen_test_layout_ImGuiTable() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).ColumnsEnabledCount) as usize - ptr as usize },
-        498usize,
+        506usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiTable),
@@ -21833,7 +22354,7 @@ fn bindgen_test_layout_ImGuiTable() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).ColumnsEnabledFixedCount) as usize - ptr as usize },
-        500usize,
+        508usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiTable),
@@ -21843,7 +22364,7 @@ fn bindgen_test_layout_ImGuiTable() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).DeclColumnsCount) as usize - ptr as usize },
-        502usize,
+        510usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiTable),
@@ -21853,7 +22374,7 @@ fn bindgen_test_layout_ImGuiTable() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).HoveredColumnBody) as usize - ptr as usize },
-        504usize,
+        512usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiTable),
@@ -21863,7 +22384,7 @@ fn bindgen_test_layout_ImGuiTable() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).HoveredColumnBorder) as usize - ptr as usize },
-        506usize,
+        514usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiTable),
@@ -21873,7 +22394,7 @@ fn bindgen_test_layout_ImGuiTable() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).AutoFitSingleColumn) as usize - ptr as usize },
-        508usize,
+        516usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiTable),
@@ -21883,7 +22404,7 @@ fn bindgen_test_layout_ImGuiTable() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).ResizedColumn) as usize - ptr as usize },
-        510usize,
+        518usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiTable),
@@ -21893,7 +22414,7 @@ fn bindgen_test_layout_ImGuiTable() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).LastResizedColumn) as usize - ptr as usize },
-        512usize,
+        520usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiTable),
@@ -21903,7 +22424,7 @@ fn bindgen_test_layout_ImGuiTable() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).HeldHeaderColumn) as usize - ptr as usize },
-        514usize,
+        522usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiTable),
@@ -21913,7 +22434,7 @@ fn bindgen_test_layout_ImGuiTable() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).ReorderColumn) as usize - ptr as usize },
-        516usize,
+        524usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiTable),
@@ -21923,7 +22444,7 @@ fn bindgen_test_layout_ImGuiTable() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).ReorderColumnDir) as usize - ptr as usize },
-        518usize,
+        526usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiTable),
@@ -21933,7 +22454,7 @@ fn bindgen_test_layout_ImGuiTable() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).LeftMostEnabledColumn) as usize - ptr as usize },
-        520usize,
+        528usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiTable),
@@ -21943,7 +22464,7 @@ fn bindgen_test_layout_ImGuiTable() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).RightMostEnabledColumn) as usize - ptr as usize },
-        522usize,
+        530usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiTable),
@@ -21953,7 +22474,7 @@ fn bindgen_test_layout_ImGuiTable() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).LeftMostStretchedColumn) as usize - ptr as usize },
-        524usize,
+        532usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiTable),
@@ -21963,7 +22484,7 @@ fn bindgen_test_layout_ImGuiTable() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).RightMostStretchedColumn) as usize - ptr as usize },
-        526usize,
+        534usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiTable),
@@ -21973,7 +22494,7 @@ fn bindgen_test_layout_ImGuiTable() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).ContextPopupColumn) as usize - ptr as usize },
-        528usize,
+        536usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiTable),
@@ -21983,7 +22504,7 @@ fn bindgen_test_layout_ImGuiTable() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).FreezeRowsRequest) as usize - ptr as usize },
-        530usize,
+        538usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiTable),
@@ -21993,7 +22514,7 @@ fn bindgen_test_layout_ImGuiTable() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).FreezeRowsCount) as usize - ptr as usize },
-        532usize,
+        540usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiTable),
@@ -22003,7 +22524,7 @@ fn bindgen_test_layout_ImGuiTable() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).FreezeColumnsRequest) as usize - ptr as usize },
-        534usize,
+        542usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiTable),
@@ -22013,7 +22534,7 @@ fn bindgen_test_layout_ImGuiTable() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).FreezeColumnsCount) as usize - ptr as usize },
-        536usize,
+        544usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiTable),
@@ -22023,7 +22544,7 @@ fn bindgen_test_layout_ImGuiTable() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).RowCellDataCurrent) as usize - ptr as usize },
-        538usize,
+        546usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiTable),
@@ -22033,7 +22554,7 @@ fn bindgen_test_layout_ImGuiTable() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).DummyDrawChannel) as usize - ptr as usize },
-        540usize,
+        548usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiTable),
@@ -22043,7 +22564,7 @@ fn bindgen_test_layout_ImGuiTable() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).Bg2DrawChannelCurrent) as usize - ptr as usize },
-        542usize,
+        550usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiTable),
@@ -22053,7 +22574,7 @@ fn bindgen_test_layout_ImGuiTable() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).Bg2DrawChannelUnfrozen) as usize - ptr as usize },
-        544usize,
+        552usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiTable),
@@ -22063,7 +22584,7 @@ fn bindgen_test_layout_ImGuiTable() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).IsLayoutLocked) as usize - ptr as usize },
-        546usize,
+        554usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiTable),
@@ -22073,7 +22594,7 @@ fn bindgen_test_layout_ImGuiTable() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).IsInsideRow) as usize - ptr as usize },
-        547usize,
+        555usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiTable),
@@ -22083,7 +22604,7 @@ fn bindgen_test_layout_ImGuiTable() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).IsInitializing) as usize - ptr as usize },
-        548usize,
+        556usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiTable),
@@ -22093,7 +22614,7 @@ fn bindgen_test_layout_ImGuiTable() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).IsSortSpecsDirty) as usize - ptr as usize },
-        549usize,
+        557usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiTable),
@@ -22103,7 +22624,7 @@ fn bindgen_test_layout_ImGuiTable() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).IsUsingHeaders) as usize - ptr as usize },
-        550usize,
+        558usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiTable),
@@ -22113,7 +22634,7 @@ fn bindgen_test_layout_ImGuiTable() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).IsContextPopupOpen) as usize - ptr as usize },
-        551usize,
+        559usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiTable),
@@ -22123,7 +22644,7 @@ fn bindgen_test_layout_ImGuiTable() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).IsSettingsRequestLoad) as usize - ptr as usize },
-        552usize,
+        560usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiTable),
@@ -22133,7 +22654,7 @@ fn bindgen_test_layout_ImGuiTable() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).IsSettingsDirty) as usize - ptr as usize },
-        553usize,
+        561usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiTable),
@@ -22143,7 +22664,7 @@ fn bindgen_test_layout_ImGuiTable() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).IsDefaultDisplayOrder) as usize - ptr as usize },
-        554usize,
+        562usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiTable),
@@ -22153,7 +22674,7 @@ fn bindgen_test_layout_ImGuiTable() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).IsResetAllRequest) as usize - ptr as usize },
-        555usize,
+        563usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiTable),
@@ -22163,7 +22684,7 @@ fn bindgen_test_layout_ImGuiTable() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).IsResetDisplayOrderRequest) as usize - ptr as usize },
-        556usize,
+        564usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiTable),
@@ -22173,7 +22694,7 @@ fn bindgen_test_layout_ImGuiTable() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).IsUnfrozenRows) as usize - ptr as usize },
-        557usize,
+        565usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiTable),
@@ -22183,7 +22704,7 @@ fn bindgen_test_layout_ImGuiTable() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).IsDefaultSizingPolicy) as usize - ptr as usize },
-        558usize,
+        566usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiTable),
@@ -22193,7 +22714,7 @@ fn bindgen_test_layout_ImGuiTable() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).HasScrollbarYCurr) as usize - ptr as usize },
-        559usize,
+        567usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiTable),
@@ -22203,7 +22724,7 @@ fn bindgen_test_layout_ImGuiTable() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).HasScrollbarYPrev) as usize - ptr as usize },
-        560usize,
+        568usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiTable),
@@ -22213,7 +22734,7 @@ fn bindgen_test_layout_ImGuiTable() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).MemoryCompacted) as usize - ptr as usize },
-        561usize,
+        569usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiTable),
@@ -22223,7 +22744,7 @@ fn bindgen_test_layout_ImGuiTable() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).HostSkipItems) as usize - ptr as usize },
-        562usize,
+        570usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiTable),
@@ -23993,6 +24514,15 @@ extern "C" {
     pub fn igSetTooltipV(fmt: *const ::std::os::raw::c_char, args: va_list);
 }
 extern "C" {
+    pub fn igBeginItemTooltip() -> bool;
+}
+extern "C" {
+    pub fn igSetItemTooltip(fmt: *const ::std::os::raw::c_char, ...);
+}
+extern "C" {
+    pub fn igSetItemTooltipV(fmt: *const ::std::os::raw::c_char, args: va_list);
+}
+extern "C" {
     pub fn igBeginPopup(str_id: *const ::std::os::raw::c_char, flags: ImGuiWindowFlags) -> bool;
 }
 extern "C" {
@@ -24256,6 +24786,9 @@ extern "C" {
     pub fn igSetKeyboardFocusHere(offset: ::std::os::raw::c_int);
 }
 extern "C" {
+    pub fn igSetNextItemAllowOverlap();
+}
+extern "C" {
     pub fn igIsItemHovered(flags: ImGuiHoveredFlags) -> bool;
 }
 extern "C" {
@@ -24305,9 +24838,6 @@ extern "C" {
 }
 extern "C" {
     pub fn igGetItemRectSize(pOut: *mut ImVec2);
-}
-extern "C" {
-    pub fn igSetItemAllowOverlap();
 }
 extern "C" {
     pub fn igGetMainViewport() -> *mut ImGuiViewport;
@@ -24563,6 +25093,9 @@ extern "C" {
     pub fn ImGuiIO_AddMouseWheelEvent(self_: *mut ImGuiIO, wheel_x: f32, wheel_y: f32);
 }
 extern "C" {
+    pub fn ImGuiIO_AddMouseSourceEvent(self_: *mut ImGuiIO, source: ImGuiMouseSource);
+}
+extern "C" {
     pub fn ImGuiIO_AddMouseViewportEvent(self_: *mut ImGuiIO, id: ImGuiID);
 }
 extern "C" {
@@ -24590,7 +25123,7 @@ extern "C" {
     pub fn ImGuiIO_SetAppAcceptingEvents(self_: *mut ImGuiIO, accepting_events: bool);
 }
 extern "C" {
-    pub fn ImGuiIO_ClearInputCharacters(self_: *mut ImGuiIO);
+    pub fn ImGuiIO_ClearEventsQueue(self_: *mut ImGuiIO);
 }
 extern "C" {
     pub fn ImGuiIO_ClearInputKeys(self_: *mut ImGuiIO);
@@ -24883,10 +25416,16 @@ extern "C" {
     pub fn ImGuiListClipper_Step(self_: *mut ImGuiListClipper) -> bool;
 }
 extern "C" {
-    pub fn ImGuiListClipper_ForceDisplayRangeByIndices(
+    pub fn ImGuiListClipper_IncludeItemByIndex(
         self_: *mut ImGuiListClipper,
-        item_min: ::std::os::raw::c_int,
-        item_max: ::std::os::raw::c_int,
+        item_index: ::std::os::raw::c_int,
+    );
+}
+extern "C" {
+    pub fn ImGuiListClipper_IncludeItemsByIndex(
+        self_: *mut ImGuiListClipper,
+        item_begin: ::std::os::raw::c_int,
+        item_end: ::std::os::raw::c_int,
     );
 }
 extern "C" {
@@ -25401,6 +25940,9 @@ extern "C" {
 }
 extern "C" {
     pub fn ImDrawData_Clear(self_: *mut ImDrawData);
+}
+extern "C" {
+    pub fn ImDrawData_AddDrawList(self_: *mut ImDrawData, draw_list: *mut ImDrawList);
 }
 extern "C" {
     pub fn ImDrawData_DeIndexAllBuffers(self_: *mut ImDrawData);
@@ -26185,9 +26727,6 @@ extern "C" {
     pub fn igImTriangleArea(a: ImVec2, b: ImVec2, c: ImVec2) -> f32;
 }
 extern "C" {
-    pub fn igImGetDirQuadrantFromDelta(dx: f32, dy: f32) -> ImGuiDir;
-}
-extern "C" {
     pub fn ImVec1_ImVec1_Nil() -> *mut ImVec1;
 }
 extern "C" {
@@ -26376,18 +26915,10 @@ extern "C" {
     );
 }
 extern "C" {
-    pub fn ImDrawDataBuilder_Clear(self_: *mut ImDrawDataBuilder);
+    pub fn ImDrawDataBuilder_ImDrawDataBuilder() -> *mut ImDrawDataBuilder;
 }
 extern "C" {
-    pub fn ImDrawDataBuilder_ClearFreeMemory(self_: *mut ImDrawDataBuilder);
-}
-extern "C" {
-    pub fn ImDrawDataBuilder_GetDrawListCount(
-        self_: *mut ImDrawDataBuilder,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn ImDrawDataBuilder_FlattenIntoSingleLayer(self_: *mut ImDrawDataBuilder);
+    pub fn ImDrawDataBuilder_destroy(self_: *mut ImDrawDataBuilder);
 }
 extern "C" {
     pub fn ImGuiDataVarInfo_GetVarPtr(
@@ -26440,6 +26971,18 @@ extern "C" {
 }
 extern "C" {
     pub fn ImGuiMenuColumns_CalcNextTotalWidth(self_: *mut ImGuiMenuColumns, update_offsets: bool);
+}
+extern "C" {
+    pub fn ImGuiInputTextDeactivatedState_ImGuiInputTextDeactivatedState(
+    ) -> *mut ImGuiInputTextDeactivatedState;
+}
+extern "C" {
+    pub fn ImGuiInputTextDeactivatedState_destroy(self_: *mut ImGuiInputTextDeactivatedState);
+}
+extern "C" {
+    pub fn ImGuiInputTextDeactivatedState_ClearFreeMemory(
+        self_: *mut ImGuiInputTextDeactivatedState,
+    );
 }
 extern "C" {
     pub fn ImGuiInputTextState_ImGuiInputTextState() -> *mut ImGuiInputTextState;
@@ -26926,12 +27469,17 @@ extern "C" {
     pub fn igWindowRectRelToAbs(pOut: *mut ImRect, window: *mut ImGuiWindow, r: ImRect);
 }
 extern "C" {
-    pub fn igFocusWindow(window: *mut ImGuiWindow);
+    pub fn igWindowPosRelToAbs(pOut: *mut ImVec2, window: *mut ImGuiWindow, p: ImVec2);
+}
+extern "C" {
+    pub fn igFocusWindow(window: *mut ImGuiWindow, flags: ImGuiFocusRequestFlags);
 }
 extern "C" {
     pub fn igFocusTopMostWindowUnderOne(
         under_this_window: *mut ImGuiWindow,
         ignore_window: *mut ImGuiWindow,
+        filter_viewport: *mut ImGuiViewport,
+        flags: ImGuiFocusRequestFlags,
     );
 }
 extern "C" {
@@ -26962,6 +27510,13 @@ extern "C" {
 }
 extern "C" {
     pub fn igGetForegroundDrawList_WindowPtr(window: *mut ImGuiWindow) -> *mut ImDrawList;
+}
+extern "C" {
+    pub fn igAddDrawListToDrawDataEx(
+        draw_data: *mut ImDrawData,
+        out_list: *mut ImVector_ImDrawListPtr,
+        draw_list: *mut ImDrawList,
+    );
 }
 extern "C" {
     pub fn igInitialize();
@@ -27167,7 +27722,10 @@ extern "C" {
     ) -> bool;
 }
 extern "C" {
-    pub fn igItemHoverable(bb: ImRect, id: ImGuiID) -> bool;
+    pub fn igItemHoverable(bb: ImRect, id: ImGuiID, item_flags: ImGuiItemFlags) -> bool;
+}
+extern "C" {
+    pub fn igIsWindowContentHoverable(window: *mut ImGuiWindow, flags: ImGuiHoveredFlags) -> bool;
 }
 extern "C" {
     pub fn igIsClippedEx(bb: ImRect, id: ImGuiID) -> bool;
@@ -27279,6 +27837,9 @@ extern "C" {
     pub fn igGetTopMostAndVisiblePopupModal() -> *mut ImGuiWindow;
 }
 extern "C" {
+    pub fn igFindBlockingModal(window: *mut ImGuiWindow) -> *mut ImGuiWindow;
+}
+extern "C" {
     pub fn igFindBestWindowPosForPopup(pOut: *mut ImVec2, window: *mut ImGuiWindow);
 }
 extern "C" {
@@ -27355,6 +27916,12 @@ extern "C" {
     pub fn igNavMoveRequestResolveWithLastItem(result: *mut ImGuiNavItemData);
 }
 extern "C" {
+    pub fn igNavMoveRequestResolveWithPastTreeNode(
+        result: *mut ImGuiNavItemData,
+        tree_node_data: *mut ImGuiNavTreeNodeData,
+    );
+}
+extern "C" {
     pub fn igNavMoveRequestCancel();
 }
 extern "C" {
@@ -27364,7 +27931,10 @@ extern "C" {
     pub fn igNavMoveRequestTryWrapping(window: *mut ImGuiWindow, move_flags: ImGuiNavMoveFlags);
 }
 extern "C" {
-    pub fn igActivateItem(id: ImGuiID);
+    pub fn igNavClearPreferredPosForAxis(axis: ImGuiAxis);
+}
+extern "C" {
+    pub fn igNavUpdateCurrentWindowIsScrollPushableX();
 }
 extern "C" {
     pub fn igSetNavWindow(window: *mut ImGuiWindow);
@@ -27376,6 +27946,12 @@ extern "C" {
         focus_scope_id: ImGuiID,
         rect_rel: ImRect,
     );
+}
+extern "C" {
+    pub fn igFocusItem();
+}
+extern "C" {
+    pub fn igActivateItemByID(id: ImGuiID);
 }
 extern "C" {
     pub fn igIsNamedKey(key: ImGuiKey) -> bool;
@@ -27402,10 +27978,13 @@ extern "C" {
     pub fn igConvertShortcutMod(key_chord: ImGuiKeyChord) -> ImGuiKeyChord;
 }
 extern "C" {
-    pub fn igConvertSingleModFlagToKey(key: ImGuiKey) -> ImGuiKey;
+    pub fn igConvertSingleModFlagToKey(ctx: *mut ImGuiContext, key: ImGuiKey) -> ImGuiKey;
 }
 extern "C" {
-    pub fn igGetKeyData(key: ImGuiKey) -> *mut ImGuiKeyData;
+    pub fn igGetKeyData_ContextPtr(ctx: *mut ImGuiContext, key: ImGuiKey) -> *mut ImGuiKeyData;
+}
+extern "C" {
+    pub fn igGetKeyData_Key(key: ImGuiKey) -> *mut ImGuiKeyData;
 }
 extern "C" {
     pub fn igGetKeyChordName(
@@ -27460,13 +28039,16 @@ extern "C" {
     pub fn igSetKeyOwner(key: ImGuiKey, owner_id: ImGuiID, flags: ImGuiInputFlags);
 }
 extern "C" {
+    pub fn igSetKeyOwnersForKeyChord(key: ImGuiKeyChord, owner_id: ImGuiID, flags: ImGuiInputFlags);
+}
+extern "C" {
     pub fn igSetItemKeyOwner(key: ImGuiKey, flags: ImGuiInputFlags);
 }
 extern "C" {
     pub fn igTestKeyOwner(key: ImGuiKey, owner_id: ImGuiID) -> bool;
 }
 extern "C" {
-    pub fn igGetKeyOwnerData(key: ImGuiKey) -> *mut ImGuiKeyOwnerData;
+    pub fn igGetKeyOwnerData(ctx: *mut ImGuiContext, key: ImGuiKey) -> *mut ImGuiKeyOwnerData;
 }
 extern "C" {
     pub fn igIsKeyDown_ID(key: ImGuiKey, owner_id: ImGuiID) -> bool;
@@ -27753,6 +28335,9 @@ extern "C" {
 }
 extern "C" {
     pub fn igTableGetHoveredColumn() -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn igTableGetHoveredRow() -> ::std::os::raw::c_int;
 }
 extern "C" {
     pub fn igTableGetHeaderRowHeight() -> f32;
@@ -28212,7 +28797,7 @@ extern "C" {
     ) -> bool;
 }
 extern "C" {
-    pub fn igSeparatorEx(flags: ImGuiSeparatorFlags);
+    pub fn igSeparatorEx(flags: ImGuiSeparatorFlags, thickness: f32);
 }
 extern "C" {
     pub fn igSeparatorTextEx(
@@ -28391,6 +28976,9 @@ extern "C" {
     ) -> bool;
 }
 extern "C" {
+    pub fn igInputTextDeactivateHook(id: ImGuiID);
+}
+extern "C" {
     pub fn igTempInputText(
         bb: ImRect,
         id: ImGuiID,
@@ -28504,6 +29092,15 @@ extern "C" {
     pub fn igErrorCheckUsingSetCursorPosToExtendParentBoundaries();
 }
 extern "C" {
+    pub fn igDebugDrawCursorPos(col: ImU32);
+}
+extern "C" {
+    pub fn igDebugDrawLineExtents(col: ImU32);
+}
+extern "C" {
+    pub fn igDebugDrawItemRect(col: ImU32);
+}
+extern "C" {
     pub fn igDebugLocateItem(target_id: ImGuiID);
 }
 extern "C" {
@@ -28511,9 +29108,6 @@ extern "C" {
 }
 extern "C" {
     pub fn igDebugLocateItemResolveWithLastItem();
-}
-extern "C" {
-    pub fn igDebugDrawItemRect(col: ImU32);
 }
 extern "C" {
     pub fn igDebugStartItemPicker();

@@ -5,13 +5,13 @@ use std::sync::atomic::{AtomicBool, Ordering};
 
 use gfx::GfxInterface;
 use gfx::surface::GfxSurface;
-use logger::{fatal, info, warning};
+use logger::{fatal, info};
 use plateform::Platform;
 use plateform::window::Window;
 
 use crate::asset_manager::AssetManager;
 use crate::renderer::Renderer;
-use crate::resource::ResourceAllocator;
+use crate::resource::allocator::ResourceAllocator;
 use crate::world::World;
 
 pub struct DeltaSeconds {
@@ -188,7 +188,7 @@ impl Engine {
             "Engine.start() have already been called !"
         );
         self.pre_initialized.store(true, Ordering::SeqCst);
-        logger::info!("Engine pre-initialization");
+        info!("Engine pre-initialization");
 
         let mut builder = Builder::default();
         self.app.pre_initialize(&mut builder);
@@ -202,7 +202,7 @@ impl Engine {
 
         *self.initialized_lock.lock().unwrap() = true;
         self.initialized_ready.notify_all();
-        logger::info!("Engine started");
+        info!("Engine started");
         self.app.initialized();
 
         self.engine_loop();
@@ -329,6 +329,6 @@ impl Drop for Engine {
         // Now de-initialized
         self.pre_initialized.store(false, Ordering::SeqCst);
         unsafe { ENGINE_INSTANCE = std::ptr::null_mut() }
-        logger::info!("closed engine");
+        info!("closed engine");
     }
 }

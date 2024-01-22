@@ -1,33 +1,22 @@
-use std::ptr::null_mut;
+﻿use std::ptr::null_mut;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::RwLock;
 use logger::fatal;
 use crate::engine::Engine;
+use crate::gfx::surface::Frame;
+use crate::resource::resource::{Resource, ResourceFactory, ResourceStorage};
 
-pub trait ResourceTypeName {
-    fn type_name(&self) -> &str;
+
+
+
+
+
+
+pub struct SwResourceStorage<T: Resource + 'static> {
+    resources: Vec<(AtomicBool, RwLock<*mut T>)>,
 }
 
-impl<T> ResourceTypeName for T where T: ResourceTypeName {
-    fn type_name(&self) -> &str {
-        std::any::type_name::<T>()
-    }
-}
-
-pub trait Resource : ResourceTypeName {
-    fn name(&self) -> &str;
-}
-
-pub trait ResourceFactory<T: Resource> {
-    fn instantiate(self) -> T;
-}
-
-pub struct ResourceStorage<T: Resource + 'static> {
-    loading: AtomicBool,
-    loaded_object: RwLock<*mut T>,
-}
-
-impl<T: Resource> Default for ResourceStorage<T> {
+impl<T: Resource> Default for SwResourceStorage<T> {
     fn default() -> Self {
         Self {
             loading: AtomicBool::new(false),
@@ -36,7 +25,7 @@ impl<T: Resource> Default for ResourceStorage<T> {
     }
 }
 
-impl<T: Resource + 'static> ResourceStorage<T> {
+impl<T: Resource + 'static> SwResourceStorage<T> {
     pub fn load<F: ResourceFactory<T>>(&self, factory: F) {
         self.loading.store(true, Ordering::SeqCst);
         let new_resource = Box::into_raw(Box::new(factory.instantiate()));
@@ -83,8 +72,51 @@ impl<T: Resource + 'static> ResourceStorage<T> {
     }
 }
 
-impl<T: Resource + 'static> Drop for ResourceStorage<T> {
-    fn drop(&mut self) {
-        self.destroy();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct TestStr {}
+
+impl Resource for TestStr {
+    fn name(&self) -> &str {
+        todo!()
+    }
+}
+
+struct TestStrFactory {}
+
+impl ResourceFactory<TestStr> for TestStrFactory {
+    fn instantiate(self) -> TestStr {
+        TestStr {}
+    }
+}
+
+
+fn frame_function(frame: Frame) {
+    
+    let test = ResourceStorage::swapchain(frame);
+
+    {
+        test.load(TestStrFactory {});
+        let data = *test;
+
+        test.is_loading_for(frame);
+        test.unwrap_for(frame);
     }
 }

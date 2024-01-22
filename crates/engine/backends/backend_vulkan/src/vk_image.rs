@@ -9,7 +9,7 @@ use core::gfx::image::{GfxImage, GfxImageUsageFlags, ImageParams, ImageType, Ima
 use core::gfx::surface::Frame;
 use core::gfx::buffer::{BufferCreateInfo, BufferType, BufferAccess, BufferUsage};
 use core::gfx::gfx_resource::{GfxResource, GfxImageBuilder};
-
+use core::resource::resource::{Resource, ResourceFactory};
 use shader_base::types::{BackgroundColor, PixelFormat};
 
 use crate::vk_buffer::VkBufferAccess;
@@ -30,6 +30,12 @@ pub struct VkImage {
     image_type: RwLock<ImageType>,
     is_from_existing_images: bool,
     name: String,
+}
+
+impl Resource for VkImage {
+    fn name(&self) -> &str {
+        self.name.as_str()
+    }
 }
 
 impl GfxImage for VkImage {
@@ -187,7 +193,6 @@ impl GfxImage for VkImage {
 }
 
 pub struct VkImageUsage(vk::ImageUsageFlags);
-
 impl VkImageUsage {
     fn from(usage: GfxImageUsageFlags, is_depth: bool) -> Self {
         let mut flags = vk::ImageUsageFlags::default();
@@ -216,6 +221,16 @@ pub struct RbImage {
     create_infos: ImageParams,
     type_override: ImageType,
     name: String,
+}
+
+pub struct VkImageFactory {
+
+}
+
+impl ResourceFactory<VkImageFactory> for VkImageFactory {
+    fn instantiate(self) -> VkImageFactory {
+
+    }
 }
 
 impl GfxImageBuilder<CombinedImageData> for RbImage {

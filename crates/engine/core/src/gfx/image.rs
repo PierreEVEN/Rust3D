@@ -1,6 +1,7 @@
 use enumflags2::{bitflags, BitFlags};
 use maths::vec2::Vec2u32;
 use shader_base::types::{BackgroundColor, GfxCast, PixelFormat};
+use crate::resource::resource::Resource;
 
 #[derive(Copy, Clone)]
 pub enum ImageType {
@@ -84,7 +85,7 @@ pub struct ImageCreateInfos {
     pub pixels: Option<Vec<u8>>,
 }
 
-pub trait GfxImage: GfxCast {
+pub trait GfxImage: GfxCast + Resource {
     fn background_color(&self) -> BackgroundColor;
     fn set_background_color(&self, color: &BackgroundColor);
     fn get_type(&self) -> ImageType;

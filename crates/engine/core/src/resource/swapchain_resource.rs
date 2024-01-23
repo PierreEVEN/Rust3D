@@ -7,6 +7,7 @@ use crate::gfx::Gfx;
 use crate::gfx::surface::Frame;
 use crate::resource::resource::{Resource, ResourceFactory};
 
+/*
 
 struct SubSwResourceStorage <T : Resource + 'static> {
     loading_call_count: i64,
@@ -166,3 +167,5 @@ fn frame_function(frame: Frame) {
         test.unwrap_for(frame);
     }
 }
+
+ */

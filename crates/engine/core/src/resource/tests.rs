@@ -14,10 +14,6 @@ mod resources_tests {
     }
 
     impl Resource for TestResource {
-        fn type_name(&self) -> &str {
-            "Custom resource type"
-        }
-
         fn name(&self) -> &str {
             "Custom resource name"
         }

@@ -167,7 +167,7 @@ impl ImGUiContext {
                     mesh.resize(&frame, draw_data.TotalVtxCount as u32, draw_data.TotalIdxCount as u32);
 
                     for n in 0..draw_data.CmdListsCount {
-                        let cmd_list = &**draw_data.CmdLists.offset(n as isize);
+                        let cmd_list = &**draw_data.CmdLists.Data.offset(n as isize);
 
                         mesh.set_data(
                             &frame,
@@ -221,7 +221,7 @@ impl ImGUiContext {
                 let mut global_vtx_offset = 0;
 
                 for n in 0..draw_data.CmdListsCount {
-                    let cmd = unsafe { &**draw_data.CmdLists.offset(n as isize) };
+                    let cmd = unsafe { &**draw_data.CmdLists.Data.offset(n as isize) };
                     for cmd_i in 0..cmd.CmdBuffer.Size {
                         let pcmd = unsafe { &*cmd.CmdBuffer.Data.offset(cmd_i as isize) };
                         match pcmd.UserCallback {

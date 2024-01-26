@@ -223,6 +223,7 @@ pub struct RbImage {
     name: String,
 }
 
+/*
 pub struct VkImageFactory {
 
 }
@@ -233,6 +234,8 @@ impl ResourceFactory<VkImageFactory> for VkImageFactory {
     }
 }
 
+
+ */
 impl GfxImageBuilder<CombinedImageData> for RbImage {
     fn build(&self, swapchain_ref: &Frame) -> CombinedImageData {
         // Convert image details

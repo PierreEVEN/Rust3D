@@ -8,7 +8,7 @@ pub trait ResourceTypeName {
     fn type_name(&self) -> &str;
 }
 
-impl<T> ResourceTypeName for T where T: ResourceTypeName {
+impl<T> ResourceTypeName for T where T: Resource {
     fn type_name(&self) -> &str {
         std::any::type_name::<T>()
     }

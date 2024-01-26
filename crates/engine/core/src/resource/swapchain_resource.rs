@@ -7,7 +7,6 @@ use crate::gfx::Gfx;
 use crate::gfx::surface::Frame;
 use crate::resource::resource::{Resource, ResourceFactory};
 
-
 struct SubSwResourceStorage <T : Resource + 'static> {
     loading_call_count: i64,
     loading_state: Option<Box<dyn Resource>>, // Pending load count, current resource

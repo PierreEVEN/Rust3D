@@ -44,7 +44,7 @@ impl<T: Clone> GfxResource<T> {
         }
     }
     pub fn new_static<U: GfxImageBuilder<T> + 'static>(builder: U) -> Self {
-        let static_ref = Frame::new(0, 0);
+        let static_ref = Frame::new(0);
         Self {
             static_resource: true,
             resources: RwLock::new(HashMap::from([(
@@ -83,16 +83,17 @@ impl<T: Clone> GfxResource<T> {
             }
         }
 
-        self.resources.write().unwrap().insert(
-            reference.clone(),
-            self.builder.read().unwrap().as_ref().build(reference),
-        );
-        self.resources
-            .read()
-            .unwrap()
-            .get(reference)
-            .unwrap()
-            .clone()
+        let resources = &mut *self.resources.write().unwrap();
+        resources.insert(reference.clone(), self.builder.read().unwrap().as_ref().build(reference));
+
+        match resources.get(reference) {
+            None => {
+                panic!("Invalid resource")
+            }
+            Some(resource) => {
+                return resource.clone()
+            }
+        };
     }
 
     pub fn invalidate<U: GfxImageBuilder<T> + 'static>(&self, builder: U) {

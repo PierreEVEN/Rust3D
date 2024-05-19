@@ -4,7 +4,7 @@ use std::fs::File;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
-use std::thread::ThreadId;
+use std::thread::{Thread, ThreadId};
 use std::{env, fs, thread};
 
 use chrono::DateTime;
@@ -82,15 +82,15 @@ impl Display for LogMessage {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let thread_name = match self.thread_id {
             None => "".to_string(),
-            Some(thread_id) => "::".to_string() + get_thread_label(thread_id).as_str(),
+            Some(thread_id) => get_thread_label(thread_id) + "::",
         };
         f.write_str(
             format!(
                 "{} |{}| [{}{}] : {}",
                 chrono::Utc::now().format("%H:%M:%S"),
                 self.severity,
-                self.context,
                 thread_name,
+                self.context,
                 self.text
             )
             .as_str(),

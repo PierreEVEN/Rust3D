@@ -143,9 +143,8 @@ impl ImGUiContext {
         io.DeltaTime = 0.16f32;
         unsafe { igNewFrame(); }
 
-        render_node.add_render_function(move |_, command_buffer| {
-            let frame = command_buffer.get_frame_id();
-            let display_res = command_buffer.get_display_res();
+        render_node.add_render_function(move |_, ctx, command_buffer| {
+            let display_res = ctx.display_res();
 
             unsafe { igShowDemoWindow(null_mut()); }
 
@@ -164,13 +163,13 @@ impl ImGUiContext {
                     let mut vertex_start = 0;
                     let mut index_start = 0;
 
-                    mesh.resize(&frame, draw_data.TotalVtxCount as u32, draw_data.TotalIdxCount as u32);
+                    mesh.resize(ctx.frame(), draw_data.TotalVtxCount as u32, draw_data.TotalIdxCount as u32);
 
                     for n in 0..draw_data.CmdListsCount {
-                        let cmd_list = &**draw_data.CmdLists.Data.offset(n as isize);
+                        let cmd_list = &**draw_data.CmdLists.offset(n as isize);
 
                         mesh.set_data(
-                            &frame,
+                            ctx.frame(),
                             vertex_start,
                             slice::from_raw_parts(
                                 cmd_list.VtxBuffer.Data as *const u8,
@@ -221,7 +220,7 @@ impl ImGUiContext {
                 let mut global_vtx_offset = 0;
 
                 for n in 0..draw_data.CmdListsCount {
-                    let cmd = unsafe { &**draw_data.CmdLists.Data.offset(n as isize) };
+                    let cmd = unsafe { &**draw_data.CmdLists.offset(n as isize) };
                     for cmd_i in 0..cmd.CmdBuffer.Size {
                         let pcmd = unsafe { &*cmd.CmdBuffer.Data.offset(cmd_i as isize) };
                         match pcmd.UserCallback {
@@ -251,7 +250,7 @@ impl ImGUiContext {
                                     }
 
                                     // Apply scissor/clipping rectangle
-                                    command_buffer.set_scissor(Scissors {
+                                    command_buffer.set_scissor(ctx, Scissors {
                                         min_x: clip_rect.x as i32,
                                         min_y: clip_rect.y as i32,
                                         width: (clip_rect.z - clip_rect.x) as u32,
@@ -263,9 +262,10 @@ impl ImGUiContext {
                                         //material.bind_texture(&BindPoint::new("sTexture"), nullptr); // TODO handle textures
                                     }
 
-                                    material.bind_to(command_buffer);
+                                    material.bind_to(ctx, command_buffer);
 
                                     command_buffer.draw_mesh_advanced(
+                                        ctx, 
                                         &mesh,
                                         pcmd.IdxOffset + global_idx_offset,
                                         (pcmd.VtxOffset + global_vtx_offset) as i32,

@@ -1,3 +1,4 @@
+use std::backtrace::Backtrace;
 use std::borrow::Cow;
 use std::collections::HashMap;
 use std::ffi::CStr;
@@ -5,14 +6,14 @@ use std::mem::MaybeUninit;
 use std::os::raw::c_char;
 use std::thread;
 
-use core::gfx::PhysicalDevice;
 use ash::{extensions::ext, vk};
-use ash::vk::{DebugUtilsMessageSeverityFlagsEXT};
+use ash::vk::DebugUtilsMessageSeverityFlagsEXT;
 
+use core::gfx::PhysicalDevice;
 use logger::LogSeverity;
 
+use crate::{GfxVulkan, to_c_char};
 use crate::vk_physical_device::VkPhysicalDevice;
-use crate::{to_c_char, GfxVulkan};
 
 #[derive(Default, Clone)]
 pub struct InstanceCreateInfos {
@@ -118,8 +119,8 @@ impl VkInstance {
 
         // Create debug messenger
         let _debug_info = vk::DebugUtilsMessengerCreateInfoEXT {
-            message_severity: 
-                DebugUtilsMessageSeverityFlagsEXT::VERBOSE
+            message_severity:
+            DebugUtilsMessageSeverityFlagsEXT::VERBOSE
                 | DebugUtilsMessageSeverityFlagsEXT::INFO
                 | DebugUtilsMessageSeverityFlagsEXT::ERROR
                 | DebugUtilsMessageSeverityFlagsEXT::WARNING,
@@ -307,10 +308,10 @@ unsafe extern "system" fn vulkan_debug_callback(
         );
         return vk::FALSE;
     }
-    
+
     let mut severity = LogSeverity::INFO;
     if message_severity.contains(DebugUtilsMessageSeverityFlagsEXT::ERROR) {
-        severity = LogSeverity::FATAL 
+        severity = LogSeverity::FATAL
     }
     if message_severity.contains(DebugUtilsMessageSeverityFlagsEXT::WARNING) {
         severity = LogSeverity::ERROR
@@ -321,7 +322,7 @@ unsafe extern "system" fn vulkan_debug_callback(
     if message_severity.contains(DebugUtilsMessageSeverityFlagsEXT::VERBOSE) {
         severity = LogSeverity::DEBUG(0)
     }
-    
+
     let mid_line = match object_type {
         Some(obj_type) => {
             match object_handle {
@@ -337,7 +338,13 @@ unsafe extern "system" fn vulkan_debug_callback(
             "".to_string()
         }
     };
-    
+    match severity {
+        LogSeverity::FATAL | LogSeverity::ERROR => {
+            message_text += format!("\n {}", Backtrace::force_capture()).as_str();
+        }
+        _ => {}
+    }
+
     #[cfg(debug_assertions)]
     {
         logger::broadcast_log(logger::LogMessage {

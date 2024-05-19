@@ -1,8 +1,9 @@
-﻿use std::sync::{Arc};
+﻿use std::sync::{Arc, Mutex};
 
 use ecs::entity::GameObject;
 use logger::error;
 use maths::vec2::Vec2u32;
+
 use crate::gfx::Gfx;
 use crate::gfx::image::{GfxImage, ImageCreateInfos, ImageParams, ImageType};
 use crate::gfx::image::ImageUsage::{GpuWriteDestination, Sampling};
@@ -15,7 +16,7 @@ use crate::gfx::surface::{Frame, GfxSurface, SurfaceAcquireResult};
 pub struct FrameGraph {
     present_pass: RenderPass,
     surface: Option<Box<dyn GfxSurface>>,
-    frame: Frame
+    test_mut: Mutex<bool>
 }
 
 impl FrameGraph {
@@ -26,11 +27,11 @@ impl FrameGraph {
         for input in top_node.inputs() {
             present_pass.add_input(Arc::new(Self::compile_node(input, initial_res)));
         }
-        present_pass.instantiate();        
+        present_pass.instantiate();
         Self {
             present_pass,
             surface: None,
-            frame: Frame::null(),
+            test_mut: Mutex::default()
         }
     }
 
@@ -45,7 +46,7 @@ impl FrameGraph {
         Self {
             present_pass,
             surface: Some(surface),
-            frame: Frame::null()
+            test_mut: Mutex::new(false),
         }
     }
 
@@ -83,22 +84,25 @@ impl FrameGraph {
     }
 
     /// Render framegraph from given point of view
-    pub fn execute(&self, camera: &GameObject) {
+    pub fn execute(&self, camera: &GameObject, global_frame: &Frame) {
         match &self.surface {
             None => {}
             Some(surface) => {
-                match surface.acquire(self.present_pass.instance().as_ref()) {
-                    Ok(_) => {
+                
+                // @TODO : Remove this temp lock and allow full parallel rendering
+                let data = self.test_mut.lock();
+                match surface.acquire(self.present_pass.instance().as_ref(), global_frame) {
+                    Ok(frame) => {
+                        self.present_pass.draw(&frame, surface.get_surface_texture().res_2d(), camera);
 
-                        self.frame.update(surface.get_current_ref().image_id(), 0);
-                        self.present_pass.draw(&self.frame, surface.get_surface_texture().res_2d(), camera);
-                        match surface.submit(self.present_pass.instance().as_ref()) {
+                        // Will lock until the previous frame is finished
+                        match surface.submit(self.present_pass.instance().as_ref(), &frame) {
                             Ok(_) => {}
                             Err(err) => {
                                 match err {
                                     SurfaceAcquireResult::Resized => {
                                         self.present_pass.resize(surface.get_surface_texture().res_2d());
-                                        logger::warning!("failed to submit to surface : Surface resized to {:?}", surface.get_surface_texture().res_2d()) 
+                                        logger::warning!("failed to acquire surface image : Surface resized to {:?}", surface.get_surface_texture().res_2d())
                                     }
                                     SurfaceAcquireResult::Failed(message) => { error!("failed to submit to surface : {}", message) }
                                 }
@@ -111,10 +115,13 @@ impl FrameGraph {
                                 self.present_pass.resize(surface.get_surface_texture().res_2d());
                                 logger::warning!("failed to acquire surface image : Surface resized to {:?}", surface.get_surface_texture().res_2d())
                             }
-                            SurfaceAcquireResult::Failed(_) => {}
+                            SurfaceAcquireResult::Failed(message) => { error!("failed to submit to surface : {}", message) }
                         }
                     }
-                };
+                }
+                if *data.unwrap() {
+                    logger::fatal!("ahh");
+                }
             }
         }
     }

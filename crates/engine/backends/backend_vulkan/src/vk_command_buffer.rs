@@ -1,28 +1,31 @@
+use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
+use std::thread;
+use std::thread::ThreadId;
 
 use ash::vk;
+use ash::vk::CommandPool;
 
-use maths::vec2::Vec2u32;
-use shader_base::pass_id::PassID;
 use shader_base::ShaderStage;
 use shader_base::types::Scissors;
 use core::gfx::gfx_resource::{GfxImageBuilder, GfxResource};
 use core::gfx::surface::{Frame};
 use core::gfx::mesh::{Mesh, IndexBufferType};
-use core::gfx::command_buffer::{GfxCommandBuffer};
+use core::gfx::command_buffer::{GfxCommandBuffer, CommandCtx};
 use core::gfx::shader::{ShaderProgram};
 use core::gfx::shader_instance::{ShaderInstance};
 use core::gfx::buffer::BufferMemory;
 
 use crate::{vk_check, GfxVulkan, VkBuffer, VkShaderInstance, VkShaderProgram};
 
+#[derive(Default)]
 pub struct VkCommandPool {
-    pub command_pool: vk::CommandPool,
+    command_pool: RwLock<HashMap<ThreadId, CommandPool>>,
 }
 
 pub fn create_command_buffer(name: String) -> vk::CommandBuffer {
     let create_infos = vk::CommandBufferAllocateInfo::builder()
-        .command_pool(unsafe { GfxVulkan::get().command_pool.assume_init_ref() }.command_pool)
+        .command_pool(unsafe { GfxVulkan::get().command_pool.assume_init_ref() }.get_for_current_thread())
         .command_buffer_count(1)
         .level(vk::CommandBufferLevel::PRIMARY)
         .build();
@@ -89,7 +92,14 @@ pub fn submit_command_buffer(command_buffer: vk::CommandBuffer, queue_flags: vk:
 }
 
 impl VkCommandPool {
-    pub fn new(name: String) -> VkCommandPool {
+    pub fn get_for_current_thread(&self) -> CommandPool {
+        match self.command_pool.read().unwrap().get(&thread::current().id()) {
+            None => {}
+            Some(pool) => {
+                return pool.clone();
+            }
+        }
+
         let create_infos = vk::CommandPoolCreateInfo::builder()
             .flags(vk::CommandPoolCreateFlags::RESET_COMMAND_BUFFER)
             .queue_family_index(
@@ -114,17 +124,16 @@ impl VkCommandPool {
         });
 
         GfxVulkan::get()
-            .set_vk_object_name(command_pool, format!("command pool\t\t: {}", name).as_str());
+            .set_vk_object_name(command_pool, format!("command pool\t\t: {:?}", thread::current().id()).as_str());
 
-        VkCommandPool { command_pool }
+        self.command_pool.write().unwrap().insert(thread::current().id(), command_pool.clone());
+
+        command_pool
     }
 }
 
 pub struct VkCommandBuffer {
     pub command_buffer: GfxResource<vk::CommandBuffer>,
-    pass_id: RwLock<PassID>,
-    image_id: RwLock<Frame>,
-    display_res: RwLock<Vec2u32>,
 }
 
 pub struct RbCommandBuffer {
@@ -140,46 +149,37 @@ impl GfxImageBuilder<vk::CommandBuffer> for RbCommandBuffer {
 impl VkCommandBuffer {
     pub fn new(name: String) -> Arc<VkCommandBuffer> {
         Arc::new(VkCommandBuffer {
-            command_buffer: GfxResource::new(RbCommandBuffer { name }),
-            pass_id: RwLock::new(PassID::new("undefined")),
-            image_id: RwLock::new(Frame::null()),
-            display_res: Default::default(),
+            command_buffer: GfxResource::new(RbCommandBuffer { name })
         })
-    }
-
-    pub fn init_for(&self, new_id: PassID, image_id: Frame, display_res: Vec2u32) {
-        *self.pass_id.write().unwrap() = new_id;
-        *self.image_id.write().unwrap() = image_id;
-        *self.display_res.write().unwrap() = display_res;
     }
 }
 
 impl GfxCommandBuffer for VkCommandBuffer {
-    fn bind_program(&self, program: &Arc<dyn ShaderProgram>) {
+    fn bind_program(&self, ctx: &CommandCtx, program: &Arc<dyn ShaderProgram>) {
         unsafe {
             GfxVulkan::get()
                 .device
                 .assume_init_ref()
                 .handle
                 .cmd_bind_pipeline(
-                    self.command_buffer.get(&self.image_id.read().unwrap()),
+                    self.command_buffer.get(ctx.frame()),
                     vk::PipelineBindPoint::GRAPHICS,
                     program.cast::<VkShaderProgram>().pipeline,
                 );
         }
     }
 
-    fn bind_shader_instance(&self, instance: &Arc<dyn ShaderInstance>) {
+    fn bind_shader_instance(&self, ctx: &CommandCtx, instance: &Arc<dyn ShaderInstance>) {
         instance
             .cast::<VkShaderInstance>()
-            .refresh_descriptors(&self.image_id.read().unwrap(), &self.pass_id.read().unwrap());
+            .refresh_descriptors(ctx.frame(), ctx.render_pass());
         unsafe {
             GfxVulkan::get()
                 .device
                 .assume_init_ref()
                 .handle
                 .cmd_bind_descriptor_sets(
-                    self.command_buffer.get(&self.image_id.read().unwrap()),
+                    self.command_buffer.get(ctx.frame()),
                     vk::PipelineBindPoint::GRAPHICS,
                     *instance.cast::<VkShaderInstance>().pipeline_layout,
                     0,
@@ -188,18 +188,18 @@ impl GfxCommandBuffer for VkCommandBuffer {
                         .descriptor_sets
                         .read()
                         .unwrap()
-                        .get(&self.image_id.read().unwrap())],
+                        .get(ctx.frame())],
                     &[],
                 );
         }
     }
 
-    fn draw_mesh(&self, _mesh: &Arc<Mesh>, _instance_count: u32, _first_instance: u32) {
+    fn draw_mesh(&self, ctx: &CommandCtx, _mesh: &Arc<Mesh>, _instance_count: u32, _first_instance: u32) {
         todo!()
     }
 
     fn draw_mesh_advanced(
-        &self,
+        &self, ctx: &CommandCtx,
         mesh: &Arc<Mesh>,
         first_index: u32,
         vertex_offset: i32,
@@ -215,8 +215,8 @@ impl GfxCommandBuffer for VkCommandBuffer {
                 .assume_init_ref()
                 .handle
                 .cmd_bind_index_buffer(
-                    self.command_buffer.get(&self.image_id.read().unwrap()),
-                    index_buffer.get_handle(&self.image_id.read().unwrap()),
+                    self.command_buffer.get(ctx.frame()),
+                    index_buffer.get_handle(ctx.frame()),
                     0 as vk::DeviceSize,
                     match mesh.index_type() {
                         IndexBufferType::Uint16 => vk::IndexType::UINT16,
@@ -229,9 +229,9 @@ impl GfxCommandBuffer for VkCommandBuffer {
                 .assume_init_ref()
                 .handle
                 .cmd_bind_vertex_buffers(
-                    self.command_buffer.get(&self.image_id.read().unwrap()),
+                    self.command_buffer.get(ctx.frame()),
                     0,
-                    &[vertex_buffer.get_handle(&self.image_id.read().unwrap())],
+                    &[vertex_buffer.get_handle(ctx.frame())],
                     &[0],
                 )
         }
@@ -241,7 +241,7 @@ impl GfxCommandBuffer for VkCommandBuffer {
                 .assume_init_ref()
                 .handle
                 .cmd_draw_indexed(
-                    self.command_buffer.get(&self.image_id.read().unwrap()),
+                    self.command_buffer.get(ctx.frame()),
                     index_count,
                     instance_count,
                     first_index,
@@ -251,12 +251,12 @@ impl GfxCommandBuffer for VkCommandBuffer {
         }
     }
 
-    fn draw_mesh_indirect(&self, _mesh: &Arc<Mesh>) {
+    fn draw_mesh_indirect(&self, ctx: &CommandCtx, _mesh: &Arc<Mesh>) {
         todo!()
     }
 
     fn draw_procedural(
-        &self,
+        &self, ctx: &CommandCtx,
         vertex_count: u32,
         first_vertex: u32,
         instance_count: u32,
@@ -264,7 +264,7 @@ impl GfxCommandBuffer for VkCommandBuffer {
     ) {
         unsafe {
             GfxVulkan::get().device.assume_init_ref().handle.cmd_draw(
-                self.command_buffer.get(&self.image_id.read().unwrap()),
+                self.command_buffer.get(ctx.frame()),
                 vertex_count,
                 instance_count,
                 first_vertex,
@@ -273,14 +273,14 @@ impl GfxCommandBuffer for VkCommandBuffer {
         }
     }
 
-    fn set_scissor(&self, scissors: Scissors) {
+    fn set_scissor(&self, ctx: &CommandCtx, scissors: Scissors) {
         unsafe {
             GfxVulkan::get()
                 .device
                 .assume_init_ref()
                 .handle
                 .cmd_set_scissor(
-                    self.command_buffer.get(&self.image_id.read().unwrap()),
+                    self.command_buffer.get(ctx.frame()),
                     0,
                     &[vk::Rect2D {
                         extent: vk::Extent2D {
@@ -297,7 +297,7 @@ impl GfxCommandBuffer for VkCommandBuffer {
     }
 
     fn push_constant(
-        &self,
+        &self, ctx: &CommandCtx,
         program: &Arc<dyn ShaderProgram>,
         data: &BufferMemory,
         stage: ShaderStage,
@@ -308,30 +308,19 @@ impl GfxCommandBuffer for VkCommandBuffer {
                 .assume_init_ref()
                 .handle
                 .cmd_push_constants(
-                    self.command_buffer.get(&self.image_id.read().unwrap()),
+                    self.command_buffer.get(ctx.frame()),
                     *program.cast::<VkShaderProgram>().pipeline_layout,
                     match stage {
                         ShaderStage::Vertex => vk::ShaderStageFlags::VERTEX,
                         ShaderStage::Fragment => vk::ShaderStageFlags::FRAGMENT,
                         ShaderStage::TesselationEvaluate => vk::ShaderStageFlags::TESSELLATION_EVALUATION,
                         ShaderStage::TesselationControl => vk::ShaderStageFlags::TESSELLATION_CONTROL,
-                        ShaderStage::Geometry => {vk::ShaderStageFlags::GEOMETRY}
-                        ShaderStage::Compute => {vk::ShaderStageFlags::COMPUTE}
+                        ShaderStage::Geometry => { vk::ShaderStageFlags::GEOMETRY }
+                        ShaderStage::Compute => { vk::ShaderStageFlags::COMPUTE }
                     },
                     0,
                     data.as_slice(),
                 )
         }
-    }
-
-    fn get_pass_id(&self) -> PassID {
-        self.pass_id.read().unwrap().clone()
-    }
-    fn get_frame_id(&self) -> Frame {
-        self.image_id.read().unwrap().clone()
-    }
-
-    fn get_display_res(&self) -> Vec2u32 {
-        self.display_res.read().unwrap().clone()
     }
 }

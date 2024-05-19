@@ -1,6 +1,10 @@
 use std::path::PathBuf;
-use std::sync::{Arc};
+use std::sync::Arc;
+
 use core::engine::{App, Builder, Camera, Engine};
+use core::gfx::Gfx;
+use core::gfx::image_sampler::SamplerCreateInfos;
+use core::gfx::material::Material;
 use core::world::World;
 use ecs::entity::GameObject;
 use ecs::query::Query;
@@ -8,11 +12,8 @@ use maths::vec4::Vec4F32;
 use plateform::window::{PlatformEvent, WindowCreateInfos};
 use renderers::DeferredRenderer;
 use resl::ReslShaderInterface;
-use shader_base::{BindPoint};
-use shader_base::types::{BackgroundColor};
-use core::gfx::material::Material;
-use core::gfx::Gfx;
-use core::gfx::image_sampler::SamplerCreateInfos;
+use shader_base::BindPoint;
+use shader_base::types::BackgroundColor;
 
 #[derive(Default)]
 pub struct TestApp {
@@ -32,16 +33,15 @@ impl App for TestApp {
         builder.platform = Box::new(|| { backend_launcher::backend::spawn_platform() });
         builder.gfx = Box::new(|| {
             let mut gfx = backend_launcher::backend::spawn_gfx();
-            gfx.pre_init();
+            gfx.pre_init(3, Box::new(|window| {
+                backend_launcher::backend::spawn_surface(window)
+            }));
             gfx.init();
             gfx.set_physical_device(
                 gfx.find_best_suitable_physical_device()
                     .expect("there is no suitable GPU available"),
             );
             gfx
-        });
-        builder.surface = Box::new(|window| {
-            backend_launcher::backend::spawn_surface(window)
         });
     }
     fn initialized(&mut self) {
@@ -84,22 +84,22 @@ impl App for TestApp {
         match renderer.renderer.present_node().find_node("g_buffers") {
             None => {}
             Some(g_buffer) => {
-                g_buffer.add_render_function(move |ecs, _command_buffer| {
+                g_buffer.add_render_function(move |ecs, frame, _command_buffer| {
                     Query::<&ProceduralDraw>::new(ecs).for_each(|_| {});
                 })
             }
         }
 
-        renderer.renderer.present_node().add_render_function(move |ecs, command_buffer| {
+        renderer.renderer.present_node().add_render_function(move |ecs, frame, command_buffer| {
             Query::<&ProceduralDraw>::new(ecs).for_each(|mesh| {
                 if let Some(material) = &mesh.material {
-                    material.bind_to(command_buffer);
-                    command_buffer.draw_procedural(mesh.vertices, 0, mesh.instances, 0);
+                    material.bind_to(frame, command_buffer);
+                    command_buffer.draw_procedural(frame, mesh.vertices, 0, mesh.instances, 0);
                 }
             });
         });
 
-        Engine::get().add_renderer(renderer.renderer);
+        Gfx::get().add_renderer(renderer.renderer);
     }
 
     fn new_frame(&mut self, _delta_seconds: f64) {}

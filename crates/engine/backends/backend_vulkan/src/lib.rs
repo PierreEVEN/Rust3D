@@ -163,7 +163,7 @@ impl GfxInterface for GfxVulkan {
         unsafe {
             (&self.command_pool as *const MaybeUninit<VkCommandPool>
                 as *mut MaybeUninit<VkCommandPool>)
-                .write(MaybeUninit::new(VkCommandPool::new("global".to_string())))
+                .write(MaybeUninit::new(VkCommandPool::default()))
         };
         unsafe {
             (&self.descriptor_pool as *const MaybeUninit<VkDescriptorPool>

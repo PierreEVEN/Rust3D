@@ -4,6 +4,11 @@ use std::sync::RwLock;
 use logger::fatal;
 use crate::engine::Engine;
 
+/**
+Store a game resource, and handle it's asynchronous loading.
+It is used to track all existing resources loaded in the engine.
+*/
+
 pub trait ResourceTypeName {
     fn type_name(&self) -> &str;
 }
@@ -37,6 +42,8 @@ impl<T: Resource> Default for ResourceStorage<T> {
 }
 
 impl<T: Resource + 'static> ResourceStorage<T> {
+    
+    // Load this resource from a factory. Can be executed on any thread
     pub fn load<F: ResourceFactory<T>>(&self, factory: F) {
         self.loading.store(true, Ordering::SeqCst);
         let new_resource = Box::into_raw(Box::new(factory.instantiate()));
@@ -55,6 +62,7 @@ impl<T: Resource + 'static> ResourceStorage<T> {
         self.loading.store(false, Ordering::SeqCst);
     }
 
+    // Will destroy the resource once the full game loop is finished.
     pub fn destroy(&self) {
         let resource_replace_lock = &mut *self.loaded_object.write().unwrap();
         if (*resource_replace_lock).is_null() {

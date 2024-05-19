@@ -1,7 +1,8 @@
 use std::collections::HashMap;
 use std::fmt::Error;
 use std::os::raw::c_char;
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, Mutex, RwLock};
+use std::thread;
 
 use ash::extensions::khr::Swapchain;
 use ash::prelude::VkResult;
@@ -11,11 +12,12 @@ use gpu_allocator::vulkan;
 use crate::{vk_check, GfxVulkan};
 
 pub fn get_required_device_extensions() -> Vec<*const c_char> {
-    vec!["VK_KHR_swapchain\0".as_ptr() as *const c_char]
+    vec!["VK_KHR_swapchain\0".as_ptr() as *const c_char,
+         "VK_KHR_timeline_semaphore\0".as_ptr() as *const c_char]
 }
 
 pub struct VkQueue {
-    queue: vk::Queue,
+    queue: Mutex<vk::Queue>,
     pub flags: vk::QueueFlags,
     pub index: u32,
     fence: vk::Fence,
@@ -28,6 +30,7 @@ impl VkQueue {
         flags: vk::QueueFlags,
         index: u32,
     ) -> Arc<Self> {
+
         let ci_fence = vk::FenceCreateInfo::builder()
             .flags(vk::FenceCreateFlags::SIGNALED)
             .build();
@@ -35,13 +38,13 @@ impl VkQueue {
         let fence = vk_check!(unsafe { device.create_fence(&ci_fence, None) });
 
         Arc::new(Self {
-            queue,
+            queue: Mutex::new(queue),
             flags,
             index,
             fence,
         })
     }
-
+    
     pub fn wait(&self) {
         vk_check!(unsafe {
             GfxVulkan::get()
@@ -53,6 +56,7 @@ impl VkQueue {
     }
 
     pub fn submit(&self, submit_infos: vk::SubmitInfo) {
+        let locked_queue = &*self.queue.lock().unwrap();
         self.wait();
         vk_check!(unsafe {
             GfxVulkan::get()
@@ -66,7 +70,7 @@ impl VkQueue {
                 .device
                 .assume_init_ref()
                 .handle
-                .queue_submit(self.queue, &[submit_infos], self.fence)
+                .queue_submit(*locked_queue, &[submit_infos], self.fence)
         });
     }
     pub fn present(
@@ -74,7 +78,9 @@ impl VkQueue {
         swapchain: &Swapchain,
         present_infos: vk::PresentInfoKHR,
     ) -> VkResult<bool> {
-        unsafe { swapchain.queue_present(self.queue, &present_infos) }
+        unsafe {
+            let locked_queue = &*self.queue.lock().unwrap();
+            swapchain.queue_present(*locked_queue, &present_infos) }
     }
 }
 
@@ -130,6 +136,7 @@ impl Default for VkDevice {
             .features(device_features)
             .build();
 
+        logger::warning!("extensions : {:?}", extensions);
         let ci_device = vk::DeviceCreateInfo::builder()
             .push_next(&mut index_features_2)
             .queue_create_infos(ci_queues.as_slice())

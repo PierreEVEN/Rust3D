@@ -4,12 +4,13 @@ use std::sync::{Arc, RwLock};
 use shader_base::{BindPoint, DescriptorType, ShaderInterface, ShaderStage};
 use shader_base::pass_id::PassID;
 use crate::gfx::buffer::BufferMemory;
-use crate::gfx::command_buffer::GfxCommandBuffer;
+use crate::gfx::command_buffer::{CommandCtx, GfxCommandBuffer};
 use crate::gfx::Gfx;
 use crate::gfx::image::GfxImage;
 use crate::gfx::image_sampler::ImageSampler;
 use crate::gfx::shader::ShaderProgram;
 use crate::gfx::shader_instance::ShaderInstance;
+use crate::gfx::surface::Frame;
 
 #[derive(Clone)]
 pub enum MaterialResourceData {
@@ -117,15 +118,15 @@ impl Material {
         self.push_constants.write().unwrap().insert(shader_stage.clone(), BufferMemory::from_struct(pc));
     }
 
-    pub fn bind_to(&self, command_buffer: &dyn GfxCommandBuffer) {
-        let pass = command_buffer.get_pass_id();
+    pub fn bind_to(&self, ctx: &CommandCtx, command_buffer: &dyn GfxCommandBuffer) {
+        let pass = ctx.render_pass();
         if let Some(program) = self.get_program(&pass) {
-            command_buffer.bind_program(&program);
+            command_buffer.bind_program(ctx, &program);
             if let Some(instance) = self.get_instance(&pass) {
-                command_buffer.bind_shader_instance(&instance);
+                command_buffer.bind_shader_instance(ctx, &instance);
                 
                 for (stage, memory) in &*self.push_constants.read().unwrap() {
-                    command_buffer.push_constant(&program, memory, stage.clone());
+                    command_buffer.push_constant(ctx, &program, memory, stage.clone());
                 }                
             }
         }

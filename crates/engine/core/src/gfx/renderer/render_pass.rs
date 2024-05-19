@@ -6,7 +6,7 @@ use ecs::entity::GameObject;
 use maths::vec2::Vec2u32;
 use shader_base::pass_id::PassID;
 use shader_base::types::GfxCast;
-use crate::gfx::command_buffer::GfxCommandBuffer;
+use crate::gfx::command_buffer::{CommandCtx, GfxCommandBuffer};
 use crate::gfx::Gfx;
 use crate::gfx::image::{GfxImage, ImageType};
 use crate::gfx::renderer::render_node::RenderNode;
@@ -78,7 +78,7 @@ impl RenderPass {
     }
 
     pub fn draw(&self, frame: &Frame, res: Vec2u32, camera: &GameObject) {
-        //TODO parallelize
+        //TODO parallelize into jobs
         for input in &self.inputs {
             input.draw(frame, res, camera);
         }
@@ -88,7 +88,9 @@ impl RenderPass {
                 None => {}
                 Some(ecs) => {
                     if let Ok(mut ecs) = ecs.upgrade().unwrap().write() {
-                        self.source_node.draw_content(ecs.deref_mut(), self.command_buffer.as_ref());
+                        let ctx = CommandCtx::new(frame.clone(), self.pass_id.clone(), res.clone());
+                        
+                        self.source_node.draw_content(ecs.deref_mut(), &ctx, self.command_buffer.as_ref());
                     }
                 }
             }

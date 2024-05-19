@@ -24,12 +24,11 @@ use shader_base::types::BackgroundColor;
 pub struct VkSurfaceWin32 {
     pub surface: vk::SurfaceKHR,
     pub swapchain: RwLock<Option<vk::SwapchainKHR>>,
-    image_acquire_semaphore: GfxResource<vk::Semaphore>,
+    image_acquire_semaphore: Arc<GfxResource<vk::Semaphore>>,
     surface_format: vk::SurfaceFormatKHR,
     _surface_loader: Surface,
     _swapchain_loader: Swapchain,
     image_count: u8,
-    current_image: Frame,
     window: Arc<dyn Window>,
     surface_image: RwLock<Option<Arc<dyn GfxImage>>>,
     present_queue: Option<Arc<VkQueue>>,
@@ -188,14 +187,6 @@ impl GfxSurface for VkSurfaceWin32 {
         &self.window
     }
 
-    fn get_image_count(&self) -> u8 {
-        self.image_count
-    }
-
-    fn get_current_ref(&self) -> &Frame {
-        &self.current_image
-    }
-
     fn get_surface_texture(&self) -> Arc<dyn GfxImage> {
         self.surface_image.read().unwrap().as_ref().unwrap().clone()
     }
@@ -203,7 +194,9 @@ impl GfxSurface for VkSurfaceWin32 {
     fn acquire(
         &self,
         render_pass: &dyn RenderPassInstance,
-    ) -> Result<(), SurfaceAcquireResult> {
+        global_frame: &Frame
+    ) -> Result<(Frame), SurfaceAcquireResult> {
+
         let geometry = self.window.get_geometry();
 
         if let WindowStatus::Minimized = self.window.get_status() {
@@ -216,10 +209,9 @@ impl GfxSurface for VkSurfaceWin32 {
             ));
         }
 
-        let current_image_acquire_semaphore =
-            self.image_acquire_semaphore.get(self.get_current_ref());
+        let current_image_acquire_semaphore = self.image_acquire_semaphore.get(global_frame);
         let swapchain = self.swapchain.read().unwrap();
-        let (image_index, _acquired_image) = match unsafe {
+        let (acquired_image, _acquired_image) = match unsafe {
             self._swapchain_loader.acquire_next_image(
                 swapchain.unwrap(),
                 u64::MAX,
@@ -238,23 +230,21 @@ impl GfxSurface for VkSurfaceWin32 {
                 });
             }
         };
-        self.current_image.update(image_index as u8, 0);
-
-        render_pass.cast::<VkRenderPassInstance>().init_present_pass(current_image_acquire_semaphore);
-        Ok(())
+        render_pass.cast::<VkRenderPassInstance>().init_present_pass(self.image_acquire_semaphore.clone(), (acquired_image as u8, global_frame.image_id()));
+        Ok(Frame::new(acquired_image as u8))
     }
-
     fn submit(
         &self,
         render_pass: &dyn RenderPassInstance,
+        frame: &Frame,
     ) -> Result<(), SurfaceAcquireResult> {
-        let current_image = self.get_current_ref().image_id() as u32;
+        // Submit
         let render_pass = render_pass.cast::<VkRenderPassInstance>();
 
         let present_info = vk::PresentInfoKHR::builder()
-            .wait_semaphores(&[render_pass.render_finished_semaphore.get(self.get_current_ref())])
+            .wait_semaphores(&[render_pass.render_finished_semaphore.get(&frame)])
             .swapchains(&[self.swapchain.read().unwrap().unwrap()])
-            .image_indices(&[current_image])
+            .image_indices(&[frame.image_id() as u32])
             .build();
 
         match &self.present_queue {
@@ -272,6 +262,7 @@ impl GfxSurface for VkSurfaceWin32 {
         }
     }
 }
+
 
 impl VkSurfaceWin32 {
     pub fn new(
@@ -408,10 +399,9 @@ impl VkSurfaceWin32 {
             surface_format,
             _swapchain_loader: swapchain_loader,
             image_count: image_count as u8,
-            current_image: Frame::null(),
             window: window.clone(),
             present_queue,
-            image_acquire_semaphore: GfxResource::new(RbSemaphore { name }),
+            image_acquire_semaphore: Arc::new(GfxResource::new(RbSemaphore { name })),
             surface_image: RwLock::default(),
         };
 

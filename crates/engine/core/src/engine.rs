@@ -2,15 +2,17 @@ use std::mem::MaybeUninit;
 use std::ops::{Deref, DerefMut};
 use std::sync::{Arc, Condvar, Mutex, RwLock, Weak};
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::thread;
+use std::thread::JoinHandle;
 
 use logger::{fatal, info};
 use plateform::Platform;
 use plateform::window::Window;
-use crate::base_assets::asset_manager::AssetManager;
-use crate::gfx::GfxInterface;
-use crate::gfx::renderer::renderer::Renderer;
-use crate::gfx::surface::GfxSurface;
 
+use crate::base_assets::asset_manager::AssetManager;
+use crate::gfx::{Gfx, GfxInterface};
+use crate::gfx::renderer::renderer::Renderer;
+use crate::gfx::surface::{Frame, GfxSurface};
 use crate::resource::allocator::ResourceAllocator;
 use crate::world::World;
 
@@ -52,12 +54,9 @@ pub trait App {
     fn stopped(&self);
 }
 
-pub type SurfaceBuilderFunc = dyn FnMut(&Weak<dyn Window>) -> Box<dyn GfxSurface>;
-
 pub struct Builder {
     pub platform: Box<dyn FnMut() -> Box<dyn Platform>>,
     pub gfx: Box<dyn FnMut() -> Box<dyn GfxInterface>>,
-    pub surface: Box<SurfaceBuilderFunc>,
     pub asset_manager: Box<dyn FnMut() -> AssetManager>,
 }
 
@@ -66,7 +65,6 @@ impl Default for Builder {
         Self {
             platform: Box::new(|| { panic!("Platform has not been defined") }),
             gfx: Box::new(|| { panic!("Gfx backend has not been defined") }),
-            surface: Box::new(|_| { panic!("Surface backend have not been defined") }),
             asset_manager: Box::new(AssetManager::default),
         }
     }
@@ -77,7 +75,6 @@ pub struct Engine {
     resource_allocator: ResourceAllocator,
     platform: MaybeUninit<Box<dyn Platform>>,
     gfx: MaybeUninit<Box<dyn GfxInterface>>,
-    surface_builder: Box<SurfaceBuilderFunc>,
     app: Box<dyn App>,
     pub engine_number: u64,
 
@@ -87,7 +84,6 @@ pub struct Engine {
     is_stopping: AtomicBool,
 
     worlds: RwLock<Vec<Arc<World>>>,
-    views: RwLock<Vec<Renderer>>,
     game_delta: DeltaSeconds,
 }
 
@@ -152,7 +148,6 @@ impl Engine {
             resource_allocator: ResourceAllocator::default(),
             platform: MaybeUninit::uninit(),
             gfx: MaybeUninit::uninit(),
-            surface_builder: Box::new(|_| { fatal!("surface builder is not valid") }),
             app: Box::new(app),
             engine_number: 1234567890,
             pre_initialized: AtomicBool::new(false),
@@ -160,7 +155,6 @@ impl Engine {
             initialized_ready: Default::default(),
             is_stopping: AtomicBool::new(false),
             worlds: Default::default(),
-            views: Default::default(),
             game_delta: DeltaSeconds::new(None),
         };
         EngineRef::new(engine)
@@ -185,15 +179,14 @@ impl Engine {
         self.platform = MaybeUninit::new((*builder.platform)());
         self.gfx = MaybeUninit::new((*builder.gfx)());
         self.asset_manager = MaybeUninit::new((*builder.asset_manager)());
-        self.surface_builder = builder.surface;
 
         // FINISHED PRE-INITIALIZATION
-
         *self.initialized_lock.lock().unwrap() = true;
         self.initialized_ready.notify_all();
         info!("Engine started");
         self.app.initialized();
 
+        Gfx::get().launch_render_threads();
         self.engine_loop();
     }
 
@@ -268,26 +261,14 @@ impl Engine {
         world
     }
 
-    pub fn add_renderer(&self, renderer: Renderer) {
-        self.views.write().unwrap().push(renderer);
-    }
-
-    pub fn new_surface(&mut self, window: &Weak<dyn Window>) -> Box<dyn GfxSurface> {
-        (*self.surface_builder)(window)
-    }
-
     fn engine_loop(&mut self) {
         while !self.is_stopping.load(Ordering::SeqCst) {
             self.game_delta.new_frame();
             self.platform().poll_events();
             self.app.new_frame(self.game_delta.current());
-
-            if let Ok(renderers) = self.views.read() {
-                for renderer in &*renderers {
-                    renderer.new_frame();
-                }
-            }
         }
+        // Wait render thread completion
+        Gfx::get().stop_rendering_tasks();
     }
 
     pub fn delta_second(&self) -> f64 {
@@ -303,7 +284,7 @@ impl Drop for Engine {
         self.app.stopped();
 
         // Unload worlds and views
-        self.views.write().unwrap().clear();
+        Gfx::get().shutdown();
         self.worlds.write().unwrap().clear();
 
         // Started de-initialization

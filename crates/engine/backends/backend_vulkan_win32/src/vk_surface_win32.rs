@@ -210,6 +210,7 @@ impl GfxSurface for VkSurfaceWin32 {
         }
 
         let current_image_acquire_semaphore = self.image_acquire_semaphore.get(global_frame);
+        logger::warning!("B) set image_acquire semaphore {global_frame}");
         let swapchain = self.swapchain.read().unwrap();
         let (acquired_image, _acquired_image) = match unsafe {
             self._swapchain_loader.acquire_next_image(
@@ -230,7 +231,8 @@ impl GfxSurface for VkSurfaceWin32 {
                 });
             }
         };
-        render_pass.cast::<VkRenderPassInstance>().init_present_pass(self.image_acquire_semaphore.clone(), (acquired_image as u8, global_frame.image_id()));
+        logger::warning!("C) ACQUIRED {global_frame} -> {acquired_image}");
+        render_pass.cast::<VkRenderPassInstance>().init_present_pass(self.image_acquire_semaphore.clone(), (global_frame.clone(), Frame::new(acquired_image as u8)));
         Ok(Frame::new(acquired_image as u8))
     }
     fn submit(
@@ -244,7 +246,7 @@ impl GfxSurface for VkSurfaceWin32 {
         let present_info = vk::PresentInfoKHR::builder()
             .wait_semaphores(&[render_pass.render_finished_semaphore.get(&frame)])
             .swapchains(&[self.swapchain.read().unwrap().unwrap()])
-            .image_indices(&[frame.image_id() as u32])
+            .image_indices(&[render_pass.get_acquired_frame(frame).image_id() as u32])
             .build();
 
         match &self.present_queue {

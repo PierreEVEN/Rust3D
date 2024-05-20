@@ -39,7 +39,7 @@ pub mod renderer;
 
 static mut GFX_INSTANCE: MaybeUninit<Gfx> = MaybeUninit::<Gfx>::uninit();
 
-pub type SurfaceBuilderFunc = dyn FnMut(&Weak<dyn Window>) -> Box<dyn GfxSurface>;
+pub type SurfaceBuilderFunc = dyn FnMut(&Weak<dyn Window>) -> Arc<dyn GfxSurface>;
 
 pub trait GfxInterface: GfxCast {
     fn init(&mut self);
@@ -131,7 +131,7 @@ impl Gfx {
         self.views.write().unwrap().push(renderer);
     }
 
-    pub fn new_surface(&mut self, window: &Weak<dyn Window>) -> Box<dyn GfxSurface> {
+    pub fn new_surface(&mut self, window: &Weak<dyn Window>) -> Arc<dyn GfxSurface> {
         match &mut self.surface_builder {
             None => { panic!("Invalid surface builder") }
             Some(builder) => { (*builder)(window) }

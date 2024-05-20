@@ -22,7 +22,7 @@ use crate::vk_image::VkImage;
 pub struct VkRenderPassInstance {
     pub render_finished_semaphore: GfxResource<vk::Semaphore>,
     pub source_node: Arc<RenderNode>,
-    pub present_semaphore: RwLock<(Option<Arc<GfxResource<vk::Semaphore>>>, HashMap<u8, u8>)>,
+    pub present_semaphore: RwLock<(Option<Arc<GfxResource<vk::Semaphore>>>, HashMap<Frame, Frame>)>,
     pub render_pass: Arc<VkRenderPass>,
     pub framebuffer: GfxResource<vk::Framebuffer>,
     pub images: Vec<Arc<dyn GfxImage>>,
@@ -45,10 +45,14 @@ impl VkRenderPassInstance {
         }
     }
 
-    pub fn init_present_pass(&self, submit_semaphore: Arc<GfxResource<vk::Semaphore>>, frame_id_map: (u8, u8)) {
+    pub fn init_present_pass(&self, submit_semaphore: Arc<GfxResource<vk::Semaphore>>, frame_id_map: (Frame, Frame)) {
         let semaphore_info = &mut*self.present_semaphore.write().unwrap();
         semaphore_info.0 = Some(submit_semaphore);
         semaphore_info.1.insert(frame_id_map.0, frame_id_map.1);
+    }
+    
+    pub fn get_acquired_frame(&self, global_frame: &Frame) -> Frame {
+        self.present_semaphore.read().unwrap().1.get(global_frame).unwrap().clone()
     }
 }
 
@@ -77,11 +81,15 @@ impl RenderPassInstance for VkRenderPassInstance {
             });
         }
 
-
+        let semaphore_infos = &*self.present_semaphore.read().unwrap();
+        let image_frame = match semaphore_infos.1.get(&frame) {
+            None => {frame}
+            Some(found_frame) => {found_frame}
+        };
         // begin pass
         let begin_infos = vk::RenderPassBeginInfo::builder()
             .render_pass(self.render_pass.render_pass)
-            .framebuffer(self.framebuffer.get(frame))
+            .framebuffer(self.framebuffer.get(&image_frame))
             .render_area(vk::Rect2D {
                 offset: vk::Offset2D { x: 0, y: 0 },
                 extent: vk::Extent2D {
@@ -161,8 +169,7 @@ impl RenderPassInstance for VkRenderPassInstance {
             match &semaphore_infos.0 {
                 None => { panic!("Present semaphore is not valid !") }
                 Some(semaphore) => {
-                    let real_frame = Frame::new(*semaphore_infos.1.get(&frame.image_id()).unwrap());
-                    wait_semaphores.push(semaphore.get(&real_frame));
+                    wait_semaphores.push(semaphore.get(&frame));
                 }
             }
         }

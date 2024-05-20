@@ -6,12 +6,12 @@ use ecs::entity::GameObject;
 use maths::vec2::Vec2u32;
 use shader_base::pass_id::PassID;
 use shader_base::types::GfxCast;
+
 use crate::gfx::command_buffer::{CommandCtx, GfxCommandBuffer};
 use crate::gfx::Gfx;
 use crate::gfx::image::{GfxImage, ImageType};
 use crate::gfx::renderer::render_node::RenderNode;
 use crate::gfx::surface::Frame;
-
 
 pub trait RenderPassInstance: GfxCast {
     fn bind(&self, frame: &Frame, context: &RenderPass, res: Vec2u32, command_buffer: &dyn GfxCommandBuffer);
@@ -36,6 +36,7 @@ pub struct RenderPass {
     source_node: Arc<RenderNode>,
     command_buffer: Arc<dyn GfxCommandBuffer>,
     pass_id: PassID,
+    pre_present_callback: RwLock<Option<Box<dyn FnMut(&RenderPass, &Frame) -> bool>>>,
 }
 
 impl RenderPass {
@@ -49,9 +50,10 @@ impl RenderPass {
             source_node: render_node.clone(),
             command_buffer: Gfx::get().create_command_buffer("unnamed".to_string()),
             pass_id: PassID::new(render_node.get_name().as_str()),
+            pre_present_callback: Default::default(),
         }
     }
-    
+
     pub fn instantiate(&mut self) {
         let instance = Gfx::get().instantiate_render_pass(self);
         self.instance = MaybeUninit::new(instance);
@@ -60,7 +62,7 @@ impl RenderPass {
     pub fn get_id(&self) -> &PassID {
         &self.pass_id
     }
-    
+
     pub fn source(&self) -> &Arc<RenderNode> {
         &self.source_node
     }
@@ -77,25 +79,40 @@ impl RenderPass {
         unsafe { self.instance.assume_init_ref() }
     }
 
-    pub fn draw(&self, frame: &Frame, res: Vec2u32, camera: &GameObject) {
+    pub fn pre_present_callback<T: 'static + FnMut(&RenderPass, &Frame) -> bool>(&self, callback: T) {
+        *self.pre_present_callback.write().unwrap() = Some(Box::new(callback));
+    }
+
+    pub fn draw(&self, frame: &Frame, res: Vec2u32, camera: &GameObject) -> bool{
         //TODO parallelize into jobs
         for input in &self.inputs {
             input.draw(frame, res, camera);
         }
         unsafe {
+            if self.source_node.is_present_pass() {
+                match &mut *self.pre_present_callback.write().unwrap() {
+                    None => {}
+                    Some(callback) => {
+                        if !callback(self, frame) {
+                            return false;
+                        }
+                    }
+                }
+            }
+
             self.instance.assume_init_ref().bind(frame, self, (*self.compute_res.write().unwrap())(res), &*self.command_buffer);
             match camera.world() {
                 None => {}
                 Some(ecs) => {
                     if let Ok(mut ecs) = ecs.upgrade().unwrap().write() {
                         let ctx = CommandCtx::new(frame.clone(), self.pass_id.clone(), res.clone());
-                        
                         self.source_node.draw_content(ecs.deref_mut(), &ctx, self.command_buffer.as_ref());
                     }
                 }
             }
 
             self.instance.assume_init_ref().submit(frame, self, &*self.command_buffer);
+            true
         }
     }
 

@@ -140,7 +140,7 @@ impl ImGUiContext {
         let io = unsafe { &mut *igGetIO() };
         io.DisplaySize = ImVec2 { x: 1f32, y: 1f32 };
         io.DisplayFramebufferScale = ImVec2 { x: 1.0, y: 1.0 };
-        io.DeltaTime = 0.16f32;
+        io.DeltaTime = 16f32;
         unsafe { igNewFrame(); }
 
         render_node.add_render_function(move |_, ctx, command_buffer| {

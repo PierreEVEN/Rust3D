@@ -10,13 +10,6 @@ use gfx::PhysicalDevice;
 use crate::{G_VULKAN, g_vulkan, to_c_char};
 use crate::vk_physical_device::VkPhysicalDevice;
 
-#[derive(Default, Clone)]
-pub struct InstanceCreateInfos {
-    pub required_layers: Vec<(String, bool)>,
-    pub required_extensions: Vec<(String, bool)>,
-    pub enable_validation_layers: bool,
-}
-
 pub struct VkInstance {
     pub handle: ash::Instance,
     pub debug_util_loader: ext::DebugUtils,
@@ -26,7 +19,7 @@ pub struct VkInstance {
 }
 
 impl VkInstance {
-    pub fn new(create_infos: InstanceCreateInfos) -> Result<VkInstance, std::io::Error> {
+    pub fn new(create_infos: crate::InstanceCreateInfos) -> Result<VkInstance, std::io::Error> {
         // Build extensions and layer
         let mut required_layers = Vec::new();
         let mut required_extensions = Vec::new();
@@ -60,7 +53,6 @@ impl VkInstance {
             required_extensions.push("VK_EXT_debug_report\0".to_string());
         }
         required_extensions.push("VK_KHR_surface\0".to_string());
-        required_extensions.push("VK_KHR_win32_surface\0".to_string());
 
         for layer in &required_layers {
             layers_names_raw.push(layer.as_str().as_ptr() as *const c_char);

@@ -45,16 +45,16 @@ impl ImGUiContext {
         let imgui_context = unsafe { igCreateContext(null_mut()) };
         
         let io = unsafe { &mut *igGetIO() };
-        io.ConfigFlags |= ImGuiConfigFlags__ImGuiConfigFlags_NavEnableKeyboard;
-        io.ConfigFlags |= ImGuiConfigFlags__ImGuiConfigFlags_NavEnableGamepad;
-        io.ConfigFlags |= ImGuiConfigFlags__ImGuiConfigFlags_DockingEnable;
-        io.ConfigFlags |= ImGuiConfigFlags__ImGuiConfigFlags_ViewportsEnable;
+        io.ConfigFlags |= ImGuiConfigFlags__ImGuiConfigFlags_NavEnableKeyboard as i32;
+        io.ConfigFlags |= ImGuiConfigFlags__ImGuiConfigFlags_NavEnableGamepad as i32;
+        io.ConfigFlags |= ImGuiConfigFlags__ImGuiConfigFlags_DockingEnable as i32;
+        io.ConfigFlags |= ImGuiConfigFlags__ImGuiConfigFlags_ViewportsEnable as i32;
 
         io.BackendPlatformUserData = null_mut();
         io.BackendPlatformName = "imgui backend".as_ptr() as *const c_char;
-        io.BackendFlags |= ImGuiBackendFlags__ImGuiBackendFlags_HasMouseCursors;
-        io.BackendFlags |= ImGuiBackendFlags__ImGuiBackendFlags_HasSetMousePos;
-        io.BackendFlags |= ImGuiBackendFlags__ImGuiBackendFlags_PlatformHasViewports;
+        io.BackendFlags |= ImGuiBackendFlags__ImGuiBackendFlags_HasMouseCursors as i32;
+        io.BackendFlags |= ImGuiBackendFlags__ImGuiBackendFlags_HasSetMousePos as i32;
+        io.BackendFlags |= ImGuiBackendFlags__ImGuiBackendFlags_PlatformHasViewports as i32;
         io.MouseHoveredViewport = 0;
         
         let style = unsafe { &mut *igGetStyle() };

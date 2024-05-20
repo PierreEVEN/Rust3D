@@ -4,7 +4,6 @@ use ash::extensions::khr;
 use ash::extensions::khr::{Surface, Swapchain};
 use ash::vk;
 use gpu_allocator::vulkan;
-use raw_window_handle::RawWindowHandle;
 
 use backend_vulkan::{g_vulkan, G_VULKAN, GfxVulkan, vk_check};
 use backend_vulkan::vk_device::VkQueue;
@@ -19,8 +18,9 @@ use gfx::surface::{GfxImageID, GfxSurface, SurfaceAcquireResult};
 use gfx::types::PixelFormat;
 use maths::vec2::Vec2u32;
 use plateform::window::Window;
+use plateform_wayland::window::WindowWayland;
 
-pub struct VkSurfaceWin32 {
+pub struct VkSurfaceWayland {
     pub surface: vk::SurfaceKHR,
     pub swapchain: RwLock<Option<vk::SwapchainKHR>>,
     image_acquire_semaphore: GfxResource<vk::Semaphore>,
@@ -46,7 +46,7 @@ impl GfxImageBuilder<(vk::Image, Arc<vulkan::Allocation>)> for RbSurfaceImage {
     }
 }
 
-impl GfxSurface for VkSurfaceWin32 {
+impl GfxSurface for VkSurfaceWayland {
     fn create_or_recreate(&self) {
         vk_check!(unsafe { self.gfx.cast::<GfxVulkan>().device.handle.device_wait_idle() });
 
@@ -217,22 +217,20 @@ impl GfxSurface for VkSurfaceWin32 {
     }
 }
 
-impl VkSurfaceWin32 {
+impl VkSurfaceWayland {
     pub fn new(gfx: &GfxRef, name: String, window: &Arc<dyn Window>, image_count: u32) -> Arc<dyn GfxSurface> {
+
         let gfx_copy = gfx.clone();
 
-        let handle = match window.cast::<plateform_win32::window::WindowWin32>().get_handle() {
-            RawWindowHandle::Win32(handle) => { handle }
-            _ => { panic!("invalid window handle"); }
-        };
+        let wayland_window = window.cast::<WindowWayland>();
 
-        let ci_surface = vk::Win32SurfaceCreateInfoKHR::builder()
-            .hinstance(handle.hinstance)
-            .hwnd(handle.hwnd)
+        let ci_surface = vk::WaylandSurfaceCreateInfoKHR::builder()
+            .display(wayland_window.get_display_ptr() as *mut vk::wl_display)
+            .surface(wayland_window.get_surface_ptr() as *mut vk::wl_surface)
             .build();
 
-        let surface_fn = khr::Win32Surface::new(g_vulkan!(), &gfx.cast::<GfxVulkan>().instance.handle);
-        let surface = unsafe { surface_fn.create_win32_surface(&ci_surface, None) }.expect("failed to create surface");
+        let surface_fn = khr::WaylandSurface::new(g_vulkan!(), &gfx.cast::<GfxVulkan>().instance.handle);
+        let surface = unsafe { surface_fn.create_wayland_surface(&ci_surface, None) }.expect("failed to create surface");
         let surface_loader = Surface::new(g_vulkan!(), &gfx.cast::<GfxVulkan>().instance.handle);
 
         let swapchain_loader = Swapchain::new(&gfx.cast::<GfxVulkan>().instance.handle, &gfx.cast::<GfxVulkan>().device.handle);

@@ -80,979 +80,1348 @@ where
         }
     }
 }
-pub const _VCRT_COMPILER_PREPROCESSOR: u32 = 1;
-pub const _SAL_VERSION: u32 = 20;
-pub const __SAL_H_VERSION: u32 = 180000000;
-pub const _USE_DECLSPECS_FOR_SAL: u32 = 0;
-pub const _USE_ATTRIBUTES_FOR_SAL: u32 = 0;
-pub const _CRT_PACKING: u32 = 8;
-pub const _HAS_EXCEPTIONS: u32 = 1;
-pub const _STL_LANG: u32 = 0;
-pub const _HAS_CXX17: u32 = 0;
-pub const _HAS_CXX20: u32 = 0;
-pub const _HAS_CXX23: u32 = 0;
-pub const _HAS_NODISCARD: u32 = 0;
-pub const _ARM_WINAPI_PARTITION_DESKTOP_SDK_AVAILABLE: u32 = 1;
-pub const _CRT_BUILD_DESKTOP_APP: u32 = 1;
-pub const _ARGMAX: u32 = 100;
-pub const _CRT_INT_MAX: u32 = 2147483647;
-pub const _CRT_FUNCTIONS_REQUIRED: u32 = 1;
-pub const _CRT_HAS_CXX17: u32 = 0;
-pub const _CRT_HAS_C11: u32 = 1;
-pub const _CRT_INTERNAL_NONSTDC_NAMES: u32 = 1;
-pub const __STDC_SECURE_LIB__: u32 = 200411;
-pub const __GOT_SECURE_LIB__: u32 = 200411;
-pub const __STDC_WANT_SECURE_LIB__: u32 = 1;
-pub const _SECURECRT_FILL_BUFFER_PATTERN: u32 = 254;
-pub const _CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES: u32 = 0;
-pub const _CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT: u32 = 0;
-pub const _CRT_SECURE_CPP_OVERLOAD_SECURE_NAMES: u32 = 1;
-pub const _CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_MEMORY: u32 = 0;
-pub const _CRT_SECURE_CPP_OVERLOAD_SECURE_NAMES_MEMORY: u32 = 0;
-pub const _CRT_INTERNAL_STDIO_SYMBOL_PREFIX: &[u8; 1usize] = b"\0";
-pub const _CRT_INTERNAL_PRINTF_LEGACY_VSPRINTF_NULL_TERMINATION: u32 = 1;
-pub const _CRT_INTERNAL_PRINTF_STANDARD_SNPRINTF_BEHAVIOR: u32 = 2;
-pub const _CRT_INTERNAL_PRINTF_LEGACY_WIDE_SPECIFIERS: u32 = 4;
-pub const _CRT_INTERNAL_PRINTF_LEGACY_MSVCRT_COMPATIBILITY: u32 = 8;
-pub const _CRT_INTERNAL_PRINTF_LEGACY_THREE_DIGIT_EXPONENTS: u32 = 16;
-pub const _CRT_INTERNAL_PRINTF_STANDARD_ROUNDING: u32 = 32;
-pub const _CRT_INTERNAL_SCANF_SECURECRT: u32 = 1;
-pub const _CRT_INTERNAL_SCANF_LEGACY_WIDE_SPECIFIERS: u32 = 2;
-pub const _CRT_INTERNAL_SCANF_LEGACY_MSVCRT_COMPATIBILITY: u32 = 4;
-pub const BUFSIZ: u32 = 512;
-pub const _NSTREAM_: u32 = 512;
-pub const _IOB_ENTRIES: u32 = 3;
-pub const EOF: i32 = -1;
+pub const _STDIO_H: u32 = 1;
+pub const _FEATURES_H: u32 = 1;
+pub const _DEFAULT_SOURCE: u32 = 1;
+pub const __GLIBC_USE_ISOC2X: u32 = 0;
+pub const __USE_ISOC11: u32 = 1;
+pub const __USE_ISOC99: u32 = 1;
+pub const __USE_ISOC95: u32 = 1;
+pub const __USE_POSIX_IMPLICITLY: u32 = 1;
+pub const _POSIX_SOURCE: u32 = 1;
+pub const _POSIX_C_SOURCE: u32 = 200809;
+pub const __USE_POSIX: u32 = 1;
+pub const __USE_POSIX2: u32 = 1;
+pub const __USE_POSIX199309: u32 = 1;
+pub const __USE_POSIX199506: u32 = 1;
+pub const __USE_XOPEN2K: u32 = 1;
+pub const __USE_XOPEN2K8: u32 = 1;
+pub const _ATFILE_SOURCE: u32 = 1;
+pub const __WORDSIZE: u32 = 64;
+pub const __WORDSIZE_TIME64_COMPAT32: u32 = 1;
+pub const __SYSCALL_WORDSIZE: u32 = 64;
+pub const __TIMESIZE: u32 = 64;
+pub const __USE_MISC: u32 = 1;
+pub const __USE_ATFILE: u32 = 1;
+pub const __USE_FORTIFY_LEVEL: u32 = 0;
+pub const __GLIBC_USE_DEPRECATED_GETS: u32 = 0;
+pub const __GLIBC_USE_DEPRECATED_SCANF: u32 = 0;
+pub const __GLIBC_USE_C2X_STRTOL: u32 = 0;
+pub const _STDC_PREDEF_H: u32 = 1;
+pub const __STDC_IEC_559__: u32 = 1;
+pub const __STDC_IEC_60559_BFP__: u32 = 201404;
+pub const __STDC_IEC_559_COMPLEX__: u32 = 1;
+pub const __STDC_IEC_60559_COMPLEX__: u32 = 201404;
+pub const __STDC_ISO_10646__: u32 = 201706;
+pub const __GNU_LIBRARY__: u32 = 6;
+pub const __GLIBC__: u32 = 2;
+pub const __GLIBC_MINOR__: u32 = 39;
+pub const _SYS_CDEFS_H: u32 = 1;
+pub const __glibc_c99_flexarr_available: u32 = 1;
+pub const __LDOUBLE_REDIRECTS_TO_FLOAT128_ABI: u32 = 0;
+pub const __HAVE_GENERIC_SELECTION: u32 = 1;
+pub const __GLIBC_USE_LIB_EXT2: u32 = 0;
+pub const __GLIBC_USE_IEC_60559_BFP_EXT: u32 = 0;
+pub const __GLIBC_USE_IEC_60559_BFP_EXT_C2X: u32 = 0;
+pub const __GLIBC_USE_IEC_60559_EXT: u32 = 0;
+pub const __GLIBC_USE_IEC_60559_FUNCS_EXT: u32 = 0;
+pub const __GLIBC_USE_IEC_60559_FUNCS_EXT_C2X: u32 = 0;
+pub const __GLIBC_USE_IEC_60559_TYPES_EXT: u32 = 0;
+pub const _BITS_TYPES_H: u32 = 1;
+pub const _BITS_TYPESIZES_H: u32 = 1;
+pub const __OFF_T_MATCHES_OFF64_T: u32 = 1;
+pub const __INO_T_MATCHES_INO64_T: u32 = 1;
+pub const __RLIM_T_MATCHES_RLIM64_T: u32 = 1;
+pub const __STATFS_MATCHES_STATFS64: u32 = 1;
+pub const __KERNEL_OLD_TIMEVAL_MATCHES_TIMEVAL64: u32 = 1;
+pub const __FD_SETSIZE: u32 = 1024;
+pub const _BITS_TIME64_H: u32 = 1;
+pub const _____fpos_t_defined: u32 = 1;
+pub const ____mbstate_t_defined: u32 = 1;
+pub const _____fpos64_t_defined: u32 = 1;
+pub const ____FILE_defined: u32 = 1;
+pub const __FILE_defined: u32 = 1;
+pub const __struct_FILE_defined: u32 = 1;
+pub const _IO_EOF_SEEN: u32 = 16;
+pub const _IO_ERR_SEEN: u32 = 32;
+pub const _IO_USER_LOCK: u32 = 32768;
+pub const __cookie_io_functions_t_defined: u32 = 1;
 pub const _IOFBF: u32 = 0;
-pub const _IOLBF: u32 = 64;
-pub const _IONBF: u32 = 4;
-pub const L_tmpnam: u32 = 260;
-pub const L_tmpnam_s: u32 = 260;
+pub const _IOLBF: u32 = 1;
+pub const _IONBF: u32 = 2;
+pub const BUFSIZ: u32 = 8192;
+pub const EOF: i32 = -1;
+pub const SEEK_SET: u32 = 0;
 pub const SEEK_CUR: u32 = 1;
 pub const SEEK_END: u32 = 2;
-pub const SEEK_SET: u32 = 0;
-pub const FILENAME_MAX: u32 = 260;
-pub const FOPEN_MAX: u32 = 20;
-pub const _SYS_OPEN: u32 = 20;
-pub const TMP_MAX: u32 = 2147483647;
-pub const TMP_MAX_S: u32 = 2147483647;
-pub const _TMP_MAX_S: u32 = 2147483647;
-pub const SYS_OPEN: u32 = 20;
-pub const WCHAR_MIN: u32 = 0;
-pub const WCHAR_MAX: u32 = 65535;
+pub const P_tmpdir: &[u8; 5usize] = b"/tmp\0";
+pub const L_tmpnam: u32 = 20;
+pub const TMP_MAX: u32 = 238328;
+pub const _BITS_STDIO_LIM_H: u32 = 1;
+pub const FILENAME_MAX: u32 = 4096;
+pub const L_ctermid: u32 = 9;
+pub const FOPEN_MAX: u32 = 16;
+pub const __HAVE_FLOAT128: u32 = 0;
+pub const __HAVE_DISTINCT_FLOAT128: u32 = 0;
+pub const __HAVE_FLOAT64X: u32 = 1;
+pub const __HAVE_FLOAT64X_LONG_DOUBLE: u32 = 1;
+pub const __HAVE_FLOAT16: u32 = 0;
+pub const __HAVE_FLOAT32: u32 = 1;
+pub const __HAVE_FLOAT64: u32 = 1;
+pub const __HAVE_FLOAT32X: u32 = 1;
+pub const __HAVE_FLOAT128X: u32 = 0;
+pub const __HAVE_DISTINCT_FLOAT16: u32 = 0;
+pub const __HAVE_DISTINCT_FLOAT32: u32 = 0;
+pub const __HAVE_DISTINCT_FLOAT64: u32 = 0;
+pub const __HAVE_DISTINCT_FLOAT32X: u32 = 0;
+pub const __HAVE_DISTINCT_FLOAT64X: u32 = 0;
+pub const __HAVE_DISTINCT_FLOAT128X: u32 = 0;
+pub const __HAVE_FLOATN_NOT_TYPEDEF: u32 = 0;
+pub const _STDINT_H: u32 = 1;
+pub const _BITS_WCHAR_H: u32 = 1;
+pub const _BITS_STDINT_INTN_H: u32 = 1;
+pub const _BITS_STDINT_UINTN_H: u32 = 1;
+pub const _BITS_STDINT_LEAST_H: u32 = 1;
+pub const INT8_MIN: i32 = -128;
+pub const INT16_MIN: i32 = -32768;
+pub const INT32_MIN: i32 = -2147483648;
+pub const INT8_MAX: u32 = 127;
+pub const INT16_MAX: u32 = 32767;
+pub const INT32_MAX: u32 = 2147483647;
+pub const UINT8_MAX: u32 = 255;
+pub const UINT16_MAX: u32 = 65535;
+pub const UINT32_MAX: u32 = 4294967295;
+pub const INT_LEAST8_MIN: i32 = -128;
+pub const INT_LEAST16_MIN: i32 = -32768;
+pub const INT_LEAST32_MIN: i32 = -2147483648;
+pub const INT_LEAST8_MAX: u32 = 127;
+pub const INT_LEAST16_MAX: u32 = 32767;
+pub const INT_LEAST32_MAX: u32 = 2147483647;
+pub const UINT_LEAST8_MAX: u32 = 255;
+pub const UINT_LEAST16_MAX: u32 = 65535;
+pub const UINT_LEAST32_MAX: u32 = 4294967295;
+pub const INT_FAST8_MIN: i32 = -128;
+pub const INT_FAST16_MIN: i64 = -9223372036854775808;
+pub const INT_FAST32_MIN: i64 = -9223372036854775808;
+pub const INT_FAST8_MAX: u32 = 127;
+pub const INT_FAST16_MAX: u64 = 9223372036854775807;
+pub const INT_FAST32_MAX: u64 = 9223372036854775807;
+pub const UINT_FAST8_MAX: u32 = 255;
+pub const UINT_FAST16_MAX: i32 = -1;
+pub const UINT_FAST32_MAX: i32 = -1;
+pub const INTPTR_MIN: i64 = -9223372036854775808;
+pub const INTPTR_MAX: u64 = 9223372036854775807;
+pub const UINTPTR_MAX: i32 = -1;
+pub const PTRDIFF_MIN: i64 = -9223372036854775808;
+pub const PTRDIFF_MAX: u64 = 9223372036854775807;
+pub const SIG_ATOMIC_MIN: i32 = -2147483648;
+pub const SIG_ATOMIC_MAX: u32 = 2147483647;
+pub const SIZE_MAX: i32 = -1;
 pub const WINT_MIN: u32 = 0;
-pub const WINT_MAX: u32 = 65535;
-pub const __GNUC_VA_LIST: u32 = 1;
+pub const WINT_MAX: u32 = 4294967295;
+pub const __bool_true_false_are_defined: u32 = 1;
 pub const true_: u32 = 1;
 pub const false_: u32 = 0;
-pub const __bool_true_false_are_defined: u32 = 1;
 pub const IMGUI_HAS_DOCK: u32 = 1;
-pub type va_list = *mut ::std::os::raw::c_char;
-extern "C" {
-    pub fn __va_start(arg1: *mut *mut ::std::os::raw::c_char, ...);
-}
-pub type __vcrt_bool = bool;
-pub type wchar_t = ::std::os::raw::c_ushort;
-extern "C" {
-    pub fn __security_init_cookie();
-}
-extern "C" {
-    pub fn __security_check_cookie(_StackCookie: usize);
-}
-extern "C" {
-    pub fn __report_gsfailure(_StackCookie: usize) -> !;
-}
-extern "C" {
-    pub static mut __security_cookie: usize;
-}
-pub type __crt_bool = bool;
-extern "C" {
-    pub fn _invalid_parameter_noinfo();
-}
-extern "C" {
-    pub fn _invalid_parameter_noinfo_noreturn() -> !;
-}
-extern "C" {
-    pub fn _invoke_watson(
-        _Expression: *const wchar_t,
-        _FunctionName: *const wchar_t,
-        _FileName: *const wchar_t,
-        _LineNo: ::std::os::raw::c_uint,
-        _Reserved: usize,
-    ) -> !;
-}
-pub type errno_t = ::std::os::raw::c_int;
-pub type wint_t = ::std::os::raw::c_ushort;
-pub type wctype_t = ::std::os::raw::c_ushort;
-pub type __time32_t = ::std::os::raw::c_long;
-pub type __time64_t = ::std::os::raw::c_longlong;
+pub type __gnuc_va_list = __builtin_va_list;
+pub type __u_char = ::std::os::raw::c_uchar;
+pub type __u_short = ::std::os::raw::c_ushort;
+pub type __u_int = ::std::os::raw::c_uint;
+pub type __u_long = ::std::os::raw::c_ulong;
+pub type __int8_t = ::std::os::raw::c_schar;
+pub type __uint8_t = ::std::os::raw::c_uchar;
+pub type __int16_t = ::std::os::raw::c_short;
+pub type __uint16_t = ::std::os::raw::c_ushort;
+pub type __int32_t = ::std::os::raw::c_int;
+pub type __uint32_t = ::std::os::raw::c_uint;
+pub type __int64_t = ::std::os::raw::c_long;
+pub type __uint64_t = ::std::os::raw::c_ulong;
+pub type __int_least8_t = __int8_t;
+pub type __uint_least8_t = __uint8_t;
+pub type __int_least16_t = __int16_t;
+pub type __uint_least16_t = __uint16_t;
+pub type __int_least32_t = __int32_t;
+pub type __uint_least32_t = __uint32_t;
+pub type __int_least64_t = __int64_t;
+pub type __uint_least64_t = __uint64_t;
+pub type __quad_t = ::std::os::raw::c_long;
+pub type __u_quad_t = ::std::os::raw::c_ulong;
+pub type __intmax_t = ::std::os::raw::c_long;
+pub type __uintmax_t = ::std::os::raw::c_ulong;
+pub type __dev_t = ::std::os::raw::c_ulong;
+pub type __uid_t = ::std::os::raw::c_uint;
+pub type __gid_t = ::std::os::raw::c_uint;
+pub type __ino_t = ::std::os::raw::c_ulong;
+pub type __ino64_t = ::std::os::raw::c_ulong;
+pub type __mode_t = ::std::os::raw::c_uint;
+pub type __nlink_t = ::std::os::raw::c_ulong;
+pub type __off_t = ::std::os::raw::c_long;
+pub type __off64_t = ::std::os::raw::c_long;
+pub type __pid_t = ::std::os::raw::c_int;
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
-pub struct __crt_locale_data_public {
-    pub _locale_pctype: *const ::std::os::raw::c_ushort,
-    pub _locale_mb_cur_max: ::std::os::raw::c_int,
-    pub _locale_lc_codepage: ::std::os::raw::c_uint,
+pub struct __fsid_t {
+    pub __val: [::std::os::raw::c_int; 2usize],
 }
 #[test]
-fn bindgen_test_layout___crt_locale_data_public() {
-    const UNINIT: ::std::mem::MaybeUninit<__crt_locale_data_public> =
+fn bindgen_test_layout___fsid_t() {
+    const UNINIT: ::std::mem::MaybeUninit<__fsid_t> = ::std::mem::MaybeUninit::uninit();
+    let ptr = UNINIT.as_ptr();
+    assert_eq!(
+        ::std::mem::size_of::<__fsid_t>(),
+        8usize,
+        concat!("Size of: ", stringify!(__fsid_t))
+    );
+    assert_eq!(
+        ::std::mem::align_of::<__fsid_t>(),
+        4usize,
+        concat!("Alignment of ", stringify!(__fsid_t))
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).__val) as usize - ptr as usize },
+        0usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(__fsid_t),
+            "::",
+            stringify!(__val)
+        )
+    );
+}
+pub type __clock_t = ::std::os::raw::c_long;
+pub type __rlim_t = ::std::os::raw::c_ulong;
+pub type __rlim64_t = ::std::os::raw::c_ulong;
+pub type __id_t = ::std::os::raw::c_uint;
+pub type __time_t = ::std::os::raw::c_long;
+pub type __useconds_t = ::std::os::raw::c_uint;
+pub type __suseconds_t = ::std::os::raw::c_long;
+pub type __suseconds64_t = ::std::os::raw::c_long;
+pub type __daddr_t = ::std::os::raw::c_int;
+pub type __key_t = ::std::os::raw::c_int;
+pub type __clockid_t = ::std::os::raw::c_int;
+pub type __timer_t = *mut ::std::os::raw::c_void;
+pub type __blksize_t = ::std::os::raw::c_long;
+pub type __blkcnt_t = ::std::os::raw::c_long;
+pub type __blkcnt64_t = ::std::os::raw::c_long;
+pub type __fsblkcnt_t = ::std::os::raw::c_ulong;
+pub type __fsblkcnt64_t = ::std::os::raw::c_ulong;
+pub type __fsfilcnt_t = ::std::os::raw::c_ulong;
+pub type __fsfilcnt64_t = ::std::os::raw::c_ulong;
+pub type __fsword_t = ::std::os::raw::c_long;
+pub type __ssize_t = ::std::os::raw::c_long;
+pub type __syscall_slong_t = ::std::os::raw::c_long;
+pub type __syscall_ulong_t = ::std::os::raw::c_ulong;
+pub type __loff_t = __off64_t;
+pub type __caddr_t = *mut ::std::os::raw::c_char;
+pub type __intptr_t = ::std::os::raw::c_long;
+pub type __socklen_t = ::std::os::raw::c_uint;
+pub type __sig_atomic_t = ::std::os::raw::c_int;
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct __mbstate_t {
+    pub __count: ::std::os::raw::c_int,
+    pub __value: __mbstate_t__bindgen_ty_1,
+}
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub union __mbstate_t__bindgen_ty_1 {
+    pub __wch: ::std::os::raw::c_uint,
+    pub __wchb: [::std::os::raw::c_char; 4usize],
+}
+#[test]
+fn bindgen_test_layout___mbstate_t__bindgen_ty_1() {
+    const UNINIT: ::std::mem::MaybeUninit<__mbstate_t__bindgen_ty_1> =
         ::std::mem::MaybeUninit::uninit();
     let ptr = UNINIT.as_ptr();
     assert_eq!(
-        ::std::mem::size_of::<__crt_locale_data_public>(),
-        16usize,
-        concat!("Size of: ", stringify!(__crt_locale_data_public))
+        ::std::mem::size_of::<__mbstate_t__bindgen_ty_1>(),
+        4usize,
+        concat!("Size of: ", stringify!(__mbstate_t__bindgen_ty_1))
     );
     assert_eq!(
-        ::std::mem::align_of::<__crt_locale_data_public>(),
-        8usize,
-        concat!("Alignment of ", stringify!(__crt_locale_data_public))
+        ::std::mem::align_of::<__mbstate_t__bindgen_ty_1>(),
+        4usize,
+        concat!("Alignment of ", stringify!(__mbstate_t__bindgen_ty_1))
     );
     assert_eq!(
-        unsafe { ::std::ptr::addr_of!((*ptr)._locale_pctype) as usize - ptr as usize },
+        unsafe { ::std::ptr::addr_of!((*ptr).__wch) as usize - ptr as usize },
         0usize,
         concat!(
             "Offset of field: ",
-            stringify!(__crt_locale_data_public),
+            stringify!(__mbstate_t__bindgen_ty_1),
             "::",
-            stringify!(_locale_pctype)
+            stringify!(__wch)
         )
     );
     assert_eq!(
-        unsafe { ::std::ptr::addr_of!((*ptr)._locale_mb_cur_max) as usize - ptr as usize },
+        unsafe { ::std::ptr::addr_of!((*ptr).__wchb) as usize - ptr as usize },
+        0usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(__mbstate_t__bindgen_ty_1),
+            "::",
+            stringify!(__wchb)
+        )
+    );
+}
+#[test]
+fn bindgen_test_layout___mbstate_t() {
+    const UNINIT: ::std::mem::MaybeUninit<__mbstate_t> = ::std::mem::MaybeUninit::uninit();
+    let ptr = UNINIT.as_ptr();
+    assert_eq!(
+        ::std::mem::size_of::<__mbstate_t>(),
         8usize,
+        concat!("Size of: ", stringify!(__mbstate_t))
+    );
+    assert_eq!(
+        ::std::mem::align_of::<__mbstate_t>(),
+        4usize,
+        concat!("Alignment of ", stringify!(__mbstate_t))
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).__count) as usize - ptr as usize },
+        0usize,
         concat!(
             "Offset of field: ",
-            stringify!(__crt_locale_data_public),
+            stringify!(__mbstate_t),
             "::",
-            stringify!(_locale_mb_cur_max)
+            stringify!(__count)
         )
     );
     assert_eq!(
-        unsafe { ::std::ptr::addr_of!((*ptr)._locale_lc_codepage) as usize - ptr as usize },
-        12usize,
+        unsafe { ::std::ptr::addr_of!((*ptr).__value) as usize - ptr as usize },
+        4usize,
         concat!(
             "Offset of field: ",
-            stringify!(__crt_locale_data_public),
+            stringify!(__mbstate_t),
             "::",
-            stringify!(_locale_lc_codepage)
+            stringify!(__value)
         )
     );
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct __crt_locale_pointers {
-    pub locinfo: *mut __crt_locale_data,
-    pub mbcinfo: *mut __crt_multibyte_data,
+#[derive(Copy, Clone)]
+pub struct _G_fpos_t {
+    pub __pos: __off_t,
+    pub __state: __mbstate_t,
 }
 #[test]
-fn bindgen_test_layout___crt_locale_pointers() {
-    const UNINIT: ::std::mem::MaybeUninit<__crt_locale_pointers> =
+fn bindgen_test_layout__G_fpos_t() {
+    const UNINIT: ::std::mem::MaybeUninit<_G_fpos_t> = ::std::mem::MaybeUninit::uninit();
+    let ptr = UNINIT.as_ptr();
+    assert_eq!(
+        ::std::mem::size_of::<_G_fpos_t>(),
+        16usize,
+        concat!("Size of: ", stringify!(_G_fpos_t))
+    );
+    assert_eq!(
+        ::std::mem::align_of::<_G_fpos_t>(),
+        8usize,
+        concat!("Alignment of ", stringify!(_G_fpos_t))
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).__pos) as usize - ptr as usize },
+        0usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(_G_fpos_t),
+            "::",
+            stringify!(__pos)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).__state) as usize - ptr as usize },
+        8usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(_G_fpos_t),
+            "::",
+            stringify!(__state)
+        )
+    );
+}
+pub type __fpos_t = _G_fpos_t;
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct _G_fpos64_t {
+    pub __pos: __off64_t,
+    pub __state: __mbstate_t,
+}
+#[test]
+fn bindgen_test_layout__G_fpos64_t() {
+    const UNINIT: ::std::mem::MaybeUninit<_G_fpos64_t> = ::std::mem::MaybeUninit::uninit();
+    let ptr = UNINIT.as_ptr();
+    assert_eq!(
+        ::std::mem::size_of::<_G_fpos64_t>(),
+        16usize,
+        concat!("Size of: ", stringify!(_G_fpos64_t))
+    );
+    assert_eq!(
+        ::std::mem::align_of::<_G_fpos64_t>(),
+        8usize,
+        concat!("Alignment of ", stringify!(_G_fpos64_t))
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).__pos) as usize - ptr as usize },
+        0usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(_G_fpos64_t),
+            "::",
+            stringify!(__pos)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).__state) as usize - ptr as usize },
+        8usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(_G_fpos64_t),
+            "::",
+            stringify!(__state)
+        )
+    );
+}
+pub type __fpos64_t = _G_fpos64_t;
+pub type __FILE = _IO_FILE;
+pub type FILE = _IO_FILE;
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct _IO_marker {
+    _unused: [u8; 0],
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct _IO_codecvt {
+    _unused: [u8; 0],
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct _IO_wide_data {
+    _unused: [u8; 0],
+}
+pub type _IO_lock_t = ::std::os::raw::c_void;
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct _IO_FILE {
+    pub _flags: ::std::os::raw::c_int,
+    pub _IO_read_ptr: *mut ::std::os::raw::c_char,
+    pub _IO_read_end: *mut ::std::os::raw::c_char,
+    pub _IO_read_base: *mut ::std::os::raw::c_char,
+    pub _IO_write_base: *mut ::std::os::raw::c_char,
+    pub _IO_write_ptr: *mut ::std::os::raw::c_char,
+    pub _IO_write_end: *mut ::std::os::raw::c_char,
+    pub _IO_buf_base: *mut ::std::os::raw::c_char,
+    pub _IO_buf_end: *mut ::std::os::raw::c_char,
+    pub _IO_save_base: *mut ::std::os::raw::c_char,
+    pub _IO_backup_base: *mut ::std::os::raw::c_char,
+    pub _IO_save_end: *mut ::std::os::raw::c_char,
+    pub _markers: *mut _IO_marker,
+    pub _chain: *mut _IO_FILE,
+    pub _fileno: ::std::os::raw::c_int,
+    pub _flags2: ::std::os::raw::c_int,
+    pub _old_offset: __off_t,
+    pub _cur_column: ::std::os::raw::c_ushort,
+    pub _vtable_offset: ::std::os::raw::c_schar,
+    pub _shortbuf: [::std::os::raw::c_char; 1usize],
+    pub _lock: *mut _IO_lock_t,
+    pub _offset: __off64_t,
+    pub _codecvt: *mut _IO_codecvt,
+    pub _wide_data: *mut _IO_wide_data,
+    pub _freeres_list: *mut _IO_FILE,
+    pub _freeres_buf: *mut ::std::os::raw::c_void,
+    pub __pad5: usize,
+    pub _mode: ::std::os::raw::c_int,
+    pub _unused2: [::std::os::raw::c_char; 20usize],
+}
+#[test]
+fn bindgen_test_layout__IO_FILE() {
+    const UNINIT: ::std::mem::MaybeUninit<_IO_FILE> = ::std::mem::MaybeUninit::uninit();
+    let ptr = UNINIT.as_ptr();
+    assert_eq!(
+        ::std::mem::size_of::<_IO_FILE>(),
+        216usize,
+        concat!("Size of: ", stringify!(_IO_FILE))
+    );
+    assert_eq!(
+        ::std::mem::align_of::<_IO_FILE>(),
+        8usize,
+        concat!("Alignment of ", stringify!(_IO_FILE))
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr)._flags) as usize - ptr as usize },
+        0usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(_IO_FILE),
+            "::",
+            stringify!(_flags)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr)._IO_read_ptr) as usize - ptr as usize },
+        8usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(_IO_FILE),
+            "::",
+            stringify!(_IO_read_ptr)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr)._IO_read_end) as usize - ptr as usize },
+        16usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(_IO_FILE),
+            "::",
+            stringify!(_IO_read_end)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr)._IO_read_base) as usize - ptr as usize },
+        24usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(_IO_FILE),
+            "::",
+            stringify!(_IO_read_base)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr)._IO_write_base) as usize - ptr as usize },
+        32usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(_IO_FILE),
+            "::",
+            stringify!(_IO_write_base)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr)._IO_write_ptr) as usize - ptr as usize },
+        40usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(_IO_FILE),
+            "::",
+            stringify!(_IO_write_ptr)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr)._IO_write_end) as usize - ptr as usize },
+        48usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(_IO_FILE),
+            "::",
+            stringify!(_IO_write_end)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr)._IO_buf_base) as usize - ptr as usize },
+        56usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(_IO_FILE),
+            "::",
+            stringify!(_IO_buf_base)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr)._IO_buf_end) as usize - ptr as usize },
+        64usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(_IO_FILE),
+            "::",
+            stringify!(_IO_buf_end)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr)._IO_save_base) as usize - ptr as usize },
+        72usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(_IO_FILE),
+            "::",
+            stringify!(_IO_save_base)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr)._IO_backup_base) as usize - ptr as usize },
+        80usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(_IO_FILE),
+            "::",
+            stringify!(_IO_backup_base)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr)._IO_save_end) as usize - ptr as usize },
+        88usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(_IO_FILE),
+            "::",
+            stringify!(_IO_save_end)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr)._markers) as usize - ptr as usize },
+        96usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(_IO_FILE),
+            "::",
+            stringify!(_markers)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr)._chain) as usize - ptr as usize },
+        104usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(_IO_FILE),
+            "::",
+            stringify!(_chain)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr)._fileno) as usize - ptr as usize },
+        112usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(_IO_FILE),
+            "::",
+            stringify!(_fileno)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr)._flags2) as usize - ptr as usize },
+        116usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(_IO_FILE),
+            "::",
+            stringify!(_flags2)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr)._old_offset) as usize - ptr as usize },
+        120usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(_IO_FILE),
+            "::",
+            stringify!(_old_offset)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr)._cur_column) as usize - ptr as usize },
+        128usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(_IO_FILE),
+            "::",
+            stringify!(_cur_column)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr)._vtable_offset) as usize - ptr as usize },
+        130usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(_IO_FILE),
+            "::",
+            stringify!(_vtable_offset)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr)._shortbuf) as usize - ptr as usize },
+        131usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(_IO_FILE),
+            "::",
+            stringify!(_shortbuf)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr)._lock) as usize - ptr as usize },
+        136usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(_IO_FILE),
+            "::",
+            stringify!(_lock)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr)._offset) as usize - ptr as usize },
+        144usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(_IO_FILE),
+            "::",
+            stringify!(_offset)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr)._codecvt) as usize - ptr as usize },
+        152usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(_IO_FILE),
+            "::",
+            stringify!(_codecvt)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr)._wide_data) as usize - ptr as usize },
+        160usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(_IO_FILE),
+            "::",
+            stringify!(_wide_data)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr)._freeres_list) as usize - ptr as usize },
+        168usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(_IO_FILE),
+            "::",
+            stringify!(_freeres_list)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr)._freeres_buf) as usize - ptr as usize },
+        176usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(_IO_FILE),
+            "::",
+            stringify!(_freeres_buf)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).__pad5) as usize - ptr as usize },
+        184usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(_IO_FILE),
+            "::",
+            stringify!(__pad5)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr)._mode) as usize - ptr as usize },
+        192usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(_IO_FILE),
+            "::",
+            stringify!(_mode)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr)._unused2) as usize - ptr as usize },
+        196usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(_IO_FILE),
+            "::",
+            stringify!(_unused2)
+        )
+    );
+}
+pub type cookie_read_function_t = ::std::option::Option<
+    unsafe extern "C" fn(
+        __cookie: *mut ::std::os::raw::c_void,
+        __buf: *mut ::std::os::raw::c_char,
+        __nbytes: usize,
+    ) -> __ssize_t,
+>;
+pub type cookie_write_function_t = ::std::option::Option<
+    unsafe extern "C" fn(
+        __cookie: *mut ::std::os::raw::c_void,
+        __buf: *const ::std::os::raw::c_char,
+        __nbytes: usize,
+    ) -> __ssize_t,
+>;
+pub type cookie_seek_function_t = ::std::option::Option<
+    unsafe extern "C" fn(
+        __cookie: *mut ::std::os::raw::c_void,
+        __pos: *mut __off64_t,
+        __w: ::std::os::raw::c_int,
+    ) -> ::std::os::raw::c_int,
+>;
+pub type cookie_close_function_t = ::std::option::Option<
+    unsafe extern "C" fn(__cookie: *mut ::std::os::raw::c_void) -> ::std::os::raw::c_int,
+>;
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct _IO_cookie_io_functions_t {
+    pub read: cookie_read_function_t,
+    pub write: cookie_write_function_t,
+    pub seek: cookie_seek_function_t,
+    pub close: cookie_close_function_t,
+}
+#[test]
+fn bindgen_test_layout__IO_cookie_io_functions_t() {
+    const UNINIT: ::std::mem::MaybeUninit<_IO_cookie_io_functions_t> =
         ::std::mem::MaybeUninit::uninit();
     let ptr = UNINIT.as_ptr();
     assert_eq!(
-        ::std::mem::size_of::<__crt_locale_pointers>(),
+        ::std::mem::size_of::<_IO_cookie_io_functions_t>(),
+        32usize,
+        concat!("Size of: ", stringify!(_IO_cookie_io_functions_t))
+    );
+    assert_eq!(
+        ::std::mem::align_of::<_IO_cookie_io_functions_t>(),
+        8usize,
+        concat!("Alignment of ", stringify!(_IO_cookie_io_functions_t))
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).read) as usize - ptr as usize },
+        0usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(_IO_cookie_io_functions_t),
+            "::",
+            stringify!(read)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).write) as usize - ptr as usize },
+        8usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(_IO_cookie_io_functions_t),
+            "::",
+            stringify!(write)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).seek) as usize - ptr as usize },
         16usize,
-        concat!("Size of: ", stringify!(__crt_locale_pointers))
-    );
-    assert_eq!(
-        ::std::mem::align_of::<__crt_locale_pointers>(),
-        8usize,
-        concat!("Alignment of ", stringify!(__crt_locale_pointers))
-    );
-    assert_eq!(
-        unsafe { ::std::ptr::addr_of!((*ptr).locinfo) as usize - ptr as usize },
-        0usize,
         concat!(
             "Offset of field: ",
-            stringify!(__crt_locale_pointers),
+            stringify!(_IO_cookie_io_functions_t),
             "::",
-            stringify!(locinfo)
+            stringify!(seek)
         )
     );
     assert_eq!(
-        unsafe { ::std::ptr::addr_of!((*ptr).mbcinfo) as usize - ptr as usize },
-        8usize,
+        unsafe { ::std::ptr::addr_of!((*ptr).close) as usize - ptr as usize },
+        24usize,
         concat!(
             "Offset of field: ",
-            stringify!(__crt_locale_pointers),
+            stringify!(_IO_cookie_io_functions_t),
             "::",
-            stringify!(mbcinfo)
+            stringify!(close)
         )
     );
 }
-pub type _locale_t = *mut __crt_locale_pointers;
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct _Mbstatet {
-    pub _Wchar: ::std::os::raw::c_ulong,
-    pub _Byte: ::std::os::raw::c_ushort,
-    pub _State: ::std::os::raw::c_ushort,
-}
-#[test]
-fn bindgen_test_layout__Mbstatet() {
-    const UNINIT: ::std::mem::MaybeUninit<_Mbstatet> = ::std::mem::MaybeUninit::uninit();
-    let ptr = UNINIT.as_ptr();
-    assert_eq!(
-        ::std::mem::size_of::<_Mbstatet>(),
-        8usize,
-        concat!("Size of: ", stringify!(_Mbstatet))
-    );
-    assert_eq!(
-        ::std::mem::align_of::<_Mbstatet>(),
-        4usize,
-        concat!("Alignment of ", stringify!(_Mbstatet))
-    );
-    assert_eq!(
-        unsafe { ::std::ptr::addr_of!((*ptr)._Wchar) as usize - ptr as usize },
-        0usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(_Mbstatet),
-            "::",
-            stringify!(_Wchar)
-        )
-    );
-    assert_eq!(
-        unsafe { ::std::ptr::addr_of!((*ptr)._Byte) as usize - ptr as usize },
-        4usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(_Mbstatet),
-            "::",
-            stringify!(_Byte)
-        )
-    );
-    assert_eq!(
-        unsafe { ::std::ptr::addr_of!((*ptr)._State) as usize - ptr as usize },
-        6usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(_Mbstatet),
-            "::",
-            stringify!(_State)
-        )
-    );
-}
-pub type mbstate_t = _Mbstatet;
-pub type time_t = __time64_t;
-pub type rsize_t = usize;
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct _iobuf {
-    pub _Placeholder: *mut ::std::os::raw::c_void,
-}
-#[test]
-fn bindgen_test_layout__iobuf() {
-    const UNINIT: ::std::mem::MaybeUninit<_iobuf> = ::std::mem::MaybeUninit::uninit();
-    let ptr = UNINIT.as_ptr();
-    assert_eq!(
-        ::std::mem::size_of::<_iobuf>(),
-        8usize,
-        concat!("Size of: ", stringify!(_iobuf))
-    );
-    assert_eq!(
-        ::std::mem::align_of::<_iobuf>(),
-        8usize,
-        concat!("Alignment of ", stringify!(_iobuf))
-    );
-    assert_eq!(
-        unsafe { ::std::ptr::addr_of!((*ptr)._Placeholder) as usize - ptr as usize },
-        0usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(_iobuf),
-            "::",
-            stringify!(_Placeholder)
-        )
-    );
-}
-pub type FILE = _iobuf;
-extern "C" {
-    pub fn __acrt_iob_func(_Ix: ::std::os::raw::c_uint) -> *mut FILE;
-}
-extern "C" {
-    pub fn fgetwc(_Stream: *mut FILE) -> wint_t;
-}
-extern "C" {
-    pub fn _fgetwchar() -> wint_t;
-}
-extern "C" {
-    pub fn fputwc(_Character: wchar_t, _Stream: *mut FILE) -> wint_t;
-}
-extern "C" {
-    pub fn _fputwchar(_Character: wchar_t) -> wint_t;
-}
-extern "C" {
-    pub fn getwc(_Stream: *mut FILE) -> wint_t;
-}
-extern "C" {
-    pub fn getwchar() -> wint_t;
-}
-extern "C" {
-    pub fn fgetws(
-        _Buffer: *mut wchar_t,
-        _BufferCount: ::std::os::raw::c_int,
-        _Stream: *mut FILE,
-    ) -> *mut wchar_t;
-}
-extern "C" {
-    pub fn fputws(_Buffer: *const wchar_t, _Stream: *mut FILE) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn _getws_s(_Buffer: *mut wchar_t, _BufferCount: usize) -> *mut wchar_t;
-}
-extern "C" {
-    pub fn putwc(_Character: wchar_t, _Stream: *mut FILE) -> wint_t;
-}
-extern "C" {
-    pub fn putwchar(_Character: wchar_t) -> wint_t;
-}
-extern "C" {
-    pub fn _putws(_Buffer: *const wchar_t) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn ungetwc(_Character: wint_t, _Stream: *mut FILE) -> wint_t;
-}
-extern "C" {
-    pub fn _wfdopen(_FileHandle: ::std::os::raw::c_int, _Mode: *const wchar_t) -> *mut FILE;
-}
-extern "C" {
-    pub fn _wfopen(_FileName: *const wchar_t, _Mode: *const wchar_t) -> *mut FILE;
-}
-extern "C" {
-    pub fn _wfopen_s(
-        _Stream: *mut *mut FILE,
-        _FileName: *const wchar_t,
-        _Mode: *const wchar_t,
-    ) -> errno_t;
-}
-extern "C" {
-    pub fn _wfreopen(
-        _FileName: *const wchar_t,
-        _Mode: *const wchar_t,
-        _OldStream: *mut FILE,
-    ) -> *mut FILE;
-}
-extern "C" {
-    pub fn _wfreopen_s(
-        _Stream: *mut *mut FILE,
-        _FileName: *const wchar_t,
-        _Mode: *const wchar_t,
-        _OldStream: *mut FILE,
-    ) -> errno_t;
-}
-extern "C" {
-    pub fn _wfsopen(
-        _FileName: *const wchar_t,
-        _Mode: *const wchar_t,
-        _ShFlag: ::std::os::raw::c_int,
-    ) -> *mut FILE;
-}
-extern "C" {
-    pub fn _wperror(_ErrorMessage: *const wchar_t);
-}
-extern "C" {
-    pub fn _wpopen(_Command: *const wchar_t, _Mode: *const wchar_t) -> *mut FILE;
-}
-extern "C" {
-    pub fn _wremove(_FileName: *const wchar_t) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn _wtempnam(_Directory: *const wchar_t, _FilePrefix: *const wchar_t) -> *mut wchar_t;
-}
-extern "C" {
-    pub fn _wtmpnam_s(_Buffer: *mut wchar_t, _BufferCount: usize) -> errno_t;
-}
-extern "C" {
-    pub fn _wtmpnam(_Buffer: *mut wchar_t) -> *mut wchar_t;
-}
-extern "C" {
-    pub fn _fgetwc_nolock(_Stream: *mut FILE) -> wint_t;
-}
-extern "C" {
-    pub fn _fputwc_nolock(_Character: wchar_t, _Stream: *mut FILE) -> wint_t;
-}
-extern "C" {
-    pub fn _getwc_nolock(_Stream: *mut FILE) -> wint_t;
-}
-extern "C" {
-    pub fn _putwc_nolock(_Character: wchar_t, _Stream: *mut FILE) -> wint_t;
-}
-extern "C" {
-    pub fn _ungetwc_nolock(_Character: wint_t, _Stream: *mut FILE) -> wint_t;
-}
-extern "C" {
-    pub fn __stdio_common_vfwprintf(
-        _Options: ::std::os::raw::c_ulonglong,
-        _Stream: *mut FILE,
-        _Format: *const wchar_t,
-        _Locale: _locale_t,
-        _ArgList: va_list,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn __stdio_common_vfwprintf_s(
-        _Options: ::std::os::raw::c_ulonglong,
-        _Stream: *mut FILE,
-        _Format: *const wchar_t,
-        _Locale: _locale_t,
-        _ArgList: va_list,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn __stdio_common_vfwprintf_p(
-        _Options: ::std::os::raw::c_ulonglong,
-        _Stream: *mut FILE,
-        _Format: *const wchar_t,
-        _Locale: _locale_t,
-        _ArgList: va_list,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn __stdio_common_vfwscanf(
-        _Options: ::std::os::raw::c_ulonglong,
-        _Stream: *mut FILE,
-        _Format: *const wchar_t,
-        _Locale: _locale_t,
-        _ArgList: va_list,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn __stdio_common_vswprintf(
-        _Options: ::std::os::raw::c_ulonglong,
-        _Buffer: *mut wchar_t,
-        _BufferCount: usize,
-        _Format: *const wchar_t,
-        _Locale: _locale_t,
-        _ArgList: va_list,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn __stdio_common_vswprintf_s(
-        _Options: ::std::os::raw::c_ulonglong,
-        _Buffer: *mut wchar_t,
-        _BufferCount: usize,
-        _Format: *const wchar_t,
-        _Locale: _locale_t,
-        _ArgList: va_list,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn __stdio_common_vsnwprintf_s(
-        _Options: ::std::os::raw::c_ulonglong,
-        _Buffer: *mut wchar_t,
-        _BufferCount: usize,
-        _MaxCount: usize,
-        _Format: *const wchar_t,
-        _Locale: _locale_t,
-        _ArgList: va_list,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn __stdio_common_vswprintf_p(
-        _Options: ::std::os::raw::c_ulonglong,
-        _Buffer: *mut wchar_t,
-        _BufferCount: usize,
-        _Format: *const wchar_t,
-        _Locale: _locale_t,
-        _ArgList: va_list,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn __stdio_common_vswscanf(
-        _Options: ::std::os::raw::c_ulonglong,
-        _Buffer: *const wchar_t,
-        _BufferCount: usize,
-        _Format: *const wchar_t,
-        _Locale: _locale_t,
-        _ArgList: va_list,
-    ) -> ::std::os::raw::c_int;
-}
-pub type fpos_t = ::std::os::raw::c_longlong;
-extern "C" {
-    pub fn _get_stream_buffer_pointers(
-        _Stream: *mut FILE,
-        _Base: *mut *mut *mut ::std::os::raw::c_char,
-        _Pointer: *mut *mut *mut ::std::os::raw::c_char,
-        _Count: *mut *mut ::std::os::raw::c_int,
-    ) -> errno_t;
-}
-extern "C" {
-    pub fn clearerr_s(_Stream: *mut FILE) -> errno_t;
-}
-extern "C" {
-    pub fn fopen_s(
-        _Stream: *mut *mut FILE,
-        _FileName: *const ::std::os::raw::c_char,
-        _Mode: *const ::std::os::raw::c_char,
-    ) -> errno_t;
-}
-extern "C" {
-    pub fn fread_s(
-        _Buffer: *mut ::std::os::raw::c_void,
-        _BufferSize: usize,
-        _ElementSize: usize,
-        _ElementCount: usize,
-        _Stream: *mut FILE,
-    ) -> usize;
-}
-extern "C" {
-    pub fn freopen_s(
-        _Stream: *mut *mut FILE,
-        _FileName: *const ::std::os::raw::c_char,
-        _Mode: *const ::std::os::raw::c_char,
-        _OldStream: *mut FILE,
-    ) -> errno_t;
-}
-extern "C" {
-    pub fn gets_s(
-        _Buffer: *mut ::std::os::raw::c_char,
-        _Size: rsize_t,
-    ) -> *mut ::std::os::raw::c_char;
-}
-extern "C" {
-    pub fn tmpfile_s(_Stream: *mut *mut FILE) -> errno_t;
-}
-extern "C" {
-    pub fn tmpnam_s(_Buffer: *mut ::std::os::raw::c_char, _Size: rsize_t) -> errno_t;
-}
-extern "C" {
-    pub fn clearerr(_Stream: *mut FILE);
-}
-extern "C" {
-    pub fn fclose(_Stream: *mut FILE) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn _fcloseall() -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn _fdopen(
-        _FileHandle: ::std::os::raw::c_int,
-        _Mode: *const ::std::os::raw::c_char,
-    ) -> *mut FILE;
-}
-extern "C" {
-    pub fn feof(_Stream: *mut FILE) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn ferror(_Stream: *mut FILE) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn fflush(_Stream: *mut FILE) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn fgetc(_Stream: *mut FILE) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn _fgetchar() -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn fgetpos(_Stream: *mut FILE, _Position: *mut fpos_t) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn fgets(
-        _Buffer: *mut ::std::os::raw::c_char,
-        _MaxCount: ::std::os::raw::c_int,
-        _Stream: *mut FILE,
-    ) -> *mut ::std::os::raw::c_char;
-}
-extern "C" {
-    pub fn _fileno(_Stream: *mut FILE) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn _flushall() -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn fopen(
-        _FileName: *const ::std::os::raw::c_char,
-        _Mode: *const ::std::os::raw::c_char,
-    ) -> *mut FILE;
-}
-extern "C" {
-    pub fn fputc(_Character: ::std::os::raw::c_int, _Stream: *mut FILE) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn _fputchar(_Character: ::std::os::raw::c_int) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn fputs(
-        _Buffer: *const ::std::os::raw::c_char,
-        _Stream: *mut FILE,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn fread(
-        _Buffer: *mut ::std::os::raw::c_void,
-        _ElementSize: ::std::os::raw::c_ulonglong,
-        _ElementCount: ::std::os::raw::c_ulonglong,
-        _Stream: *mut FILE,
-    ) -> ::std::os::raw::c_ulonglong;
-}
-extern "C" {
-    pub fn freopen(
-        _FileName: *const ::std::os::raw::c_char,
-        _Mode: *const ::std::os::raw::c_char,
-        _Stream: *mut FILE,
-    ) -> *mut FILE;
-}
-extern "C" {
-    pub fn _fsopen(
-        _FileName: *const ::std::os::raw::c_char,
-        _Mode: *const ::std::os::raw::c_char,
-        _ShFlag: ::std::os::raw::c_int,
-    ) -> *mut FILE;
-}
-extern "C" {
-    pub fn fsetpos(_Stream: *mut FILE, _Position: *const fpos_t) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn fseek(
-        _Stream: *mut FILE,
-        _Offset: ::std::os::raw::c_long,
-        _Origin: ::std::os::raw::c_int,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn _fseeki64(
-        _Stream: *mut FILE,
-        _Offset: ::std::os::raw::c_longlong,
-        _Origin: ::std::os::raw::c_int,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn ftell(_Stream: *mut FILE) -> ::std::os::raw::c_long;
-}
-extern "C" {
-    pub fn _ftelli64(_Stream: *mut FILE) -> ::std::os::raw::c_longlong;
-}
-extern "C" {
-    pub fn fwrite(
-        _Buffer: *const ::std::os::raw::c_void,
-        _ElementSize: ::std::os::raw::c_ulonglong,
-        _ElementCount: ::std::os::raw::c_ulonglong,
-        _Stream: *mut FILE,
-    ) -> ::std::os::raw::c_ulonglong;
-}
-extern "C" {
-    pub fn getc(_Stream: *mut FILE) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn getchar() -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn _getmaxstdio() -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn _getw(_Stream: *mut FILE) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn perror(_ErrorMessage: *const ::std::os::raw::c_char);
-}
-extern "C" {
-    pub fn _pclose(_Stream: *mut FILE) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn _popen(
-        _Command: *const ::std::os::raw::c_char,
-        _Mode: *const ::std::os::raw::c_char,
-    ) -> *mut FILE;
-}
-extern "C" {
-    pub fn putc(_Character: ::std::os::raw::c_int, _Stream: *mut FILE) -> ::std::os::raw::c_int;
-}
+pub type cookie_io_functions_t = _IO_cookie_io_functions_t;
+pub type va_list = __gnuc_va_list;
+pub type off_t = __off_t;
+pub type fpos_t = __fpos_t;
 extern "C" {
-    pub fn putchar(_Character: ::std::os::raw::c_int) -> ::std::os::raw::c_int;
+    pub static mut stdin: *mut FILE;
 }
 extern "C" {
-    pub fn puts(_Buffer: *const ::std::os::raw::c_char) -> ::std::os::raw::c_int;
+    pub static mut stdout: *mut FILE;
 }
 extern "C" {
-    pub fn _putw(_Word: ::std::os::raw::c_int, _Stream: *mut FILE) -> ::std::os::raw::c_int;
+    pub static mut stderr: *mut FILE;
 }
 extern "C" {
-    pub fn remove(_FileName: *const ::std::os::raw::c_char) -> ::std::os::raw::c_int;
+    pub fn remove(__filename: *const ::std::os::raw::c_char) -> ::std::os::raw::c_int;
 }
 extern "C" {
     pub fn rename(
-        _OldFileName: *const ::std::os::raw::c_char,
-        _NewFileName: *const ::std::os::raw::c_char,
+        __old: *const ::std::os::raw::c_char,
+        __new: *const ::std::os::raw::c_char,
     ) -> ::std::os::raw::c_int;
 }
 extern "C" {
-    pub fn _unlink(_FileName: *const ::std::os::raw::c_char) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn unlink(_FileName: *const ::std::os::raw::c_char) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn rewind(_Stream: *mut FILE);
-}
-extern "C" {
-    pub fn _rmtmp() -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn setbuf(_Stream: *mut FILE, _Buffer: *mut ::std::os::raw::c_char);
-}
-extern "C" {
-    pub fn _setmaxstdio(_Maximum: ::std::os::raw::c_int) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn setvbuf(
-        _Stream: *mut FILE,
-        _Buffer: *mut ::std::os::raw::c_char,
-        _Mode: ::std::os::raw::c_int,
-        _Size: usize,
+    pub fn renameat(
+        __oldfd: ::std::os::raw::c_int,
+        __old: *const ::std::os::raw::c_char,
+        __newfd: ::std::os::raw::c_int,
+        __new: *const ::std::os::raw::c_char,
     ) -> ::std::os::raw::c_int;
 }
 extern "C" {
-    pub fn _tempnam(
-        _DirectoryName: *const ::std::os::raw::c_char,
-        _FilePrefix: *const ::std::os::raw::c_char,
-    ) -> *mut ::std::os::raw::c_char;
+    pub fn fclose(__stream: *mut FILE) -> ::std::os::raw::c_int;
 }
 extern "C" {
     pub fn tmpfile() -> *mut FILE;
 }
 extern "C" {
-    pub fn tmpnam(_Buffer: *mut ::std::os::raw::c_char) -> *mut ::std::os::raw::c_char;
+    pub fn tmpnam(arg1: *mut ::std::os::raw::c_char) -> *mut ::std::os::raw::c_char;
 }
 extern "C" {
-    pub fn ungetc(_Character: ::std::os::raw::c_int, _Stream: *mut FILE) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn _lock_file(_Stream: *mut FILE);
-}
-extern "C" {
-    pub fn _unlock_file(_Stream: *mut FILE);
-}
-extern "C" {
-    pub fn _fclose_nolock(_Stream: *mut FILE) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn _fflush_nolock(_Stream: *mut FILE) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn _fgetc_nolock(_Stream: *mut FILE) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn _fputc_nolock(
-        _Character: ::std::os::raw::c_int,
-        _Stream: *mut FILE,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn _fread_nolock(
-        _Buffer: *mut ::std::os::raw::c_void,
-        _ElementSize: usize,
-        _ElementCount: usize,
-        _Stream: *mut FILE,
-    ) -> usize;
-}
-extern "C" {
-    pub fn _fread_nolock_s(
-        _Buffer: *mut ::std::os::raw::c_void,
-        _BufferSize: usize,
-        _ElementSize: usize,
-        _ElementCount: usize,
-        _Stream: *mut FILE,
-    ) -> usize;
-}
-extern "C" {
-    pub fn _fseek_nolock(
-        _Stream: *mut FILE,
-        _Offset: ::std::os::raw::c_long,
-        _Origin: ::std::os::raw::c_int,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn _fseeki64_nolock(
-        _Stream: *mut FILE,
-        _Offset: ::std::os::raw::c_longlong,
-        _Origin: ::std::os::raw::c_int,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn _ftell_nolock(_Stream: *mut FILE) -> ::std::os::raw::c_long;
-}
-extern "C" {
-    pub fn _ftelli64_nolock(_Stream: *mut FILE) -> ::std::os::raw::c_longlong;
-}
-extern "C" {
-    pub fn _fwrite_nolock(
-        _Buffer: *const ::std::os::raw::c_void,
-        _ElementSize: usize,
-        _ElementCount: usize,
-        _Stream: *mut FILE,
-    ) -> usize;
-}
-extern "C" {
-    pub fn _getc_nolock(_Stream: *mut FILE) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn _putc_nolock(
-        _Character: ::std::os::raw::c_int,
-        _Stream: *mut FILE,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn _ungetc_nolock(
-        _Character: ::std::os::raw::c_int,
-        _Stream: *mut FILE,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn __p__commode() -> *mut ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn __stdio_common_vfprintf(
-        _Options: ::std::os::raw::c_ulonglong,
-        _Stream: *mut FILE,
-        _Format: *const ::std::os::raw::c_char,
-        _Locale: _locale_t,
-        _ArgList: va_list,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn __stdio_common_vfprintf_s(
-        _Options: ::std::os::raw::c_ulonglong,
-        _Stream: *mut FILE,
-        _Format: *const ::std::os::raw::c_char,
-        _Locale: _locale_t,
-        _ArgList: va_list,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn __stdio_common_vfprintf_p(
-        _Options: ::std::os::raw::c_ulonglong,
-        _Stream: *mut FILE,
-        _Format: *const ::std::os::raw::c_char,
-        _Locale: _locale_t,
-        _ArgList: va_list,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn _set_printf_count_output(_Value: ::std::os::raw::c_int) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn _get_printf_count_output() -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn __stdio_common_vfscanf(
-        _Options: ::std::os::raw::c_ulonglong,
-        _Stream: *mut FILE,
-        _Format: *const ::std::os::raw::c_char,
-        _Locale: _locale_t,
-        _Arglist: va_list,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn __stdio_common_vsprintf(
-        _Options: ::std::os::raw::c_ulonglong,
-        _Buffer: *mut ::std::os::raw::c_char,
-        _BufferCount: usize,
-        _Format: *const ::std::os::raw::c_char,
-        _Locale: _locale_t,
-        _ArgList: va_list,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn __stdio_common_vsprintf_s(
-        _Options: ::std::os::raw::c_ulonglong,
-        _Buffer: *mut ::std::os::raw::c_char,
-        _BufferCount: usize,
-        _Format: *const ::std::os::raw::c_char,
-        _Locale: _locale_t,
-        _ArgList: va_list,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn __stdio_common_vsnprintf_s(
-        _Options: ::std::os::raw::c_ulonglong,
-        _Buffer: *mut ::std::os::raw::c_char,
-        _BufferCount: usize,
-        _MaxCount: usize,
-        _Format: *const ::std::os::raw::c_char,
-        _Locale: _locale_t,
-        _ArgList: va_list,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn __stdio_common_vsprintf_p(
-        _Options: ::std::os::raw::c_ulonglong,
-        _Buffer: *mut ::std::os::raw::c_char,
-        _BufferCount: usize,
-        _Format: *const ::std::os::raw::c_char,
-        _Locale: _locale_t,
-        _ArgList: va_list,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn __stdio_common_vsscanf(
-        _Options: ::std::os::raw::c_ulonglong,
-        _Buffer: *const ::std::os::raw::c_char,
-        _BufferCount: usize,
-        _Format: *const ::std::os::raw::c_char,
-        _Locale: _locale_t,
-        _ArgList: va_list,
-    ) -> ::std::os::raw::c_int;
+    pub fn tmpnam_r(__s: *mut ::std::os::raw::c_char) -> *mut ::std::os::raw::c_char;
 }
 extern "C" {
     pub fn tempnam(
-        _Directory: *const ::std::os::raw::c_char,
-        _FilePrefix: *const ::std::os::raw::c_char,
+        __dir: *const ::std::os::raw::c_char,
+        __pfx: *const ::std::os::raw::c_char,
     ) -> *mut ::std::os::raw::c_char;
 }
 extern "C" {
-    pub fn fcloseall() -> ::std::os::raw::c_int;
+    pub fn fflush(__stream: *mut FILE) -> ::std::os::raw::c_int;
 }
 extern "C" {
-    pub fn fdopen(
-        _FileHandle: ::std::os::raw::c_int,
-        _Format: *const ::std::os::raw::c_char,
+    pub fn fflush_unlocked(__stream: *mut FILE) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn fopen(
+        __filename: *const ::std::os::raw::c_char,
+        __modes: *const ::std::os::raw::c_char,
     ) -> *mut FILE;
 }
 extern "C" {
-    pub fn fgetchar() -> ::std::os::raw::c_int;
+    pub fn freopen(
+        __filename: *const ::std::os::raw::c_char,
+        __modes: *const ::std::os::raw::c_char,
+        __stream: *mut FILE,
+    ) -> *mut FILE;
 }
 extern "C" {
-    pub fn fileno(_Stream: *mut FILE) -> ::std::os::raw::c_int;
+    pub fn fdopen(__fd: ::std::os::raw::c_int, __modes: *const ::std::os::raw::c_char)
+        -> *mut FILE;
 }
 extern "C" {
-    pub fn flushall() -> ::std::os::raw::c_int;
+    pub fn fopencookie(
+        __magic_cookie: *mut ::std::os::raw::c_void,
+        __modes: *const ::std::os::raw::c_char,
+        __io_funcs: cookie_io_functions_t,
+    ) -> *mut FILE;
 }
 extern "C" {
-    pub fn fputchar(_Ch: ::std::os::raw::c_int) -> ::std::os::raw::c_int;
+    pub fn fmemopen(
+        __s: *mut ::std::os::raw::c_void,
+        __len: usize,
+        __modes: *const ::std::os::raw::c_char,
+    ) -> *mut FILE;
 }
 extern "C" {
-    pub fn getw(_Stream: *mut FILE) -> ::std::os::raw::c_int;
+    pub fn open_memstream(
+        __bufloc: *mut *mut ::std::os::raw::c_char,
+        __sizeloc: *mut usize,
+    ) -> *mut FILE;
 }
 extern "C" {
-    pub fn putw(_Ch: ::std::os::raw::c_int, _Stream: *mut FILE) -> ::std::os::raw::c_int;
+    pub fn setbuf(__stream: *mut FILE, __buf: *mut ::std::os::raw::c_char);
 }
 extern "C" {
-    pub fn rmtmp() -> ::std::os::raw::c_int;
+    pub fn setvbuf(
+        __stream: *mut FILE,
+        __buf: *mut ::std::os::raw::c_char,
+        __modes: ::std::os::raw::c_int,
+        __n: usize,
+    ) -> ::std::os::raw::c_int;
 }
-pub type int_least8_t = ::std::os::raw::c_schar;
-pub type int_least16_t = ::std::os::raw::c_short;
-pub type int_least32_t = ::std::os::raw::c_int;
-pub type int_least64_t = ::std::os::raw::c_longlong;
-pub type uint_least8_t = ::std::os::raw::c_uchar;
-pub type uint_least16_t = ::std::os::raw::c_ushort;
-pub type uint_least32_t = ::std::os::raw::c_uint;
-pub type uint_least64_t = ::std::os::raw::c_ulonglong;
+extern "C" {
+    pub fn setbuffer(__stream: *mut FILE, __buf: *mut ::std::os::raw::c_char, __size: usize);
+}
+extern "C" {
+    pub fn setlinebuf(__stream: *mut FILE);
+}
+extern "C" {
+    pub fn fprintf(
+        __stream: *mut FILE,
+        __format: *const ::std::os::raw::c_char,
+        ...
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn printf(__format: *const ::std::os::raw::c_char, ...) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn sprintf(
+        __s: *mut ::std::os::raw::c_char,
+        __format: *const ::std::os::raw::c_char,
+        ...
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn vfprintf(
+        __s: *mut FILE,
+        __format: *const ::std::os::raw::c_char,
+        __arg: *mut __va_list_tag,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn vprintf(
+        __format: *const ::std::os::raw::c_char,
+        __arg: *mut __va_list_tag,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn vsprintf(
+        __s: *mut ::std::os::raw::c_char,
+        __format: *const ::std::os::raw::c_char,
+        __arg: *mut __va_list_tag,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn snprintf(
+        __s: *mut ::std::os::raw::c_char,
+        __maxlen: ::std::os::raw::c_ulong,
+        __format: *const ::std::os::raw::c_char,
+        ...
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn vsnprintf(
+        __s: *mut ::std::os::raw::c_char,
+        __maxlen: ::std::os::raw::c_ulong,
+        __format: *const ::std::os::raw::c_char,
+        __arg: *mut __va_list_tag,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn vasprintf(
+        __ptr: *mut *mut ::std::os::raw::c_char,
+        __f: *const ::std::os::raw::c_char,
+        __arg: *mut __va_list_tag,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn __asprintf(
+        __ptr: *mut *mut ::std::os::raw::c_char,
+        __fmt: *const ::std::os::raw::c_char,
+        ...
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn asprintf(
+        __ptr: *mut *mut ::std::os::raw::c_char,
+        __fmt: *const ::std::os::raw::c_char,
+        ...
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn vdprintf(
+        __fd: ::std::os::raw::c_int,
+        __fmt: *const ::std::os::raw::c_char,
+        __arg: *mut __va_list_tag,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn dprintf(
+        __fd: ::std::os::raw::c_int,
+        __fmt: *const ::std::os::raw::c_char,
+        ...
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn fscanf(
+        __stream: *mut FILE,
+        __format: *const ::std::os::raw::c_char,
+        ...
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn scanf(__format: *const ::std::os::raw::c_char, ...) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn sscanf(
+        __s: *const ::std::os::raw::c_char,
+        __format: *const ::std::os::raw::c_char,
+        ...
+    ) -> ::std::os::raw::c_int;
+}
+pub type _Float32 = f32;
+pub type _Float64 = f64;
+pub type _Float32x = f64;
+pub type _Float64x = u128;
+extern "C" {
+    #[link_name = "\u{1}__isoc99_fscanf"]
+    pub fn fscanf1(
+        __stream: *mut FILE,
+        __format: *const ::std::os::raw::c_char,
+        ...
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    #[link_name = "\u{1}__isoc99_scanf"]
+    pub fn scanf1(__format: *const ::std::os::raw::c_char, ...) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    #[link_name = "\u{1}__isoc99_sscanf"]
+    pub fn sscanf1(
+        __s: *const ::std::os::raw::c_char,
+        __format: *const ::std::os::raw::c_char,
+        ...
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn vfscanf(
+        __s: *mut FILE,
+        __format: *const ::std::os::raw::c_char,
+        __arg: *mut __va_list_tag,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn vscanf(
+        __format: *const ::std::os::raw::c_char,
+        __arg: *mut __va_list_tag,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn vsscanf(
+        __s: *const ::std::os::raw::c_char,
+        __format: *const ::std::os::raw::c_char,
+        __arg: *mut __va_list_tag,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    #[link_name = "\u{1}__isoc99_vfscanf"]
+    pub fn vfscanf1(
+        __s: *mut FILE,
+        __format: *const ::std::os::raw::c_char,
+        __arg: *mut __va_list_tag,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    #[link_name = "\u{1}__isoc99_vscanf"]
+    pub fn vscanf1(
+        __format: *const ::std::os::raw::c_char,
+        __arg: *mut __va_list_tag,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    #[link_name = "\u{1}__isoc99_vsscanf"]
+    pub fn vsscanf1(
+        __s: *const ::std::os::raw::c_char,
+        __format: *const ::std::os::raw::c_char,
+        __arg: *mut __va_list_tag,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn fgetc(__stream: *mut FILE) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn getc(__stream: *mut FILE) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn getchar() -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn getc_unlocked(__stream: *mut FILE) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn getchar_unlocked() -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn fgetc_unlocked(__stream: *mut FILE) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn fputc(__c: ::std::os::raw::c_int, __stream: *mut FILE) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn putc(__c: ::std::os::raw::c_int, __stream: *mut FILE) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn putchar(__c: ::std::os::raw::c_int) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn fputc_unlocked(__c: ::std::os::raw::c_int, __stream: *mut FILE)
+        -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn putc_unlocked(__c: ::std::os::raw::c_int, __stream: *mut FILE) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn putchar_unlocked(__c: ::std::os::raw::c_int) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn getw(__stream: *mut FILE) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn putw(__w: ::std::os::raw::c_int, __stream: *mut FILE) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn fgets(
+        __s: *mut ::std::os::raw::c_char,
+        __n: ::std::os::raw::c_int,
+        __stream: *mut FILE,
+    ) -> *mut ::std::os::raw::c_char;
+}
+extern "C" {
+    pub fn __getdelim(
+        __lineptr: *mut *mut ::std::os::raw::c_char,
+        __n: *mut usize,
+        __delimiter: ::std::os::raw::c_int,
+        __stream: *mut FILE,
+    ) -> __ssize_t;
+}
+extern "C" {
+    pub fn getdelim(
+        __lineptr: *mut *mut ::std::os::raw::c_char,
+        __n: *mut usize,
+        __delimiter: ::std::os::raw::c_int,
+        __stream: *mut FILE,
+    ) -> __ssize_t;
+}
+extern "C" {
+    pub fn getline(
+        __lineptr: *mut *mut ::std::os::raw::c_char,
+        __n: *mut usize,
+        __stream: *mut FILE,
+    ) -> __ssize_t;
+}
+extern "C" {
+    pub fn fputs(__s: *const ::std::os::raw::c_char, __stream: *mut FILE) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn puts(__s: *const ::std::os::raw::c_char) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn ungetc(__c: ::std::os::raw::c_int, __stream: *mut FILE) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn fread(
+        __ptr: *mut ::std::os::raw::c_void,
+        __size: ::std::os::raw::c_ulong,
+        __n: ::std::os::raw::c_ulong,
+        __stream: *mut FILE,
+    ) -> ::std::os::raw::c_ulong;
+}
+extern "C" {
+    pub fn fwrite(
+        __ptr: *const ::std::os::raw::c_void,
+        __size: ::std::os::raw::c_ulong,
+        __n: ::std::os::raw::c_ulong,
+        __s: *mut FILE,
+    ) -> ::std::os::raw::c_ulong;
+}
+extern "C" {
+    pub fn fread_unlocked(
+        __ptr: *mut ::std::os::raw::c_void,
+        __size: usize,
+        __n: usize,
+        __stream: *mut FILE,
+    ) -> usize;
+}
+extern "C" {
+    pub fn fwrite_unlocked(
+        __ptr: *const ::std::os::raw::c_void,
+        __size: usize,
+        __n: usize,
+        __stream: *mut FILE,
+    ) -> usize;
+}
+extern "C" {
+    pub fn fseek(
+        __stream: *mut FILE,
+        __off: ::std::os::raw::c_long,
+        __whence: ::std::os::raw::c_int,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn ftell(__stream: *mut FILE) -> ::std::os::raw::c_long;
+}
+extern "C" {
+    pub fn rewind(__stream: *mut FILE);
+}
+extern "C" {
+    pub fn fseeko(
+        __stream: *mut FILE,
+        __off: __off_t,
+        __whence: ::std::os::raw::c_int,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn ftello(__stream: *mut FILE) -> __off_t;
+}
+extern "C" {
+    pub fn fgetpos(__stream: *mut FILE, __pos: *mut fpos_t) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn fsetpos(__stream: *mut FILE, __pos: *const fpos_t) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn clearerr(__stream: *mut FILE);
+}
+extern "C" {
+    pub fn feof(__stream: *mut FILE) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn ferror(__stream: *mut FILE) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn clearerr_unlocked(__stream: *mut FILE);
+}
+extern "C" {
+    pub fn feof_unlocked(__stream: *mut FILE) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn ferror_unlocked(__stream: *mut FILE) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn perror(__s: *const ::std::os::raw::c_char);
+}
+extern "C" {
+    pub fn fileno(__stream: *mut FILE) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn fileno_unlocked(__stream: *mut FILE) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn pclose(__stream: *mut FILE) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn popen(
+        __command: *const ::std::os::raw::c_char,
+        __modes: *const ::std::os::raw::c_char,
+    ) -> *mut FILE;
+}
+extern "C" {
+    pub fn ctermid(__s: *mut ::std::os::raw::c_char) -> *mut ::std::os::raw::c_char;
+}
+extern "C" {
+    pub fn flockfile(__stream: *mut FILE);
+}
+extern "C" {
+    pub fn ftrylockfile(__stream: *mut FILE) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn funlockfile(__stream: *mut FILE);
+}
+extern "C" {
+    pub fn __uflow(arg1: *mut FILE) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn __overflow(arg1: *mut FILE, arg2: ::std::os::raw::c_int) -> ::std::os::raw::c_int;
+}
+pub type int_least8_t = __int_least8_t;
+pub type int_least16_t = __int_least16_t;
+pub type int_least32_t = __int_least32_t;
+pub type int_least64_t = __int_least64_t;
+pub type uint_least8_t = __uint_least8_t;
+pub type uint_least16_t = __uint_least16_t;
+pub type uint_least32_t = __uint_least32_t;
+pub type uint_least64_t = __uint_least64_t;
 pub type int_fast8_t = ::std::os::raw::c_schar;
-pub type int_fast16_t = ::std::os::raw::c_int;
-pub type int_fast32_t = ::std::os::raw::c_int;
-pub type int_fast64_t = ::std::os::raw::c_longlong;
+pub type int_fast16_t = ::std::os::raw::c_long;
+pub type int_fast32_t = ::std::os::raw::c_long;
+pub type int_fast64_t = ::std::os::raw::c_long;
 pub type uint_fast8_t = ::std::os::raw::c_uchar;
-pub type uint_fast16_t = ::std::os::raw::c_uint;
-pub type uint_fast32_t = ::std::os::raw::c_uint;
-pub type uint_fast64_t = ::std::os::raw::c_ulonglong;
-pub type intmax_t = ::std::os::raw::c_longlong;
-pub type uintmax_t = ::std::os::raw::c_ulonglong;
-pub type __gnuc_va_list = __builtin_va_list;
-pub type ImU64 = ::std::os::raw::c_ulonglong;
+pub type uint_fast16_t = ::std::os::raw::c_ulong;
+pub type uint_fast32_t = ::std::os::raw::c_ulong;
+pub type uint_fast64_t = ::std::os::raw::c_ulong;
+pub type intmax_t = __intmax_t;
+pub type uintmax_t = __uintmax_t;
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct ImGuiDockRequest {
@@ -1165,6 +1534,7 @@ pub type ImU16 = ::std::os::raw::c_ushort;
 pub type ImS32 = ::std::os::raw::c_int;
 pub type ImU32 = ::std::os::raw::c_uint;
 pub type ImS64 = ::std::os::raw::c_longlong;
+pub type ImU64 = ::std::os::raw::c_ulonglong;
 pub type ImWchar16 = ::std::os::raw::c_ushort;
 pub type ImWchar32 = ::std::os::raw::c_uint;
 pub type ImWchar = ImWchar16;
@@ -1288,7 +1658,7 @@ pub const ImGuiWindowFlags__ImGuiWindowFlags_Popup: ImGuiWindowFlags_ = 67108864
 pub const ImGuiWindowFlags__ImGuiWindowFlags_Modal: ImGuiWindowFlags_ = 134217728;
 pub const ImGuiWindowFlags__ImGuiWindowFlags_ChildMenu: ImGuiWindowFlags_ = 268435456;
 pub const ImGuiWindowFlags__ImGuiWindowFlags_DockNodeHost: ImGuiWindowFlags_ = 536870912;
-pub type ImGuiWindowFlags_ = ::std::os::raw::c_int;
+pub type ImGuiWindowFlags_ = ::std::os::raw::c_uint;
 pub const ImGuiInputTextFlags__ImGuiInputTextFlags_None: ImGuiInputTextFlags_ = 0;
 pub const ImGuiInputTextFlags__ImGuiInputTextFlags_CharsDecimal: ImGuiInputTextFlags_ = 1;
 pub const ImGuiInputTextFlags__ImGuiInputTextFlags_CharsHexadecimal: ImGuiInputTextFlags_ = 2;
@@ -1311,7 +1681,7 @@ pub const ImGuiInputTextFlags__ImGuiInputTextFlags_CharsScientific: ImGuiInputTe
 pub const ImGuiInputTextFlags__ImGuiInputTextFlags_CallbackResize: ImGuiInputTextFlags_ = 262144;
 pub const ImGuiInputTextFlags__ImGuiInputTextFlags_CallbackEdit: ImGuiInputTextFlags_ = 524288;
 pub const ImGuiInputTextFlags__ImGuiInputTextFlags_EscapeClearsAll: ImGuiInputTextFlags_ = 1048576;
-pub type ImGuiInputTextFlags_ = ::std::os::raw::c_int;
+pub type ImGuiInputTextFlags_ = ::std::os::raw::c_uint;
 pub const ImGuiTreeNodeFlags__ImGuiTreeNodeFlags_None: ImGuiTreeNodeFlags_ = 0;
 pub const ImGuiTreeNodeFlags__ImGuiTreeNodeFlags_Selected: ImGuiTreeNodeFlags_ = 1;
 pub const ImGuiTreeNodeFlags__ImGuiTreeNodeFlags_Framed: ImGuiTreeNodeFlags_ = 2;
@@ -1328,7 +1698,7 @@ pub const ImGuiTreeNodeFlags__ImGuiTreeNodeFlags_SpanAvailWidth: ImGuiTreeNodeFl
 pub const ImGuiTreeNodeFlags__ImGuiTreeNodeFlags_SpanFullWidth: ImGuiTreeNodeFlags_ = 4096;
 pub const ImGuiTreeNodeFlags__ImGuiTreeNodeFlags_NavLeftJumpsBackHere: ImGuiTreeNodeFlags_ = 8192;
 pub const ImGuiTreeNodeFlags__ImGuiTreeNodeFlags_CollapsingHeader: ImGuiTreeNodeFlags_ = 26;
-pub type ImGuiTreeNodeFlags_ = ::std::os::raw::c_int;
+pub type ImGuiTreeNodeFlags_ = ::std::os::raw::c_uint;
 pub const ImGuiPopupFlags__ImGuiPopupFlags_None: ImGuiPopupFlags_ = 0;
 pub const ImGuiPopupFlags__ImGuiPopupFlags_MouseButtonLeft: ImGuiPopupFlags_ = 0;
 pub const ImGuiPopupFlags__ImGuiPopupFlags_MouseButtonRight: ImGuiPopupFlags_ = 1;
@@ -1340,14 +1710,14 @@ pub const ImGuiPopupFlags__ImGuiPopupFlags_NoOpenOverItems: ImGuiPopupFlags_ = 6
 pub const ImGuiPopupFlags__ImGuiPopupFlags_AnyPopupId: ImGuiPopupFlags_ = 128;
 pub const ImGuiPopupFlags__ImGuiPopupFlags_AnyPopupLevel: ImGuiPopupFlags_ = 256;
 pub const ImGuiPopupFlags__ImGuiPopupFlags_AnyPopup: ImGuiPopupFlags_ = 384;
-pub type ImGuiPopupFlags_ = ::std::os::raw::c_int;
+pub type ImGuiPopupFlags_ = ::std::os::raw::c_uint;
 pub const ImGuiSelectableFlags__ImGuiSelectableFlags_None: ImGuiSelectableFlags_ = 0;
 pub const ImGuiSelectableFlags__ImGuiSelectableFlags_DontClosePopups: ImGuiSelectableFlags_ = 1;
 pub const ImGuiSelectableFlags__ImGuiSelectableFlags_SpanAllColumns: ImGuiSelectableFlags_ = 2;
 pub const ImGuiSelectableFlags__ImGuiSelectableFlags_AllowDoubleClick: ImGuiSelectableFlags_ = 4;
 pub const ImGuiSelectableFlags__ImGuiSelectableFlags_Disabled: ImGuiSelectableFlags_ = 8;
 pub const ImGuiSelectableFlags__ImGuiSelectableFlags_AllowItemOverlap: ImGuiSelectableFlags_ = 16;
-pub type ImGuiSelectableFlags_ = ::std::os::raw::c_int;
+pub type ImGuiSelectableFlags_ = ::std::os::raw::c_uint;
 pub const ImGuiComboFlags__ImGuiComboFlags_None: ImGuiComboFlags_ = 0;
 pub const ImGuiComboFlags__ImGuiComboFlags_PopupAlignLeft: ImGuiComboFlags_ = 1;
 pub const ImGuiComboFlags__ImGuiComboFlags_HeightSmall: ImGuiComboFlags_ = 2;
@@ -1357,7 +1727,7 @@ pub const ImGuiComboFlags__ImGuiComboFlags_HeightLargest: ImGuiComboFlags_ = 16;
 pub const ImGuiComboFlags__ImGuiComboFlags_NoArrowButton: ImGuiComboFlags_ = 32;
 pub const ImGuiComboFlags__ImGuiComboFlags_NoPreview: ImGuiComboFlags_ = 64;
 pub const ImGuiComboFlags__ImGuiComboFlags_HeightMask_: ImGuiComboFlags_ = 30;
-pub type ImGuiComboFlags_ = ::std::os::raw::c_int;
+pub type ImGuiComboFlags_ = ::std::os::raw::c_uint;
 pub const ImGuiTabBarFlags__ImGuiTabBarFlags_None: ImGuiTabBarFlags_ = 0;
 pub const ImGuiTabBarFlags__ImGuiTabBarFlags_Reorderable: ImGuiTabBarFlags_ = 1;
 pub const ImGuiTabBarFlags__ImGuiTabBarFlags_AutoSelectNewTabs: ImGuiTabBarFlags_ = 2;
@@ -1369,7 +1739,7 @@ pub const ImGuiTabBarFlags__ImGuiTabBarFlags_FittingPolicyResizeDown: ImGuiTabBa
 pub const ImGuiTabBarFlags__ImGuiTabBarFlags_FittingPolicyScroll: ImGuiTabBarFlags_ = 128;
 pub const ImGuiTabBarFlags__ImGuiTabBarFlags_FittingPolicyMask_: ImGuiTabBarFlags_ = 192;
 pub const ImGuiTabBarFlags__ImGuiTabBarFlags_FittingPolicyDefault_: ImGuiTabBarFlags_ = 64;
-pub type ImGuiTabBarFlags_ = ::std::os::raw::c_int;
+pub type ImGuiTabBarFlags_ = ::std::os::raw::c_uint;
 pub const ImGuiTabItemFlags__ImGuiTabItemFlags_None: ImGuiTabItemFlags_ = 0;
 pub const ImGuiTabItemFlags__ImGuiTabItemFlags_UnsavedDocument: ImGuiTabItemFlags_ = 1;
 pub const ImGuiTabItemFlags__ImGuiTabItemFlags_SetSelected: ImGuiTabItemFlags_ = 2;
@@ -1379,7 +1749,7 @@ pub const ImGuiTabItemFlags__ImGuiTabItemFlags_NoTooltip: ImGuiTabItemFlags_ = 1
 pub const ImGuiTabItemFlags__ImGuiTabItemFlags_NoReorder: ImGuiTabItemFlags_ = 32;
 pub const ImGuiTabItemFlags__ImGuiTabItemFlags_Leading: ImGuiTabItemFlags_ = 64;
 pub const ImGuiTabItemFlags__ImGuiTabItemFlags_Trailing: ImGuiTabItemFlags_ = 128;
-pub type ImGuiTabItemFlags_ = ::std::os::raw::c_int;
+pub type ImGuiTabItemFlags_ = ::std::os::raw::c_uint;
 pub const ImGuiTableFlags__ImGuiTableFlags_None: ImGuiTableFlags_ = 0;
 pub const ImGuiTableFlags__ImGuiTableFlags_Resizable: ImGuiTableFlags_ = 1;
 pub const ImGuiTableFlags__ImGuiTableFlags_Reorderable: ImGuiTableFlags_ = 2;
@@ -1416,7 +1786,7 @@ pub const ImGuiTableFlags__ImGuiTableFlags_ScrollY: ImGuiTableFlags_ = 33554432;
 pub const ImGuiTableFlags__ImGuiTableFlags_SortMulti: ImGuiTableFlags_ = 67108864;
 pub const ImGuiTableFlags__ImGuiTableFlags_SortTristate: ImGuiTableFlags_ = 134217728;
 pub const ImGuiTableFlags__ImGuiTableFlags_SizingMask_: ImGuiTableFlags_ = 57344;
-pub type ImGuiTableFlags_ = ::std::os::raw::c_int;
+pub type ImGuiTableFlags_ = ::std::os::raw::c_uint;
 pub const ImGuiTableColumnFlags__ImGuiTableColumnFlags_None: ImGuiTableColumnFlags_ = 0;
 pub const ImGuiTableColumnFlags__ImGuiTableColumnFlags_Disabled: ImGuiTableColumnFlags_ = 1;
 pub const ImGuiTableColumnFlags__ImGuiTableColumnFlags_DefaultHide: ImGuiTableColumnFlags_ = 2;
@@ -1452,15 +1822,15 @@ pub const ImGuiTableColumnFlags__ImGuiTableColumnFlags_StatusMask_: ImGuiTableCo
     251658240;
 pub const ImGuiTableColumnFlags__ImGuiTableColumnFlags_NoDirectResize_: ImGuiTableColumnFlags_ =
     1073741824;
-pub type ImGuiTableColumnFlags_ = ::std::os::raw::c_int;
+pub type ImGuiTableColumnFlags_ = ::std::os::raw::c_uint;
 pub const ImGuiTableRowFlags__ImGuiTableRowFlags_None: ImGuiTableRowFlags_ = 0;
 pub const ImGuiTableRowFlags__ImGuiTableRowFlags_Headers: ImGuiTableRowFlags_ = 1;
-pub type ImGuiTableRowFlags_ = ::std::os::raw::c_int;
+pub type ImGuiTableRowFlags_ = ::std::os::raw::c_uint;
 pub const ImGuiTableBgTarget__ImGuiTableBgTarget_None: ImGuiTableBgTarget_ = 0;
 pub const ImGuiTableBgTarget__ImGuiTableBgTarget_RowBg0: ImGuiTableBgTarget_ = 1;
 pub const ImGuiTableBgTarget__ImGuiTableBgTarget_RowBg1: ImGuiTableBgTarget_ = 2;
 pub const ImGuiTableBgTarget__ImGuiTableBgTarget_CellBg: ImGuiTableBgTarget_ = 3;
-pub type ImGuiTableBgTarget_ = ::std::os::raw::c_int;
+pub type ImGuiTableBgTarget_ = ::std::os::raw::c_uint;
 pub const ImGuiFocusedFlags__ImGuiFocusedFlags_None: ImGuiFocusedFlags_ = 0;
 pub const ImGuiFocusedFlags__ImGuiFocusedFlags_ChildWindows: ImGuiFocusedFlags_ = 1;
 pub const ImGuiFocusedFlags__ImGuiFocusedFlags_RootWindow: ImGuiFocusedFlags_ = 2;
@@ -1468,7 +1838,7 @@ pub const ImGuiFocusedFlags__ImGuiFocusedFlags_AnyWindow: ImGuiFocusedFlags_ = 4
 pub const ImGuiFocusedFlags__ImGuiFocusedFlags_NoPopupHierarchy: ImGuiFocusedFlags_ = 8;
 pub const ImGuiFocusedFlags__ImGuiFocusedFlags_DockHierarchy: ImGuiFocusedFlags_ = 16;
 pub const ImGuiFocusedFlags__ImGuiFocusedFlags_RootAndChildWindows: ImGuiFocusedFlags_ = 3;
-pub type ImGuiFocusedFlags_ = ::std::os::raw::c_int;
+pub type ImGuiFocusedFlags_ = ::std::os::raw::c_uint;
 pub const ImGuiHoveredFlags__ImGuiHoveredFlags_None: ImGuiHoveredFlags_ = 0;
 pub const ImGuiHoveredFlags__ImGuiHoveredFlags_ChildWindows: ImGuiHoveredFlags_ = 1;
 pub const ImGuiHoveredFlags__ImGuiHoveredFlags_RootWindow: ImGuiHoveredFlags_ = 2;
@@ -1486,7 +1856,7 @@ pub const ImGuiHoveredFlags__ImGuiHoveredFlags_RootAndChildWindows: ImGuiHovered
 pub const ImGuiHoveredFlags__ImGuiHoveredFlags_DelayNormal: ImGuiHoveredFlags_ = 2048;
 pub const ImGuiHoveredFlags__ImGuiHoveredFlags_DelayShort: ImGuiHoveredFlags_ = 4096;
 pub const ImGuiHoveredFlags__ImGuiHoveredFlags_NoSharedDelay: ImGuiHoveredFlags_ = 8192;
-pub type ImGuiHoveredFlags_ = ::std::os::raw::c_int;
+pub type ImGuiHoveredFlags_ = ::std::os::raw::c_uint;
 pub const ImGuiDockNodeFlags__ImGuiDockNodeFlags_None: ImGuiDockNodeFlags_ = 0;
 pub const ImGuiDockNodeFlags__ImGuiDockNodeFlags_KeepAliveOnly: ImGuiDockNodeFlags_ = 1;
 pub const ImGuiDockNodeFlags__ImGuiDockNodeFlags_NoDockingInCentralNode: ImGuiDockNodeFlags_ = 4;
@@ -1494,7 +1864,7 @@ pub const ImGuiDockNodeFlags__ImGuiDockNodeFlags_PassthruCentralNode: ImGuiDockN
 pub const ImGuiDockNodeFlags__ImGuiDockNodeFlags_NoSplit: ImGuiDockNodeFlags_ = 16;
 pub const ImGuiDockNodeFlags__ImGuiDockNodeFlags_NoResize: ImGuiDockNodeFlags_ = 32;
 pub const ImGuiDockNodeFlags__ImGuiDockNodeFlags_AutoHideTabBar: ImGuiDockNodeFlags_ = 64;
-pub type ImGuiDockNodeFlags_ = ::std::os::raw::c_int;
+pub type ImGuiDockNodeFlags_ = ::std::os::raw::c_uint;
 pub const ImGuiDragDropFlags__ImGuiDragDropFlags_None: ImGuiDragDropFlags_ = 0;
 pub const ImGuiDragDropFlags__ImGuiDragDropFlags_SourceNoPreviewTooltip: ImGuiDragDropFlags_ = 1;
 pub const ImGuiDragDropFlags__ImGuiDragDropFlags_SourceNoDisableHover: ImGuiDragDropFlags_ = 2;
@@ -1507,7 +1877,7 @@ pub const ImGuiDragDropFlags__ImGuiDragDropFlags_AcceptNoDrawDefaultRect: ImGuiD
     2048;
 pub const ImGuiDragDropFlags__ImGuiDragDropFlags_AcceptNoPreviewTooltip: ImGuiDragDropFlags_ = 4096;
 pub const ImGuiDragDropFlags__ImGuiDragDropFlags_AcceptPeekOnly: ImGuiDragDropFlags_ = 3072;
-pub type ImGuiDragDropFlags_ = ::std::os::raw::c_int;
+pub type ImGuiDragDropFlags_ = ::std::os::raw::c_uint;
 pub const ImGuiDataType__ImGuiDataType_S8: ImGuiDataType_ = 0;
 pub const ImGuiDataType__ImGuiDataType_U8: ImGuiDataType_ = 1;
 pub const ImGuiDataType__ImGuiDataType_S16: ImGuiDataType_ = 2;
@@ -1519,7 +1889,7 @@ pub const ImGuiDataType__ImGuiDataType_U64: ImGuiDataType_ = 7;
 pub const ImGuiDataType__ImGuiDataType_Float: ImGuiDataType_ = 8;
 pub const ImGuiDataType__ImGuiDataType_Double: ImGuiDataType_ = 9;
 pub const ImGuiDataType__ImGuiDataType_COUNT: ImGuiDataType_ = 10;
-pub type ImGuiDataType_ = ::std::os::raw::c_int;
+pub type ImGuiDataType_ = ::std::os::raw::c_uint;
 pub const ImGuiDir__ImGuiDir_None: ImGuiDir_ = -1;
 pub const ImGuiDir__ImGuiDir_Left: ImGuiDir_ = 0;
 pub const ImGuiDir__ImGuiDir_Right: ImGuiDir_ = 1;
@@ -1530,7 +1900,7 @@ pub type ImGuiDir_ = ::std::os::raw::c_int;
 pub const ImGuiSortDirection__ImGuiSortDirection_None: ImGuiSortDirection_ = 0;
 pub const ImGuiSortDirection__ImGuiSortDirection_Ascending: ImGuiSortDirection_ = 1;
 pub const ImGuiSortDirection__ImGuiSortDirection_Descending: ImGuiSortDirection_ = 2;
-pub type ImGuiSortDirection_ = ::std::os::raw::c_int;
+pub type ImGuiSortDirection_ = ::std::os::raw::c_uint;
 pub const ImGuiKey_ImGuiKey_None: ImGuiKey = 0;
 pub const ImGuiKey_ImGuiKey_Tab: ImGuiKey = 512;
 pub const ImGuiKey_ImGuiKey_LeftArrow: ImGuiKey = 513;
@@ -1685,7 +2055,7 @@ pub const ImGuiKey_ImGuiKey_NamedKey_END: ImGuiKey = 652;
 pub const ImGuiKey_ImGuiKey_NamedKey_COUNT: ImGuiKey = 140;
 pub const ImGuiKey_ImGuiKey_KeysData_SIZE: ImGuiKey = 652;
 pub const ImGuiKey_ImGuiKey_KeysData_OFFSET: ImGuiKey = 0;
-pub type ImGuiKey = ::std::os::raw::c_int;
+pub type ImGuiKey = ::std::os::raw::c_uint;
 pub const ImGuiNavInput_ImGuiNavInput_Activate: ImGuiNavInput = 0;
 pub const ImGuiNavInput_ImGuiNavInput_Cancel: ImGuiNavInput = 1;
 pub const ImGuiNavInput_ImGuiNavInput_Input: ImGuiNavInput = 2;
@@ -1703,7 +2073,7 @@ pub const ImGuiNavInput_ImGuiNavInput_FocusNext: ImGuiNavInput = 13;
 pub const ImGuiNavInput_ImGuiNavInput_TweakSlow: ImGuiNavInput = 14;
 pub const ImGuiNavInput_ImGuiNavInput_TweakFast: ImGuiNavInput = 15;
 pub const ImGuiNavInput_ImGuiNavInput_COUNT: ImGuiNavInput = 16;
-pub type ImGuiNavInput = ::std::os::raw::c_int;
+pub type ImGuiNavInput = ::std::os::raw::c_uint;
 pub const ImGuiConfigFlags__ImGuiConfigFlags_None: ImGuiConfigFlags_ = 0;
 pub const ImGuiConfigFlags__ImGuiConfigFlags_NavEnableKeyboard: ImGuiConfigFlags_ = 1;
 pub const ImGuiConfigFlags__ImGuiConfigFlags_NavEnableGamepad: ImGuiConfigFlags_ = 2;
@@ -1717,7 +2087,7 @@ pub const ImGuiConfigFlags__ImGuiConfigFlags_DpiEnableScaleViewports: ImGuiConfi
 pub const ImGuiConfigFlags__ImGuiConfigFlags_DpiEnableScaleFonts: ImGuiConfigFlags_ = 32768;
 pub const ImGuiConfigFlags__ImGuiConfigFlags_IsSRGB: ImGuiConfigFlags_ = 1048576;
 pub const ImGuiConfigFlags__ImGuiConfigFlags_IsTouchScreen: ImGuiConfigFlags_ = 2097152;
-pub type ImGuiConfigFlags_ = ::std::os::raw::c_int;
+pub type ImGuiConfigFlags_ = ::std::os::raw::c_uint;
 pub const ImGuiBackendFlags__ImGuiBackendFlags_None: ImGuiBackendFlags_ = 0;
 pub const ImGuiBackendFlags__ImGuiBackendFlags_HasGamepad: ImGuiBackendFlags_ = 1;
 pub const ImGuiBackendFlags__ImGuiBackendFlags_HasMouseCursors: ImGuiBackendFlags_ = 2;
@@ -1726,7 +2096,7 @@ pub const ImGuiBackendFlags__ImGuiBackendFlags_RendererHasVtxOffset: ImGuiBacken
 pub const ImGuiBackendFlags__ImGuiBackendFlags_PlatformHasViewports: ImGuiBackendFlags_ = 1024;
 pub const ImGuiBackendFlags__ImGuiBackendFlags_HasMouseHoveredViewport: ImGuiBackendFlags_ = 2048;
 pub const ImGuiBackendFlags__ImGuiBackendFlags_RendererHasViewports: ImGuiBackendFlags_ = 4096;
-pub type ImGuiBackendFlags_ = ::std::os::raw::c_int;
+pub type ImGuiBackendFlags_ = ::std::os::raw::c_uint;
 pub const ImGuiCol__ImGuiCol_Text: ImGuiCol_ = 0;
 pub const ImGuiCol__ImGuiCol_TextDisabled: ImGuiCol_ = 1;
 pub const ImGuiCol__ImGuiCol_WindowBg: ImGuiCol_ = 2;
@@ -1783,7 +2153,7 @@ pub const ImGuiCol__ImGuiCol_NavWindowingHighlight: ImGuiCol_ = 52;
 pub const ImGuiCol__ImGuiCol_NavWindowingDimBg: ImGuiCol_ = 53;
 pub const ImGuiCol__ImGuiCol_ModalWindowDimBg: ImGuiCol_ = 54;
 pub const ImGuiCol__ImGuiCol_COUNT: ImGuiCol_ = 55;
-pub type ImGuiCol_ = ::std::os::raw::c_int;
+pub type ImGuiCol_ = ::std::os::raw::c_uint;
 pub const ImGuiStyleVar__ImGuiStyleVar_Alpha: ImGuiStyleVar_ = 0;
 pub const ImGuiStyleVar__ImGuiStyleVar_DisabledAlpha: ImGuiStyleVar_ = 1;
 pub const ImGuiStyleVar__ImGuiStyleVar_WindowPadding: ImGuiStyleVar_ = 2;
@@ -1813,14 +2183,14 @@ pub const ImGuiStyleVar__ImGuiStyleVar_SeparatorTextBorderSize: ImGuiStyleVar_ =
 pub const ImGuiStyleVar__ImGuiStyleVar_SeparatorTextAlign: ImGuiStyleVar_ = 26;
 pub const ImGuiStyleVar__ImGuiStyleVar_SeparatorTextPadding: ImGuiStyleVar_ = 27;
 pub const ImGuiStyleVar__ImGuiStyleVar_COUNT: ImGuiStyleVar_ = 28;
-pub type ImGuiStyleVar_ = ::std::os::raw::c_int;
+pub type ImGuiStyleVar_ = ::std::os::raw::c_uint;
 pub const ImGuiButtonFlags__ImGuiButtonFlags_None: ImGuiButtonFlags_ = 0;
 pub const ImGuiButtonFlags__ImGuiButtonFlags_MouseButtonLeft: ImGuiButtonFlags_ = 1;
 pub const ImGuiButtonFlags__ImGuiButtonFlags_MouseButtonRight: ImGuiButtonFlags_ = 2;
 pub const ImGuiButtonFlags__ImGuiButtonFlags_MouseButtonMiddle: ImGuiButtonFlags_ = 4;
 pub const ImGuiButtonFlags__ImGuiButtonFlags_MouseButtonMask_: ImGuiButtonFlags_ = 7;
 pub const ImGuiButtonFlags__ImGuiButtonFlags_MouseButtonDefault_: ImGuiButtonFlags_ = 1;
-pub type ImGuiButtonFlags_ = ::std::os::raw::c_int;
+pub type ImGuiButtonFlags_ = ::std::os::raw::c_uint;
 pub const ImGuiColorEditFlags__ImGuiColorEditFlags_None: ImGuiColorEditFlags_ = 0;
 pub const ImGuiColorEditFlags__ImGuiColorEditFlags_NoAlpha: ImGuiColorEditFlags_ = 2;
 pub const ImGuiColorEditFlags__ImGuiColorEditFlags_NoPicker: ImGuiColorEditFlags_ = 4;
@@ -1851,19 +2221,19 @@ pub const ImGuiColorEditFlags__ImGuiColorEditFlags_DisplayMask_: ImGuiColorEditF
 pub const ImGuiColorEditFlags__ImGuiColorEditFlags_DataTypeMask_: ImGuiColorEditFlags_ = 25165824;
 pub const ImGuiColorEditFlags__ImGuiColorEditFlags_PickerMask_: ImGuiColorEditFlags_ = 100663296;
 pub const ImGuiColorEditFlags__ImGuiColorEditFlags_InputMask_: ImGuiColorEditFlags_ = 402653184;
-pub type ImGuiColorEditFlags_ = ::std::os::raw::c_int;
+pub type ImGuiColorEditFlags_ = ::std::os::raw::c_uint;
 pub const ImGuiSliderFlags__ImGuiSliderFlags_None: ImGuiSliderFlags_ = 0;
 pub const ImGuiSliderFlags__ImGuiSliderFlags_AlwaysClamp: ImGuiSliderFlags_ = 16;
 pub const ImGuiSliderFlags__ImGuiSliderFlags_Logarithmic: ImGuiSliderFlags_ = 32;
 pub const ImGuiSliderFlags__ImGuiSliderFlags_NoRoundToFormat: ImGuiSliderFlags_ = 64;
 pub const ImGuiSliderFlags__ImGuiSliderFlags_NoInput: ImGuiSliderFlags_ = 128;
 pub const ImGuiSliderFlags__ImGuiSliderFlags_InvalidMask_: ImGuiSliderFlags_ = 1879048207;
-pub type ImGuiSliderFlags_ = ::std::os::raw::c_int;
+pub type ImGuiSliderFlags_ = ::std::os::raw::c_uint;
 pub const ImGuiMouseButton__ImGuiMouseButton_Left: ImGuiMouseButton_ = 0;
 pub const ImGuiMouseButton__ImGuiMouseButton_Right: ImGuiMouseButton_ = 1;
 pub const ImGuiMouseButton__ImGuiMouseButton_Middle: ImGuiMouseButton_ = 2;
 pub const ImGuiMouseButton__ImGuiMouseButton_COUNT: ImGuiMouseButton_ = 5;
-pub type ImGuiMouseButton_ = ::std::os::raw::c_int;
+pub type ImGuiMouseButton_ = ::std::os::raw::c_uint;
 pub const ImGuiMouseCursor__ImGuiMouseCursor_None: ImGuiMouseCursor_ = -1;
 pub const ImGuiMouseCursor__ImGuiMouseCursor_Arrow: ImGuiMouseCursor_ = 0;
 pub const ImGuiMouseCursor__ImGuiMouseCursor_TextInput: ImGuiMouseCursor_ = 1;
@@ -1881,7 +2251,7 @@ pub const ImGuiCond__ImGuiCond_Always: ImGuiCond_ = 1;
 pub const ImGuiCond__ImGuiCond_Once: ImGuiCond_ = 2;
 pub const ImGuiCond__ImGuiCond_FirstUseEver: ImGuiCond_ = 4;
 pub const ImGuiCond__ImGuiCond_Appearing: ImGuiCond_ = 8;
-pub type ImGuiCond_ = ::std::os::raw::c_int;
+pub type ImGuiCond_ = ::std::os::raw::c_uint;
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct ImGuiStyle {
@@ -5245,13 +5615,13 @@ pub const ImDrawFlags__ImDrawFlags_RoundCornersRight: ImDrawFlags_ = 160;
 pub const ImDrawFlags__ImDrawFlags_RoundCornersAll: ImDrawFlags_ = 240;
 pub const ImDrawFlags__ImDrawFlags_RoundCornersDefault_: ImDrawFlags_ = 240;
 pub const ImDrawFlags__ImDrawFlags_RoundCornersMask_: ImDrawFlags_ = 496;
-pub type ImDrawFlags_ = ::std::os::raw::c_int;
+pub type ImDrawFlags_ = ::std::os::raw::c_uint;
 pub const ImDrawListFlags__ImDrawListFlags_None: ImDrawListFlags_ = 0;
 pub const ImDrawListFlags__ImDrawListFlags_AntiAliasedLines: ImDrawListFlags_ = 1;
 pub const ImDrawListFlags__ImDrawListFlags_AntiAliasedLinesUseTex: ImDrawListFlags_ = 2;
 pub const ImDrawListFlags__ImDrawListFlags_AntiAliasedFill: ImDrawListFlags_ = 4;
 pub const ImDrawListFlags__ImDrawListFlags_AllowVtxOffset: ImDrawListFlags_ = 8;
-pub type ImDrawListFlags_ = ::std::os::raw::c_int;
+pub type ImDrawListFlags_ = ::std::os::raw::c_uint;
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct ImVector_ImDrawVert {
@@ -6361,7 +6731,7 @@ pub const ImFontAtlasFlags__ImFontAtlasFlags_None: ImFontAtlasFlags_ = 0;
 pub const ImFontAtlasFlags__ImFontAtlasFlags_NoPowerOfTwoHeight: ImFontAtlasFlags_ = 1;
 pub const ImFontAtlasFlags__ImFontAtlasFlags_NoMouseCursors: ImFontAtlasFlags_ = 2;
 pub const ImFontAtlasFlags__ImFontAtlasFlags_NoBakedLines: ImFontAtlasFlags_ = 4;
-pub type ImFontAtlasFlags_ = ::std::os::raw::c_int;
+pub type ImFontAtlasFlags_ = ::std::os::raw::c_uint;
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct ImVector_ImFontPtr {
@@ -7138,7 +7508,7 @@ pub const ImGuiViewportFlags__ImGuiViewportFlags_TopMost: ImGuiViewportFlags_ = 
 pub const ImGuiViewportFlags__ImGuiViewportFlags_Minimized: ImGuiViewportFlags_ = 1024;
 pub const ImGuiViewportFlags__ImGuiViewportFlags_NoAutoMerge: ImGuiViewportFlags_ = 2048;
 pub const ImGuiViewportFlags__ImGuiViewportFlags_CanHostOtherWindows: ImGuiViewportFlags_ = 4096;
-pub type ImGuiViewportFlags_ = ::std::os::raw::c_int;
+pub type ImGuiViewportFlags_ = ::std::os::raw::c_uint;
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct ImGuiViewport {
@@ -8809,7 +9179,7 @@ pub const ImGuiItemFlags__ImGuiItemFlags_MixedValue: ImGuiItemFlags_ = 64;
 pub const ImGuiItemFlags__ImGuiItemFlags_ReadOnly: ImGuiItemFlags_ = 128;
 pub const ImGuiItemFlags__ImGuiItemFlags_NoWindowHoverableCheck: ImGuiItemFlags_ = 256;
 pub const ImGuiItemFlags__ImGuiItemFlags_Inputable: ImGuiItemFlags_ = 1024;
-pub type ImGuiItemFlags_ = ::std::os::raw::c_int;
+pub type ImGuiItemFlags_ = ::std::os::raw::c_uint;
 pub const ImGuiItemStatusFlags__ImGuiItemStatusFlags_None: ImGuiItemStatusFlags_ = 0;
 pub const ImGuiItemStatusFlags__ImGuiItemStatusFlags_HoveredRect: ImGuiItemStatusFlags_ = 1;
 pub const ImGuiItemStatusFlags__ImGuiItemStatusFlags_HasDisplayRect: ImGuiItemStatusFlags_ = 2;
@@ -8821,14 +9191,14 @@ pub const ImGuiItemStatusFlags__ImGuiItemStatusFlags_Deactivated: ImGuiItemStatu
 pub const ImGuiItemStatusFlags__ImGuiItemStatusFlags_HoveredWindow: ImGuiItemStatusFlags_ = 128;
 pub const ImGuiItemStatusFlags__ImGuiItemStatusFlags_FocusedByTabbing: ImGuiItemStatusFlags_ = 256;
 pub const ImGuiItemStatusFlags__ImGuiItemStatusFlags_Visible: ImGuiItemStatusFlags_ = 512;
-pub type ImGuiItemStatusFlags_ = ::std::os::raw::c_int;
+pub type ImGuiItemStatusFlags_ = ::std::os::raw::c_uint;
 pub const ImGuiInputTextFlagsPrivate__ImGuiInputTextFlags_Multiline: ImGuiInputTextFlagsPrivate_ =
     67108864;
 pub const ImGuiInputTextFlagsPrivate__ImGuiInputTextFlags_NoMarkEdited:
     ImGuiInputTextFlagsPrivate_ = 134217728;
 pub const ImGuiInputTextFlagsPrivate__ImGuiInputTextFlags_MergedItem: ImGuiInputTextFlagsPrivate_ =
     268435456;
-pub type ImGuiInputTextFlagsPrivate_ = ::std::os::raw::c_int;
+pub type ImGuiInputTextFlagsPrivate_ = ::std::os::raw::c_uint;
 pub const ImGuiButtonFlagsPrivate__ImGuiButtonFlags_PressedOnClick: ImGuiButtonFlagsPrivate_ = 16;
 pub const ImGuiButtonFlagsPrivate__ImGuiButtonFlags_PressedOnClickRelease:
     ImGuiButtonFlagsPrivate_ = 32;
@@ -8863,12 +9233,12 @@ pub const ImGuiButtonFlagsPrivate__ImGuiButtonFlags_NoTestKeyOwner: ImGuiButtonF
 pub const ImGuiButtonFlagsPrivate__ImGuiButtonFlags_PressedOnMask_: ImGuiButtonFlagsPrivate_ = 1008;
 pub const ImGuiButtonFlagsPrivate__ImGuiButtonFlags_PressedOnDefault_: ImGuiButtonFlagsPrivate_ =
     32;
-pub type ImGuiButtonFlagsPrivate_ = ::std::os::raw::c_int;
+pub type ImGuiButtonFlagsPrivate_ = ::std::os::raw::c_uint;
 pub const ImGuiComboFlagsPrivate__ImGuiComboFlags_CustomPreview: ImGuiComboFlagsPrivate_ = 1048576;
-pub type ImGuiComboFlagsPrivate_ = ::std::os::raw::c_int;
+pub type ImGuiComboFlagsPrivate_ = ::std::os::raw::c_uint;
 pub const ImGuiSliderFlagsPrivate__ImGuiSliderFlags_Vertical: ImGuiSliderFlagsPrivate_ = 1048576;
 pub const ImGuiSliderFlagsPrivate__ImGuiSliderFlags_ReadOnly: ImGuiSliderFlagsPrivate_ = 2097152;
-pub type ImGuiSliderFlagsPrivate_ = ::std::os::raw::c_int;
+pub type ImGuiSliderFlagsPrivate_ = ::std::os::raw::c_uint;
 pub const ImGuiSelectableFlagsPrivate__ImGuiSelectableFlags_NoHoldingActiveID:
     ImGuiSelectableFlagsPrivate_ = 1048576;
 pub const ImGuiSelectableFlagsPrivate__ImGuiSelectableFlags_SelectOnNav:
@@ -8885,41 +9255,41 @@ pub const ImGuiSelectableFlagsPrivate__ImGuiSelectableFlags_NoPadWithHalfSpacing
     ImGuiSelectableFlagsPrivate_ = 67108864;
 pub const ImGuiSelectableFlagsPrivate__ImGuiSelectableFlags_NoSetKeyOwner:
     ImGuiSelectableFlagsPrivate_ = 134217728;
-pub type ImGuiSelectableFlagsPrivate_ = ::std::os::raw::c_int;
+pub type ImGuiSelectableFlagsPrivate_ = ::std::os::raw::c_uint;
 pub const ImGuiTreeNodeFlagsPrivate__ImGuiTreeNodeFlags_ClipLabelForTrailingButton:
     ImGuiTreeNodeFlagsPrivate_ = 1048576;
-pub type ImGuiTreeNodeFlagsPrivate_ = ::std::os::raw::c_int;
+pub type ImGuiTreeNodeFlagsPrivate_ = ::std::os::raw::c_uint;
 pub const ImGuiSeparatorFlags__ImGuiSeparatorFlags_None: ImGuiSeparatorFlags_ = 0;
 pub const ImGuiSeparatorFlags__ImGuiSeparatorFlags_Horizontal: ImGuiSeparatorFlags_ = 1;
 pub const ImGuiSeparatorFlags__ImGuiSeparatorFlags_Vertical: ImGuiSeparatorFlags_ = 2;
 pub const ImGuiSeparatorFlags__ImGuiSeparatorFlags_SpanAllColumns: ImGuiSeparatorFlags_ = 4;
-pub type ImGuiSeparatorFlags_ = ::std::os::raw::c_int;
+pub type ImGuiSeparatorFlags_ = ::std::os::raw::c_uint;
 pub const ImGuiTextFlags__ImGuiTextFlags_None: ImGuiTextFlags_ = 0;
 pub const ImGuiTextFlags__ImGuiTextFlags_NoWidthForLargeClippedText: ImGuiTextFlags_ = 1;
-pub type ImGuiTextFlags_ = ::std::os::raw::c_int;
+pub type ImGuiTextFlags_ = ::std::os::raw::c_uint;
 pub const ImGuiTooltipFlags__ImGuiTooltipFlags_None: ImGuiTooltipFlags_ = 0;
 pub const ImGuiTooltipFlags__ImGuiTooltipFlags_OverridePreviousTooltip: ImGuiTooltipFlags_ = 1;
-pub type ImGuiTooltipFlags_ = ::std::os::raw::c_int;
+pub type ImGuiTooltipFlags_ = ::std::os::raw::c_uint;
 pub const ImGuiLayoutType__ImGuiLayoutType_Horizontal: ImGuiLayoutType_ = 0;
 pub const ImGuiLayoutType__ImGuiLayoutType_Vertical: ImGuiLayoutType_ = 1;
-pub type ImGuiLayoutType_ = ::std::os::raw::c_int;
+pub type ImGuiLayoutType_ = ::std::os::raw::c_uint;
 pub const ImGuiLogType_ImGuiLogType_None: ImGuiLogType = 0;
 pub const ImGuiLogType_ImGuiLogType_TTY: ImGuiLogType = 1;
 pub const ImGuiLogType_ImGuiLogType_File: ImGuiLogType = 2;
 pub const ImGuiLogType_ImGuiLogType_Buffer: ImGuiLogType = 3;
 pub const ImGuiLogType_ImGuiLogType_Clipboard: ImGuiLogType = 4;
-pub type ImGuiLogType = ::std::os::raw::c_int;
+pub type ImGuiLogType = ::std::os::raw::c_uint;
 pub const ImGuiAxis_ImGuiAxis_None: ImGuiAxis = -1;
 pub const ImGuiAxis_ImGuiAxis_X: ImGuiAxis = 0;
 pub const ImGuiAxis_ImGuiAxis_Y: ImGuiAxis = 1;
 pub type ImGuiAxis = ::std::os::raw::c_int;
 pub const ImGuiPlotType_ImGuiPlotType_Lines: ImGuiPlotType = 0;
 pub const ImGuiPlotType_ImGuiPlotType_Histogram: ImGuiPlotType = 1;
-pub type ImGuiPlotType = ::std::os::raw::c_int;
+pub type ImGuiPlotType = ::std::os::raw::c_uint;
 pub const ImGuiPopupPositionPolicy_ImGuiPopupPositionPolicy_Default: ImGuiPopupPositionPolicy = 0;
 pub const ImGuiPopupPositionPolicy_ImGuiPopupPositionPolicy_ComboBox: ImGuiPopupPositionPolicy = 1;
 pub const ImGuiPopupPositionPolicy_ImGuiPopupPositionPolicy_Tooltip: ImGuiPopupPositionPolicy = 2;
-pub type ImGuiPopupPositionPolicy = ::std::os::raw::c_int;
+pub type ImGuiPopupPositionPolicy = ::std::os::raw::c_uint;
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct ImGuiDataVarInfo {
@@ -9069,7 +9439,7 @@ fn bindgen_test_layout_ImGuiDataTypeInfo() {
 pub const ImGuiDataTypePrivate__ImGuiDataType_String: ImGuiDataTypePrivate_ = 11;
 pub const ImGuiDataTypePrivate__ImGuiDataType_Pointer: ImGuiDataTypePrivate_ = 12;
 pub const ImGuiDataTypePrivate__ImGuiDataType_ID: ImGuiDataTypePrivate_ = 13;
-pub type ImGuiDataTypePrivate_ = ::std::os::raw::c_int;
+pub type ImGuiDataTypePrivate_ = ::std::os::raw::c_uint;
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct ImGuiColorMod {
@@ -9846,7 +10216,7 @@ pub const ImGuiNextWindowDataFlags__ImGuiNextWindowDataFlags_HasDock: ImGuiNextW
     512;
 pub const ImGuiNextWindowDataFlags__ImGuiNextWindowDataFlags_HasWindowClass:
     ImGuiNextWindowDataFlags_ = 1024;
-pub type ImGuiNextWindowDataFlags_ = ::std::os::raw::c_int;
+pub type ImGuiNextWindowDataFlags_ = ::std::os::raw::c_uint;
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct ImGuiNextWindowData {
@@ -10089,7 +10459,7 @@ fn bindgen_test_layout_ImGuiNextWindowData() {
 pub const ImGuiNextItemDataFlags__ImGuiNextItemDataFlags_None: ImGuiNextItemDataFlags_ = 0;
 pub const ImGuiNextItemDataFlags__ImGuiNextItemDataFlags_HasWidth: ImGuiNextItemDataFlags_ = 1;
 pub const ImGuiNextItemDataFlags__ImGuiNextItemDataFlags_HasOpen: ImGuiNextItemDataFlags_ = 2;
-pub type ImGuiNextItemDataFlags_ = ::std::os::raw::c_int;
+pub type ImGuiNextItemDataFlags_ = ::std::os::raw::c_uint;
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct ImGuiNextItemData {
@@ -10560,7 +10930,7 @@ pub const ImGuiInputEventType_ImGuiInputEventType_Key: ImGuiInputEventType = 5;
 pub const ImGuiInputEventType_ImGuiInputEventType_Text: ImGuiInputEventType = 6;
 pub const ImGuiInputEventType_ImGuiInputEventType_Focus: ImGuiInputEventType = 7;
 pub const ImGuiInputEventType_ImGuiInputEventType_COUNT: ImGuiInputEventType = 8;
-pub type ImGuiInputEventType = ::std::os::raw::c_int;
+pub type ImGuiInputEventType = ::std::os::raw::c_uint;
 pub const ImGuiInputSource_ImGuiInputSource_None: ImGuiInputSource = 0;
 pub const ImGuiInputSource_ImGuiInputSource_Mouse: ImGuiInputSource = 1;
 pub const ImGuiInputSource_ImGuiInputSource_Keyboard: ImGuiInputSource = 2;
@@ -10568,7 +10938,7 @@ pub const ImGuiInputSource_ImGuiInputSource_Gamepad: ImGuiInputSource = 3;
 pub const ImGuiInputSource_ImGuiInputSource_Clipboard: ImGuiInputSource = 4;
 pub const ImGuiInputSource_ImGuiInputSource_Nav: ImGuiInputSource = 5;
 pub const ImGuiInputSource_ImGuiInputSource_COUNT: ImGuiInputSource = 6;
-pub type ImGuiInputSource = ::std::os::raw::c_int;
+pub type ImGuiInputSource = ::std::os::raw::c_uint;
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct ImGuiInputEventMousePos {
@@ -11256,7 +11626,7 @@ pub const ImGuiInputFlags__ImGuiInputFlags_SupportedByIsKeyPressed: ImGuiInputFl
 pub const ImGuiInputFlags__ImGuiInputFlags_SupportedByShortcut: ImGuiInputFlags_ = 16143;
 pub const ImGuiInputFlags__ImGuiInputFlags_SupportedBySetKeyOwner: ImGuiInputFlags_ = 192;
 pub const ImGuiInputFlags__ImGuiInputFlags_SupportedBySetItemKeyOwner: ImGuiInputFlags_ = 240;
-pub type ImGuiInputFlags_ = ::std::os::raw::c_int;
+pub type ImGuiInputFlags_ = ::std::os::raw::c_uint;
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct ImGuiListClipperRange {
@@ -11463,7 +11833,7 @@ pub const ImGuiActivateFlags__ImGuiActivateFlags_None: ImGuiActivateFlags_ = 0;
 pub const ImGuiActivateFlags__ImGuiActivateFlags_PreferInput: ImGuiActivateFlags_ = 1;
 pub const ImGuiActivateFlags__ImGuiActivateFlags_PreferTweak: ImGuiActivateFlags_ = 2;
 pub const ImGuiActivateFlags__ImGuiActivateFlags_TryToPreserveState: ImGuiActivateFlags_ = 4;
-pub type ImGuiActivateFlags_ = ::std::os::raw::c_int;
+pub type ImGuiActivateFlags_ = ::std::os::raw::c_uint;
 pub const ImGuiScrollFlags__ImGuiScrollFlags_None: ImGuiScrollFlags_ = 0;
 pub const ImGuiScrollFlags__ImGuiScrollFlags_KeepVisibleEdgeX: ImGuiScrollFlags_ = 1;
 pub const ImGuiScrollFlags__ImGuiScrollFlags_KeepVisibleEdgeY: ImGuiScrollFlags_ = 2;
@@ -11474,13 +11844,13 @@ pub const ImGuiScrollFlags__ImGuiScrollFlags_AlwaysCenterY: ImGuiScrollFlags_ = 
 pub const ImGuiScrollFlags__ImGuiScrollFlags_NoScrollParent: ImGuiScrollFlags_ = 64;
 pub const ImGuiScrollFlags__ImGuiScrollFlags_MaskX_: ImGuiScrollFlags_ = 21;
 pub const ImGuiScrollFlags__ImGuiScrollFlags_MaskY_: ImGuiScrollFlags_ = 42;
-pub type ImGuiScrollFlags_ = ::std::os::raw::c_int;
+pub type ImGuiScrollFlags_ = ::std::os::raw::c_uint;
 pub const ImGuiNavHighlightFlags__ImGuiNavHighlightFlags_None: ImGuiNavHighlightFlags_ = 0;
 pub const ImGuiNavHighlightFlags__ImGuiNavHighlightFlags_TypeDefault: ImGuiNavHighlightFlags_ = 1;
 pub const ImGuiNavHighlightFlags__ImGuiNavHighlightFlags_TypeThin: ImGuiNavHighlightFlags_ = 2;
 pub const ImGuiNavHighlightFlags__ImGuiNavHighlightFlags_AlwaysDraw: ImGuiNavHighlightFlags_ = 4;
 pub const ImGuiNavHighlightFlags__ImGuiNavHighlightFlags_NoRounding: ImGuiNavHighlightFlags_ = 8;
-pub type ImGuiNavHighlightFlags_ = ::std::os::raw::c_int;
+pub type ImGuiNavHighlightFlags_ = ::std::os::raw::c_uint;
 pub const ImGuiNavMoveFlags__ImGuiNavMoveFlags_None: ImGuiNavMoveFlags_ = 0;
 pub const ImGuiNavMoveFlags__ImGuiNavMoveFlags_LoopX: ImGuiNavMoveFlags_ = 1;
 pub const ImGuiNavMoveFlags__ImGuiNavMoveFlags_LoopY: ImGuiNavMoveFlags_ = 2;
@@ -11495,11 +11865,11 @@ pub const ImGuiNavMoveFlags__ImGuiNavMoveFlags_FocusApi: ImGuiNavMoveFlags_ = 51
 pub const ImGuiNavMoveFlags__ImGuiNavMoveFlags_Tabbing: ImGuiNavMoveFlags_ = 1024;
 pub const ImGuiNavMoveFlags__ImGuiNavMoveFlags_Activate: ImGuiNavMoveFlags_ = 2048;
 pub const ImGuiNavMoveFlags__ImGuiNavMoveFlags_DontSetNavHighlight: ImGuiNavMoveFlags_ = 4096;
-pub type ImGuiNavMoveFlags_ = ::std::os::raw::c_int;
+pub type ImGuiNavMoveFlags_ = ::std::os::raw::c_uint;
 pub const ImGuiNavLayer_ImGuiNavLayer_Main: ImGuiNavLayer = 0;
 pub const ImGuiNavLayer_ImGuiNavLayer_Menu: ImGuiNavLayer = 1;
 pub const ImGuiNavLayer_ImGuiNavLayer_COUNT: ImGuiNavLayer = 2;
-pub type ImGuiNavLayer = ::std::os::raw::c_int;
+pub type ImGuiNavLayer = ::std::os::raw::c_uint;
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct ImGuiNavItemData {
@@ -11614,7 +11984,7 @@ pub const ImGuiOldColumnFlags__ImGuiOldColumnFlags_NoPreserveWidths: ImGuiOldCol
 pub const ImGuiOldColumnFlags__ImGuiOldColumnFlags_NoForceWithinWindow: ImGuiOldColumnFlags_ = 8;
 pub const ImGuiOldColumnFlags__ImGuiOldColumnFlags_GrowParentContentsSize: ImGuiOldColumnFlags_ =
     16;
-pub type ImGuiOldColumnFlags_ = ::std::os::raw::c_int;
+pub type ImGuiOldColumnFlags_ = ::std::os::raw::c_uint;
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct ImGuiOldColumnData {
@@ -11978,14 +12348,14 @@ pub type ImGuiDockNodeFlagsPrivate_ = ::std::os::raw::c_int;
 pub const ImGuiDataAuthority__ImGuiDataAuthority_Auto: ImGuiDataAuthority_ = 0;
 pub const ImGuiDataAuthority__ImGuiDataAuthority_DockNode: ImGuiDataAuthority_ = 1;
 pub const ImGuiDataAuthority__ImGuiDataAuthority_Window: ImGuiDataAuthority_ = 2;
-pub type ImGuiDataAuthority_ = ::std::os::raw::c_int;
+pub type ImGuiDataAuthority_ = ::std::os::raw::c_uint;
 pub const ImGuiDockNodeState_ImGuiDockNodeState_Unknown: ImGuiDockNodeState = 0;
 pub const ImGuiDockNodeState_ImGuiDockNodeState_HostWindowHiddenBecauseSingleWindow:
     ImGuiDockNodeState = 1;
 pub const ImGuiDockNodeState_ImGuiDockNodeState_HostWindowHiddenBecauseWindowsAreResizing:
     ImGuiDockNodeState = 2;
 pub const ImGuiDockNodeState_ImGuiDockNodeState_HostWindowVisible: ImGuiDockNodeState = 3;
-pub type ImGuiDockNodeState = ::std::os::raw::c_int;
+pub type ImGuiDockNodeState = ::std::os::raw::c_uint;
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct ImVector_ImGuiWindowPtr {
@@ -12071,7 +12441,7 @@ pub struct ImGuiDockNode {
     pub WantCloseTabId: ImGuiID,
     pub _bitfield_align_1: [u8; 0],
     pub _bitfield_1: __BindgenBitfieldUnit<[u8; 3usize]>,
-    pub __bindgen_padding_0: [u8; 9usize],
+    pub __bindgen_padding_0: u8,
 }
 #[test]
 fn bindgen_test_layout_ImGuiDockNode() {
@@ -12079,7 +12449,7 @@ fn bindgen_test_layout_ImGuiDockNode() {
     let ptr = UNINIT.as_ptr();
     assert_eq!(
         ::std::mem::size_of::<ImGuiDockNode>(),
-        208usize,
+        200usize,
         concat!("Size of: ", stringify!(ImGuiDockNode))
     );
     assert_eq!(
@@ -12600,7 +12970,7 @@ pub const ImGuiWindowDockStyleCol_ImGuiWindowDockStyleCol_TabUnfocused: ImGuiWin
 pub const ImGuiWindowDockStyleCol_ImGuiWindowDockStyleCol_TabUnfocusedActive:
     ImGuiWindowDockStyleCol = 5;
 pub const ImGuiWindowDockStyleCol_ImGuiWindowDockStyleCol_COUNT: ImGuiWindowDockStyleCol = 6;
-pub type ImGuiWindowDockStyleCol = ::std::os::raw::c_int;
+pub type ImGuiWindowDockStyleCol = ::std::os::raw::c_uint;
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct ImGuiWindowDockStyle {
@@ -13342,7 +13712,7 @@ pub const ImGuiLocKey_ImGuiLocKey_WindowingPopup: ImGuiLocKey = 5;
 pub const ImGuiLocKey_ImGuiLocKey_WindowingUntitled: ImGuiLocKey = 6;
 pub const ImGuiLocKey_ImGuiLocKey_DockingHideTabBar: ImGuiLocKey = 7;
 pub const ImGuiLocKey_ImGuiLocKey_COUNT: ImGuiLocKey = 8;
-pub type ImGuiLocKey = ::std::os::raw::c_int;
+pub type ImGuiLocKey = ::std::os::raw::c_uint;
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct ImGuiLocEntry {
@@ -13395,7 +13765,7 @@ pub const ImGuiDebugLogFlags__ImGuiDebugLogFlags_EventDocking: ImGuiDebugLogFlag
 pub const ImGuiDebugLogFlags__ImGuiDebugLogFlags_EventViewport: ImGuiDebugLogFlags_ = 128;
 pub const ImGuiDebugLogFlags__ImGuiDebugLogFlags_EventMask_: ImGuiDebugLogFlags_ = 255;
 pub const ImGuiDebugLogFlags__ImGuiDebugLogFlags_OutputToTTY: ImGuiDebugLogFlags_ = 1024;
-pub type ImGuiDebugLogFlags_ = ::std::os::raw::c_int;
+pub type ImGuiDebugLogFlags_ = ::std::os::raw::c_uint;
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct ImGuiMetricsConfig {
@@ -13546,7 +13916,6 @@ pub struct ImGuiStackLevelInfo {
     pub QuerySuccess: bool,
     pub _bitfield_align_1: [u8; 0],
     pub _bitfield_1: __BindgenBitfieldUnit<[u8; 1usize]>,
-    pub __bindgen_padding_0: [u8; 5usize],
     pub Desc: [::std::os::raw::c_char; 57usize],
 }
 #[test]
@@ -13555,7 +13924,7 @@ fn bindgen_test_layout_ImGuiStackLevelInfo() {
     let ptr = UNINIT.as_ptr();
     assert_eq!(
         ::std::mem::size_of::<ImGuiStackLevelInfo>(),
-        72usize,
+        64usize,
         concat!("Size of: ", stringify!(ImGuiStackLevelInfo))
     );
     assert_eq!(
@@ -13595,7 +13964,7 @@ fn bindgen_test_layout_ImGuiStackLevelInfo() {
     );
     assert_eq!(
         unsafe { ::std::ptr::addr_of!((*ptr).Desc) as usize - ptr as usize },
-        12usize,
+        7usize,
         concat!(
             "Offset of field: ",
             stringify!(ImGuiStackLevelInfo),
@@ -13775,7 +14144,7 @@ pub const ImGuiContextHookType_ImGuiContextHookType_RenderPre: ImGuiContextHookT
 pub const ImGuiContextHookType_ImGuiContextHookType_RenderPost: ImGuiContextHookType = 5;
 pub const ImGuiContextHookType_ImGuiContextHookType_Shutdown: ImGuiContextHookType = 6;
 pub const ImGuiContextHookType_ImGuiContextHookType_PendingRemoval_: ImGuiContextHookType = 7;
-pub type ImGuiContextHookType = ::std::os::raw::c_int;
+pub type ImGuiContextHookType = ::std::os::raw::c_uint;
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct ImGuiContextHook {
@@ -19654,14 +20023,14 @@ pub const ImGuiTabBarFlagsPrivate__ImGuiTabBarFlags_DockNode: ImGuiTabBarFlagsPr
 pub const ImGuiTabBarFlagsPrivate__ImGuiTabBarFlags_IsFocused: ImGuiTabBarFlagsPrivate_ = 2097152;
 pub const ImGuiTabBarFlagsPrivate__ImGuiTabBarFlags_SaveSettings: ImGuiTabBarFlagsPrivate_ =
     4194304;
-pub type ImGuiTabBarFlagsPrivate_ = ::std::os::raw::c_int;
+pub type ImGuiTabBarFlagsPrivate_ = ::std::os::raw::c_uint;
 pub const ImGuiTabItemFlagsPrivate__ImGuiTabItemFlags_SectionMask_: ImGuiTabItemFlagsPrivate_ = 192;
 pub const ImGuiTabItemFlagsPrivate__ImGuiTabItemFlags_NoCloseButton: ImGuiTabItemFlagsPrivate_ =
     1048576;
 pub const ImGuiTabItemFlagsPrivate__ImGuiTabItemFlags_Button: ImGuiTabItemFlagsPrivate_ = 2097152;
 pub const ImGuiTabItemFlagsPrivate__ImGuiTabItemFlags_Unsorted: ImGuiTabItemFlagsPrivate_ = 4194304;
 pub const ImGuiTabItemFlagsPrivate__ImGuiTabItemFlags_Preview: ImGuiTabItemFlagsPrivate_ = 8388608;
-pub type ImGuiTabItemFlagsPrivate_ = ::std::os::raw::c_int;
+pub type ImGuiTabItemFlagsPrivate_ = ::std::os::raw::c_uint;
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct ImGuiTabItem {
@@ -23113,25 +23482,29 @@ extern "C" {
     pub fn igText(fmt: *const ::std::os::raw::c_char, ...);
 }
 extern "C" {
-    pub fn igTextV(fmt: *const ::std::os::raw::c_char, args: va_list);
+    pub fn igTextV(fmt: *const ::std::os::raw::c_char, args: *mut __va_list_tag);
 }
 extern "C" {
     pub fn igTextColored(col: ImVec4, fmt: *const ::std::os::raw::c_char, ...);
 }
 extern "C" {
-    pub fn igTextColoredV(col: ImVec4, fmt: *const ::std::os::raw::c_char, args: va_list);
+    pub fn igTextColoredV(
+        col: ImVec4,
+        fmt: *const ::std::os::raw::c_char,
+        args: *mut __va_list_tag,
+    );
 }
 extern "C" {
     pub fn igTextDisabled(fmt: *const ::std::os::raw::c_char, ...);
 }
 extern "C" {
-    pub fn igTextDisabledV(fmt: *const ::std::os::raw::c_char, args: va_list);
+    pub fn igTextDisabledV(fmt: *const ::std::os::raw::c_char, args: *mut __va_list_tag);
 }
 extern "C" {
     pub fn igTextWrapped(fmt: *const ::std::os::raw::c_char, ...);
 }
 extern "C" {
-    pub fn igTextWrappedV(fmt: *const ::std::os::raw::c_char, args: va_list);
+    pub fn igTextWrappedV(fmt: *const ::std::os::raw::c_char, args: *mut __va_list_tag);
 }
 extern "C" {
     pub fn igLabelText(
@@ -23144,14 +23517,14 @@ extern "C" {
     pub fn igLabelTextV(
         label: *const ::std::os::raw::c_char,
         fmt: *const ::std::os::raw::c_char,
-        args: va_list,
+        args: *mut __va_list_tag,
     );
 }
 extern "C" {
     pub fn igBulletText(fmt: *const ::std::os::raw::c_char, ...);
 }
 extern "C" {
-    pub fn igBulletTextV(fmt: *const ::std::os::raw::c_char, args: va_list);
+    pub fn igBulletTextV(fmt: *const ::std::os::raw::c_char, args: *mut __va_list_tag);
 }
 extern "C" {
     pub fn igSeparatorText(label: *const ::std::os::raw::c_char);
@@ -23745,14 +24118,14 @@ extern "C" {
     pub fn igTreeNodeV_Str(
         str_id: *const ::std::os::raw::c_char,
         fmt: *const ::std::os::raw::c_char,
-        args: va_list,
+        args: *mut __va_list_tag,
     ) -> bool;
 }
 extern "C" {
     pub fn igTreeNodeV_Ptr(
         ptr_id: *const ::std::os::raw::c_void,
         fmt: *const ::std::os::raw::c_char,
-        args: va_list,
+        args: *mut __va_list_tag,
     ) -> bool;
 }
 extern "C" {
@@ -23782,7 +24155,7 @@ extern "C" {
         str_id: *const ::std::os::raw::c_char,
         flags: ImGuiTreeNodeFlags,
         fmt: *const ::std::os::raw::c_char,
-        args: va_list,
+        args: *mut __va_list_tag,
     ) -> bool;
 }
 extern "C" {
@@ -23790,7 +24163,7 @@ extern "C" {
         ptr_id: *const ::std::os::raw::c_void,
         flags: ImGuiTreeNodeFlags,
         fmt: *const ::std::os::raw::c_char,
-        args: va_list,
+        args: *mut __va_list_tag,
     ) -> bool;
 }
 extern "C" {
@@ -23990,7 +24363,7 @@ extern "C" {
     pub fn igSetTooltip(fmt: *const ::std::os::raw::c_char, ...);
 }
 extern "C" {
-    pub fn igSetTooltipV(fmt: *const ::std::os::raw::c_char, args: va_list);
+    pub fn igSetTooltipV(fmt: *const ::std::os::raw::c_char, args: *mut __va_list_tag);
 }
 extern "C" {
     pub fn igBeginPopup(str_id: *const ::std::os::raw::c_char, flags: ImGuiWindowFlags) -> bool;
@@ -24202,7 +24575,7 @@ extern "C" {
     pub fn igLogButtons();
 }
 extern "C" {
-    pub fn igLogTextV(fmt: *const ::std::os::raw::c_char, args: va_list);
+    pub fn igLogTextV(fmt: *const ::std::os::raw::c_char, args: *mut __va_list_tag);
 }
 extern "C" {
     pub fn igBeginDragDropSource(flags: ImGuiDragDropFlags) -> bool;
@@ -24767,7 +25140,7 @@ extern "C" {
     pub fn ImGuiTextBuffer_appendfv(
         self_: *mut ImGuiTextBuffer,
         fmt: *const ::std::os::raw::c_char,
-        args: va_list,
+        args: *mut __va_list_tag,
     );
 }
 extern "C" {
@@ -25887,7 +26260,7 @@ extern "C" {
         buf: *mut ::std::os::raw::c_char,
         buf_size: usize,
         fmt: *const ::std::os::raw::c_char,
-        args: va_list,
+        args: *mut __va_list_tag,
     ) -> ::std::os::raw::c_int;
 }
 extern "C" {
@@ -25903,7 +26276,7 @@ extern "C" {
         out_buf: *mut *const ::std::os::raw::c_char,
         out_buf_end: *mut *const ::std::os::raw::c_char,
         fmt: *const ::std::os::raw::c_char,
-        args: va_list,
+        args: *mut __va_list_tag,
     );
 }
 extern "C" {
@@ -28486,7 +28859,7 @@ extern "C" {
     pub fn igDebugLog(fmt: *const ::std::os::raw::c_char, ...);
 }
 extern "C" {
-    pub fn igDebugLogV(fmt: *const ::std::os::raw::c_char, args: va_list);
+    pub fn igDebugLogV(fmt: *const ::std::os::raw::c_char, args: *mut __va_list_tag);
 }
 extern "C" {
     pub fn igErrorCheckEndFrameRecover(
@@ -28718,14 +29091,67 @@ extern "C" {
         >,
     );
 }
+pub type __builtin_va_list = [__va_list_tag; 1usize];
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
-pub struct __crt_locale_data {
-    pub _address: u8,
+pub struct __va_list_tag {
+    pub gp_offset: ::std::os::raw::c_uint,
+    pub fp_offset: ::std::os::raw::c_uint,
+    pub overflow_arg_area: *mut ::std::os::raw::c_void,
+    pub reg_save_area: *mut ::std::os::raw::c_void,
 }
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct __crt_multibyte_data {
-    pub _address: u8,
+#[test]
+fn bindgen_test_layout___va_list_tag() {
+    const UNINIT: ::std::mem::MaybeUninit<__va_list_tag> = ::std::mem::MaybeUninit::uninit();
+    let ptr = UNINIT.as_ptr();
+    assert_eq!(
+        ::std::mem::size_of::<__va_list_tag>(),
+        24usize,
+        concat!("Size of: ", stringify!(__va_list_tag))
+    );
+    assert_eq!(
+        ::std::mem::align_of::<__va_list_tag>(),
+        8usize,
+        concat!("Alignment of ", stringify!(__va_list_tag))
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).gp_offset) as usize - ptr as usize },
+        0usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(__va_list_tag),
+            "::",
+            stringify!(gp_offset)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).fp_offset) as usize - ptr as usize },
+        4usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(__va_list_tag),
+            "::",
+            stringify!(fp_offset)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).overflow_arg_area) as usize - ptr as usize },
+        8usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(__va_list_tag),
+            "::",
+            stringify!(overflow_arg_area)
+        )
+    );
+    assert_eq!(
+        unsafe { ::std::ptr::addr_of!((*ptr).reg_save_area) as usize - ptr as usize },
+        16usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(__va_list_tag),
+            "::",
+            stringify!(reg_save_area)
+        )
+    );
 }
-pub type __builtin_va_list = *mut ::std::os::raw::c_char;

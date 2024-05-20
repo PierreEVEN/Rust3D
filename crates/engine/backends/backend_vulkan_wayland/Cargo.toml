@@ -1,0 +1,14 @@
+[package]
+name = "backend_vulkan_wayland"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+gfx = {path = "../../common/gfx"}
+maths = {path = "../../maths"}
+macros = { path = "../../macros" }
+backend_vulkan = { path = "../backend_vulkan" }
+plateform = {path = "../../common/plateform"}
+plateform_wayland = {path = "../plateform_wayland"}
+ash = "0.37.2"
+gpu-allocator =  { version= "0.22.0", default-features = false, features=["vulkan"]}

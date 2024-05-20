@@ -12,3 +12,6 @@ core = { path = "../../core" }
 backend_vulkan = { path = "../backend_vulkan" }
 backend_vulkan_win32 = { path = "../backend_vulkan_win32" }
 plateform_win32 = { path = "../plateform_win32" }
+
+backend_vulkan_wayland = { path = "../backend_vulkan_wayland" }
+plateform_wayland = { path = "../plateform_wayland" }

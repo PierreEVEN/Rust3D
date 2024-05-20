@@ -91,6 +91,12 @@ impl WindowWin32 {
             }
         }
     }
+
+    pub fn get_handle(&self) -> RawWindowHandle {
+        let mut handle = Win32WindowHandle::empty();
+        handle.hwnd = self.hwnd.0 as *mut std::ffi::c_void;
+        RawWindowHandle::Win32(handle)
+    }
 }
 
 impl Window for WindowWin32 {
@@ -136,12 +142,6 @@ impl Window for WindowWin32 {
 
     fn get_background_alpha(&self) -> u8 {
         *self.background_alpha.read().unwrap()
-    }
-
-    fn get_handle(&self) -> RawWindowHandle {
-        let mut handle = Win32WindowHandle::empty();
-        handle.hwnd = self.hwnd.0 as *mut std::ffi::c_void;
-        RawWindowHandle::Win32(handle)
     }
 
     fn bind_event(&self, event_type: PlatformEvent, delegate: WindowEventDelegate) {

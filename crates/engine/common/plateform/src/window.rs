@@ -1,7 +1,7 @@
-﻿use std::hash::{Hash, Hasher};
+﻿use std::any::Any;
+use std::hash::{Hash, Hasher};
 
 use enumflags2::{bitflags, BitFlags};
-use raw_window_handle::RawWindowHandle;
 
 use maths::rect2d::RectI32;
 
@@ -55,7 +55,17 @@ impl Eq for PlatformEvent {}
 
 pub type WindowEventDelegate = Box<dyn FnMut(&PlatformEvent)>;
 
-pub trait Window {
+pub trait WindowCast: 'static {
+    fn as_any(&self) -> &dyn Any;
+}
+
+impl<T: 'static> WindowCast for T {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
+
+pub trait Window : WindowCast {
     fn set_geometry(&self, geometry: RectI32);
     fn get_geometry(&self) -> RectI32;
     fn set_title(&self, title: &str);
@@ -63,6 +73,11 @@ pub trait Window {
     fn show(&self);
     fn set_background_alpha(&self, alpha: u8);
     fn get_background_alpha(&self) -> u8;
-    fn get_handle(&self) -> RawWindowHandle;
     fn bind_event(&self, event_type: PlatformEvent, delegate: WindowEventDelegate);
+}
+
+impl dyn Window {
+    pub fn cast<U: Window + 'static>(&self) -> &U {
+        self.as_any().downcast_ref::<U>().unwrap()
+    }
 }

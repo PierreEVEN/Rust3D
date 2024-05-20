@@ -1,6 +1,4 @@
-﻿#[cfg(not(target_os = "windows"))]
-use cc::Build;
-use std::io;
+﻿use std::io;
 use std::path::Path;
 
 fn main() -> io::Result<()> {
@@ -24,6 +22,7 @@ fn main() -> io::Result<()> {
     bindings
         .write_to_file(out_path.join("bindings.rs"))
         .expect("Couldn't write bindings.");
-    
+
+
     Ok(())
 }

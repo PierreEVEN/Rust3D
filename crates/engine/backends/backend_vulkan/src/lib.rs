@@ -25,7 +25,7 @@ use crate::vk_descriptor_pool::VkDescriptorPool;
 use crate::vk_device::VkDevice;
 use crate::vk_image::VkImage;
 use crate::vk_image_sampler::VkImageSampler;
-use crate::vk_instance::{InstanceCreateInfos, VkInstance};
+use crate::vk_instance::{VkInstance};
 use crate::vk_physical_device::VkPhysicalDevice;
 use crate::vk_render_pass::VkRenderPass;
 use crate::vk_shader::VkShaderProgram;
@@ -74,6 +74,13 @@ macro_rules! vk_check {
             Err(vk_err) => { panic!("vk error : {}\non '{}'", vk_err.to_string(), stringify!(expression)) }
         }
     }
+}
+
+#[derive(Default, Clone)]
+pub struct InstanceCreateInfos {
+    pub required_layers: Vec<(String, bool)>,
+    pub required_extensions: Vec<(String, bool)>,
+    pub enable_validation_layers: bool,
 }
 
 pub struct GfxVulkan {
@@ -145,14 +152,10 @@ impl GfxInterface for GfxVulkan {
 }
 
 impl GfxVulkan {
-    pub fn new() -> GfxRef {
+    pub fn new(instance_create_infos: InstanceCreateInfos) -> GfxRef {
         unsafe { G_VULKAN = Some(ash::Entry::load().expect("failed to load vulkan library")); }
 
-        let instance = VkInstance::new(InstanceCreateInfos {
-            enable_validation_layers: true,
-            required_extensions: vec![],
-            ..InstanceCreateInfos::default()
-        }).expect("failed to create instance");
+        let instance = VkInstance::new(instance_create_infos).expect("failed to create instance");
 
         let physical_device = MaybeUninit::zeroed();
         let physical_device_vk = MaybeUninit::zeroed();
